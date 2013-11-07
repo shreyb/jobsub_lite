@@ -1,1 +1,29 @@
-readme file
+REST API application server for JobSub
+
+################
+# Development
+################
+
+We use pip  and virtual env to manage dependencies
+
+Initial Setup
+1.  Open command prompt and navigate to this directory
+2.  chmod 700 dev_initial_setup.sh
+3.  ./dev_initial_setup.sh
+4.  source dev_use_virtual_env.sh
+
+Every time you do a git pull you should install all
+new pip dependencies
+1.  source dev_use_virtual_env.sh
+
+
+################
+# Configuration
+################
+
+Apache mod_wsgi is set up to run the cherry.py application as a daemon so that jobs
+can be started as a user other than apache. The jobsub environment should be set up
+in the .bashrc of the user by adding the following commands:
+
+source /fnal/ups/etc/setups.sh
+setup jobsub_tools

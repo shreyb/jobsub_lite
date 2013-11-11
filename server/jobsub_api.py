@@ -3,6 +3,7 @@ import json
 import base64
 import os
 import re
+import errno
 
 try:
     import htcondor as condor
@@ -13,6 +14,16 @@ except:
 
 from subprocess import Popen, PIPE
 from shutil import copyfileobj
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 @cherrypy.popargs('exp_id')
 class ExperimentsResource(object):
@@ -35,8 +46,9 @@ class JobsResource(object):
                         cherrypy.request.app.log.error('jobsub_command: ' + str(jobsub_command))
                         if jobsub_command is not None:
                             # TODO: get the command path root from the configuration
-                            command_path_root = '.'
+                            command_path_root = '/opt/jobsub/uploads/'
                             # TODO: create sub directories for the user and request id or timestamp
+                            mkdir_p(command_path_root)
                             command_path = os.path.join(command_path_root, jobsub_command.filename)
                             cherrypy.request.app.log.error('command_path: ' + str(command_path))
                             with open(command_path, 'wb') as dst_file:

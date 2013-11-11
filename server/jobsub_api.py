@@ -40,7 +40,7 @@ class JobsResource(object):
                     cherrypy.request.app.log.error('kwargs: ' + str(kwargs))
                     jobsub_args = kwargs.get('jobsub_args_base64')
                     if jobsub_args is not None:
-                        jobsub_args = base64.b64decode(jobsub_args)
+                        jobsub_args = base64.b64decode(jobsub_args).rstrip()
                         cherrypy.request.app.log.error('jobsub_args: ' + str(jobsub_args))
                         jobsub_command = kwargs.get('jobsub_command')
                         cherrypy.request.app.log.error('jobsub_command: ' + str(jobsub_command))

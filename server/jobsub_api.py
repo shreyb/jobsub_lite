@@ -30,17 +30,21 @@ class JobsResource(object):
                     jobsub_args = kwargs.get('jobsub_args_base64')
                     if jobsub_args is not None:
                         jobsub_args = base64.b64decode(jobsub_args)
+                        cherrypy.request.app.log.error('jobsub_args: ' + str(jobsub_args))
                         jobsub_command = kwargs.get('jobsub_command')
+                        cherrypy.request.app.log.error('jobsub_command: ' + str(jobsub_command))
                         if jobsub_command is not None:
                             # TODO: get the command path root from the configuration
                             command_path_root = '.'
                             # TODO: create sub directories for the user and request id or timestamp
                             command_path = os.path.join(command_path_root, jobsub_command.filename)
+                            cherrypy.request.app.log.error('command_path: ' + str(command_path))
                             with open(command_path, 'wb') as dst_file:
                                 copyfileobj(jobsub_command.file, dst_file)
                             # replace the command file name in the arguments with the path on the local machine
                             command_tag = '@(.*)%s' % jobsub_command.filename
                             jobsub_args = re.sub(command_tag, command_path, jobsub_args)
+                            cherrypy.request.app.log.error('jobsub_args (subbed): ' + str(jobsub_args))
 
                         jobsub_args = jobsub_args.split(' ')
                         #TODO: the path to the jobsub tool should be configurable

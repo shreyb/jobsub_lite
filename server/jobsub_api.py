@@ -1,10 +1,18 @@
 import cherrypy
-import htcondor as condor
-import classad
 import json
 import base64
+import os
+import re
+
+try:
+    import htcondor as condor
+    import classad
+except:
+    import traceback
+    traceback.print_exc()
 
 from subprocess import Popen, PIPE
+from shutil import copyfileobj
 
 @cherrypy.popargs('exp_id')
 class ExperimentsResource(object):
@@ -19,14 +27,21 @@ class JobsResource(object):
             if cherrypy.request.method == 'POST':
                 if job_id is None:
                     cherrypy.request.app.log.error('kwargs: ' + str(kwargs))
-                    jobsub_args = kwargs.get('-jobsub_args')
-                    jobsub_args_base64 = kwargs.get('-jobsub_args_base64')
-                    if jobsub_args is not None and jobsub_args_base64 is not None:
-                        # TODO: return an error if both are set
-                        pass
-                    if jobsub_args_base64 is not None:
-                        jobsub_args = base64.b64decode(jobsub_args_base64)
+                    jobsub_args = kwargs.get('jobsub_args_base64')
                     if jobsub_args is not None:
+                        jobsub_args = base64.b64decode(jobsub_args)
+                        jobsub_command = kwargs.get('jobsub_command')
+                        if jobsub_command is not None:
+                            # TODO: get the command path root from the configuration
+                            command_path_root = '.'
+                            # TODO: create sub directories for the user and request id or timestamp
+                            command_path = os.path.join(command_path_root, jobsub_command.filename)
+                            with open(command_path, 'wb') as dst_file:
+                                copyfileobj(jobsub_command.file, dst_file)
+                            # replace the command file name in the arguments with the path on the local machine
+                            command_tag = '@(.*)%s' % jobsub_command.filename
+                            jobsub_args = re.sub(command_tag, command_path, jobsub_args)
+
                         jobsub_args = jobsub_args.split(' ')
                         #TODO: the path to the jobsub tool should be configurable
                         command = ['/opt/jobsub/jobsub_env_runner.sh'] + jobsub_args

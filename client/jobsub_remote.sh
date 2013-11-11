@@ -1,15 +1,5 @@
 #!/bin/bash
-
-# Find arguments starting with @. Assume it is a file that will be transferred
-# TODO: Do we want to upload multiple files?
-for arg in "$@"
-do
-    if [[ "$arg" == @* ]]
-    then
-        file_upload="-F jobsub_command=$arg"
-        echo "File ${arg:1} will be uploaded"
-    fi
-done
-
-COMMAND=`echo "$@" | base64`
-curl -cert /tmp/x509up_u501 -k $file_upload -X POST -F jobsub_args_base64=$COMMAND https://fcint076.fnal.gov:8443/jobsub/experiments/1/jobs/ && echo
+INPUT=`echo "$@"`
+UID=`id -u`
+COMMAND=`echo $INPUT | base64 -w 0`
+curl -cert /tmp/x509up_u${UID}.p12 -k -X POST -d -jobsub_args_base64=$COMMAND https://fermicloud326.fnal.gov:8443/jobsub/experiments/1/jobs/ && echo

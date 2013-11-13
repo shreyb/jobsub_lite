@@ -46,7 +46,7 @@ class JobsResource(object):
                             jobsub_args = base64.b64decode(jobsub_args).rstrip()
                             cherrypy.request.app.log.error('jobsub_args: %s' % jobsub_args)
                             jobsub_command = kwargs.get('jobsub_command')
-                            cherrypy.request.app.log.error('jobsub_command: %s' + jobsub_command)
+                            cherrypy.request.app.log.error('jobsub_command: %s' % jobsub_command)
                             if jobsub_command is not None:
                                 # TODO: get the command path root from the configuration
                                 command_path_root = '/opt/jobsub/uploads/'

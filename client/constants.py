@@ -30,3 +30,10 @@ JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/experiments/%s/jobs/'
 # HTTP Verbs/Actions
 HTTP_GET = 'GET'
 HTTP_POST = 'POST'
+
+################################################################################
+# PyCurl Constants
+################################################################################
+
+JOBSUB_PYCURL_CONNECTTIMEOUT = 5
+JOBSUB_PYCURL_TIMEOUT = 30

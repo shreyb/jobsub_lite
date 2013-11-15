@@ -32,7 +32,7 @@ class JobSubClient:
         self.acctGroup = acct_group
         self.jobExe = job_exe
         self.jobArgs = job_args
-        self.serverArgs_b64en = base64.urlsafe_b64encode('%s %s %s' % (
+        self.serverArgs_b64en = base64.urlsafe_b64encode('%s @%s %s' % (
             ' '.join(self.serverArgs), self.jobExe, self.jobArgs))
         #self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
         #                     self.server, self.serverVersion, self.acctGroup

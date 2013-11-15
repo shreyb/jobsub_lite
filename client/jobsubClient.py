@@ -24,12 +24,16 @@ import constants
 
 class JobSubClient:
 
-    def __init__(self, server, server_args, acct_group, server_version='current'):
+    def __init__(self, server, server_args, acct_group,
+            job_exe, job_args, server_version='current'):
         self.server = server
-        self.serverVersion = 'current'
+        self.serverVersion = server_version
         self.serverArgs = server_args
         self.acctGroup = acct_group
-        self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(self.serverArgs))
+        self.jobExe = job_exe
+        self.jobArgs = job_args
+        self.serverArgs_b64en = base64.urlsafe_b64encode('%s %s %s' % (
+            ' '.join(self.serverArgs), self.jobExe, self.jobArgs))
         #self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
         #                     self.server, self.serverVersion, self.acctGroup
         #                 )
@@ -46,7 +50,9 @@ class JobSubClient:
 
         # curl -cert /tmp/x509up_u501 -k -X POST -d -jobsub_args_base64=$COMMAND https://fcint076.fnal.gov:8443/jobsub/experiments/1/jobs/ 
 
-        post_fields = {'jobsub_args_base64': self.serverArgs_b64en}
+        post_data = [
+            ('jobsub_args_base64', self.serverArgs_b64en)
+        ]
         creds = get_client_cert()
         print "CREDENTIALS: %s" % creds
         print '%s' % self.submitURL
@@ -65,14 +71,22 @@ class JobSubClient:
         curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
         curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
         curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.SSLCERT, creds.get('cert'))
         curl.setopt(curl.SSLKEY, creds.get('key'))
         curl.setopt(curl.CAPATH, get_capath())
         curl.setopt(curl.WRITEFUNCTION, response.write)
 
+
+        f = None
+        if self.jobExe:
+            post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
+        #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+        curl.setopt(curl.HTTPPOST, post_data)
         curl.perform()
         curl.close()
+
+        if f:
+            f.close()
 
         # TODO: eval is dangerous on the msg you get from https. Make this secure.
         response_dict = eval(response.getvalue())

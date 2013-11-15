@@ -84,11 +84,25 @@ def parse_opts(argv):
                       default=constants.JOBSUB_SERVER,
                       help='Alternate location of JobSub server to use')
 
+    # Job executable and Job args
+    parser.add_option('--job-exe',
+                      dest='jobExe',
+                      action='store',
+                      metavar='<Job Executable>',
+                      help='Full path to the executable')
+
+    parser.add_option('--job-args',
+                      dest='jobArgs',
+                      action='store',
+                      metavar='<Job Args>',
+                      help='Arguments to the job exe')
+
     # Random server args
     parser.add_option('--jobsub-server-args',
                       dest='serverArgs',
                       action='callback',
                       callback=parse_server_args)
+
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
@@ -111,7 +125,9 @@ def main(argv):
     #print_opts(options)
     js_client = JobSubClient(options.jobsubServer,
                              options.serverArgs,
-                             options.acctGroup)
+                             options.acctGroup,
+                             options.jobExe,
+                             options.jobArgs)
     js_client.submit()
 
 if __name__ == '__main__':

@@ -134,4 +134,8 @@ if __name__ == '__main__':
     main(sys.argv)
 
 # TO TEST RUN SOMETHING LIKE THE FOLLOWING
+
+# X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --job-exe parag_test.sh --job-args 100 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots
+
+### Following are old examples
 #X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots --X509_USER_PROXY=/scratch/proxies/dbox/dbox.nova.proxy /scratch/app/users/condor-exec/dbox/test_grid_env.sh 100

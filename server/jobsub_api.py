@@ -47,7 +47,7 @@ class JobsResource(object):
         return result
 
     def execute_gums_command(self, subject_dn, experiment):
-        command = '/usr/bin/gums-host|mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|"%s"|-f|"/fermilab/%s"' % (subject_dn, experiment)
+        command = '/usr/bin/gums-host|mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|%s|-f|/fermilab/%s' % (subject_dn, experiment)
         command = command.split('|')
         cherrypy.request.app.log.error('gums command: %s' % command)
         pp = Popen(command, stdout=PIPE, stderr=PIPE)
@@ -77,7 +77,7 @@ class JobsResource(object):
             cherrypy.request.app.log.error('Exception getting uid', traceback=True)
         return uid
 
-    def doPOST(self, subject_dn, experiment, job_id, **kwargs):
+    def doPOST(self, subject_dn, experiment, job_id, kwargs):
         if job_id is None:
             cherrypy.request.app.log.error('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -112,7 +112,7 @@ class JobsResource(object):
             #TODO: return an error because job_id has been supplied but POST is for creating new jobs
             pass
 
-    def doGET(self, subject_dn, experiment, job_id, **kwargs):
+    def doGET(self, subject_dn, experiment, job_id, kwargs):
         if job_id is not None:
             job_id = int(job_id)
             schedd = condor.Schedd()
@@ -133,9 +133,9 @@ class JobsResource(object):
                 if self.is_supported_experiemtn(experiment):
                     if self.gums_auth(subject_dn, experiment):
                         if cherrypy.request.method == 'POST':
-                            self.doPOST(subject_dn, experiment, job_id, kwargs)
+                            return self.doPOST(subject_dn, experiment, job_id, kwargs)
                         elif cherrypy.request.method == 'GET':
-                            self.doGET(subject_dn, experiment, job_id, kwargs)
+                            return self.doGET(subject_dn, experiment, job_id, kwargs)
                     else:
                         # TODO: return error for failed gums auth
                         pass

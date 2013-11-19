@@ -13,10 +13,11 @@ yum -y install mod_ssl
 yum -y install mod_wsgi
 chkconfig --add httpd
 chkconfig --level 345 httpd on
-#mv /opt/IdleManager/idle_manager.conf /etc/httpd/conf.d/
-# set up the certs. not sure this is the right way
-scp fcl316.fnal.gov:/etc/grid-security/hostkey.pem /etc/grid-security/
-scp fcl316.fnal.gov:/etc/grid-security/hostcert.pem /etc/grid-security/
+mv /opt/jobsub/jobsub_api.conf /etc/httpd/conf.d/
+# link the host keys
 mkdir /etc/grid-security/certificates
 scp -rp fcl316.fnal.gov:/etc/grid-security/certificates /etc/grid-security/
 service httpd start
+
+wget https://www.racf.bnl.gov/Facility/GUMS/mvn/gums/gums-client/1.3.17/gums-client-1.3.17-1.noarch.rpm
+rpm -i gums-client-1.3.17-1.noarch.rpm

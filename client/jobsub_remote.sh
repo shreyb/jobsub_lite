@@ -1,11 +1,54 @@
 #!/bin/bash
-INPUT=`echo "$@"`
 
-BASE64="base64 -w 0"
-if [[ `uname` == 'Darwin' ]]; then
-    BASE64="base64"
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script submits jobs using the jobsub web service
+
+OPTIONS:
+   --help           Show this message
+   --jobsub-server  The remote host
+   --acct-group     The experiment accounting group
+EOF
+}
+
+# Gather the arguments to the client
+#
+# example: fcint076.fnal.gov
+JOBSUB_HOST=
+# example: minos
+ACCOUNTING_GROUP=
+while :
+do
+    case $1 in
+        --help)
+            usage
+            exit 1
+            ;;
+        --jobsub-server)
+            JOBSUB_HOST=$2;
+            shift 2;
+            ;;
+        --acct-group)
+            ACCOUNTING_GROUP=$2;
+            shift 2;
+            ;;
+        --)
+            shift;
+            break;;
+        *)  # no more options. Stop while loop
+        break
+        ;;
+    esac
+done
+
+if [[ -z $JOBSUB_HOST ]] || [[ -z $ACCOUNTING_GROUP ]]
+then
+     usage
+     exit 1
 fi
-COMMAND=`echo $INPUT | $BASE64`
 
 # Find arguments starting with @. Assume it is a file that will be transferred
 # TODO: Do we want to upload multiple files?
@@ -18,4 +61,15 @@ do
     fi
 done
 
-curl -cert /tmp/x509up_u${UID} -k -X POST $file_upload -F jobsub_args_base64=$COMMAND https://fermicloud326.fnal.gov:8443/jobsub/experiments/1/jobs/ && echo
+# Encode the jobsub input as base 64
+INPUT=`echo "$@"`
+BASE64="base64 -w 0"
+if [[ `uname` == 'Darwin' ]]; then
+    # base64 on OS X does not have -w flag, but does not output newlines
+    BASE64="base64"
+    # The ca-bundle.crt file can be copied from /etc/pki/tls/certs/ca-bundle.crt on Linux hosts
+    CACERT="--cacert ./ca-bundle.crt"
+fi
+COMMAND=`echo $INPUT | $BASE64`
+
+curl --cert /tmp/x509up_u${UID} $CACERT -X POST $file_upload -F jobsub_args_base64=$COMMAND https://$JOBSUB_HOST:8443/jobsub/experiments/$ACCOUNTING_GROUP/jobs/ && echo

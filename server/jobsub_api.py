@@ -47,8 +47,8 @@ class JobsResource(object):
         return result
 
     def execute_gums_command(self, subject_dn, experiment):
-        command = '/usr/bin/gums-host mapUser -g https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort "%s" -f "/fermilab/%s"' % (subject_dn, experiment)
-        command = command.split()
+        command = '/usr/bin/gums-host mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|"%s"|-f|"/fermilab/%s"' % (subject_dn, experiment)
+        command = command.split('|')
         cherrypy.request.app.log.error('gums command: %s' % command)
         pp = Popen(command, stdout=PIPE, stderr=PIPE)
         result = {

@@ -60,7 +60,7 @@ class JobsResource(object):
 
     def gums_auth(self, subject_dn, experiment):
         result = self.execute_gums_command(subject_dn, experiment)
-        if result['out'] == 'null' or len(result['err']) > 0:
+        if result['out'][0].startswith('null') or len(result['err']) > 0:
             return False
         else:
             return True
@@ -77,7 +77,7 @@ class JobsResource(object):
             cherrypy.request.app.log.error('Exception getting uid', traceback=True)
         return uid
 
-    def POST(self, subject_dn, experiment, job_id=None, **kwargs):
+    def doPOST(self, subject_dn, experiment, job_id, **kwargs):
         if job_id is None:
             cherrypy.request.app.log.error('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -112,7 +112,7 @@ class JobsResource(object):
             #TODO: return an error because job_id has been supplied but POST is for creating new jobs
             pass
 
-    def GET(self, subject_dn, experiment, job_id=None, **kwargs):
+    def doGET(self, subject_dn, experiment, job_id, **kwargs):
         if job_id is not None:
             job_id = int(job_id)
             schedd = condor.Schedd()
@@ -133,9 +133,9 @@ class JobsResource(object):
                 if self.is_supported_experiemtn(experiment):
                     if self.gums_auth(subject_dn, experiment):
                         if cherrypy.request.method == 'POST':
-                            self.POST(subject_dn, experiment, job_id, kwargs)
+                            self.doPOST(subject_dn, experiment, job_id, kwargs)
                         elif cherrypy.request.method == 'GET':
-                            self.GET(subject_dn, experiment, job_id, kwargs)
+                            self.doGET(subject_dn, experiment, job_id, kwargs)
                     else:
                         # TODO: return error for failed gums auth
                         pass

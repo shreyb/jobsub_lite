@@ -26,7 +26,7 @@ def mkdir_p(path):
         else:
             raise
 
-@cherrypy.popargs('exp_id')
+@cherrypy.popargs('experiment')
 class ExperimentsResource(object):
     def __init__(self):
         self.jobs = JobsResource()

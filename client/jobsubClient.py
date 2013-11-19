@@ -18,6 +18,8 @@ import base64
 import pycurl
 import urllib
 import cStringIO
+import platform
+import json
 
 import constants
 
@@ -72,8 +74,10 @@ class JobSubClient:
         curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
         curl.setopt(curl.FAILONERROR, True)
         curl.setopt(curl.SSLCERT, creds.get('cert'))
-        curl.setopt(curl.SSLKEY, creds.get('key'))
-        curl.setopt(curl.CAPATH, get_capath())
+        #curl.setopt(curl.SSLKEY, creds.get('key'))
+        #curl.setopt(curl.CAPATH, get_capath())
+        if platform.system() == 'Darwin':
+            curl.setopt(curl.CAINFO, './ca-bundle.crt')
         curl.setopt(curl.WRITEFUNCTION, response.write)
 
 
@@ -83,19 +87,22 @@ class JobSubClient:
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
         curl.perform()
+        response_code = curl.getinfo(pycurl.HTTP_CODE)
         curl.close()
 
         if f:
             f.close()
 
-        # TODO: eval is dangerous on the msg you get from https. Make this secure.
-        response_dict = eval(response.getvalue())
-        response_err = response_dict.get('err')
-        response_out = response_dict.get('out')
+        if response_code == 200:
+            response_dict = json.loads(response.getvalue())
+            response_err = response_dict.get('err')
+            response_out = response_dict.get('out')
+            print_formatted_response(response_out)
+            print_formatted_response(response_err, msg_type='ERROR')
+        else:
+            print "Server response code: %s" % response_code
         response.close()
 
-        print_formatted_response(response_out)
-        print_formatted_response(response_err, msg_type='ERROR')
 
 
 def print_formatted_response(msg, msg_type='OUTPUT'):

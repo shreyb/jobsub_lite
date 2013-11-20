@@ -42,8 +42,8 @@ def format_response(content_type, data):
         return 'Content type %s not supported' % content_type
 
 
-@cherrypy.popargs('experiment')
-class ExperimentsResource(object):
+@cherrypy.popargs('accountinggroup')
+class AccountingGroupsResource(object):
     def __init__(self):
         self.jobs = JobsResource()
 
@@ -62,8 +62,8 @@ class JobsResource(object):
         cherrypy.request.app.log.error('jobsub command result: %s' % str(result))
         return result
 
-    def execute_gums_command(self, subject_dn, experiment):
-        command = '/usr/bin/gums-host|mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|%s|-f|/fermilab/%s' % (subject_dn, experiment)
+    def execute_gums_command(self, subject_dn, accountinggroup):
+        command = '/usr/bin/gums-host|mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|%s|-f|/fermilab/%s' % (subject_dn, accountinggroup)
         command = command.split('|')
         cherrypy.request.app.log.error('gums command: %s' % command)
         pp = Popen(command, stdout=PIPE, stderr=PIPE)
@@ -74,15 +74,15 @@ class JobsResource(object):
         cherrypy.request.app.log.error('gums command result: %s' % str(result))
         return result
 
-    def gums_auth(self, subject_dn, experiment):
-        result = self.execute_gums_command(subject_dn, experiment)
+    def gums_auth(self, subject_dn, accountinggroup):
+        result = self.execute_gums_command(subject_dn, accountinggroup)
         if result['out'][0].startswith('null') or len(result['err']) > 0:
             return False
         else:
             return True
 
-    def is_supported_experiemtn(self, experiment):
-        # TODO: get list of experiments from jobsub config
+    def is_supported_accountinggroup(self, accountinggroup):
+        # TODO: get list of accountinggroups from jobsub config
         return True
 
     def get_uid(self, subject_dn):
@@ -93,7 +93,7 @@ class JobsResource(object):
             cherrypy.request.app.log.error('Exception getting uid', traceback=True)
         return uid
 
-    def doPOST(self, subject_dn, experiment, job_id, kwargs):
+    def doPOST(self, subject_dn, accountinggroup, job_id, kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         if job_id is None:
             cherrypy.request.app.log.error('kwargs: %s' % str(kwargs))
@@ -108,7 +108,7 @@ class JobsResource(object):
                     command_path_root = '/opt/jobsub/uploads'
                     uid = self.get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
-                    command_path = '%s/%s/%s/%s' % (command_path_root, experiment, uid, ts)
+                    command_path = '%s/%s/%s/%s' % (command_path_root, accountinggroup, uid, ts)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
                     cherrypy.request.app.log.error('command_file_path: %s' % command_file_path)
@@ -133,7 +133,7 @@ class JobsResource(object):
             cherrypy.request.app.log.error(err)
             return format_response(content_type_accept, {'err': err})
 
-    def doGET(self, subject_dn, experiment, job_id, kwargs):
+    def doGET(self, subject_dn, accountinggroup, job_id, kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         if job_id is not None:
             job_id = int(job_id)
@@ -149,32 +149,32 @@ class JobsResource(object):
             return format_response(content_type_accept, {'err': err})
 
     @cherrypy.expose
-    def index(self, experiment, job_id=None, **kwargs):
+    def index(self, accountinggroup, job_id=None, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         cherrypy.request.app.log.error('Request content_type_accept: %s' % content_type_accept)
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
-            if subject_dn is not None and experiment is not None:
-                cherrypy.request.app.log.error('subject_dn: %s, experiment: %s' % (subject_dn, experiment))
-                if self.is_supported_experiemtn(experiment):
-                    if self.gums_auth(subject_dn, experiment):
+            if subject_dn is not None and accountinggroup is not None:
+                cherrypy.request.app.log.error('subject_dn: %s, accountinggroup: %s' % (subject_dn, accountinggroup))
+                if self.is_supported_accountinggroup(accountinggroup):
+                    if self.gums_auth(subject_dn, accountinggroup):
                         if cherrypy.request.method == 'POST':
-                            return self.doPOST(subject_dn, experiment, job_id, kwargs)
+                            return self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
                         elif cherrypy.request.method == 'GET':
-                            return self.doGET(subject_dn, experiment, job_id, kwargs)
+                            return self.doGET(subject_dn, accountinggroup, job_id, kwargs)
                     else:
                         # return error for failed gums auth
                         err = 'User authorization has failed'
                         cherrypy.request.app.log.error(err)
                         return format_response(content_type_accept, {'err': err})
                 else:
-                    # return error for unsupported experiment
-                    err = 'Experiment %s is not configured in jobsub' % experiment
+                    # return error for unsupported accountinggroup
+                    err = 'AccountingGroup %s is not configured in jobsub' % accountinggroup
                     cherrypy.request.app.log.error(err)
                     return format_response(content_type_accept, {'err': err})
             else:
-                # return error for no subject_dn and experiment
-                err = 'User has not supplied subject dn and experiment'
+                # return error for no subject_dn and accountinggroup
+                err = 'User has not supplied subject dn and accountinggroup'
                 cherrypy.request.app.log.error(err)
                 return format_response(content_type_accept, {'err': err})
         except:
@@ -186,7 +186,7 @@ class Root(object):
 
 root = Root()
 
-root.experiments = ExperimentsResource()
+root.accountinggroups = AccountingGroupsResource()
 
 if __name__ == '__main__':
     cherrypy.quickstart(root, '/jobsub')
@@ -203,7 +203,7 @@ else:
 """
 import cherrypy
 
-from experiments import Experiments
+from accountinggroups import AccountingGroups
 
 
 class Root(object):
@@ -211,7 +211,7 @@ class Root(object):
 
 root = Root()
 
-root.experiments = Experiments()
+root.accountinggroups = AccountingGroups()
 
 # TODO: conf should be in seperate module for difference between dev and prod
 conf = {

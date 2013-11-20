@@ -50,7 +50,7 @@ class JobSubClient:
         # Reponse from executing curl
         response = cStringIO.StringIO()
 
-        # curl -cert /tmp/x509up_u501 -k -X POST -d -jobsub_args_base64=$COMMAND https://fcint076.fnal.gov:8443/jobsub/experiments/1/jobs/ 
+        # curl -cert /tmp/x509up_u501 -k -X POST -d -jobsub_args_base64=$COMMAND https://fcint076.fnal.gov:8443/jobsub/accountinggroup/1/jobs/
 
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)

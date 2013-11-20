@@ -15,6 +15,7 @@ except:
 from subprocess import Popen, PIPE
 from shutil import copyfileobj
 from datetime import datetime
+from pprint import pprint
 
 
 def mkdir_p(path):
@@ -25,6 +26,17 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+def format_text_response(data):
+    cherrypy.response.headers['Content-Type'] = 'text/plain'
+    return str(pprint(data))
+
+
+def format_json_response(data):
+    cherrypy.response.headers['Content-Type'] = 'application/json'
+    return str(json.dumps(data))
+
 
 @cherrypy.popargs('experiment')
 class ExperimentsResource(object):
@@ -103,15 +115,14 @@ class JobsResource(object):
                     cherrypy.request.app.log.error('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                result = self.execute_jobsub_command(jobsub_args)
-                cherrypy.response.headers['Content-Type'] = 'application/json'
-                return str(json.dumps(result))
+                data = self.execute_jobsub_command(jobsub_args)
+                return format_json_response(data)
             else:
-                #TODO: return an error because no command was supplied
-                pass
+                # return an error because no command was supplied
+                return format_json_response({'err': "User must supply jobsub command"})
         else:
-            #TODO: return an error because job_id has been supplied but POST is for creating new jobs
-            pass
+            # return an error because job_id has been supplied but POST is for creating new jobs
+            return format_json_response({'err': "User has been supplied job_is but POST is for creating new jobs"})
 
     def doGET(self, subject_dn, experiment, job_id, kwargs):
         if job_id is not None:
@@ -122,11 +133,13 @@ class JobsResource(object):
                 if job['ClusterId'] == job_id:
                     return str(job)
         else:
-            #TODO: return an error because job_id has not been supplied but GET is for querying jobs
-            pass
+            # return an error because job_id has not been supplied but GET is for querying jobs
+            return format_json_response({'err': "User has not supplied job_id but GET is for querying jobs"})
 
     @cherrypy.expose
     def index(self, experiment, job_id=None, **kwargs):
+        content_type = cherrypy.request.headers.get('Accept')
+        cherrypy.request.app.log.error('Request content_type: %s' % content_type)
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None and experiment is not None:
@@ -138,16 +151,17 @@ class JobsResource(object):
                         elif cherrypy.request.method == 'GET':
                             return self.doGET(subject_dn, experiment, job_id, kwargs)
                     else:
-                        # TODO: return error for failed gums auth
-                        pass
+                        # return error for failed gums auth
+                        return format_json_response({'err': "User authorization has failed"})
                 else:
-                    # TODO: return error for unsupported experiment
-                    pass
+                    # return error for unsupported experiment
+                    return format_json_response({'err': "Experiment %s is not configured in jobsub" % experiment})
             else:
-                # TODO: return error for no subject_dn and experiment
-                pass
+                # return error for no subject_dn and experiment
+                return format_json_response({'err': "User has not supplied subject dn and experiment"})
         except:
             cherrypy.request.app.log.error('Exception on JobsResouce.index', traceback=True)
+
 
 
 class Root(object):

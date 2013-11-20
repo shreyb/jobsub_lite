@@ -28,14 +28,18 @@ def mkdir_p(path):
             raise
 
 
-def format_text_response(data):
-    cherrypy.response.headers['Content-Type'] = 'text/plain'
-    return str(pprint(data))
-
-
-def format_json_response(data):
-    cherrypy.response.headers['Content-Type'] = 'application/json'
-    return str(json.dumps(data))
+def format_response(content_type, data):
+    if content_type == 'application/json':
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return str(json.dumps(data))
+    elif content_type == 'text/plain':
+        cherrypy.response.headers['Content-Type'] = 'text/plain'
+        return str(pprint(data))
+    elif content_type == 'text/html':
+        cherrypy.response.headers['Content-Type'] = 'text/html'
+        return str(pprint(data))
+    else:
+        return 'Content type %s not supported' % content_type
 
 
 @cherrypy.popargs('experiment')
@@ -90,6 +94,7 @@ class JobsResource(object):
         return uid
 
     def doPOST(self, subject_dn, experiment, job_id, kwargs):
+        content_type_accept = cherrypy.request.headers.get('Accept')
         if job_id is None:
             cherrypy.request.app.log.error('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -116,15 +121,20 @@ class JobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
                 data = self.execute_jobsub_command(jobsub_args)
-                return format_json_response(data)
+                return format_response(content_type_accept, data)
             else:
                 # return an error because no command was supplied
-                return format_json_response({'err': "User must supply jobsub command"})
+                err = 'User must supply jobsub command'
+                cherrypy.request.app.log.error(err)
+                return format_response(content_type_accept, {'err': err})
         else:
             # return an error because job_id has been supplied but POST is for creating new jobs
-            return format_json_response({'err': "User has been supplied job_is but POST is for creating new jobs"})
+            err = 'User has been supplied job_is but POST is for creating new jobs'
+            cherrypy.request.app.log.error(err)
+            return format_response(content_type_accept, {'err': err})
 
     def doGET(self, subject_dn, experiment, job_id, kwargs):
+        content_type_accept = cherrypy.request.headers.get('Accept')
         if job_id is not None:
             job_id = int(job_id)
             schedd = condor.Schedd()
@@ -134,12 +144,14 @@ class JobsResource(object):
                     return str(job)
         else:
             # return an error because job_id has not been supplied but GET is for querying jobs
-            return format_json_response({'err': "User has not supplied job_id but GET is for querying jobs"})
+            err = 'User has not supplied job_id but GET is for querying jobs'
+            cherrypy.request.app.log.error(err)
+            return format_response(content_type_accept, {'err': err})
 
     @cherrypy.expose
     def index(self, experiment, job_id=None, **kwargs):
-        content_type = cherrypy.request.headers.get('Accept')
-        cherrypy.request.app.log.error('Request content_type: %s' % content_type)
+        content_type_accept = cherrypy.request.headers.get('Accept')
+        cherrypy.request.app.log.error('Request content_type_accept: %s' % content_type_accept)
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None and experiment is not None:
@@ -152,16 +164,21 @@ class JobsResource(object):
                             return self.doGET(subject_dn, experiment, job_id, kwargs)
                     else:
                         # return error for failed gums auth
-                        return format_json_response({'err': "User authorization has failed"})
+                        err = 'User authorization has failed'
+                        cherrypy.request.app.log.error(err)
+                        return format_response(content_type_accept, {'err': err})
                 else:
                     # return error for unsupported experiment
-                    return format_json_response({'err': "Experiment %s is not configured in jobsub" % experiment})
+                    err = 'Experiment %s is not configured in jobsub' % experiment
+                    cherrypy.request.app.log.error(err)
+                    return format_response(content_type_accept, {'err': err})
             else:
                 # return error for no subject_dn and experiment
-                return format_json_response({'err': "User has not supplied subject dn and experiment"})
+                err = 'User has not supplied subject dn and experiment'
+                cherrypy.request.app.log.error(err)
+                return format_response(content_type_accept, {'err': err})
         except:
             cherrypy.request.app.log.error('Exception on JobsResouce.index', traceback=True)
-
 
 
 class Root(object):

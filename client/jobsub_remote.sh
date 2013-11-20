@@ -72,4 +72,4 @@ if [[ `uname` == 'Darwin' ]]; then
 fi
 COMMAND=`echo $INPUT | $BASE64`
 
-curl --cert /tmp/x509up_u${UID} $CACERT -X POST $file_upload -F jobsub_args_base64=$COMMAND https://$JOBSUB_HOST:8443/jobsub/experiments/$ACCOUNTING_GROUP/jobs/ && echo
+curl --cert /tmp/x509up_u${UID} $CACERT -H "Accept: application/json" -X POST $file_upload -F jobsub_args_base64=$COMMAND https://$JOBSUB_HOST:8443/jobsub/experiments/$ACCOUNTING_GROUP/jobs/ && echo

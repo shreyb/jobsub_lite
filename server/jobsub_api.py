@@ -90,7 +90,7 @@ class JobsResource(object):
                     # TODO: get the command path root from the configuration
                     command_path_root = '/opt/jobsub/uploads'
                     uid = self.get_uid(subject_dn)
-                    ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+                    ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     command_path = '%s/%s/%s/%s' % (command_path_root, experiment, uid, ts)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
@@ -104,6 +104,7 @@ class JobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
                 result = self.execute_jobsub_command(jobsub_args)
+                cherrypy.response.headers['Content-Type'] = 'application/json'
                 return str(json.dumps(result))
             else:
                 #TODO: return an error because no command was supplied

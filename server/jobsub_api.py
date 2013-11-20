@@ -144,7 +144,7 @@ class JobsResource(object):
             results = schedd.query()
             for job in results:
                 if job['ClusterId'] == job_id:
-                    return format_response(content_type_accept, {'out': json.dumps(job)})
+                    return format_response(content_type_accept, {'out': repr(job)})
             else:
                 return format_response(content_type_accept, {'err': 'Job with id %s not found in condor queue' % job_id})
         else:

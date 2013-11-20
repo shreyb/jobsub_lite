@@ -44,6 +44,21 @@ def format_response(content_type, data):
         return 'Content type %s not supported' % content_type
 
 
+def is_supported_accountinggroup(accountinggroup):
+    # TODO: get list of accountinggroups from jobsub config
+    cherrypy.request.app.log.error('JOBSUB_INI_FILE: %s' % os.environ['JOBSUB_INI_FILE'])
+    return True
+
+
+def get_uid(subject_dn):
+    uid = 'unknown'
+    try:
+        uid = subject_dn.split(':')[1]
+    except:
+        cherrypy.request.app.log.error('Exception getting uid', traceback=True)
+    return uid
+
+
 @cherrypy.popargs('accountinggroup')
 class AccountingGroupsResource(object):
     def __init__(self):
@@ -83,18 +98,6 @@ class JobsResource(object):
         else:
             return True
 
-    def is_supported_accountinggroup(self, accountinggroup):
-        # TODO: get list of accountinggroups from jobsub config
-        return True
-
-    def get_uid(self, subject_dn):
-        uid = 'unknown'
-        try:
-            uid = subject_dn.split(':')[1]
-        except:
-            cherrypy.request.app.log.error('Exception getting uid', traceback=True)
-        return uid
-
     def doPOST(self, subject_dn, accountinggroup, job_id, kwargs):
         rc = dict()
         if job_id is None:
@@ -108,7 +111,7 @@ class JobsResource(object):
                 if jobsub_command is not None:
                     # TODO: get the command path root from the configuration
                     command_path_root = '/opt/jobsub/uploads'
-                    uid = self.get_uid(subject_dn)
+                    uid = get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
                     command_path = '%s/%s/%s/%s_%s' % (command_path_root, accountinggroup, uid, ts, thread_id)
@@ -167,7 +170,7 @@ class JobsResource(object):
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None and accountinggroup is not None:
                 cherrypy.request.app.log.error('subject_dn: %s, accountinggroup: %s' % (subject_dn, accountinggroup))
-                if self.is_supported_accountinggroup(accountinggroup):
+                if is_supported_accountinggroup(accountinggroup):
                     if self.gums_auth(subject_dn, accountinggroup):
                         if cherrypy.request.method == 'POST':
                             rc = self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
@@ -202,6 +205,11 @@ class Root(object):
 root = Root()
 
 root.accountinggroups = AccountingGroupsResource()
+
+
+def application(environ, start_response):
+    os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
+
 
 if __name__ == '__main__':
     cherrypy.quickstart(root, '/jobsub')

@@ -96,7 +96,7 @@ class JobsResource(object):
         return uid
 
     def doPOST(self, subject_dn, accountinggroup, job_id, kwargs):
-        content_type_accept = cherrypy.request.headers.get('Accept')
+        rc = dict()
         if job_id is None:
             cherrypy.request.app.log.error('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -123,40 +123,46 @@ class JobsResource(object):
                     cherrypy.request.app.log.error('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                data = self.execute_jobsub_command(jobsub_args)
-                return format_response(content_type_accept, data)
+                rc = self.execute_jobsub_command(jobsub_args)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
                 cherrypy.request.app.log.error(err)
-                return format_response(content_type_accept, {'err': err})
+                rc = {'err': err}
         else:
             # return an error because job_id has been supplied but POST is for creating new jobs
             err = 'User has supplied job_id but POST is for creating new jobs'
             cherrypy.request.app.log.error(err)
-            return format_response(content_type_accept, {'err': err})
+            rc = {'err': err}
+
+        return rc
 
     def doGET(self, subject_dn, accountinggroup, job_id, kwargs):
-        content_type_accept = cherrypy.request.headers.get('Accept')
+        rc = dict()
         if job_id is not None:
             job_id = int(job_id)
             schedd = condor.Schedd()
             results = schedd.query()
             for job in results:
                 if job['ClusterId'] == job_id:
-                    return format_response(content_type_accept, {'out': repr(job)})
+                    rc = {'out': repr(job)}
             else:
-                return format_response(content_type_accept, {'err': 'Job with id %s not found in condor queue' % job_id})
+                err = 'Job with id %s not found in condor queue' % job_id
+                cherrypy.request.app.log.error(err)
+                rc = {'err': err}
         else:
             # return an error because job_id has not been supplied but GET is for querying jobs
             err = 'User has not supplied job_id but GET is for querying jobs'
             cherrypy.request.app.log.error(err)
-            return format_response(content_type_accept, {'err': err})
+            rc = {'err': err}
+
+        return rc
 
     @cherrypy.expose
     def index(self, accountinggroup, job_id=None, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         cherrypy.request.app.log.error('Request content_type_accept: %s' % content_type_accept)
+        rc = dict()
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None and accountinggroup is not None:
@@ -164,26 +170,30 @@ class JobsResource(object):
                 if self.is_supported_accountinggroup(accountinggroup):
                     if self.gums_auth(subject_dn, accountinggroup):
                         if cherrypy.request.method == 'POST':
-                            return self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
+                            rc = self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
                         elif cherrypy.request.method == 'GET':
-                            return self.doGET(subject_dn, accountinggroup, job_id, kwargs)
+                            rc = self.doGET(subject_dn, accountinggroup, job_id, kwargs)
                     else:
                         # return error for failed gums auth
                         err = 'User authorization has failed'
                         cherrypy.request.app.log.error(err)
-                        return format_response(content_type_accept, {'err': err})
+                        rc = {'err': err}
                 else:
                     # return error for unsupported accountinggroup
                     err = 'AccountingGroup %s is not configured in jobsub' % accountinggroup
                     cherrypy.request.app.log.error(err)
-                    return format_response(content_type_accept, {'err': err})
+                    rc = {'err': err}
             else:
                 # return error for no subject_dn and accountinggroup
                 err = 'User has not supplied subject dn and accountinggroup'
                 cherrypy.request.app.log.error(err)
-                return format_response(content_type_accept, {'err': err})
+                rc = {'err': err}
         except:
-            cherrypy.request.app.log.error('Exception on JobsResouce.index', traceback=True)
+            err = 'Exception on JobsResouce.index'
+            cherrypy.request.app.log.error(err, traceback=True)
+            rc = {'err': err}
+
+        return format_response(content_type_accept, rc)
 
 
 class Root(object):

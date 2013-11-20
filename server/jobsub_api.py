@@ -4,6 +4,7 @@ import base64
 import os
 import re
 import errno
+import threading
 
 try:
     import htcondor as condor
@@ -109,7 +110,8 @@ class JobsResource(object):
                     command_path_root = '/opt/jobsub/uploads'
                     uid = self.get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
-                    command_path = '%s/%s/%s/%s' % (command_path_root, accountinggroup, uid, ts)
+                    thread_id = threading.current_thread().ident
+                    command_path = '%s/%s/%s/%s_%s' % (command_path_root, accountinggroup, uid, ts, thread_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
                     cherrypy.request.app.log.error('command_file_path: %s' % command_file_path)

@@ -74,10 +74,11 @@ class JobSubClient:
         curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
         curl.setopt(curl.FAILONERROR, True)
         curl.setopt(curl.SSLCERT, creds.get('cert'))
-        #curl.setopt(curl.SSLKEY, creds.get('key'))
-        #curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.SSLKEY, creds.get('key'))
         if platform.system() == 'Darwin':
             curl.setopt(curl.CAINFO, './ca-bundle.crt')
+        else:
+            curl.setopt(curl.CAPATH, get_capath())
         curl.setopt(curl.WRITEFUNCTION, response.write)
 
 

@@ -15,7 +15,7 @@ except:
 from subprocess import Popen, PIPE
 from shutil import copyfileobj
 from datetime import datetime
-from pprint import pprint
+from pprint import pformat
 
 
 def mkdir_p(path):
@@ -35,10 +35,10 @@ def format_response(content_type, data):
         return str(json.dumps(data))
     elif 'text/plain' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'text/plain'
-        return str(pprint(data))
+        return str(pformat(data))
     elif 'text/html' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'text/html'
-        return str(pprint(data))
+        return str(pformat(data))
     else:
         return 'Content type %s not supported' % content_type
 

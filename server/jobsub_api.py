@@ -29,13 +29,14 @@ def mkdir_p(path):
 
 
 def format_response(content_type, data):
-    if content_type == 'application/json':
+    content_type_list = content_type.split(',')
+    if 'application/json' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'application/json'
         return str(json.dumps(data))
-    elif content_type == 'text/plain':
+    elif 'text/plain' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'text/plain'
         return str(pprint(data))
-    elif content_type == 'text/html':
+    elif 'text/html' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'text/html'
         return str(pprint(data))
     else:

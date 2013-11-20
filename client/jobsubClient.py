@@ -96,14 +96,15 @@ class JobSubClient:
             f.close()
 
         if response_code == 200:
+            value = response.getvalue()
             if response_content_type == 'application/json':
-                response_dict = json.loads(response.getvalue())
+                response_dict = json.loads(value)
                 response_err = response_dict.get('err')
                 response_out = response_dict.get('out')
                 print_formatted_response(response_out)
                 print_formatted_response(response_err, msg_type='ERROR')
             else:
-                print_formatted_response(response.getvalue())
+                print_formatted_response(value)
         else:
             print "Server response code: %s" % response_code
         response.close()
@@ -112,7 +113,7 @@ class JobSubClient:
 
 def print_formatted_response(msg, msg_type='OUTPUT'):
     print 'Response %s:' % msg_type
-    if isinstance(msg, (str, int, float)):
+    if isinstance(msg, (str, int, float, unicode)):
         print '%s' % msg
     elif isinstance(msg, (list, tuple)):
         print '%s' % ' '.join(msg)

@@ -129,7 +129,7 @@ class JobsResource(object):
                 return format_response(content_type_accept, {'err': err})
         else:
             # return an error because job_id has been supplied but POST is for creating new jobs
-            err = 'User has been supplied job_is but POST is for creating new jobs'
+            err = 'User has supplied job_id but POST is for creating new jobs'
             cherrypy.request.app.log.error(err)
             return format_response(content_type_accept, {'err': err})
 

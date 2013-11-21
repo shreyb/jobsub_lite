@@ -209,10 +209,10 @@ def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
 
     script_name = ''
-    appname = environ['JOBSUB_APP_NAME']
+    appname = environ.get('JOBSUB_APP_NAME')
     if appname is not None:
         script_name = os.path.join('/', appname)
-        version = environ['JOBSUB_VERSION']
+        version = environ.get('JOBSUB_VERSION')
         if version is not None:
             script_name = os.path.join(script_name, appname)
     cherrypy.tree.mount(root, script_name=script_name, config=None)

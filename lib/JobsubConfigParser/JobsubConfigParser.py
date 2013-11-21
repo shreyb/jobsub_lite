@@ -1,6 +1,7 @@
 from ConfigParser import SafeConfigParser
 import os
 import sys
+import socket
 
 class JobsubConfigParser(object):
 
@@ -23,7 +24,7 @@ class JobsubConfigParser(object):
 
 	def supportedGroups(self,host=None):
 		if host is None:
-			host=os.environ.get("HOSTNAME")
+			host=socket.gethostname()
 		p=self.parser
 		sect=p.sections()
 		if host in sect:

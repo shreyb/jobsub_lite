@@ -8,11 +8,12 @@ def htmlPrintItemList(src, dpth=0, key=''):
     s = ''
     tabs = lambda n: ' ' * n * 4
     if isinstance(src, dict):
-        for key, value in src.iteritems():
-            s = '%s%s<ul>\n' % (s, tabs(dpth))
+        if key:
             s = '%s%s<li>%s:</li>\n' % (s, tabs(dpth), key)
+        s = '%s%s<ul>\n' % (s, tabs(dpth))
+        for key, value in src.iteritems():
             s = '%s%s' % (s, htmlPrintItemList(value, dpth + 1, key))
-            s = '%s%s</ul>\n' % (s, tabs(dpth))
+        s = '%s%s</ul>\n' % (s, tabs(dpth))
     elif isinstance(src, list):
         s = '%s%s<ul>\n' % (s, tabs(dpth))
         for litem in src:

@@ -1,6 +1,6 @@
 from ConfigParser import SafeConfigParser
 import os
-import sys
+import logger
 import socket
 
 class JobsubConfigParser(object):
@@ -43,9 +43,9 @@ class JobsubConfigParser(object):
 		for x in [ "PWD", "HOME"]:
 			cnf=os.environ.get(x)+"/jobsub.ini"
 			if os.path.exists(cnf):
-				print "using %s for jobsub config"%cnf
+				logger.log("using %s for jobsub config"%cnf)
 				return cnf
-		print "error no config file found!"
+		logger.log("error no config file found!")
 		return None
 
 	

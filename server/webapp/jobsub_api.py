@@ -45,8 +45,6 @@ def format_response(content_type, data):
 
 
 def is_supported_accountinggroup(accountinggroup):
-    # TODO: get list of accountinggroups from jobsub config
-    cherrypy.request.app.log.error('JOBSUB_INI_FILE: %s' % os.environ['JOBSUB_INI_FILE'])
     return True
 
 
@@ -210,11 +208,15 @@ root.accountinggroups = AccountingGroupsResource()
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
     cherrypy.tree.mount(root, script_name='', config=None)
+    log_dir = environ['JOBSUB_LOG_DIR']
+    mkdir_p(log_dir)
+    access_log = os.path.join(log_dir, 'access.log')
+    error_log = os.path.join(log_dir, 'error.log')
     cherrypy.config.update({
         'environment': 'embedded',
         'lob.screen': False,
-        'log.error_file': '/opt/jobsub/jobsub_error.log',
-        'log.access_file': '/opt/jobsub/jobsub_access.log'
+        'log.error_file': error_log,
+        'log.access_file': access_log
     })
     return cherrypy.tree(environ, start_response)
 

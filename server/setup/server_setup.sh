@@ -18,6 +18,3 @@ mv /opt/jobsub/jobsub_api.conf /etc/httpd/conf.d/
 mkdir /etc/grid-security/certificates
 scp -rp fcl316.fnal.gov:/etc/grid-security/certificates /etc/grid-security/
 service httpd start
-
-wget https://www.racf.bnl.gov/Facility/GUMS/mvn/gums/gums-client/1.3.17/gums-client-1.3.17-1.noarch.rpm
-rpm -i gums-client-1.3.17-1.noarch.rpm

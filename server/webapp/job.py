@@ -85,6 +85,7 @@ class JobsResource(object):
             for job in results:
                 if job['ClusterId'] == job_id:
                     rc = {'out': repr(job)}
+                    break
             else:
                 err = 'Job with id %s not found in condor queue' % job_id
                 logger.log(err)

@@ -19,6 +19,7 @@ from shutil import copyfileobj
 from datetime import datetime
 from pprint import pformat
 
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -47,19 +48,21 @@ def format_response(content_type, data):
 def is_supported_accountinggroup(accountinggroup):
     rc = False
     try:
-        groups = JobsubConfigParser().supportedGroups()
+        p = JobsubConfigParser()
+        groups = p.supportedGroups()
         rc = (accountinggroup in groups)
     except:
-        cherrypy.request.app.log.error('Failed to get accounting groups', traceback=True)
+        cherrypy.request.app.log.error('Failed to get accounting groups: ', traceback=True)
 
     return rc
+
 
 def get_uid(subject_dn):
     uid = 'unknown'
     try:
         uid = subject_dn.split(':')[1]
     except:
-        cherrypy.request.app.log.error('Exception getting uid', traceback=True)
+        cherrypy.request.app.log.error('Exception getting uid: ', traceback=True)
     return uid
 
 
@@ -197,7 +200,7 @@ class JobsResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on JobsResouce.index'
-            cherrypy.request.app.log.error(err, traceback=True)
+            cherrypy.request.app.log.error('Error: ' % err, traceback=True)
             rc = {'err': err}
 
         return format_response(content_type_accept, rc)

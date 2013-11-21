@@ -24,7 +24,7 @@ class JobsResource(object):
 
     def execute_jobsub_command(self, jobsub_args):
         #TODO: the path to the jobsub tool should be configurable
-        command = ['/opt/jobsub/jobsub_env_runner.sh'] + jobsub_args
+        command = ['/opt/jobsub/server/webapp/jobsub_env_runner.sh'] + jobsub_args
         logger.log('jobsub command: %s' % command)
         pp = Popen(command, stdout=PIPE, stderr=PIPE)
         result = {
@@ -138,7 +138,7 @@ class JobsResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on JobsResouce.index'
-            logger.log('Error: ' % err, traceback=True)
+            logger.log(err, traceback=True)
             rc = {'err': err}
 
         return format_response(content_type_accept, rc)

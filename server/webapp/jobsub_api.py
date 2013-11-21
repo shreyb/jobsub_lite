@@ -5,6 +5,7 @@ import os
 import re
 import errno
 import threading
+from JobsubConfigParser import JobsubConfigParser
 
 try:
     import htcondor as condor
@@ -17,7 +18,6 @@ from subprocess import Popen, PIPE
 from shutil import copyfileobj
 from datetime import datetime
 from pprint import pformat
-
 
 def mkdir_p(path):
     try:
@@ -45,8 +45,14 @@ def format_response(content_type, data):
 
 
 def is_supported_accountinggroup(accountinggroup):
-    return True
+    rc = False
+    try:
+        groups = JobsubConfigParser().supportedGroups()
+        rc = (accountinggroup in groups)
+    except:
+        cherrypy.request.app.log.error('Failed to get accounting groups', traceback=True)
 
+    return rc
 
 def get_uid(subject_dn):
     uid = 'unknown'

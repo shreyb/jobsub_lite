@@ -177,20 +177,20 @@ class JobsResource(object):
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None and accountinggroup is not None:
                 cherrypy.request.app.log.error('subject_dn: %s, accountinggroup: %s' % (subject_dn, accountinggroup))
-                if is_supported_accountinggroup(accountinggroup):
-                    if self.gums_auth(subject_dn, accountinggroup):
+                if self.gums_auth(subject_dn, accountinggroup):
+                    if is_supported_accountinggroup(accountinggroup):
                         if cherrypy.request.method == 'POST':
                             rc = self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
                         elif cherrypy.request.method == 'GET':
                             rc = self.doGET(subject_dn, accountinggroup, job_id, kwargs)
                     else:
-                        # return error for failed gums auth
-                        err = 'User authorization has failed'
+                        # return error for unsupported accountinggroup
+                        err = 'AccountingGroup %s is not configured in jobsub' % accountinggroup
                         cherrypy.request.app.log.error(err)
                         rc = {'err': err}
                 else:
-                    # return error for unsupported accountinggroup
-                    err = 'AccountingGroup %s is not configured in jobsub' % accountinggroup
+                    # return error for failed gums auth
+                    err = 'User authorization has failed'
                     cherrypy.request.app.log.error(err)
                     rc = {'err': err}
             else:

@@ -84,7 +84,7 @@ class JobsResource(object):
             results = schedd.query()
             for job in results:
                 if job['ClusterId'] == job_id:
-                    rc = {'out': repr(job)}
+                    rc = {'out': repr(job).split(';')}
                     break
             else:
                 err = 'Job with id %s not found in condor queue' % job_id

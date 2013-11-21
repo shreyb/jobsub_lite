@@ -202,25 +202,24 @@ class JobsResource(object):
 class Root(object):
     pass
 
-root = Root()
 
+root = Root()
 root.accountinggroups = AccountingGroupsResource()
 
 
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
-
-
-if __name__ == '__main__':
-    cherrypy.quickstart(root, '/jobsub')
-else:
+    cherrypy.tree.mount(root, script_name='', config=None)
     cherrypy.config.update({
         'environment': 'embedded',
         'lob.screen': False,
         'log.error_file': '/opt/jobsub/jobsub_error.log',
         'log.access_file': '/opt/jobsub/jobsub_access.log'
     })
-    application = cherrypy.Application(root, script_name=None, config=None)
+    return cherrypy.tree(environ, start_response)
+
+if __name__ == '__main__':
+    cherrypy.quickstart(root, '/jobsub')
 
 
 """

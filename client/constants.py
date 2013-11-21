@@ -21,7 +21,7 @@ JOBSUB_SERVER = 'https://jobsub.fnal.gov'
 # https://server.com/jobsub/api/<api-version>/accountinggroups/<exp-name>/jobs
 
 #JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/api/%s/accountinggroups/%s/jobs'
-JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/accountinggroups/%s/jobs/'
+JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 
 ################################################################################
 # HTTP/REST API Constants
@@ -37,3 +37,11 @@ HTTP_POST = 'POST'
 
 JOBSUB_PYCURL_CONNECTTIMEOUT = 5
 JOBSUB_PYCURL_TIMEOUT = 30
+
+################################################################################
+# URIs
+################################################################################
+
+JOB_EXE_SUPPORTED_URIs = ('file://',)
+
+JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)

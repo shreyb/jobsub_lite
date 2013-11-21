@@ -20,9 +20,29 @@ import optparse
 import constants
 from jobsubClient import JobSubClient
 
-def usage():
-    print "%s <arg1> <arg2> <...>" % os.path.basename(sys.argv[0])
-    print "Example: %s ..." % os.path.basename(sys.argv[0])
+
+def split_client_server_args(parser, argv):
+    cli_argv = [argv[0]]
+    srv_argv = []
+
+    i = 1
+    while (i < len(sys.argv)):
+
+        opt = parser.get_option(argv[i])
+        if opt:
+            cli_argv.append(argv[i])
+            if opt.action in optparse.Option.TYPED_ACTIONS:
+                try:
+                    cli_argv.append(argv[i+1])
+                    i += 1
+                except IndexError:
+                    parser.error('%s option requires an argument' % argv[i])
+        else:
+            srv_argv.append(argv[i])
+
+        i += 1
+
+    return (cli_argv, srv_argv)
 
 
 def required_args_present(options):
@@ -70,11 +90,12 @@ def parse_opts(argv):
                                    conflict_handler="resolve")
 
     # Required args
-    parser.add_option('--acct-group',
+    parser.add_option('-G', '--group',
                       dest='acctGroup',
+                      type='string',
                       action='store',
-                      metavar='<AccountingGroup/Experiment>',
-                      help='Accounting Group/Experiment name')
+                      metavar='<Group/Experiment/Subgroup>',
+                      help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
     parser.add_option('--jobsub-server',
@@ -85,49 +106,47 @@ def parse_opts(argv):
                       help='Alternate location of JobSub server to use')
 
     # Job executable and Job args
-    parser.add_option('--job-exe',
-                      dest='jobExe',
-                      action='store',
-                      metavar='<Job Executable>',
-                      help='Full path to the executable')
+    #parser.add_option('--job-exe',
+    #                  dest='jobExe',
+    #                  action='store',
+    #                  metavar='<Job Executable>',
+    #                  help='Full path to the executable')
 
-    parser.add_option('--job-args',
-                      dest='jobArgs',
-                      action='store',
-                      metavar='<Job Args>',
-                      help='Arguments to the job exe')
+    #parser.add_option('--job-args',
+    #                  dest='jobArgs',
+    #                  action='store',
+    #                  metavar='<Job Args>',
+    #                  help='Arguments to the job exe')
 
     # Random server args
-    parser.add_option('--jobsub-server-args',
-                      dest='serverArgs',
-                      action='callback',
-                      callback=parse_server_args)
+    #parser.add_option('--jobsub-server-args',
+    #                  dest='serverArgs',
+    #                  action='callback',
+    #                  callback=parse_server_args)
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    cli_argv, srv_argv = split_client_server_args(parser, argv)
 
-    #if len(remainder) > 1:
-    #    parser.print_help(file)
+    options, remainder = parser.parse_args(cli_argv)
+
+    if len(remainder) > 1:
+        parser.print_help(file)
 
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
         parser.print_help()
         sys.exit(1)
-    return options
+    return (options, srv_argv)
 
 
 def main(argv):
-    options = parse_opts(argv)
+    options, srv_argv = parse_opts(argv)
     #print_opts(options)
-    js_client = JobSubClient(options.jobsubServer,
-                             options.serverArgs,
-                             options.acctGroup,
-                             options.jobExe,
-                             options.jobArgs)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv)
     js_client.submit()
 
 if __name__ == '__main__':
@@ -135,7 +154,8 @@ if __name__ == '__main__':
 
 # TO TEST RUN SOMETHING LIKE THE FOLLOWING
 
-# X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --job-exe parag_test.sh --job-args 100 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots
+# X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --group nova --jobsub-server https://fermicloud326.fnal.gov:8443 -g -N 3 --site Fermicloud-MultiSlots parag_test.sh --job-args 100
 
 ### Following are old examples
+# X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --job-exe parag_test.sh --job-args 100 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots
 #X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots --X509_USER_PROXY=/scratch/proxies/dbox/dbox.nova.proxy /scratch/app/users/condor-exec/dbox/test_grid_env.sh 100

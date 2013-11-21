@@ -14,60 +14,63 @@
 
 import sys
 import os
+import re
 import base64
 import pycurl
 import urllib
 import cStringIO
 import platform
 import json
+import copy
 
 import constants
 
 
 class JobSubClient:
 
-    def __init__(self, server, server_args, acct_group,
-            job_exe, job_args, server_version='current'):
+    def __init__(self, server, acct_group, server_argv, server_version='current'):
         self.server = server
         self.serverVersion = server_version
-        self.serverArgs = server_args
         self.acctGroup = acct_group
-        self.jobExe = job_exe
-        self.jobArgs = job_args
-        self.serverArgs_b64en = base64.urlsafe_b64encode('%s @%s %s' % (
-            ' '.join(self.serverArgs), self.jobExe, self.jobArgs))
-        #self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
-        #                     self.server, self.serverVersion, self.acctGroup
-        #                 )
+        self.serverArgv = server_argv
+        self.jobExeURI = get_jobexe_uri(self.serverArgv)
+        self.jobExe = uri2path(self.jobExeURI)
+        srv_argv = copy.copy(server_argv)
+
+        if self.jobExeURI and self.jobExe:
+            idx = get_jobexe_idx(srv_argv)
+            if self.requiresFileUpload(self.jobExeURI):
+                srv_argv[idx] = '@%s' % self.jobExe
+
+        self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
+
         self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
                              self.server, self.acctGroup
                          )
 
 
     def submit(self):
-        print 'URL: %s %s' % (self.submitURL, self.serverArgs_b64en)
 
         # Reponse from executing curl
         response = cStringIO.StringIO()
-
-        # curl -cert /tmp/x509up_u501 -k -X POST -d -jobsub_args_base64=$COMMAND https://fcint076.fnal.gov:8443/jobsub/accountinggroup/1/jobs/
 
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
         creds = get_client_cert()
-        print "CREDENTIALS: %s" % creds
-        print '%s' % self.submitURL
 
+        print
+        print 'URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en)
+        print 'CREDENTIALS    : %s\n' % creds
+        print 'SUBMIT_URL     : %s\n' % self.submitURL
+        print 'SERVER_ARGS    : %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en)
+        #sys.exit(1)
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
-        #print 'EXECUTING: %s' % cmd
-        #os.system(cmd)
 
-        #sys.exit(0)
         # Create curl object and set curl options to use
         curl = pycurl.Curl()
         curl.setopt(curl.URL, self.submitURL)
-        curl.setopt(curl.POST, True) # -X POST
+        curl.setopt(curl.POST, True)
         curl.setopt(curl.SSL_VERIFYHOST, True)
         curl.setopt(curl.FAILONERROR, True)
         curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
@@ -82,8 +85,8 @@ class JobSubClient:
         curl.setopt(curl.WRITEFUNCTION, response.write)
         curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 
-        f = None
-        if self.jobExe:
+        # If it is a local file upload the file
+        if self.requiresFileUpload(self.jobExeURI):
             post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -91,9 +94,6 @@ class JobSubClient:
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
         curl.close()
-
-        if f:
-            f.close()
 
         if response_code == 200:
             value = response.getvalue()
@@ -110,6 +110,12 @@ class JobSubClient:
         response.close()
 
 
+    def requiresFileUpload(self, uri):
+        if uri:
+            protocol = '%s://' % (uri.split('://'))[0]
+            if protocol in constants.JOB_EXE_SUPPORTED_URIs:
+                return True
+        return False
 
 def print_formatted_response(msg, msg_type='OUTPUT'):
     print 'Response %s:' % msg_type
@@ -149,3 +155,48 @@ def get_capath():
 
     print 'Using CA_DIR: %s' % ca_dir
     return ca_dir
+
+
+
+###################################################################################
+# INTERNAL - DO NOT USE OUTSIDE THIS CLASS
+###################################################################################
+
+
+def is_uri_supported(uri):
+    protocol = '%s://' % (uri.split('://'))[0]
+    if protocol in constants.JOB_EXE_SUPPORTED_URIs:
+        return True
+    return False
+
+
+def get_jobexe_idx(argv):
+    # Starting from the first arg parse the strings till you get one of the
+    # supported URIs that indicate the job exe.
+    # Skip the URI that follows certain options like -f which indicates input
+    # files to upload
+
+    i = 0
+    exe_idx = None
+
+    while(i < len(argv)):
+        if argv[i] in constants.JOBSUB_SERVER_OPTS_WITH_URI:
+            i += 1
+        else:
+            if is_uri_supported(argv[i]):
+                return i
+        i += 1
+
+    return None
+
+
+def get_jobexe_uri(argv):
+    exe_idx = get_jobexe_idx(argv)
+    job_exe = ''
+    if exe_idx is not None:
+        job_exe = argv[exe_idx]
+    return job_exe
+
+
+def uri2path(uri):
+    return re.sub('^[a-z]+://', '', uri)

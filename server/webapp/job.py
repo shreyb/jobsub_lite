@@ -16,7 +16,7 @@ from shutil import copyfileobj
 
 from util import get_uid, mkdir_p
 from auth import check_auth
-from accounting_group import is_supported_accountinggroup
+from jobsub import is_supported_accountinggroup
 from format import format_response
 
 @cherrypy.popargs('job_id')

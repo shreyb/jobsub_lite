@@ -4,26 +4,25 @@ import json
 from pprint import pformat
 
 
-def htmlPrintItem(obj, indent):
+def htmlPrintItemList(src, dpth=0, key=''):
     s = ''
-    if isinstance(obj, dict):
-        for k, v in obj.iteritems():
-            s = '%s %s %s %s %s %s' % (s, '  ' * indent, '<li>', str(k), ':', '</li>')
-            s = '%s %s' % (s, htmlPrintItem(v, indent + 1))
-    elif isinstance(obj, list):
-        s = '%s %s' % (' '*indent, '<ul>\n')
-        for v in obj:
-            s = '%s %s' % (s, htmlPrintItem(v, indent + 1))
-        s = '%s %s %s' % (s, '  ' * indent, '</ul>\n')
+    tabs = lambda n: ' ' * n * 4
+    if isinstance(src, dict):
+        for key, value in src.iteritems():
+            s = '%s%s<ul>\n' % (s, tabs(dpth))
+            s = '%s%s<li>%s:</li>\n' % (s, tabs(dpth), key)
+            s = '%s%s' % (s, htmlPrintItemList(value, dpth + 1, key))
+            s = '%s%s</ul>\n' % (s, tabs(dpth))
+    elif isinstance(src, list):
+        s = '%s%s<ul>\n' % (s, tabs(dpth))
+        for litem in src:
+            s = '%s%s' % (s, htmlPrintItemList(litem, dpth + 2, key))
+        s = '%s%s</ul>\n' % (s, tabs(dpth))
     else:
-        s = '%s %s %s %s %s' % (s, ' ' * indent, '<li>', str(obj), '</li>')
-    return s
-
-
-def htmlPrintItemList(obj, indent=0):
-    s = '%s %s' % (' '*indent, '<ul>\n')
-    s = '%s %s' % (s, htmlPrintItem(obj, indent))
-    s = '%s %s %s' % (s, '  ' * indent, '</ul>\n')
+        if key:
+            s = '%s%s<li>%s: %s</li>' %(s, tabs(dpth), key, src)
+        else:
+            s = '%s%s<li>%s</li>' %(s, tabs(dpth), src)
     return s
 
 

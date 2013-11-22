@@ -34,7 +34,7 @@ class JobsResource(object):
         logger.log('jobsub command result: %s' % str(result))
         return result
 
-    def doPOST(self, subject_dn, accountinggroup, job_id, kwargs):
+    def doPOST(self, subject_dn, acctgroup, job_id, kwargs):
         rc = dict()
         if job_id is None:
             logger.log('kwargs: %s' % str(kwargs))
@@ -50,7 +50,7 @@ class JobsResource(object):
                     uid = get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
-                    command_path = '%s/%s/%s/%s_%s' % (command_path_root, accountinggroup, uid, ts, thread_id)
+                    command_path = '%s/%s/%s/%s_%s' % (command_path_root, acctgroup, uid, ts, thread_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
                     logger.log('command_file_path: %s' % command_file_path)
@@ -76,7 +76,7 @@ class JobsResource(object):
 
         return rc
 
-    def doGET(self, subject_dn, accountinggroup, job_id, kwargs):
+    def doGET(self, subject_dn, acctgroup, job_id, kwargs):
         rc = dict()
         if job_id is not None:
             job_id = int(job_id)
@@ -104,30 +104,30 @@ class JobsResource(object):
     @cherrypy.expose
     # @format_response
     # @check_auth
-    def index(self, accountinggroup, job_id=None, **kwargs):
+    def index(self, acctgroup, job_id=None, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         logger.log('Request content_type_accept: %s' % content_type_accept)
         rc = dict()
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
-                logger.log('subject_dn: %s, accountinggroup: %s' % (subject_dn, accountinggroup))
-                if check_auth(subject_dn, accountinggroup):
-                    if accountinggroup is not None:
-                        logger.log('subject_dn: %s, accountinggroup: %s' % (subject_dn, accountinggroup))
-                        if is_supported_accountinggroup(accountinggroup):
+                logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
+                if check_auth(subject_dn, acctgroup):
+                    if acctgroup is not None:
+                        logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
+                        if is_supported_accountinggroup(acctgroup):
                             if cherrypy.request.method == 'POST':
-                                rc = self.doPOST(subject_dn, accountinggroup, job_id, kwargs)
+                                rc = self.doPOST(subject_dn, acctgroup, job_id, kwargs)
                             elif cherrypy.request.method == 'GET':
-                                rc = self.doGET(subject_dn, accountinggroup, job_id, kwargs)
+                                rc = self.doGET(subject_dn, acctgroup, job_id, kwargs)
                         else:
-                            # return error for unsupported accountinggroup
-                            err = 'AccountingGroup %s is not configured in jobsub' % accountinggroup
+                            # return error for unsupported acctgroup
+                            err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                             logger.log(err)
                             rc = {'err': err}
                     else:
-                        # return error for no accountinggroup
-                        err = 'User has not supplied accountinggroup'
+                        # return error for no acctgroup
+                        err = 'User has not supplied acctgroup'
                         logger.log(err)
                         rc = {'err': err}
                 else:

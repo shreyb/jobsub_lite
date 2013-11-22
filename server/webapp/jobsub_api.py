@@ -10,7 +10,7 @@ class Root(object):
 
 
 root = Root()
-root.accountinggroups = AccountingGroupsResource()
+root.acctgroups = AccountingGroupsResource()
 
 
 def application(environ, start_response):

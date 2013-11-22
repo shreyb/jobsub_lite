@@ -20,8 +20,8 @@ JOBSUB_SERVER = 'https://jobsub.fnal.gov'
 # Default JobSub job submission url pattern
 # https://server.com/jobsub/api/<api-version>/accountinggroups/<exp-name>/jobs
 
-#JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/api/%s/accountinggroups/%s/jobs'
-JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/accountinggroups/%s/jobs/'
+#JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/api/%s/acctgroups/%s/jobs'
+JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 
 ################################################################################
 # HTTP/REST API Constants

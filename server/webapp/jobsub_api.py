@@ -32,7 +32,7 @@ def application(environ, start_response):
 
     cherrypy.config.update({
         'environment': 'embedded',
-        'lob.screen': False,
+        'log.screen': False,
         'log.error_file': error_log,
         'log.access_file': access_log
     })

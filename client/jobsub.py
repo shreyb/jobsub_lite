@@ -38,14 +38,13 @@ def split_client_server_args(parser, argv):
                     i += 1
                 except IndexError:
                     parser.error('%s option requires an argument' % argv[i])
-        else:
-            # Check if the arg splitter is '='
-            opt = parser.get_option(argv[i].split('=')[:1])
+        elif '=' in argv[i]:
+            # Check if the arg splitter is '=' example --foo=bar
+            opt = parser.get_option(argv[i].split('=')[0])
             if opt:
-                # Just add the --arg=val string to the cli_arg 
                 cli_argv.append(argv[i])
-            else:
-                srv_argv.append(argv[i])
+        else:
+            srv_argv.append(argv[i])
 
         i += 1
 
@@ -138,6 +137,9 @@ def parse_opts(argv):
 
     cli_argv, srv_argv = split_client_server_args(parser, argv)
 
+    print "\nSERVER ARGS: %s\n" % srv_argv
+    print "CLIENT ARGS: %s" % cli_argv
+    #sys.exit(1)
     options, remainder = parser.parse_args(cli_argv)
 
     if len(remainder) > 1:

@@ -22,6 +22,50 @@ from format import format_response
 @cherrypy.popargs('job_id')
 class JobsResource(object):
 
+    def doGET(self, job_id):
+        job_id = int(job_id)
+        schedd = condor.Schedd()
+        results = schedd.query()
+        if job_id is not None:
+            for job in results:
+                # TODO: filter by jobs running for the user
+                if job['ClusterId'] == job_id:
+                    job_dict = dict()
+                    for k, v in job.items():
+                        job_dict[repr(k)] = repr(v)
+                    rc = {'out': job_dict}
+                    break
+            else:
+                err = 'Job with id %s not found in condor queue' % job_id
+                logger.log(err)
+                rc = {'err': err}
+        else:
+            # TODO: filter by jobs running for the user
+            jobs = list()
+            for job in results:
+                jobs.append(job['ClusterId'])
+            rc = {'out': jobs}
+
+        return rc
+
+    @cherrypy.expose
+    @format_response
+    @check_auth
+    def index(self, job_id=None, **kwargs):
+        try:
+            if cherrypy.request.method == 'GET':
+                rc = self.doGET(job_id)
+        except:
+            err = 'Exception on JobsResouce.index'
+            logger.log(err, traceback=True)
+            rc = {'err': err}
+
+        return rc
+
+
+@cherrypy.popargs('job_id')
+class AccountJobsResource(object):
+
     def execute_jobsub_command(self, jobsub_args):
         #TODO: the path to the jobsub tool should be configurable
         command = ['/opt/jobsub/server/webapp/jobsub_env_runner.sh'] + jobsub_args
@@ -76,30 +120,6 @@ class JobsResource(object):
 
         return rc
 
-    def doGET(self, job_id):
-        if job_id is not None:
-            job_id = int(job_id)
-            schedd = condor.Schedd()
-            results = schedd.query()
-            for job in results:
-                if job['ClusterId'] == job_id:
-                    job_dict = dict()
-                    for k, v in job.items():
-                        job_dict[repr(k)] = repr(v)
-                    rc = {'out': job_dict}
-                    break
-            else:
-                err = 'Job with id %s not found in condor queue' % job_id
-                logger.log(err)
-                rc = {'err': err}
-        else:
-            # return an error because job_id has not been supplied but GET is for querying jobs
-            err = 'User has not supplied job_id but GET is for querying jobs'
-            logger.log(err)
-            rc = {'err': err}
-
-        return rc
-
     @cherrypy.expose
     @format_response
     @check_auth
@@ -116,7 +136,7 @@ class JobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on JobsResouce.index'
+            err = 'Exception on AccountJobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 

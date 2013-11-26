@@ -1,14 +1,14 @@
 import cherrypy
 import logger
 
-from job import JobsResource
+from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups
 
 @cherrypy.popargs('acctgroup')
 class AccountingGroupsResource(object):
     def __init__(self):
-        self.jobs = JobsResource()
+        self.jobs = AccountJobsResource()
 
     def doGET(self, acctgroup):
         if acctgroup is None:
@@ -19,13 +19,13 @@ class AccountingGroupsResource(object):
 
     @cherrypy.expose
     @format_response
-    # @check_auth
     def index(self, acctgroup=None, **kwargs):
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
-                rc = self.doGET(acctgroup)
+                if cherrypy.request.method == 'GET':
+                    rc = self.doGET(acctgroup)
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'

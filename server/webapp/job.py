@@ -76,7 +76,7 @@ class JobsResource(object):
 
         return rc
 
-    def doGET(self, subject_dn, acctgroup, job_id, kwargs):
+    def doGET(self, job_id):
         rc = dict()
         if job_id is not None:
             job_id = int(job_id)
@@ -111,15 +111,15 @@ class JobsResource(object):
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
-                logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
+                logger.log('subject_dn: %s' % subject_dn)
                 if check_auth(subject_dn, acctgroup):
                     if acctgroup is not None:
-                        logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
+                        logger.log('acctgroup: %s' % acctgroup)
                         if is_supported_accountinggroup(acctgroup):
                             if cherrypy.request.method == 'POST':
                                 rc = self.doPOST(subject_dn, acctgroup, job_id, kwargs)
                             elif cherrypy.request.method == 'GET':
-                                rc = self.doGET(subject_dn, acctgroup, job_id, kwargs)
+                                rc = self.doGET(job_id)
                         else:
                             # return error for unsupported acctgroup
                             err = 'AccountingGroup %s is not configured in jobsub' % acctgroup

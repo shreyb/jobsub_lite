@@ -22,9 +22,49 @@ from format import format_response
 
 @cherrypy.popargs('job_id')
 class JobsResource(object):
-    def __init__(self):
-	self.userName=""
-	self.acctGrp=""
+
+    def doGET(self, job_id):
+        schedd = condor.Schedd()
+        results = schedd.query()
+        if job_id is not None:
+            job_id = int(job_id)
+            for job in results:
+                # TODO: filter by jobs running for the user
+                if job['ClusterId'] == job_id:
+                    job_dict = dict()
+                    for k, v in job.items():
+                        job_dict[repr(k)] = repr(v)
+                    rc = {'out': job_dict}
+                    break
+            else:
+                err = 'Job with id %s not found in condor queue' % job_id
+                logger.log(err)
+                rc = {'err': err}
+        else:
+            # TODO: filter by jobs running for the user
+            jobs = list()
+            for job in results:
+                jobs.append(job['ClusterId'])
+            rc = {'out': jobs}
+
+        return rc
+
+    @cherrypy.expose
+    @format_response
+    def index(self, job_id=None, **kwargs):
+        try:
+            if cherrypy.request.method == 'GET':
+                rc = self.doGET(job_id)
+        except:
+            err = 'Exception on JobsResouce.index'
+            logger.log(err, traceback=True)
+            rc = {'err': err}
+
+        return rc
+
+
+@cherrypy.popargs('job_id')
+class AccountJobsResource(object):
 
     def execute_jobsub_command(self, jobsub_args):
         #TODO: the path to the jobsub tool should be configurable
@@ -38,8 +78,7 @@ class JobsResource(object):
         logger.log('jobsub command result: %s' % str(result))
         return result
 
-    def doPOST(self, subject_dn, acctgroup, job_id, kwargs):
-        rc = dict()
+    def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
             logger.log('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -52,6 +91,7 @@ class JobsResource(object):
                     # TODO: get the command path root from the configuration
                     #command_path_root = '/opt/jobsub/uploads'
                     command_path_root = get_command_path_root()
+                    subject_dn = cherrypy.request.headers.get('Auth-User')
                     uid = get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
@@ -67,10 +107,9 @@ class JobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-		#logger.log('before jobsub args %s'%jobsub_args)
-		jobsub_args.insert(0,acctgroup)
-		jobsub_args.insert(0,get_uid(subject_dn))
-		#logger.log('after jobsub args %s'%jobsub_args)
+                jobsub_args.insert(0,acctgroup)
+                jobsub_args.insert(0,get_uid(subject_dn))
+
                 rc = self.execute_jobsub_command(jobsub_args)
             else:
                 # return an error because no command was supplied
@@ -85,75 +124,24 @@ class JobsResource(object):
 
         return rc
 
-    def doGET(self, subject_dn, acctgroup, job_id, kwargs):
-        rc = dict()
-        if job_id is not None:
-            job_id = int(job_id)
-            schedd = condor.Schedd()
-            results = schedd.query()
-            for job in results:
-                if job['ClusterId'] == job_id:
-                    job_dict = dict()
-                    for k, v in job.items():
-                        job_dict[repr(k)] = repr(v)
-                    rc = {'out': job_dict}
-                    break
-            else:
-                err = 'Job with id %s not found in condor queue' % job_id
-                logger.log(err)
-                rc = {'err': err}
-        else:
-            # return an error because job_id has not been supplied but GET is for querying jobs
-            err = 'User has not supplied job_id but GET is for querying jobs'
-            logger.log(err)
-            rc = {'err': err}
-
-        return rc
-
     @cherrypy.expose
-    # @format_response
-    # @check_auth
+    @format_response
+    @check_auth
     def index(self, acctgroup, job_id=None, **kwargs):
-        content_type_accept = cherrypy.request.headers.get('Accept')
-        logger.log('Request content_type_accept: %s' % content_type_accept)
-        rc = dict()
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
-            if subject_dn is not None:
-                logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
-                if check_auth(subject_dn, acctgroup):
-                    if acctgroup is not None:
-                        logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
-                        if is_supported_accountinggroup(acctgroup):
-                            if cherrypy.request.method == 'POST':
-                                rc = self.doPOST(subject_dn, acctgroup, job_id, kwargs)
-                            elif cherrypy.request.method == 'GET':
-                                rc = self.doGET(subject_dn, acctgroup, job_id, kwargs)
-                        else:
-                            # return error for unsupported acctgroup
-                            err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                            logger.log(err)
-                            rc = {'err': err}
-                    else:
-                        # return error for no acctgroup
-                        err = 'User has not supplied acctgroup'
-                        logger.log(err)
-                        rc = {'err': err}
-                else:
-                    # return error for failed auth
-                    err = 'User authorization has failed'
-                    logger.log(err)
-                    rc = {'err': err}
+            if is_supported_accountinggroup(acctgroup):
+                if cherrypy.request.method == 'POST':
+                    rc = self.doPOST(acctgroup, job_id, kwargs)
             else:
-                # return error for no subject_dn
-                err = 'User has not supplied subject dn'
+                # return error for unsupported acctgroup
+                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on JobsResouce.index'
+            err = 'Exception on AccountJobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 
-        return format_response(content_type_accept, rc)
+        return rc
 
 

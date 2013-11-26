@@ -127,8 +127,6 @@ class AccountJobsResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
-                elif cherrypy.request.method == 'GET':
-                    rc = self.doGET(job_id)
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup

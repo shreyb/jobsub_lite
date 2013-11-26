@@ -17,6 +17,7 @@ from shutil import copyfileobj
 from util import get_uid, mkdir_p
 from auth import check_auth
 from jobsub import is_supported_accountinggroup
+from jobsub import get_command_path_root
 from format import format_response
 
 @cherrypy.popargs('job_id')
@@ -49,7 +50,8 @@ class JobsResource(object):
                 logger.log('jobsub_command: %s' % jobsub_command)
                 if jobsub_command is not None:
                     # TODO: get the command path root from the configuration
-                    command_path_root = '/opt/jobsub/uploads'
+                    #command_path_root = '/opt/jobsub/uploads'
+                    command_path_root = get_command_path_root()
                     uid = get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident

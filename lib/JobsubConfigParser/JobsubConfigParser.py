@@ -19,6 +19,12 @@ class JobsubConfigParser(object):
 	def has_section(self,sect):
 		return self.parser.has_section(sect)
 
+	def has_option(self,sect,opt):
+		return self.parser.has_option(sect,opt)
+
+	def get(self,sect,opt):
+		return self.parser.get(sect,opt)
+
 	def items(self,sect):
 		return self.parser.items(sect)
 

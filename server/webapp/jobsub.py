@@ -14,3 +14,14 @@ def is_supported_accountinggroup(accountinggroup):
 
     return rc
 
+
+def get_supported_accountinggroups():
+    rc = list()
+    try:
+        p = JobsubConfigParser()
+        rc = p.supportedGroups()
+    except:
+        logger.log('Failed to get accounting groups: ', traceback=True)
+
+    return rc
+

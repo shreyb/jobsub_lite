@@ -110,24 +110,17 @@ class JobsResource(object):
         rc = dict()
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
-            if subject_dn is not None:
-                logger.log('subject_dn: %s' % subject_dn)
+            if subject_dn is not None and acctgroup is not None:
+                logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
                 if check_auth(subject_dn, acctgroup):
-                    if acctgroup is not None:
-                        logger.log('acctgroup: %s' % acctgroup)
-                        if is_supported_accountinggroup(acctgroup):
-                            if cherrypy.request.method == 'POST':
-                                rc = self.doPOST(subject_dn, acctgroup, job_id, kwargs)
-                            elif cherrypy.request.method == 'GET':
-                                rc = self.doGET(job_id)
-                        else:
-                            # return error for unsupported acctgroup
-                            err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                            logger.log(err)
-                            rc = {'err': err}
+                    if is_supported_accountinggroup(acctgroup):
+                        if cherrypy.request.method == 'POST':
+                            rc = self.doPOST(subject_dn, acctgroup, job_id, kwargs)
+                        elif cherrypy.request.method == 'GET':
+                            rc = self.doGET(job_id)
                     else:
-                        # return error for no acctgroup
-                        err = 'User has not supplied acctgroup'
+                        # return error for unsupported acctgroup
+                        err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                         logger.log(err)
                         rc = {'err': err}
                 else:
@@ -136,8 +129,8 @@ class JobsResource(object):
                     logger.log(err)
                     rc = {'err': err}
             else:
-                # return error for no subject_dn
-                err = 'User has not supplied subject dn'
+                # return error for no subject_dn and acct group
+                err = 'User has not supplied subject dn and/or accounting group'
                 logger.log(err)
                 rc = {'err': err}
         except:

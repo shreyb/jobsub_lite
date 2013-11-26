@@ -10,7 +10,7 @@ class AccountingGroupsResource(object):
     def __init__(self):
         self.jobs = JobsResource()
 
-    def doGET(self, acctgroup=None):
+    def doGET(self, acctgroup):
         if acctgroup is None:
             return {'out': get_supported_accountinggroups()}
         else:
@@ -20,7 +20,7 @@ class AccountingGroupsResource(object):
     @cherrypy.expose
     # @format_response
     # @check_auth
-    def index(self, acctgroup, **kwargs):
+    def index(self, acctgroup=None, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         logger.log('Request content_type_accept: %s' % content_type_accept)
         rc = dict()
@@ -28,7 +28,7 @@ class AccountingGroupsResource(object):
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
-                rc = self.doGET()
+                rc = self.doGET(acctgroup)
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'

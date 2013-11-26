@@ -27,7 +27,7 @@ def _check_auth(subject_dn, accountinggroup):
 
 
 def check_auth(func):
-    def wrapper(self, acctgroup, *args, **kwargs):
+    def check_auth_wrapper(self, acctgroup, *args, **kwargs):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         if subject_dn is not None and acctgroup is not None:
             logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
@@ -43,4 +43,4 @@ def check_auth(func):
             err = 'User has not supplied subject dn and/or accounting group'
             logger.log(err)
             rc = {'err': err}
-    return wrapper
+    return check_auth_wrapper

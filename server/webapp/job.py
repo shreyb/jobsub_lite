@@ -23,10 +23,10 @@ from format import format_response
 class JobsResource(object):
 
     def doGET(self, job_id):
-        job_id = int(job_id)
         schedd = condor.Schedd()
         results = schedd.query()
         if job_id is not None:
+            job_id = int(job_id)
             for job in results:
                 # TODO: filter by jobs running for the user
                 if job['ClusterId'] == job_id:
@@ -50,7 +50,6 @@ class JobsResource(object):
 
     @cherrypy.expose
     @format_response
-    @check_auth
     def index(self, job_id=None, **kwargs):
         try:
             if cherrypy.request.method == 'GET':

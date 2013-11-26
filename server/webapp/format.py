@@ -44,9 +44,9 @@ def _format_response(content_type, data):
 
 
 def format_response(func):
-    def wrapper(*args, **kwargs):
+    def format_response_wrapper(*args, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         logger.log('Request content_type_accept: %s' % content_type_accept)
         return _format_response(content_type_accept, func(*args, **kwargs))
 
-    return wrapper
+    return format_response_wrapper

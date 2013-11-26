@@ -28,7 +28,7 @@ def htmlPrintItemList(src, dpth=0, key=''):
     return s
 
 
-def format_response(content_type, data):
+def _format_response(content_type, data):
     content_type_list = content_type.split(',')
     if 'application/json' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'application/json'
@@ -43,10 +43,10 @@ def format_response(content_type, data):
         return 'Content type %s not supported' % content_type
 
 
-def dec_format_response(func):
-    def wrapper():
+def format_response(func):
+    def wrapper(*args, **kwargs):
         content_type_accept = cherrypy.request.headers.get('Accept')
         logger.log('Request content_type_accept: %s' % content_type_accept)
-        return format_response(content_type_accept, func())
+        return _format_response(content_type_accept, func(*args, **kwargs))
 
     return wrapper

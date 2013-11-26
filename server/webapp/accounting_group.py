@@ -2,7 +2,7 @@ import cherrypy
 import logger
 
 from job import JobsResource
-from format import dec_format_response
+from format import format_response
 from jobsub import get_supported_accountinggroups
 
 @cherrypy.popargs('acctgroup')
@@ -18,10 +18,9 @@ class AccountingGroupsResource(object):
             pass
 
     @cherrypy.expose
-    @dec_format_response
+    @format_response
     # @check_auth
     def index(self, acctgroup=None, **kwargs):
-        rc = dict()
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:

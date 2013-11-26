@@ -18,6 +18,7 @@ def execute_gums_command(subject_dn, accountinggroup):
 
 
 def _check_auth(subject_dn, accountinggroup):
+    return True
     result = execute_gums_command(subject_dn, accountinggroup)
     if result['out'][0].startswith('null') or len(result['err']) > 0:
         return False
@@ -31,7 +32,7 @@ def check_auth(func):
         if subject_dn is not None and acctgroup is not None:
             logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
             if _check_auth(subject_dn, acctgroup):
-                return func(acctgroup, *args, **kwargs)
+                return func(self, acctgroup, *args, **kwargs)
             else:
                 # return error for failed auth
                 err = 'User authorization has failed'

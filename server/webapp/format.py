@@ -1,4 +1,5 @@
 import cherrypy
+import logger
 import json
 
 from pprint import pformat
@@ -42,3 +43,10 @@ def format_response(content_type, data):
         return 'Content type %s not supported' % content_type
 
 
+def dec_format_response(func):
+    def wrapper():
+        content_type_accept = cherrypy.request.headers.get('Accept')
+        logger.log('Request content_type_accept: %s' % content_type_accept)
+        return format_response(content_type_accept, func())
+
+    return wrapper

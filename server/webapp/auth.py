@@ -18,7 +18,6 @@ def execute_gums_command(subject_dn, accountinggroup):
 
 
 def _check_auth(subject_dn, accountinggroup):
-    return True
     result = execute_gums_command(subject_dn, accountinggroup)
     if result['out'][0].startswith('null') or len(result['err']) > 0:
         return False

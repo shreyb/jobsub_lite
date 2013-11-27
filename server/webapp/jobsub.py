@@ -42,8 +42,8 @@ def get_command_path_root():
 
 
 def execute_jobsub_command(jobsub_args):
-    #TODO: the path to the jobsub tool should be configurable
-    command = ['/opt/jobsub/server/webapp/jobsub_env_runner.sh'] + jobsub_args
+    envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
+    command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
     pp = Popen(command, stdout=PIPE, stderr=PIPE)
     result = {

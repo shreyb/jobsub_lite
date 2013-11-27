@@ -37,3 +37,11 @@ HTTP_POST = 'POST'
 
 JOBSUB_PYCURL_CONNECTTIMEOUT = 5
 JOBSUB_PYCURL_TIMEOUT = 30
+
+################################################################################
+# URIs
+################################################################################
+
+JOB_EXE_SUPPORTED_URIs = ('file://',)
+
+JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)

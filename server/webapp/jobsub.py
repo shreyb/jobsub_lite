@@ -28,13 +28,12 @@ def get_supported_accountinggroups():
 
     return rc
 
+
 def get_command_path_root():
+    rc = '/opt/jobsub/uploads'
     p = JobsubConfigParser()
     submit_host = os.environ.get('SUBMIT_HOST', socket.gethostname())
-    #logger.log('searching for section %s'%submit_host, traceback=True)
     if p.has_section(submit_host):
         if p.has_option(submit_host, 'command_path_root'):
-            val = p.get(submit_host, 'command_path_root')
-            #logger.log('returning %s for command_path_root'%val)
-            return val
-    return '/opt/jobsub/uploads'
+            rc = p.get(submit_host, 'command_path_root')
+    return rc

@@ -7,8 +7,8 @@ import logger
 
 import platform
 if platform.system() == 'Linux':
-        import htcondor as condor
-        import classad
+    import htcondor as condor
+    import classad
 
 from datetime import datetime
 from subprocess import Popen, PIPE
@@ -88,8 +88,6 @@ class AccountJobsResource(object):
                 jobsub_command = kwargs.get('jobsub_command')
                 logger.log('jobsub_command: %s' % jobsub_command)
                 if jobsub_command is not None:
-                    # TODO: get the command path root from the configuration
-                    #command_path_root = '/opt/jobsub/uploads'
                     command_path_root = get_command_path_root()
                     subject_dn = cherrypy.request.headers.get('Auth-User')
                     uid = get_uid(subject_dn)

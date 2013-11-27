@@ -17,6 +17,7 @@ root.jobs = JobsResource()
 
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
+    os.environ['SUBMIT_HOST'] = environ['SUBMIT_HOST']
 
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')

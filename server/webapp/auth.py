@@ -42,4 +42,6 @@ def check_auth(func):
             err = 'User has not supplied subject dn and/or accounting group'
             logger.log(err)
             rc = {'err': err}
+        return rc
+
     return check_auth_wrapper

@@ -1,24 +1,25 @@
-import cherrypy
 import base64
 import threading
 import os
 import re
+import platform
+
+import cherrypy
+
 import logger
 
-import platform
 if platform.system() == 'Linux':
     import htcondor as condor
     import classad
 
 from datetime import datetime
-from subprocess import Popen, PIPE
 from shutil import copyfileobj
 
 from util import get_uid, mkdir_p
 from auth import check_auth
-from jobsub import is_supported_accountinggroup
-from jobsub import get_command_path_root
+from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
+
 
 @cherrypy.popargs('job_id')
 class JobsResource(object):
@@ -66,18 +67,6 @@ class JobsResource(object):
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
 
-    def execute_jobsub_command(self, jobsub_args):
-        #TODO: the path to the jobsub tool should be configurable
-        command = ['/opt/jobsub/server/webapp/jobsub_env_runner.sh'] + jobsub_args
-        logger.log('jobsub command: %s' % command)
-        pp = Popen(command, stdout=PIPE, stderr=PIPE)
-        result = {
-            'out': pp.stdout.readlines(),
-            'err': pp.stderr.readlines()
-        }
-        logger.log('jobsub command result: %s' % str(result))
-        return result
-
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
             logger.log('kwargs: %s' % str(kwargs))
@@ -87,10 +76,10 @@ class AccountJobsResource(object):
                 logger.log('jobsub_args: %s' % jobsub_args)
                 jobsub_command = kwargs.get('jobsub_command')
                 logger.log('jobsub_command: %s' % jobsub_command)
+                subject_dn = cherrypy.request.headers.get('Auth-User')
+                uid = get_uid(subject_dn)
                 if jobsub_command is not None:
                     command_path_root = get_command_path_root()
-                    subject_dn = cherrypy.request.headers.get('Auth-User')
-                    uid = get_uid(subject_dn)
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
                     command_path = '%s/%s/%s/%s_%s' % (command_path_root, acctgroup, uid, ts, thread_id)
@@ -105,10 +94,10 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                jobsub_args.insert(0,acctgroup)
-                jobsub_args.insert(0,get_uid(subject_dn))
+                jobsub_args.insert(0, acctgroup)
+                jobsub_args.insert(0, uid)
 
-                rc = self.execute_jobsub_command(jobsub_args)
+                rc = execute_jobsub_command(jobsub_args)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'

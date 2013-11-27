@@ -1,3 +1,4 @@
+from subprocess import Popen, PIPE
 import logger
 import os
 import socket
@@ -36,4 +37,19 @@ def get_command_path_root():
     if p.has_section(submit_host):
         if p.has_option(submit_host, 'command_path_root'):
             rc = p.get(submit_host, 'command_path_root')
+
     return rc
+
+
+def execute_jobsub_command(jobsub_args):
+    #TODO: the path to the jobsub tool should be configurable
+    command = ['/opt/jobsub/server/webapp/jobsub_env_runner.sh'] + jobsub_args
+    logger.log('jobsub command: %s' % command)
+    pp = Popen(command, stdout=PIPE, stderr=PIPE)
+    result = {
+        'out': pp.stdout.readlines(),
+        'err': pp.stderr.readlines()
+    }
+    logger.log('jobsub command result: %s' % str(result))
+
+    return result

@@ -26,6 +26,10 @@ class AccountingGroupsResource(object):
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
                     rc = self.doGET(acctgroup)
+                else:
+                    err = 'Unsupported method: %s' % cherrypy.request.method
+                    logger.log(err)
+                    rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'

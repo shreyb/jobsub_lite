@@ -56,6 +56,10 @@ class JobsResource(object):
         try:
             if cherrypy.request.method == 'GET':
                 rc = self.doGET(job_id)
+            else:
+                err = 'Unsupported method: %s' % cherrypy.request.method
+                logger.log(err)
+                rc = {'err': err}
         except:
             err = 'Exception on JobsResouce.index'
             logger.log(err, traceback=True)
@@ -119,6 +123,10 @@ class AccountJobsResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
+                else:
+                    err = 'Unsupported method: %s' % cherrypy.request.method
+                    logger.log(err)
+                    rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup

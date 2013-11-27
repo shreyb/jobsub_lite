@@ -27,7 +27,7 @@ def application(environ, start_response):
         version = environ.get('JOBSUB_VERSION')
         if version is not None:
             script_name = os.path.join(script_name, appname)
-    cherrypy.tree.mount(root, script_name=script_name, config=None)
+    app = cherrypy.tree.mount(root, script_name=script_name, config=None)
 
     log_dir = environ['JOBSUB_LOG_DIR']
     mkdir_p(log_dir)
@@ -40,6 +40,13 @@ def application(environ, start_response):
         'log.error_file': error_log,
         'log.access_file': access_log
     })
+
+    app.log.error('JOBSUB_INI_FILE: %s' % environ['JOBSUB_INI_FILE'])
+    app.log.error('SUBMIT_HOST: %s' % environ['SUBMIT_HOST'])
+    app.log.error('JOBSUB_ENV_RUNNER: %s' % environ['JOBSUB_ENV_RUNNER'])
+    app.log.error('JOBSUB_APP_NAME: %s' % environ['JOBSUB_APP_NAME'])
+    app.log.error('JOBSUB_VERSION: %s' % environ['JOBSUB_VERSION'])
+    app.log.error('JOBSUB_LOG_DIR: %s' % environ['JOBSUB_LOG_DIR'])
 
     return cherrypy.tree(environ, start_response)
 

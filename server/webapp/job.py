@@ -82,11 +82,13 @@ class AccountJobsResource(object):
                 logger.log('jobsub_command: %s' % jobsub_command)
                 subject_dn = cherrypy.request.headers.get('Auth-User')
                 uid = get_uid(subject_dn)
+		workdir_id='.'
                 if jobsub_command is not None:
                     command_path_root = get_command_path_root()
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
-                    command_path = '%s/%s/%s/%s_%s' % (command_path_root, acctgroup, uid, ts, thread_id)
+                    workdir_id='%s_%s'%(ts,thread_id)
+                    command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, workdir_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
                     logger.log('command_file_path: %s' % command_file_path)
@@ -98,6 +100,7 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
+                jobsub_args.insert(0, workdir_id)
                 jobsub_args.insert(0, acctgroup)
                 jobsub_args.insert(0, uid)
 

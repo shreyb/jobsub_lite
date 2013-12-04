@@ -1,5 +1,6 @@
 #!/bin/bash
-
+umask 002
+DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -16,6 +17,8 @@ export USER=$1
 shift
 export GROUP=$1
 shift
+export WORKDIR_ID=$1
+shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 setup jobsub_tools
@@ -29,9 +32,21 @@ if [ $RSLT == 0 ] ; then
 	source $file
 	shift
 fi
-cmd="jobsub $@"
+#export JOBSUB_CMD="jobsub -l "+Owner=\"$USER\"" $@"
+export JOBSUB_CMD="jobsub  $@"
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "reformatted: $cmd "  >> /tmp/jobsub_env_runner.log
+   echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi
-$cmd
+RSLT=`$JOBSUB_CMD`
+if [ "$DEBUG_JOBSUB" != "" ]; then
+   echo "$RSLT "  >> /tmp/jobsub_env_runner.log
+fi
+chmod -R g+w $CONDOR_TMP
+JID=`echo $RSLT | awk '{print $NF}'`
+GOTJID=`echo $JID| grep '[0-9].*'`
+WORKED=$?
+if [ "$WORKED" = "0" ]; then
+  echo "$JID $USER $GROUP $WORKDIR_ID " >> /scratch/uploads/job.log
+fi
+echo $RSLT
 

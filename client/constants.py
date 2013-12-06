@@ -45,3 +45,9 @@ JOBSUB_PYCURL_TIMEOUT = 30
 JOB_EXE_SUPPORTED_URIs = ('file://',)
 
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
+
+################################################################################
+# STANDARD PATTERNS FOR REGEX
+################################################################################
+
+KRB5TICKET_VALIDITY_HEADER = 'Valid starting     Expires            Service principal\n(.*)\n.*'

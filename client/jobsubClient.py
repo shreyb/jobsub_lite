@@ -57,7 +57,7 @@ class JobSubClient:
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
-        creds = get_client_cert()
+        creds = get_client_credentials()
 
         print
         print 'URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en)
@@ -117,6 +117,7 @@ class JobSubClient:
                 return True
         return False
 
+
 def print_formatted_response(msg, msg_type='OUTPUT'):
     print 'Response %s:' % msg_type
     if isinstance(msg, (str, int, float, unicode)):
@@ -124,7 +125,22 @@ def print_formatted_response(msg, msg_type='OUTPUT'):
     elif isinstance(msg, (list, tuple)):
         print '%s' % ' '.join(msg)
 
-def get_client_cert():
+
+def get_client_credentials():
+    """
+    Client credentials lookup follows following order until it finds them
+
+    Do not look for user certificate and key in ~/.globus directory. It
+    typically contains encrypted key and we could not get the server
+    communication to work with it.
+
+    1. $X509_USER_PROXY
+    2. $X509_USER_CERT & $X509_USER_KEY
+    3. Default proxy location: /tmp/x509up_u<UID>
+    4. Kerberos ticket in $KRB5CCNAME. Convert it to proxy.
+    5. Report failure
+    """
+
     creds = {}
     cert = None
     key = None
@@ -155,7 +171,6 @@ def get_capath():
 
     print 'Using CA_DIR: %s' % ca_dir
     return ca_dir
-
 
 
 ###################################################################################

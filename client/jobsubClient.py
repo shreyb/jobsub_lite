@@ -144,7 +144,6 @@ def get_client_credentials():
     creds = {}
     cert = None
     key = None
-    default_proxy = '/tmp/x509up_u%s' % os.getuid()
 
     if os.environ.get('X509_USER_PROXY'):
         cert = os.environ.get('X509_USER_PROXY')
@@ -152,10 +151,15 @@ def get_client_credentials():
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         cert = os.environ.get('X509_USER_CERT')
         key = os.environ.get('X509_USER_KEY')
-    elif os.path.exists(default_proxy):
-        cert = key = default_proxy
+    elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
+        cert = key = constants.X509_PROXY_DEFAULT_FILE
     else:
-        raise('Cannot find credentials to use')
+        krb5_creds = jobsubClientCredentials.Krb5Ticket()
+        if krb5_creds.isValid():
+            jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
+            cert = key = constants.X509_PROXY_DEFAULT_FILE
+        else:
+            raise("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
     return {'cert': cert, 'key': key}
 

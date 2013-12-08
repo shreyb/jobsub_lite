@@ -52,21 +52,28 @@ class Krb5Ticket(Credentials):
     def __str__(self):
         return '%s' % {
             'KRB5CCNAME': self.krb5CredCache,
-            'VALID FROM': self.validFrom,
-            'VALID TO'  : self.validTo
+            'VALID_FROM': self.validFrom,
+            'VALID_TO'  : self.validTo
         }
 
 
     def getKrb5CredCache(self):
-        if is_os_linux():
-            return os.environ.get('KRB5CCNAME').split(':')[-1]
-        #elif is_os_macosx():
-        #    # TODO: Figure out how to check if the ticket exists on OSX
-        #    return True
-        #else:
-        #    print 'ERROR: Unsupported platform %s' % platform.system()
-        #    return False
-        raise CredentialsNotFoundError()
+        cache_file = None
+
+        #if not is_os_linux():
+        #    raise CredentialsNotFoundError()
+
+        cache_file_env = os.environ.get('KRB5CCNAME').split(':')[-1]
+
+        if os.path.exists(cache_file_env):
+            cache_file = cache_file_env
+        elif os.path.exists(constants.KRB5_DEFAULT_CC):
+            cache_file = constants.KRB5_DEFAULT_CC
+
+        if not cache_file:
+            raise CredentialsNotFoundError()
+
+        return cache_file
 
 
     def isValid(self):
@@ -91,6 +98,15 @@ class Krb5Ticket(Credentials):
         if (stime < now) and (now < etime):
             return False
         return True
+
+
+def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
+    kx509_cmd = jobsubUtils.which('kx509')
+    if kx509_cmd:
+        cmd = '%s -o %s' % (kx509_cmd, x509_fname)
+        cmd_env = {'KRB5CCNAME': krb5cc}
+        klist_out = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    raise Exception("Unable to find command 'kx509' in the PATH")
 
 
 def krb5_ticket_lifetime(cache):

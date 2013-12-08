@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ################################################################################
 # Project:
 #   JobSub
@@ -9,6 +11,8 @@
 #   This module implements constants used by the JobSub Client
 #
 ################################################################################
+
+import os
 
 ################################################################################
 # JOBSUB Constants
@@ -47,7 +51,11 @@ JOB_EXE_SUPPORTED_URIs = ('file://',)
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
 
 ################################################################################
-# STANDARD PATTERNS FOR REGEX
+# KRB5 Constants
 ################################################################################
 
 KRB5TICKET_VALIDITY_HEADER = 'Valid starting     Expires            Service principal\n(.*)\n.*'
+
+KRB5_DEFAULT_CC = '/tmp/krb5cc_%s' % os.getuid()
+
+X509_PROXY_DEFAULT_FILE = '/tmp/x509up_u_%s' % os.getuid()

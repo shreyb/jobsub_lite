@@ -3,6 +3,7 @@ import threading
 import os
 import re
 import platform
+import zipfile
 
 import cherrypy
 
@@ -14,6 +15,8 @@ if platform.system() == 'Linux':
 
 from datetime import datetime
 from shutil import copyfileobj
+
+from cherrypy.lib.static import serve_file
 
 from util import get_uid, mkdir_p
 from auth import check_auth
@@ -68,8 +71,68 @@ class JobsResource(object):
         return rc
 
 
+def zipdir(path, zip):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            zip.write(os.path.join(root, file))
+
+
+class SandboxResource(object):
+
+    def doGET(self, acctgroup, job_id, kwargs):
+        subject_dn = cherrypy.request.headers.get('Auth-User')
+        uid = get_uid(subject_dn)
+        command_path_root = get_command_path_root()
+        job_log = os.path.join(command_path_root, 'job.log')
+        with open(job_log, 'r') as job_log_file:
+            job_records = job_log_file.readlines()
+            for job_record in job_records:
+                rec_job_id, rec_uid, rec_acctgroup, rec_workdir = job_record.split(' ')
+                if job_id == rec_job_id[:-1] and acctgroup == rec_acctgroup and uid == rec_uid:
+                    # found the path, zip data and return
+                    command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, rec_workdir)
+                    zip = zipfile.ZipFile('%s.zip' % rec_workdir, 'w')
+                    zipdir(command_path, zip)
+                    zip.close()
+                    return serve_file(zip.filename, "application/x-download", "attachment")
+            else:
+                # return error for no data found
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+                logger.log(err)
+                rc = {'err': err}
+
+        return rc
+
+    @cherrypy.expose
+    @format_response
+    @check_auth
+    def index(self, acctgroup, job_id, **kwargs):
+        try:
+            if is_supported_accountinggroup(acctgroup):
+                if cherrypy.request.method == 'GET':
+                    rc = self.doGET(acctgroup, job_id, kwargs)
+                else:
+                    err = 'Unsupported method: %s' % cherrypy.request.method
+                    logger.log(err)
+                    rc = {'err': err}
+            else:
+                # return error for unsupported acctgroup
+                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
+                logger.log(err)
+                rc = {'err': err}
+        except:
+            err = 'Exception on AccountJobsResouce.index'
+            logger.log(err, traceback=True)
+            rc = {'err': err}
+
+        return rc
+
+
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
+
+    def __init__(self):
+        self.sandbox = SandboxResource()
 
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
@@ -82,12 +145,12 @@ class AccountJobsResource(object):
                 logger.log('jobsub_command: %s' % jobsub_command)
                 subject_dn = cherrypy.request.headers.get('Auth-User')
                 uid = get_uid(subject_dn)
-		workdir_id='.'
+                workdir_id = '.'
                 if jobsub_command is not None:
                     command_path_root = get_command_path_root()
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
-                    workdir_id='%s_%s'%(ts,thread_id)
+                    workdir_id = '%s_%s'%(ts, thread_id)
                     command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, workdir_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)

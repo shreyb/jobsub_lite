@@ -24,6 +24,7 @@ import json
 import copy
 
 import constants
+import jobsubClientCredentials
 
 
 class JobSubClient:
@@ -159,7 +160,7 @@ def get_client_credentials():
             jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
             cert = key = constants.X509_PROXY_DEFAULT_FILE
         else:
-            raise("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
+            raise Exception("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
     return {'cert': cert, 'key': key}
 

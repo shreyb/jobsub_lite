@@ -4,9 +4,11 @@ import os
 import time
 import sys
 import re
+from distutils import spawn
 
 import constants
 import subprocessSupport
+import jobsubUtils
 
 class CredentialsNotFoundError(Exception):
     def __init__(self):
@@ -63,14 +65,13 @@ class Krb5Ticket(Credentials):
         #if not is_os_linux():
         #    raise CredentialsNotFoundError()
 
-        cache_file_env = os.environ.get('KRB5CCNAME').split(':')[-1]
+        krb5_cc = constants.KRB5_DEFAULT_CC
+        if ('KRB5CCNAME' in os.environ):
+            krb5_cc = os.environ.get('KRB5CCNAME')
 
-        if os.path.exists(cache_file_env):
-            cache_file = cache_file_env
-        elif os.path.exists(constants.KRB5_DEFAULT_CC):
-            cache_file = constants.KRB5_DEFAULT_CC
+        cache_file = krb5_cc.split(':')[-1]
 
-        if not cache_file:
+        if not os.path.exists(cache_file):
             raise CredentialsNotFoundError()
 
         return cache_file
@@ -84,7 +85,7 @@ class Krb5Ticket(Credentials):
 
 
     def exists(self):
-        if self.krb5CredCache:
+        if self.krb5CredCache and os.path.exists(self.krb5CredCache):
             return True
         return False
 
@@ -101,20 +102,22 @@ class Krb5Ticket(Credentials):
 
 
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
-    kx509_cmd = jobsubUtils.which('kx509')
+    kx509_cmd = spawn.find_executable("kx509")
+    #kx509_cmd = jobsubUtils.which('kx509')
     if kx509_cmd:
         cmd = '%s -o %s' % (kx509_cmd, x509_fname)
         cmd_env = {'KRB5CCNAME': krb5cc}
-        klist_out = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
-    raise Exception("Unable to find command 'kx509' in the PATH")
+        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd,
+                                                          child_env=cmd_env)
+    raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s"%klist_err)
 
 
 def krb5_ticket_lifetime(cache):
-    klist_cmd = jobsubUtils.which('klist')
+    klist_cmd = spawn.find_executable("klist")
     if klist_cmd:
         cmd = '%s -c %s' % (klist_cmd, cache)
-        klist_out = subprocessSupport.iexe_cmd(cmd)
-        lt = re.findall(constants.KRB5TICKET_VALIDITY_HEADER, klist_out)[0]
+        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd)
+        lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, klist_out))[0]
         return {'stime': ' '.join(lt.split()[:2]), 'etime': ' '.join(lt.split()[2:4])}
     raise Exception("Unable to find command 'klist' in the PATH")
 

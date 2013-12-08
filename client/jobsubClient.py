@@ -36,12 +36,18 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.jobExeURI = get_jobexe_uri(self.serverArgv)
         self.jobExe = uri2path(self.jobExeURI)
+        self.serverEnvExports = get_server_env_exports(server_argv)
+
         srv_argv = copy.copy(server_argv)
 
         if self.jobExeURI and self.jobExe:
             idx = get_jobexe_idx(srv_argv)
             if self.requiresFileUpload(self.jobExeURI):
                 srv_argv[idx] = '@%s' % self.jobExe
+
+        if self.serverEnvExports:
+            srv_env_export_b64en = base64.urlsafe_b64encode(self.serverEnvExports)
+            srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
         self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
@@ -188,6 +194,26 @@ def is_uri_supported(uri):
     if protocol in constants.JOB_EXE_SUPPORTED_URIs:
         return True
     return False
+
+
+def get_server_env_exports(argv):
+    # Any option -e should be extracted from the client and exported to the
+    # server appropriately.
+    env_vars = []
+    exports = ''
+    i = 0
+    while(i < len(argv)):
+        if argv[i] in constants.JOBSUB_SERVER_OPT_ENV:
+            i += 1
+            env_vars.append(argv[i])
+        i += 1
+
+    for var in env_vars:
+        val = os.environ.get(var)
+        if val:
+            exports = 'export %s=%s;%s' % (var, val, exports)
+
+    return exports
 
 
 def get_jobexe_idx(argv):

@@ -66,6 +66,7 @@ def print_opts(options):
     print '--------------------------------------------------------------------'
 
 
+"""
 def parse_server_args(option, opt_str, value, parser):
      assert value is None
      value = []
@@ -88,7 +89,7 @@ def parse_server_args(option, opt_str, value, parser):
 
      del parser.rargs[:len(value)]
      setattr(parser.values, option.dest, value)
-
+"""
 
 def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',

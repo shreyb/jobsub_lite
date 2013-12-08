@@ -87,7 +87,7 @@ class SandboxResource(object):
         with open(job_log, 'r') as job_log_file:
             job_records = job_log_file.readlines()
             for job_record in job_records:
-                rec_job_id, rec_uid, rec_acctgroup, rec_workdir = job_record.split(' ')
+                rec_job_id, rec_uid, rec_acctgroup, rec_workdir = job_record[:-2].split(' ')
                 if job_id == rec_job_id[:-1] and acctgroup == rec_acctgroup and uid == rec_uid:
                     # found the path, zip data and return
                     command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, rec_workdir)

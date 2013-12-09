@@ -103,23 +103,23 @@ class Krb5Ticket(Credentials):
 
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
     kx509_cmd = spawn.find_executable("kx509")
-    #kx509_cmd = jobsubUtils.which('kx509')
-    if kx509_cmd:
-        cmd = '%s -o %s' % (kx509_cmd, x509_fname)
-        cmd_env = {'KRB5CCNAME': krb5cc}
-        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd,
-                                                          child_env=cmd_env)
-    raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s"%klist_err)
+    if not kx509_cmd:
+        raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s"%klist_err)
+
+    cmd = '%s -o %s' % (kx509_cmd, x509_fname)
+    cmd_env = {'KRB5CCNAME': krb5cc}
+    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
 
 def krb5_ticket_lifetime(cache):
     klist_cmd = spawn.find_executable("klist")
-    if klist_cmd:
-        cmd = '%s -c %s' % (klist_cmd, cache)
-        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd)
-        lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, klist_out))[0]
-        return {'stime': ' '.join(lt.split()[:2]), 'etime': ' '.join(lt.split()[2:4])}
-    raise Exception("Unable to find command 'klist' in the PATH")
+    if not klist_cmd:
+        raise Exception("Unable to find command 'klist' in the PATH")
+    cmd = '%s -c %s' % (klist_cmd, cache)
+    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd)
+    lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, klist_out))[0]
+    return {'stime': ' '.join(lt.split()[:2]),
+            'etime': ' '.join(lt.split()[2:4])}
 
 # Simple tests that work on Linux
 #k = Krb5Ticket()

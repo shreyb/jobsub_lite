@@ -90,11 +90,12 @@ class SandboxResource(object):
                 rec_job_id, rec_uid, rec_acctgroup, rec_workdir = job_record[:-2].split(' ')
                 if job_id == rec_job_id[:-1] and acctgroup == rec_acctgroup and uid == rec_uid:
                     # found the path, zip data and return
-                    command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, rec_workdir)
-                    zip = zipfile.ZipFile('%s.zip' % rec_workdir, 'w')
-                    zipdir(command_path, zip)
+                    zip_path = os.path.join(command_path_root, acctgroup, uid, rec_workdir)
+                    zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % rec_workdir)
+                    zip = zipfile.ZipFile(zip_file, 'w')
+                    zipdir(zip_path, zip)
                     zip.close()
-                    return serve_file(zip.filename, "application/x-download", "attachment")
+                    return serve_file(zip_file, "application/x-download", "attachment")
             else:
                 # return error for no data found
                 err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
@@ -151,7 +152,7 @@ class AccountJobsResource(object):
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
                     workdir_id = '%s_%s'%(ts, thread_id)
-                    command_path = '%s/%s/%s/%s' % (command_path_root, acctgroup, uid, workdir_id)
+                    command_path = os.path.join(command_path_root, acctgroup, uid, workdir_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
                     logger.log('command_file_path: %s' % command_file_path)

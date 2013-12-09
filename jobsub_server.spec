@@ -12,7 +12,7 @@ Group:          Applications/System
 License:        Apache 2.0
 URL:            https://cdcvs.fnal.gov/redmine/projects/jobsub
 Source0:        %{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot:	    %(mktemp -ud %{_tmppath}/%{name}-XXXXXX)
 
 BuildArch:      noarch
 

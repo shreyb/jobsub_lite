@@ -53,7 +53,7 @@ class Krb5Ticket:
     def create(self):
         kinit_exe = spawn.find_executable("kinit")
         if not kinit_exe:
-            raise Exception("Unable to find command 'kinit' in the PATH.\nSTDERR:\n%s" % klist_err)
+            raise Exception("Unable to find command 'kinit' in the PATH.")
 
         cmd = '%s -F -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
                                                       self.createLifetimeHours,
@@ -71,7 +71,7 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
-        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.\nSTDERR:\n%s" % klist_err)
+        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
     voms_group = 'fermilab:/fermilab/%s' % acctgroup
     cmd = "%s -noregen -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
     cmd_env = {'X509_USER_PROXY': proxy_fname}
@@ -81,7 +81,7 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     kx509_exe = spawn.find_executable("kx509")
     if not kx509_exe:
-        raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s "% klist_err)
+        raise Exception("Unable to find command 'kx509' in the PATH.")
 
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
@@ -94,7 +94,7 @@ def kadmin_password():
         fd = open(passwd_file, 'r')
         password = ''.join(fd.readlines()).strip()
     except:
-        print "ERROR: Reading kadmin password from %s" % passwd_file
+        logger.log("ERROR: Reading kadmin password from %s" % passwd_file)
         raise
 
     fd.close()
@@ -110,9 +110,9 @@ def kadmin_command(command):
     cmd = "kadmin -p fifegrid/batch/fifebatch1.fnal.gov@FNAL.GOV " \
            " -q \""+command+"\" -k -t fifegrid.keytab"
 
-    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
-        print "Error output from command: %s\n%s" % (cmd, cmd_err)
+        logger.log("Error output from command: %s\n%s" % (cmd, cmd_err))
         return 1
     return 0
 
@@ -226,9 +226,9 @@ def test():
        try:
             create_voms_proxy(dns[group], group)
        except AuthenticationError, e:
-           print "Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup)
+           logger.log("Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
        except AuthorizationError, e:
-           print "Unauthorized DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup)
+           logger.log("Unauthorized DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
 
 
 if __name__ == '__main__':

@@ -26,18 +26,19 @@ import cherrypy
 import logger
 import subprocessSupport
 
+
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
-       self.dn = dn
-       self.acctgroup = acctgroup
-       Exception.__init__(self, "Error authenticating DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
+        self.dn = dn
+        self.acctgroup = acctgroup
+        Exception.__init__(self, "Error authenticating DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
 
 
 class AuthorizationError(Exception):
     def __init__(self, dn, acctgroup=''):
-       self.dn = dn
-       self.acctgroup = acctgroup
-       Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
+        self.dn = dn
+        self.acctgroup = acctgroup
+        Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
 
 
 class Krb5Ticket:
@@ -49,11 +50,10 @@ class Krb5Ticket:
         self.createLifetimeHours = 37
         self.renewableLifetimeHours = 72
 
-
     def create(self):
         kinit_exe = spawn.find_executable("kinit")
         if not kinit_exe:
-            raise Exception("Unable to find command 'kinit' in the PATH.\nSTDERR:\n%s"%klist_err)
+            raise Exception("Unable to find command 'kinit' in the PATH.\nSTDERR:\n%s" % klist_err)
 
         cmd = '%s -F -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
                                                       self.createLifetimeHours,
@@ -71,10 +71,9 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
-        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.\nSTDERR:\n%s"%klist_err)
+        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.\nSTDERR:\n%s" % klist_err)
     voms_group = 'fermilab:/fermilab/%s' % acctgroup
-    cmd = "%s -noregen -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe,
-                                                            voms_group)
+    cmd = "%s -noregen -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
     cmd_env = {'X509_USER_PROXY': proxy_fname}
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
@@ -82,7 +81,7 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     kx509_exe = spawn.find_executable("kx509")
     if not kx509_exe:
-        raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s"%klist_err)
+        raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s "% klist_err)
 
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
@@ -108,9 +107,8 @@ def add_principal(principal, keytab_fname):
 
 
 def kadmin_command(command):
-    cmd =  "kadmin -p fifegrid/batch/fifebatch1.fnal.gov@FNAL.GOV " \
+    cmd = "kadmin -p fifegrid/batch/fifebatch1.fnal.gov@FNAL.GOV " \
            " -q \""+command+"\" -k -t fifegrid.keytab"
-
 
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     if cmd_err:
@@ -128,6 +126,7 @@ def authenticate(dn):
         raise AuthenticationError(dn)
 
     return username[0]
+
 
 def authorize(dn, username, acctgroup):
     creds_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
@@ -191,9 +190,15 @@ def check_auth(func):
         dn = cherrypy.request.headers.get('Auth-User')
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s' % (dn, acctgroup))
-            if _check_auth(dn, acctgroup):
-                return func(self, acctgroup, *args, **kwargs)
-            else:
+            try:
+                if _check_auth(dn, acctgroup):
+                    return func(self, acctgroup, *args, **kwargs)
+                else:
+                    # return error for failed auth
+                    err = 'User authorization has failed'
+                    logger.log(err)
+                    rc = {'err': err}
+            except:
                 # return error for failed auth
                 err = 'User authorization has failed'
                 logger.log(err)
@@ -224,57 +229,6 @@ def test():
            print "Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup)
        except AuthorizationError, e:
            print "Unauthorized DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup)
-
-
-
-"""
-##### PREVIOUS CODE
-from subprocess import Popen, PIPE
-import logger
-
-def execute_gums_command(subject_dn, accountinggroup):
-    command = '/usr/bin/gums-host|mapUser|-g|https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort|%s|-f|/fermilab/%s' % (subject_dn, accountinggroup)
-    command = command.split('|')
-    logger.log('gums command: %s' % command)
-    pp = Popen(command, stdout=PIPE, stderr=PIPE)
-    result = {
-        'out': pp.stdout.readlines(),
-        'err': pp.stderr.readlines()
-    }
-    logger.log('gums command result: %s' % str(result))
-    return result
-
-
-def _check_auth(subject_dn, accountinggroup):
-    result = execute_gums_command(subject_dn, accountinggroup)
-    if result['out'][0].startswith('null') or len(result['err']) > 0:
-        return False
-    else:
-        return True
-
-
-def check_auth(func):
-    def check_auth_wrapper(self, acctgroup, *args, **kwargs):
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        if subject_dn is not None and acctgroup is not None:
-            logger.log('subject_dn: %s, acctgroup: %s' % (subject_dn, acctgroup))
-            if _check_auth(subject_dn, acctgroup):
-                return func(self, acctgroup, *args, **kwargs)
-            else:
-                # return error for failed auth
-                err = 'User authorization has failed'
-                logger.log(err)
-                rc = {'err': err}
-        else:
-            # return error for no subject_dn and acct group
-            err = 'User has not supplied subject dn and/or accounting group'
-            logger.log(err)
-            rc = {'err': err}
-        return rc
-
-    return check_auth_wrapper
-
-"""
 
 
 if __name__ == '__main__':

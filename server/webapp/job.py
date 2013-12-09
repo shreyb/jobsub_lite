@@ -151,7 +151,7 @@ class AccountJobsResource(object):
                     command_path_root = get_command_path_root()
                     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
                     thread_id = threading.current_thread().ident
-                    workdir_id = '%s_%s'%(ts, thread_id)
+                    workdir_id = '%s_%s' % (ts, thread_id)
                     command_path = os.path.join(command_path_root, acctgroup, uid, workdir_id)
                     mkdir_p(command_path)
                     command_file_path = os.path.join(command_path, jobsub_command.filename)

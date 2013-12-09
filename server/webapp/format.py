@@ -39,6 +39,8 @@ def _format_response(content_type, data):
     elif 'text/html' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'text/html'
         return '<html><body>%s</body></html>' % htmlPrintItemList(data)
+    elif 'application/x-download' in content_type_list:
+        return data
     else:
         return 'Content type %s not supported' % content_type
 

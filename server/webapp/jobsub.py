@@ -41,7 +41,11 @@ def get_command_path_root():
     return rc
 
 
-def execute_jobsub_command(jobsub_args):
+def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None'):
+    jobsub_args.insert(0, workdir_id)
+    jobsub_args.insert(0, acctgroup)
+    jobsub_args.insert(0, uid)
+
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)

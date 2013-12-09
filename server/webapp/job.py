@@ -3,10 +3,7 @@ import threading
 import os
 import re
 import platform
-import zipfile
-
 import cherrypy
-
 import logger
 
 if platform.system() == 'Linux':
@@ -18,7 +15,7 @@ from shutil import copyfileobj
 
 from cherrypy.lib.static import serve_file
 
-from util import get_uid, mkdir_p
+from util import get_uid, mkdir_p, create_zipfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
@@ -71,12 +68,6 @@ class JobsResource(object):
         return rc
 
 
-def zipdir(path, zip):
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            zip.write(os.path.join(root, file))
-
-
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
@@ -92,9 +83,7 @@ class SandboxResource(object):
                     # found the path, zip data and return
                     zip_path = os.path.join(command_path_root, acctgroup, uid, rec_workdir)
                     zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % rec_workdir)
-                    zip = zipfile.ZipFile(zip_file, 'w')
-                    zipdir(zip_path, zip)
-                    zip.close()
+                    create_zipfile(zip_file, zip_path)
                     return serve_file(zip_file, "application/x-download", "attachment")
             else:
                 # return error for no data found
@@ -164,11 +153,8 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                jobsub_args.insert(0, workdir_id)
-                jobsub_args.insert(0, acctgroup)
-                jobsub_args.insert(0, uid)
 
-                rc = execute_jobsub_command(jobsub_args)
+                rc = execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'

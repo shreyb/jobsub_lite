@@ -16,6 +16,7 @@ import sys
 import os
 import getopt
 import optparse
+import time
 
 import constants
 from jobsubClient import JobSubClient
@@ -157,7 +158,10 @@ def main(argv):
     options, srv_argv = parse_opts(argv)
     #print_opts(options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv)
+    stime = time.time()
     js_client.submit()
+    etime = time.time()
+    print 'Remote Submission Processing Time: %s sec' % (etime - stime)
 
 if __name__ == '__main__':
     main(sys.argv)

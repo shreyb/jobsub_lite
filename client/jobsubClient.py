@@ -70,7 +70,7 @@ class JobSubClient:
         print 'URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en)
         print 'CREDENTIALS    : %s\n' % creds
         print 'SUBMIT_URL     : %s\n' % self.submitURL
-        print 'SERVER_ARGS    : %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en)
+        print 'SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en)
         #sys.exit(1)
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
 
@@ -125,12 +125,14 @@ class JobSubClient:
         return False
 
 
-def print_formatted_response(msg, msg_type='OUTPUT'):
+def print_formatted_response(msg, msg_type='OUTPUT', ignore_empty_msg=True):
+    if ignore_empty_msg and not msg:
+        return
     print 'Response %s:' % msg_type
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % msg
     elif isinstance(msg, (list, tuple)):
-        print '%s' % ' '.join(msg)
+        print '%s' % '\n'.join(msg)
 
 
 def get_client_credentials():

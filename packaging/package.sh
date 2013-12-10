@@ -11,3 +11,4 @@ gzip jobsub-1.0.tar
 mv jobsub-1.0.tar.gz ~/rpm/SOURCES/
 rpmbuild -bb ~/rpm/SPECS/jobsub_server.spec
 cp ~/rpm/RPMS/noarch/jobsub-1.0-0.noarch.rpm ./jobsub/packaging
+# TODO: the RPM has to be put someplace that the server admin can download it. Probably the yum repo.

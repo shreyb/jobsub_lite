@@ -17,7 +17,6 @@ root.jobs = JobsResource()
 
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
-    os.environ['SUBMIT_HOST'] = environ['SUBMIT_HOST']
     os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
     os.environ['JOBSUB_CREDENTIALS_DIR'] = os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
     os.environ['KADMIN_PASSWD_FILE'] = os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
@@ -44,7 +43,6 @@ def application(environ, start_response):
     })
 
     app.log.error('JOBSUB_INI_FILE: %s' % os.environ.get('JOBSUB_INI_FILE'))
-    app.log.error('SUBMIT_HOST: %s' % os.environ.get('SUBMIT_HOST'))
     app.log.error('JOBSUB_ENV_RUNNER: %s' % os.environ.get('JOBSUB_ENV_RUNNER'))
     app.log.error('JOBSUB_APP_NAME: %s' % os.environ.get('JOBSUB_APP_NAME'))
     app.log.error('JOBSUB_VERSION: %s' % os.environ.get('JOBSUB_VERSION'))

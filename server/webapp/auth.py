@@ -55,7 +55,7 @@ class Krb5Ticket:
         if not kinit_exe:
             raise Exception("Unable to find command 'kinit' in the PATH.")
 
-        cmd = '%s -F -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
+        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
@@ -81,7 +81,9 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     kx509_exe = spawn.find_executable("kx509")
     if not kx509_exe:
-        raise Exception("Unable to find command 'kx509' in the PATH.")
+        kx509_exe = '/usr/krb5/bin/kx509'
+    #if not os.path.exists(kx509_exe):
+    #    raise Exception("Unable to find command 'kx509' in the PATH.")
 
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
@@ -90,6 +92,7 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
 
 def kadmin_password():
     passwd_file = os.environ.get('KADMIN_PASSWD_FILE')
+    logger.log('Using KADMIN PASSWORD FILE: %s' % passwd_file)
     try:
         fd = open(passwd_file, 'r')
         password = ''.join(fd.readlines()).strip()
@@ -102,14 +105,19 @@ def kadmin_password():
 
 
 def add_principal(principal, keytab_fname):
+    logger.log('Adding principal %s to the krb5 database' % principal)
     kadmin_command("addprinc -pw %s %s" % (kadmin_password(), principal))
+    logger.log('Adding keytab %s' % keytab_fname)
     kadmin_command("ktadd -k %s %s" % (keytab_fname, principal))
 
 
 def kadmin_command(command):
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    fifegrid_keytab = os.path.join(creds_base_dir, 'fifegrid.keytab')
     cmd = "kadmin -p fifegrid/batch/fifebatch1.fnal.gov@FNAL.GOV " \
-           " -q \""+command+"\" -k -t fifegrid.keytab"
+           " -q \""+command+"\" -k -t %s" % fifegrid_keytab
 
+    logger.log('Executing: %s' % cmd)
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
         logger.log("Error output from command: %s\n%s" % (cmd, cmd_err))
@@ -129,25 +137,33 @@ def authenticate(dn):
 
 
 def authorize(dn, username, acctgroup):
-    creds_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    creds_dir = os.path.join(creds_base_dir, acctgroup)
+    logger.log('Using credentials dir: %s' % creds_dir)
     try:
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        real_cache_fname = "%s/%s/krb5cc_%s" % (creds_dir, acctgroup, username)
-        old_cache_fname = "%s/%s/old_krb5cc_%s" % (creds_dir, acctgroup, username)
-        new_cache_fname = "%s/%s/new_krb5cc_%s" % (creds_dir, acctgroup, username)
-        keytab_fname = "%s/%s/%s.keytab" % (creds_dir, acctgroup, username)
-        x509_cache_fname = "%s/%s/x509cc_%s"%(creds_dir, acctgroup, username)
+        if not os.path.isdir(creds_dir):
+            os.makedirs(creds_dir, 0700)
+        real_cache_fname = os.path.join(creds_dir, 'krb5cc_%s'%username)
+        old_cache_fname = os.path.join(creds_dir, 'old_krb5cc_%s'%username)
+        new_cache_fname = os.path.join(creds_dir, 'new_krb5cc_%s'%username)
+        keytab_fname = os.path.join(creds_dir, '%s.keytab'%username)
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
 
         # First create a keytab file for the user if it does not exists
         if not os.path.isfile(keytab_fname):
+            logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
             add_principal(principal, keytab_fname)
+            logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
 
+        logger.log('Creating krb5 ticket ...')
         krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
         krb5_ticket.create()
+        logger.log('Creating krb5 ticket ... DONE')
 
         # Rename is atomic and silently overwrites destination
-        os.rename(real_cache_fname, old_cache_fname)
+        if os.path.exists(real_cache_fname):
+            os.rename(real_cache_fname, old_cache_fname)
         os.rename(new_cache_fname, real_cache_fname)
         try:
             os.unlink(old_cache_fname)
@@ -159,12 +175,18 @@ def authorize(dn, username, acctgroup):
                             proxy_fname=x509_cache_fname)
         return x509_cache_fname
     except:
+        import traceback
+        logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
+        logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
 
 
 def create_voms_proxy(dn, acctgroup):
+    logger.log('Authenticating DN: %s' % dn)
     username = authenticate(dn)
+    logger.log('Authorizing user: %s' % username)
     voms_proxy = authorize(dn, username, acctgroup)
+    logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
     return voms_proxy
 
 

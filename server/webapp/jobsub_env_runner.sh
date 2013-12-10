@@ -32,8 +32,8 @@ if [ $RSLT == 0 ] ; then
 	source $file
 	shift
 fi
-#export JOBSUB_CMD="jobsub -l "+Owner=\"$USER\"" $@"
-export JOBSUB_CMD="jobsub  $@"
+export JOBSUB_CMD="jobsub -l "+Owner=\"$USER\"" $@"
+#export JOBSUB_CMD="jobsub  $@"
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi

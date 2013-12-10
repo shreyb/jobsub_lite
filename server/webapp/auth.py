@@ -74,16 +74,18 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
     voms_group = 'fermilab:/fermilab/%s' % acctgroup
-    cmd = "%s -noregen -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
+    cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
     cmd_env = {'X509_USER_PROXY': proxy_fname}
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     except:
-        # Catch and ignore error for shortened VOMS AC
-        warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
+        # Catch and ignore warnings
+        #warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
+        proxy_created_pattern = 'Creating proxy  Done'
         tb = traceback.format_exc()
-        if len(re.findall(warning_pattern, tb)):
-            logger.log('Ignoring warning for shortened VOMS AC in the generated proxy')
+        if len(re.findall(proxy_created_pattern, tb)):
+            logger.log('Proxy was created. Ignoring warnings.')
+            logger.log('Output from running voms-proxy-init:\n%s' % tb) 
         else:
             # Anything else we should just raise
             raise

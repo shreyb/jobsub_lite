@@ -21,6 +21,7 @@
 import os
 import sys
 import re
+import traceback
 from distutils import spawn
 import cherrypy
 import logger
@@ -75,7 +76,18 @@ def krb5cc_to_vomsproxy(acctgroup, krb5cc,
     voms_group = 'fermilab:/fermilab/%s' % acctgroup
     cmd = "%s -noregen -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
     cmd_env = {'X509_USER_PROXY': proxy_fname}
-    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    try:
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    except:
+        # Catch and ignore error for shortened VOMS AC
+        warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
+        tb = traceback.format_exc()
+        if len(re.findall(warning_pattern, tb)):
+            logger.log('Ignoring warning for shortened VOMS AC in the generated proxy')
+        else:
+            # Anything else we should just raise
+            raise
+
 
 
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
@@ -175,7 +187,6 @@ def authorize(dn, username, acctgroup):
                             proxy_fname=x509_cache_fname)
         return x509_cache_fname
     except:
-        import traceback
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)

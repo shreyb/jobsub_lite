@@ -19,8 +19,8 @@ def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
     os.environ['SUBMIT_HOST'] = environ['SUBMIT_HOST']
     os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
-    os.environ['JOBSUB_CREDENTIALS_DIR'] = os.path.expanduser('JOBSUB_CREDENTIALS_DIR')
-    os.environ['KADMIN_PASSWD_FILE'] = os.path.expanduser('KADMIN_PASSWD_FILE')
+    os.environ['JOBSUB_CREDENTIALS_DIR'] = os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
+    os.environ['KADMIN_PASSWD_FILE'] = os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
 
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')
@@ -43,14 +43,14 @@ def application(environ, start_response):
         'log.access_file': access_log
     })
 
-    app.log.error('JOBSUB_INI_FILE: %s' % environ.get('JOBSUB_INI_FILE'))
-    app.log.error('SUBMIT_HOST: %s' % environ.get('SUBMIT_HOST'))
-    app.log.error('JOBSUB_ENV_RUNNER: %s' % environ.get('JOBSUB_ENV_RUNNER'))
-    app.log.error('JOBSUB_APP_NAME: %s' % environ.get('JOBSUB_APP_NAME'))
-    app.log.error('JOBSUB_VERSION: %s' % environ.get('JOBSUB_VERSION'))
-    app.log.error('JOBSUB_LOG_DIR: %s' % environ.get('JOBSUB_LOG_DIR'))
-    app.log.error('JOBSUB_CREDENTIALS_DIR: %s' % environ.get('JOBSUB_CREDENTIALS_DIR'))
-    app.log.error('KADMIN_PASSWD_FILE: %s' % environ.get('KADMIN_PASSWD_FILE'))
+    app.log.error('JOBSUB_INI_FILE: %s' % os.environ.get('JOBSUB_INI_FILE'))
+    app.log.error('SUBMIT_HOST: %s' % os.environ.get('SUBMIT_HOST'))
+    app.log.error('JOBSUB_ENV_RUNNER: %s' % os.environ.get('JOBSUB_ENV_RUNNER'))
+    app.log.error('JOBSUB_APP_NAME: %s' % os.environ.get('JOBSUB_APP_NAME'))
+    app.log.error('JOBSUB_VERSION: %s' % os.environ.get('JOBSUB_VERSION'))
+    app.log.error('JOBSUB_LOG_DIR: %s' % os.environ.get('JOBSUB_LOG_DIR'))
+    app.log.error('JOBSUB_CREDENTIALS_DIR: %s' % os.environ.get('JOBSUB_CREDENTIALS_DIR'))
+    app.log.error('KADMIN_PASSWD_FILE: %s' % os.environ.get('KADMIN_PASSWD_FILE'))
 
     return cherrypy.tree(environ, start_response)
 

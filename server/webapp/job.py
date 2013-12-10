@@ -7,8 +7,11 @@ import cherrypy
 import logger
 
 if platform.system() == 'Linux':
-    import htcondor as condor
-    import classad
+    try:
+        import htcondor as condor
+        import classad
+    except:
+        logger.log('Cannot import htcondor. Have the condor python bindings been installed?')
 
 from datetime import datetime
 from shutil import copyfileobj

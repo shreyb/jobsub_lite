@@ -65,16 +65,17 @@ class Krb5Ticket:
             raise Exception("createKrbCache error: %s" % kinit_err)
 
 
-def krb5cc_to_vomsproxy(acctgroup, krb5cc,
-                        proxy_fname='/tmp/x509up_u%s'%os.getuid()):
+def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
     krb5cc_to_x509(krb5cc, x509_fname=proxy_fname)
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
-    voms_group = 'fermilab:/fermilab/%s' % acctgroup
-    cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_group)
+    voms_attrs = 'fermilab:/fermilab/%s' % acctgroup
+    if acctrole:
+        voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
+    cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': proxy_fname}
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
@@ -150,7 +151,7 @@ def authenticate(dn):
     return username[0]
 
 
-def authorize(dn, username, acctgroup):
+def authorize(dn, username, acctgroup, acctrole='Analysis'):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     creds_dir = os.path.join(creds_base_dir, acctgroup)
     logger.log('Using credentials dir: %s' % creds_dir)
@@ -185,8 +186,7 @@ def authorize(dn, username, acctgroup):
             # Ignore file removal errors
             pass
 
-        krb5cc_to_vomsproxy(acctgroup, real_cache_fname,
-                            proxy_fname=x509_cache_fname)
+        krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')

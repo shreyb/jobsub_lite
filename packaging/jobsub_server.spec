@@ -1,8 +1,3 @@
-%if 0%{?rhel} && 0%{?rhel} <= 5
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
-%endif
-
 Name:           jobsub
 Version:        1.0
 Release:        0
@@ -16,7 +11,12 @@ BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 
 BuildArch:      noarch
 
-Requires:       python-cherrypy >= 3.1.2
+Requires:       krb5-workstation
+Requires:       krb5-fermi-getcert
+Requires:       voms-clients
+Requires:       vo-client
+Requires:       python-cherrypy >= 3.2.2
+Requires:       condor-python
 Requires:       openssl
 Requires:       mod_ssl
 Requires:       mod_wsgi

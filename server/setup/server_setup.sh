@@ -33,8 +33,8 @@ yum -y install voms-clients
 # get and install the jobsub webapp rpm
 # pull rpm from redmine and install
 # TODO: find the right way to store the jobsub rpm. Probably should be added to yum repo
-wget https://cdcvs.fnal.gov/redmine/attachments/download/14170/jobsub-1.0-0.noarch.rpm
-rpm -i jobsub-1.0-0.noarch.rpm
+wget https://cdcvs.fnal.gov/redmine/attachments/download/14214/jobsub-0.1-0.noarch.rpm
+rpm -i jobsub-0.1-0.noarch.rpm
 
 # make sure log file can be written
 mkdir -p /opt/jobsub/server/log

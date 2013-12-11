@@ -46,6 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc
+/opt/jobsub/LICENSE.txt
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyo

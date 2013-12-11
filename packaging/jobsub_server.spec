@@ -1,10 +1,10 @@
 Name:           jobsub
-Version:        1.0
+Version:        0.1
 Release:        0
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
-License:        Apache 2.0
+License:        Fermitools Software Legal Information (Modified BSD License)
 URL:            https://cdcvs.fnal.gov/redmine/projects/jobsub
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)

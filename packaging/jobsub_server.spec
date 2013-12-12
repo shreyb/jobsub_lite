@@ -1,6 +1,6 @@
 Name:           jobsub
 Version:        0.1
-Release:        0
+Release:        1
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -37,6 +37,11 @@ Jobsub API installation package for web
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub
 cp -r ./ $RPM_BUILD_ROOT/opt/jobsub
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
+mkdir -p $RPM_BUILD_ROOT/scratch/app
+mkdir -p $RPM_BUILD_ROOT/scratch/data
+mkdir -p $RPM_BUILD_ROOT/scratch/proxies
+mkdir -p $RPM_BUILD_ROOT/scratch/uploads
+
 cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d
 
 

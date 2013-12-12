@@ -1,6 +1,6 @@
 Name:           jobsub
 Version:        0.1
-Release:        1
+Release:        2
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -20,6 +20,8 @@ Requires:       condor-python
 Requires:       openssl
 Requires:       mod_ssl
 Requires:       mod_wsgi
+Requires:       osg-ca-scripts
+Requires:       fetch-crl
 
 
 %description

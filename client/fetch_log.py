@@ -67,10 +67,6 @@ def parse_opts(argv):
 
 
 def get_sandbox(options):
-
-    # Reponse from executing curl
-    response = cStringIO.StringIO()
-
     creds = get_client_credentials()
     submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
 
@@ -83,8 +79,7 @@ def get_sandbox(options):
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
     curl.setopt(curl.URL, submitURL)
-    curl.setopt(curl.GET, True)
-    curl.setopt(pycurl.WRITEDATA, fp)
+    curl.setopt(curl.WRITEFUNCTION, fp.write)
     curl.setopt(curl.SSL_VERIFYHOST, True)
     curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
@@ -96,7 +91,6 @@ def get_sandbox(options):
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
         curl.setopt(curl.CAPATH, get_capath())
-    curl.setopt(curl.WRITEFUNCTION, response.write)
     curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download'])
 
     curl.perform()
@@ -106,14 +100,9 @@ def get_sandbox(options):
     fp.close()
 
     if response_code == 200:
-        value = response.getvalue()
-        if response_content_type == 'application/x-download':
-            print_formatted_response('Downloaded to %s' % fn)
-        else:
-            print_formatted_response(value)
+        print 'Downloaded to %s' % fn
     else:
         print "Server response code: %s" % response_code
-    response.close()
 
 
 def main(argv):

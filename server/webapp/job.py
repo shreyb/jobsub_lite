@@ -24,53 +24,6 @@ from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_com
 from format import format_response
 
 
-@cherrypy.popargs('job_id')
-class JobsResource(object):
-
-    def doGET(self, job_id):
-        schedd = condor.Schedd()
-        results = schedd.query()
-        if job_id is not None:
-            job_id = int(job_id)
-            for job in results:
-                # TODO: filter by jobs running for the user
-                if job['ClusterId'] == job_id:
-                    job_dict = dict()
-                    for k, v in job.items():
-                        job_dict[repr(k)] = repr(v)
-                    rc = {'out': job_dict}
-                    break
-            else:
-                err = 'Job with id %s not found in condor queue' % job_id
-                logger.log(err)
-                rc = {'err': err}
-        else:
-            # TODO: filter by jobs running for the user
-            jobs = list()
-            for job in results:
-                jobs.append(job['ClusterId'])
-            rc = {'out': jobs}
-
-        return rc
-
-    @cherrypy.expose
-    @format_response
-    def index(self, job_id=None, **kwargs):
-        try:
-            if cherrypy.request.method == 'GET':
-                rc = self.doGET(job_id)
-            else:
-                err = 'Unsupported method: %s' % cherrypy.request.method
-                logger.log(err)
-                rc = {'err': err}
-        except:
-            err = 'Exception on JobsResouce.index'
-            logger.log(err, traceback=True)
-            rc = {'err': err}
-
-        return rc
-
-
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
@@ -85,8 +38,8 @@ class SandboxResource(object):
                 if job_id == rec_job_id[:-1] and acctgroup == rec_acctgroup and uid == rec_uid:
                     # found the path, zip data and return
                     zip_path = os.path.join(command_path_root, acctgroup, uid, rec_workdir)
-                    zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % rec_workdir)
-                    create_zipfile(zip_file, zip_path)
+                    zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
+                    create_zipfile(zip_file, zip_path, job_id)
                     return serve_file(zip_file, "application/x-download", "attachment")
             else:
                 # return error for no data found
@@ -126,6 +79,32 @@ class AccountJobsResource(object):
 
     def __init__(self):
         self.sandbox = SandboxResource()
+
+    def doGET(self, job_id):
+        schedd = condor.Schedd()
+        results = schedd.query()
+        if job_id is not None:
+            job_id = int(job_id)
+            for job in results:
+                # TODO: filter by jobs running for the user
+                if job['ClusterId'] == job_id:
+                    job_dict = dict()
+                    for k, v in job.items():
+                        job_dict[repr(k)] = repr(v)
+                    rc = {'out': job_dict}
+                    break
+            else:
+                err = 'Job with id %s not found in condor queue' % job_id
+                logger.log(err)
+                rc = {'err': err}
+        else:
+            # TODO: filter by jobs running for the user
+            jobs = list()
+            for job in results:
+                jobs.append(job['ClusterId'])
+            rc = {'out': jobs}
+
+        return rc
 
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
@@ -179,6 +158,8 @@ class AccountJobsResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
+                elif cherrypy.request.method == 'GET':
+                    rc = self.doGET(job_id)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

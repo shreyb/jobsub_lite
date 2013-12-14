@@ -1,6 +1,6 @@
 Name:           jobsub
 Version:        0.1
-Release:        2
+Release:        1
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -25,7 +25,7 @@ Requires:       fetch-crl
 
 
 %description
-Jobsub API installation package for web
+Jobsub Server REST API
 
 %prep
 %setup -q
@@ -98,3 +98,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo
 /etc/httpd/conf.d/jobsub_api.conf
+
+%changelog
+* Fri Dec 13 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1-1
+- First version of the JobSub server

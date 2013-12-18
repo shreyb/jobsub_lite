@@ -1,0 +1,235 @@
+#!/bin/sh
+#
+# This script looks for completed minos_jobsub jobs in $CONDOR_TMP
+# and moves the completed output to where it belongs.
+# 
+# 2008-08-21 Ryan Patterson <rbpatter@caltech.edu>
+#
+# 2009-05-18 Modification by Alex Himmel to prevent overwriting
+# existing file(s) at destination.
+#
+# 2009-12-08 Modification by Alex Himmel to also copy over the
+# corresponding log files
+
+
+# who are we?
+thisscript=`basename $0`
+fullargs="$@"
+
+# Usage info
+function print_advice {
+  echo "Type '"${thisscript}" -h' for help."
+}
+function print_usage {
+  echo "Usage: "${thisscript}" [args]"
+  echo "Possible [args]:"
+  echo
+  echo "    -d<tag>  Only harvest files written to directories"
+  echo "             created with <tag> from minos_jobsub -d<tag>."
+  echo "             (Only one -d<tag> option allowed here.)"
+  echo
+  echo "    -h       Print this help."
+  echo
+  echo "    -n       Tell me what would happen, but don't actually"
+  echo "             do anything."
+  echo
+  echo "    -q       Be quiet."
+  echo
+  echo "    -l       Also copy over the corresponding log files."
+  echo
+  echo "    -t       Leave a tag in \$CONDOR_TMP for each directory"
+  echo "             that gets harvested.  (See notes below.)"
+  echo
+  echo "    -v       Be verbose."
+  echo
+  echo
+  echo " NOTES:"
+  echo "   After each temporary staging directory's contents have been"
+  echo "   collected, the directory is removed from \$CONDOR_TMP.  The"
+  echo "   -t option leaves behind a file called <stagingdir>_harvested"
+  echo "   in \$CONDOR_TMP which contains the time of the harvest."
+  echo
+}
+
+
+# Got $CONDOR_TMP?
+if [ -z "${CONDOR_TMP}" ]
+then
+  echo "WARNING: \$CONDOR_TMP is undefined.  This shouldn't be the case."
+  CONDOR_TMP=/minos/data/condor-tmp/${LOGNAME}
+  echo "  Assuming CONDOR_TMP="${CONDOR_TMP}
+fi
+
+
+# defaults
+DOIT=1
+VERBOSITY=1
+HARVESTFILE=0
+TAGREXP=""
+DOLOGS=0
+
+# Peel off args
+while [ $# -gt 0 ] && [ "${1/-}" = "${1:1}" ]
+do
+  argshift=0
+  if [ "${1/-d}" = "${1:2}" ]
+  then
+    # handle output dir mapping
+    TAG=${1:2}
+    if [ -n "$TAG" ]
+    then
+      TAGREXP="_dir_${TAG}/locator"
+      argshift=1
+    else
+      echo "minos_harvestfiles: -dTAG option is missing TAG"
+      print_advice
+      exit 1
+    fi
+  else
+    case $1 in
+      -h)
+          print_usage
+          exit
+          ;;
+      -n)
+          DOIT=0
+          argshift=1
+          ;;
+      -q)
+          VERBOSITY=0
+          argshift=1
+          ;;
+      -l)
+          DOLOGS=1
+          argshift=1
+          ;;
+      -t)
+          HARVESTFILE=1
+          argshift=1
+          ;;
+      -v)
+          VERBOSITY=2
+          argshift=1
+          ;;
+      *)
+          echo ${thisscript}": invalid option -- "$1
+          print_advice
+          exit 1
+          ;;
+    esac
+  fi
+
+  # make sure we got what we needed
+  if [ ${argshift} -gt $# ]
+  then
+    echo ${thisscript}": missing argument for "$1
+    print_advice
+    exit 1
+  else
+    shift ${argshift}
+  fi
+done
+
+
+###########################
+# Loop over locator links #
+###########################
+
+# The existence of a symlink 'locator' in a $CONDOR_TMP
+# subdir means the job has finished and the user has
+# specified a desired location for the output.  So, do it.
+
+for LOCATOR in `find $CONDOR_TMP -maxdepth 2 -mindepth 2 -name locator -type l | grep "$TAGREXP"`
+do
+
+  SOURCEDIR=`dirname ${LOCATOR}`
+  TARGETDIR=`ls -l ${LOCATOR} | awk '{print $NF}'`
+
+  if [ ! -e "${LOCATOR}" ]
+  then
+    echo `basename $SOURCEDIR`": ERROR: destination '${TARGETDIR}' does not exist."
+    echo "     Cannot harvest files from ${SOURCEDIR}"
+  elif [ ! -d "${LOCATOR}" ]
+  then
+    echo `basename $SOURCEDIR`": ERROR: destination '${TARGETDIR}' is not a directory."
+    echo "     Cannot harvest files from ${SOURCEDIR}"
+  else
+
+    # we're good
+
+    SOURCEFILES="`find ${SOURCEDIR} -maxdepth 1 -mindepth 1 -not -name locator | xargs echo`"
+
+    # stats
+    if [ -n "${SOURCEFILES}" ]
+    then
+      SIZE=`du -csh ${SOURCEFILES} | tail -1 | awk '{print $1}'`
+      COUNT=`find ${SOURCEDIR} -not -type d -not -name locator | wc -l`
+    else
+      SIZE=0
+      COUNT=0
+    fi
+    TARGETDIR=`ls -l ${LOCATOR} | awk '{print $NF}'`
+    [ $VERBOSITY -gt 0 ] && echo `basename $SOURCEDIR`": $COUNT files ($SIZE bytes) moving to ${TARGETDIR}"
+
+    # logs
+    if [ $DOLOGS -eq 1 ]; then
+        LOGS="`echo $SOURCEDIR | sed 's/\(.*\)_dir_.*/\1.*/'`"
+        LOGS="`ls -1 $LOGS | xargs`"
+        if [ -n "${LOGS}" ]
+        then
+            LSIZE=`du -csh ${LOGS} | tail -1 | awk '{print $1}'`
+            LCOUNT=`find ${LOGS} -not -type d -not -name locator | wc -l`
+        else
+            LSIZE=0
+            LCOUNT=0
+        fi
+        [ $VERBOSITY -gt 0 ] && echo `basename $SOURCEDIR`": $LCOUNT logs ($LSIZE bytes) moving to ${TARGETDIR}"
+    fi
+
+    # move
+    if [ -n "${SOURCEFILES}" ]
+    then
+      for FILE in $SOURCEFILES
+      do
+        locfile=`basename ${FILE}`
+        outfile=${TARGETDIR}/${locfile}
+        i=1
+        while [ -e $outfile ]; do
+            outfile="${TARGETDIR}/${locfile}_${i}"
+            let i++
+        done
+        [ $VERBOSITY -gt 1 ] && echo "  mv ${FILE} ${outfile}"
+        [ $DOIT -eq 1 ]      &&         mv ${FILE} ${outfile}
+      done
+    fi
+    
+    if [ -n "${LOGS}" ]
+    then
+      for LOG in $LOGS
+      do
+        locfile=`basename ${LOG}`
+        outfile=${TARGETDIR}/${locfile}
+        i=1
+        while [ -e $outfile ]; do
+            outfile="${TARGETDIR}/${locfile}_${i}"
+            let i++
+        done
+        [ $VERBOSITY -gt 1 ] && echo "  mv ${LOG} ${outfile}"
+        [ $DOIT -eq 1 ]      &&         mv ${LOG} ${outfile}
+      done
+    fi
+    
+    [ $VERBOSITY -gt 1 ] && echo "  rm ${LOCATOR}"
+    [ $DOIT -eq 1 ]      &&         rm ${LOCATOR}
+    [ $VERBOSITY -gt 1 ] && echo "  rmdir ${SOURCEDIR}"
+    [ $DOIT -eq 1 ]      &&         rmdir ${SOURCEDIR}
+    if [ $HARVESTFILE -eq 1 ]
+    then
+      [ $VERBOSITY -gt 1 ] && echo "  date > ${SOURCEDIR}_harvested"
+      [ $DOIT -eq 1 ]      &&         date > ${SOURCEDIR}_harvested
+    fi
+
+  fi
+
+done
+

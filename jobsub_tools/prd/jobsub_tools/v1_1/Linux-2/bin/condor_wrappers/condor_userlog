@@ -1,0 +1,14 @@
+#!/bin/sh
+
+subhost=$MINERVA_SUBMIT_HOST
+if [ -z "$subhost" ]; then
+  subhost="gpsn01.fnal.gov"
+fi
+
+#if we are on the submit host, then execute directly
+#otherwise, execute from the submit host
+if [ "`hostname`" = "$subhost" ]; then
+  /opt/condor/bin/condor_userlog $@
+else
+  ssh -akx $subhost "/bin/bash -c \" /opt/condor/bin/condor_userlog $@\""
+fi

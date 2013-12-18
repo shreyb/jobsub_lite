@@ -1,0 +1,333 @@
+
+Jobsub_tools 
+
+A KITS product containing all the Intensity Frontier grid submission tools.
+
+Usage:
+setup jobsub_tools 
+(then)
+jobsub [options]
+minos_jobsub [options]
+minerva_jobsub [options]
+nova_jobsub [options]
+dagNabbit.py [options]
+
+no need for sourcing /grid/fermiapp/......setup_(some)_condor.sh
+
+$JOBSUB_TOOLS_DIR/docs contains additional documentation
+$JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
+
+
+--------------------------
+RELEASE NOTES
+--------------------------
+v0_1  5/17/2012
+===========================
+First UPS/UPD version, KITS product is jobsub_tools, i.e.  setup jobsub_tools
+
+Includes unit test, to run:
+sh $JOBSUB_TOOLS_DIR/test/Run_Unit_Tests.sh
+
+includes functionality test, to submit jobs (and expected output):
+$JOBSUB_TOOLS_DIR/test/Run_All_Tests.sh 
+testing a grid job
+/nova/data/condor-tmp/dbox/test_grid_env.sh_20120806_142211_26319_1.cmd
+submitting....
+Submitting job(s).
+Logging submit event(s).
+1 job(s) submitted to cluster 3796504.
+testing a local job
+/nova/data/condor-tmp/dbox/test_local_env.sh_20120806_142211_26328_1.cmd
+submitting....
+Submitting job(s).
+Logging submit event(s).
+1 job(s) submitted to cluster 3796505.
+
+---------------------------------------------------------
+condor_q dbox will show the progress of your jobs just 
+submitted to gpsn01.fnal.gov
+ifront_q will show the state of everyones jobs on this node
+---------------------------------------------------------
+
+
+v0_2  
+======================
+Unit tests improved.
+
+v0_3  6/7/12
+======================
+-fixes to dagNabbit.py
+-fixed: return value of condor job becomes return value of jobsub
+-request_robot_cert accomodates new behavior of kxlist -p
+
+v0_4  7/19/12
+======================
+- works correctly with csh or sh
+- changed underlying option handling to use optparse package
+
+v0_5 8/6/12
+=====================
+- Submission to SMU for Nova works
+
+v0_7  8/31/12
+====================
+- bugfix, jobsub [jobsub_options] script [script_options] was incorrectly
+  grabbing any [script_option] that began with a dash and making it 
+  a [jobsub_option]
+- documentation fixes
+- changed default Joblease_duration to 1 hr from 20 minutes
+
+v1_0  9/14/12
+===================
+- first production release
+- documentation subdirectory, improved jobsub -h behavior
+- changed default mail behavior, default is to send mail on error
+
+v1_1 9/27/12
+==================
+- increased jobleaseduration to 6 hours
+- fixed a bug where -opportunistic was interpreted as 
+   --outputfile=='pportunistic'
+
+v1_1a 9/28/12
+===================
+- fixed a bug where -e was quoting vars when it should not ie
+export FOO=BAR
+jobsub -e FOO should result in $FOO == BAR being true on worker node, 
+ but it was actually  $FOO="BAR" being true.  fixed.
+
+v1_1b 10/17/12
+=====================================================
+-fixed a nova configuration bug for nova
+-changed -L option to record stderr as well as stdin output
+
+v1_1c 10/18/12
+===================================================
+- fixed a typo in csh environment for nova
+- made jobsub aware of mars gftp servers
+
+
+v1_1d 11/8/12
+===============================================
+-fixed a problem with -T option, test queue works now
+-fixed URI for samweb which changed recently
+
+v1_1e 11/9/12
+==========================================
+- fixed a bug where dag files were not submitted properly
+
+v1_1f 11/19/12
+=============================================
+- more dag file fixing
+- changed order of PATH for wrapped, metered condor commands (condor_q etc)
+
+v1_1g 12/11/12
+==================================================
+-removed minerva_q, it behaved differently than what they expected
+
+v1_1h 12/19/12
+==================================================
+-changed path to ifdhc ups product
+
+v1_1i 1/19/13
+==================================================
+- changed default behavior of -L /path/to/logfile behavior
+  now write logfile to local disk on worker node, then
+  gridftp or cpn it back to specified location.
+  This behavior can be overridden with --no_log_buffer flag
+
+v1_1j 1/22/13
+=========================================================
+-fixed a bug for minerva, now picks up the $CMTCONFIG env variable
+-changed the wrapped condor commands to use ssh -akx instead of ssh -ak
+
+v1_1k 1/25/13
+=========================================================
+-fixed a bug for minerva, now picks up the $CMTCONFIG env variable
+ v1_1j release did not pick up this change due to svn misuse
+
+v1_1n 2/13/13
+==========================================================
+-gridftp fix, command to transfer output data back got removed
+in 1_1k by svn misuse
+
+v1_1o  2/18/13
+==========================================================
+another gridftp fix, bug in cpn style locking mechanism allowed
+gridftp servers to become overloaded
+
+v1_1p 2/20/13
+==========================================================
+-added ifdh log monitoring for job start, job end, file transfers 
+ in and out with -f and -d flags
+-minor bug fixes exposed by improved test suite
+
+v1_1q 2/28/13
+==========================================================
+-replaced cpn and gridftp file transfers with ifdh cp commands
+which default correctly to underlying cpn or gridftp.  All transfer
+in with -f option defaults to cpn for speed.
+
+-improved documentation output with -h flag
+
+-updated TMP,TMPDIR,TEMP to have same value of $_CONDOR_SCRATCH_DIR 
+at beginning of job execution on FNAL Grid. 
+
+
+v1_1r 3/8/13
+=============================================================
+-changed ifdh file transfers to use current ifdh instead of
+hard coded v1_0_2 ifdh used in jobsub v1_1q .  This behavior
+can be overridden by using environment variable IFDH_VERSION
+with the -e flag, ie to use ifdh v1_0_3:
+export IFDH_VERSION=v1_0_3
+jobsub -e IFDH_VERSION (the rest of the command)
+
+- fixed problems with unit tests and integration tests giving
+false positives
+
+- added sanity check for -e flag, it will complain now if you
+do jobsub -d FOO without setting $FOO first
+
+-updated OSG_WN_TMP to have same value as TMP,TMPDIR,TEMP,and  
+$_CONDOR_SCRATCH_DIR at beginning of job execution on FNAL Grid. 
+ 
+v1_1s 3/13/13
+=============================================================
+- changed behavior of -f flag when used to copy in multiple files
+previously, each file specified with -f was wrapped with its
+own CPN locks. Starting with this version, a CPN lock will be
+taken out, all the files copied in, and then the CPN lock will
+be released.
+
+v1_1t 3/14/13
+==============================================================
+
+-changes behavior of -d flag so that multiple copies out are wrapped
+with one CPN lock, similar to -f behavior as of v1_1s
+
+-fixed unit tests broken by v1_1s code changes
+
+v1_1u 3/19/13
+=============================================================
+-fix of chmod bug for copying output on v1_1t
+
+v1_2_rc3 (release candidate 3)
+===============================
+- tarball support
+  see https://cdcvs.fnal.gov/redmine/projects/ifront/wiki/UsingJobSub#tarball-support
+  new options that support this:
+
+    --input_tar_dir=INPUT_TAR_DIR
+                        create self extracting tarball from contents of
+                        INPUT_TAR_DIR.  This tarball will be run on the worker
+                        node with arguments you give to your_script
+    --tar_file_name=TAR_FILE_NAME
+                        name of tarball to submit, created from
+                        --input_tar_dir if specified
+    --overwrite_tar_file
+                        overwrite TAR_FILE_NAME when creating tarfile using
+                        --input_tar_dir
+
+- offsite support using --site flag to steer to remote sites
+  see https://cdcvs.fnal.gov/redmine/projects/ifront/wiki/UsingJobSub#Using-jobsub-to-submit-to-remote-sites
+- show_entrypoints command, see which remote sites are up/available
+
+- group_q (experiment) command
+- fixed typo in -t option for nova users
+- restored throttled condor_rm , it had been removed accidentally
+
+v1_2_rc4 final(?) v1_2 release candidate
+========================================
+- fix of nova environment setup
+- fix of ifdh cp incantation
+- fixes to test suite
+- moved $CONDOR_TMP for argoneut minerva lbne uboone nova mu2e from /experiment/app to /experiment/data
+
+v1_2_rc5 final(?) v1_2 release candidate
+========================================
+- fix of minor bugs reported in v1_2_rc4
+
+v1_2 5/15/13
+========================================
+rc5 retagged as v1_2 final
+
+v1_2b 6/6/13
+========================================
+- Message of the Day and Downtime announcements
+- sources condor setup scripts to set LD_LIBRARY_PATH on submit node
+
+
+v1_2d 8/8/13
+=========================================
+- fixes bug where jobs sent to local cluster could end up at SMU
+- sends jobs to coupp experiments entry points
+
+v1_2e 8/14/13
+=============================================
+changed help on -c --append_condor_requirements, added 2 new ones
+from the help:
+    -c REQUIREMENTS, --append_condor_requirements=REQUIREMENTS
+                        append condor requirements
+    --overwrite_condor_requirements=OVERWRITEREQUIREMENTS
+                        overwrite default condor requirements with supplied
+                        requirements
+    --override=OVERRIDE
+                        override some other value: --override 'requirements'
+                        'gack==TRUE' would produce the same condor command
+                        file as --overwrite_condor_requirements 'gack==TRUE'
+                        if you want to use this option, test it first with -n
+                        to see what you get as output
+
+v1_2f 8/30/13
+====================
+bug fixes, 
+	--site A,B,C now works properly to send jobs to OSG sites A, B, or C
+	--parrot files were being generated in $CONDOR_TMP unnecessarily
+
+v1_2g 9/11/13
+====================
+bug fix:  problem with -c option fixed
+
+v1_2g_1 9/12/13
+===================
+bug fix: jobs sent off_site sometimes filled /tmp directory with cruft
+
+v1_2g_2 9/17/13
+=================
+INC000000394488  -L -N and --no_log_buffer play together correctly now
+
+
+v1_2h 10/4/13
+=============
+bug fixes for
+INC000000395648  -- Batch submission using dagNabbit.py is broken for csh-family
+CHG000000006805  -- Deployment of SLF6 worker nodes on General Purpose Grid
+also, a SAM project DAG will run only 2000 jobs at a time now
+
+
+v1_2i 10/11/13
+=============
+--OS now accepts a comma seperated list  so '--OS=SL4,SL5,SL6,SL7' will run on any of
+these if they are available
+
+v1_2j 10/22/13
+==============
+- jobsub.ini file now does important configurations.  This is where you would add a new experiment instead of code changes.
+  jobsub.ini is searched for first in $PWD, then $HOME, then $JOBSUB_TOOLS_DIR/bin
+
+v1_2l 11/18/13
+================
+- bug fixes for handling jobsub.ini. 
+- INC000000396421 selecting SL5 or SL6 on minos machines fixed
+
+v1_2m 11/19/13
+====================
+- RITM0079516 if SAM_STATION environment variable is set, use it when creating a sam project
+- more stuff moved to configuration via ini file 
+
+v1_2n 12/3/13
+===================
+- a problem removing temporary files if user aliased 'rm' to 'rm -i' has been fixed
+- RITM0080175 setup jobsub_tools noisy, fixed
+- INC000000399880 jobsub not respecting CONDOR_TMP if reset, fixed

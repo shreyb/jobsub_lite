@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# Do all the soft linking for the Condor binaries
+# 2008-11-04 Ryan Patterson
+
+if [ -z "$MINOS_CONDOR" ]
+then
+  echo "\$MINOS_CONDOR not defined.  Source the MINOS Condor setup script before running this."
+fi
+
+OLDDIR=`/bin/pwd`
+cd $MINOS_CONDOR/scripts/remote_wrappers
+
+for BINPATH in `ls /opt/condor/bin/condor*`
+do
+  BIN=`basename $BINPATH`
+  ln -s generic_wrapper ${BIN}
+done
+
+# handle special condor_rm situation
+rm condor_rm
+ln -s condor_rm_nice condor_rm
+
+# on if05, only condor_rm gets wrapped
+cd ../if05_wrappers
+ln -s ../remote_wrappers/condor_rm condor_rm
+ln -s ../remote_wrappers/condor_rm_nice condor_rm_nice
+ln -s ../remote_wrappers/condor_rm_real condor_rm_real
+
+cd $OLDDIR
+

@@ -1,0 +1,101 @@
+#!/bin/env python
+# $Id$
+
+import getopt, sys, os, datetime, commands, pprint, subprocess
+from groupsettings import *
+
+
+def motd():
+        
+    #motd_file = "/grid/fermiapp/common/jobsub_MOTD/MOTD"
+    motd_file = settings.settings["motd_file"]
+    #downtime_file = "/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE"
+    downtime_file = settings.settings["downtime_file"]
+    if os.path.isfile(motd_file):
+	motd=open(motd_file)
+	print motd.read()
+	motd.close()
+
+    if os.path.isfile(downtime_file):
+	dt=open(downtime_file)
+	print dt.read()
+	dt.close()
+	sys.exit(0)
+    
+def iterArgs():
+    output = None
+    
+    experiment_env=os.environ.get("GROUP")
+    if experiment_env == "e938" or experiment_env == "minerva":
+        job_settings = MinervaSettings()
+    elif experiment_env == "nova":
+        job_settings = NovaSettings()
+    elif experiment_env == "lbne":
+        job_settings = LbneSettings()
+    elif experiment_env == "e875" or experiment_env == "minos":
+        job_settings = MinosSettings()
+    else:
+        job_settings = JobSettings()
+        
+    job_settings.runCmdParser()
+
+    return job_settings
+
+
+
+def doSubmit(settings):
+    print 'submitting....'
+    #env_vars = settings['environment'].split(';')
+    #print "doSubmit: env vars=",settings['added_environment']
+    exports = ""
+    for x in settings['added_environment']:
+	#if x.find("$ENV(")>0:
+        #(var,val) = x.split('=')
+        var=x
+        val = os.environ.get(var)
+        if val is not None:
+	    if settings['ups_shell']=="csh":
+		exports = exports+"""setenv %s '%s'; """%(var,val)
+	    else:
+            	exports = exports+"""export %s="%s";""" %(var,val)
+		 
+    cmd = ""
+
+    if settings['dataset_definition']=="":
+        cmd = "%s cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%(exports,settings['condor_tmp'],settings['storage_group'],settings['condor_setup_cmd'],settings['cmdfile'])
+    else:
+        cmd = "%s cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxjobs 2000 %s'"%(exports,settings['condor_tmp'],settings['storage_group'],settings['condor_setup_cmd'],settings['dagfile'])
+      
+
+    
+    if settings['submit_host'] != settings['local_host']:
+        cmd = "ssh -akx %s \"%s\"" % (settings['submit_host'],cmd)
+    if settings['verbose']:
+        print "doSubmit: executing %s " % cmd
+        
+    (retVal,output)=commands.getstatusoutput(cmd)
+    print output
+    if retVal != 0:
+        print "%s returned status %s " % (cmd,retVal)
+        print "if you need help with the above errors "
+        print "please open a service desk ticket"
+
+ 
+    
+if __name__ == "__main__":
+
+    try:
+       settings = iterArgs()
+    except Exception, e:
+       print str(e)
+       sys.exit(1)
+    settings.checkSanity()
+    settings.makeCondorFiles()
+    if settings.settings['verbose']==True:
+       pp = pprint.PrettyPrinter(indent=4)
+       pp.pprint(settings.settings)
+
+    if settings.settings['submit']:
+	motd()
+        doSubmit(settings.settings)
+

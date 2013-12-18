@@ -1,0 +1,6 @@
+
+RUN_ALL_TESTS is the master script that runs all the appropriate tests 
+for the environment that this product is installed on.
+
+Some tests are inappropriate, i.e. you must be a member of the 
+minos group to run the minos tests, TestScript detects this.

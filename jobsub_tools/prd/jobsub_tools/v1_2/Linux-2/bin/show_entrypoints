@@ -1,0 +1,14 @@
+#!/bin/sh
+
+subhost=$MINERVA_SUBMIT_HOST
+if [ -z "$subhost" ]; then
+  subhost="gpsn01.fnal.gov"
+fi
+
+#if we are on the submit host, then execute directly
+#otherwise, execute from the submit host
+if [ "`hostname`" = "$subhost" ]; then
+  /home/gfactory/v2_7_1/factory/glidein_v2_7_1/factory_startup statusdown -entry all
+else
+  ssh -akx $subhost "/bin/bash -c \" /home/gfactory/v2_7_1/factory/glidein_v2_7_1/factory_startup statusdown -entry all \""
+fi

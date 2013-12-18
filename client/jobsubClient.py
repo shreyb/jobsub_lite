@@ -55,7 +55,6 @@ class JobSubClient:
                              self.server, self.acctGroup
                          )
 
-
     def submit(self):
 
         # Reponse from executing curl
@@ -115,7 +114,6 @@ class JobSubClient:
         else:
             print "Server response code: %s" % response_code
         response.close()
-
 
     def requiresFileUpload(self, uri):
         if uri:

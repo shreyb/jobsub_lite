@@ -1,1 +1,20 @@
-README FILE
+JOBSUB
+======
+
+PROJECT HOME
+------------
+https://cdcvs.fnal.gov/redmine/projects/jobsub
+
+SERVER DEPLOYMENT INSTRUCTIONS
+------------------------------
+
+1. Installing the JobSub server components
+https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Install_the_Server
+
+2. Configuring the JobSub server components
+https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Configure_the_Server
+
+USING THE JOBSUB CLIENT
+-----------------------
+
+https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Using_the_Client

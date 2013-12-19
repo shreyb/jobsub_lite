@@ -331,3 +331,9 @@ v1_2n 12/3/13
 - a problem removing temporary files if user aliased 'rm' to 'rm -i' has been fixed
 - RITM0080175 setup jobsub_tools noisy, fixed
 - INC000000399880 jobsub not respecting CONDOR_TMP if reset, fixed
+
+v1_2o 12/19/13
+===============
+- moved code repository from svn to git users 'shouldnt' notice any difference
+- bug fix for https://cdcvs.fnal.gov/redmine/issues/5041
+- fix for RITM0079516 in v1_2m introduced a second bug, SAM_STATION had to be set for SAM Dags to work.  Now fixed.

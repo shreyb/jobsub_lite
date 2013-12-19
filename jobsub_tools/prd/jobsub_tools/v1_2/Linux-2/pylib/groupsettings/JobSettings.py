@@ -696,7 +696,10 @@ class JobSettings(object):
 		f.write("fi\n")
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("ifdh describeDefinition $DEFN\n")
-		f.write("ifdh startProject $PRJ_NAME ${SAM_STATION:$EXPERIMENT} $DEFN  $SAM_USER $EXPERIMENT\n")		   
+		f.write("""if [ "$SAM_STATION" = "" ]; then\n""")
+		f.write("""SAM_STATION=$EXPERIMENT\n""")
+		f.write("fi\n")
+		f.write("ifdh startProject $PRJ_NAME $SAM_STATION $DEFN  $SAM_USER $EXPERIMENT\n")		   
 		f.close()
 		cmd = "chmod +x %s" % sambeginexe
 		commands=JobUtils()

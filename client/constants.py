@@ -43,6 +43,7 @@ HTTP_POST = 'POST'
 
 JOBSUB_PYCURL_CONNECTTIMEOUT = 5
 JOBSUB_PYCURL_TIMEOUT = 30
+JOBSUB_SSL_VERIFYHOST = 2
 
 ################################################################################
 # URIs

@@ -77,7 +77,7 @@ class JobSubClient:
         curl = pycurl.Curl()
         curl.setopt(curl.URL, self.submitURL)
         curl.setopt(curl.POST, True)
-        curl.setopt(curl.SSL_VERIFYHOST, True)
+        curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
         curl.setopt(curl.FAILONERROR, True)
         curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
         curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)

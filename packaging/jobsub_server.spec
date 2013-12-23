@@ -1,5 +1,5 @@
 Name:           jobsub
-Version:        0.1
+Version:        0.1.1
 Release:        1
 Summary:        RESTful API for Jobsub
 
@@ -100,5 +100,8 @@ rm -rf $RPM_BUILD_ROOT
 /etc/httpd/conf.d/jobsub_api.conf
 
 %changelog
+* Mon Dec 23 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1.1-1
+- jobSub Server webapp v0.1.1
+
 * Fri Dec 13 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1-1
 - First version of the JobSub server

@@ -192,6 +192,11 @@ class JobSettings(object):
 			print "jobsub -h for help"
 			sys.exit(1)
 		self.settings['exe_script']=args[0]
+		executable_ok=os.access(self.settings['exe_script'],os.X_OK)
+		if not executable_ok:
+			os.chmod(self.settings['exe_script'],0775)
+		
+		
 		#yuck
 		if self.settings['grid']:
 			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (IS_Glidein==true) '

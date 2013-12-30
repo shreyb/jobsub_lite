@@ -1,5 +1,5 @@
 Name:           jobsub
-Version:        0.1
+Version:        0.1.1
 Release:        2
 Summary:        RESTful API for Jobsub
 
@@ -67,8 +67,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/__init__.py
 /opt/jobsub/server/__init__.pyc
 /opt/jobsub/server/__init__.pyo
-/opt/jobsub/server/conf/jobsub.ini
-/opt/jobsub/server/conf/jobsub_api.conf
+%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
+%config(noreplace) /opt/jobsub/server/conf/jobsub_api.conf
 /opt/jobsub/server/webapp/__init__.py
 /opt/jobsub/server/webapp/__init__.pyc
 /opt/jobsub/server/webapp/__init__.pyo
@@ -97,7 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo
-/etc/httpd/conf.d/jobsub_api.conf
+%config(noreplace) /etc/httpd/conf.d/jobsub_api.conf
 
 %changelog
 * Fri Dec 13 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1-1

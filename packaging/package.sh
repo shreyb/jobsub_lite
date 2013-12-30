@@ -1,6 +1,6 @@
 #!/bin/bash
 # run as ./jobsub/packaging/package.sh from directory above jobsub
-VERS=jobsub-0.1
+VERS=jobsub-0.1.1
 REL=2
 echo "%_topdir ${HOME}/rpm" > ~/.rpmmacros
 echo "%_tmppath /tmp" >> ~/.rpmmacros

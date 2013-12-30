@@ -974,7 +974,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					  ' && ((IS_Glidein==true) && (stringListMember(GLIDEIN_Site,DESIRED_Sites)))'
+					  ' && ((IS_Glidein==true) && (stringListIMember(GLIDEIN_Site,DESIRED_Sites)))'
 
 
 					 
@@ -1084,7 +1084,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					          ' && (IS_Glidein==true) && (stringListMember(GLIDEIN_Site,DESIRED_Sites))'
+					          ' && (IS_Glidein==true) && (stringListIMember(GLIDEIN_Site,DESIRED_Sites))'
 
 			elif settings['opportunistic']==0:
 				f.write("+DESIRED_Sites = \"FNAL_%s\"\n" % settings['group'])
@@ -1096,7 +1096,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"FNAL_%s,FNAL_%s_opportunistic\"\n" % (settings['group'],settings['group']))
 				if job_iter <= 1:
 					settings['requirements']=settings['requirements'] +\
-					' && ((TARGET.AGroup=="group_%s") && (stringListMember(GLIDEIN_Site,DESIRED_Sites)))'% \
+					' && ((TARGET.AGroup=="group_%s") && (stringListIMember(GLIDEIN_Site,DESIRED_Sites)))'% \
 					(settings['group'])
 
 			if job_iter <=1 and  'append_requirements' in settings:

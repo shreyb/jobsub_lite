@@ -16,6 +16,7 @@ root.acctgroups = AccountingGroupsResource()
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
     os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
+    os.environ['JOBSUB_UPS_LOCATION'] = environ['JOBSUB_UPS_LOCATION']
     os.environ['JOBSUB_CREDENTIALS_DIR'] = os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
     os.environ['KADMIN_PASSWD_FILE'] = os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-DEBUG_JOBSUB=TRUE
+#DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -8,10 +8,16 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "CWD: `pwd`" >> /tmp/jobsub_env_runner.log
    echo "$date "  >> /tmp/jobsub_env_runner.log
    echo "$cmd "  >> /tmp/jobsub_env_runner.log
+   printenv | sort >> /tmp/jobsub_env_runner.log
 fi
 
+if [ -e "$JOBSUB_UPS_LOCATION" ]; then
+	source $JOBSUB_UPS_LOCATION
+else
+	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
+	exit -1
+fi
 
-source /fnal/ups/etc/setups.sh
 #GROUP,USER passed in command line
 export USER=$1
 shift
@@ -46,7 +52,7 @@ JID=`echo $RSLT | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
-  echo "$JID $USER $GROUP $WORKDIR_ID " >> /scratch/uploads/job.log
+  echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
 fi
 echo $RSLT
 

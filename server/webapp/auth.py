@@ -60,6 +60,7 @@ class Krb5Ticket:
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
+	#logger.log("kinit cmd:%s"%cmd)
         kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         if kinit_err:
             raise Exception("createKrbCache error: %s" % kinit_err)
@@ -143,6 +144,8 @@ def kadmin_command(command):
 def authenticate(dn):
     # For now assume kerberos DN only
     KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$)'
+    #for testing, using robot certs etc
+    #KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU.*/CN.*/CN=UID:(.*$)'
 
     username = re.findall(KCA_DN_PATTERN, dn)
     if not (len(username) == 1 and username[0] != ''):
@@ -159,10 +162,10 @@ def authorize(dn, username, acctgroup, acctrole='Analysis'):
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         if not os.path.isdir(creds_dir):
             os.makedirs(creds_dir, 0700)
-        real_cache_fname = os.path.join(creds_dir, 'krb5cc_%s'%username)
-        old_cache_fname = os.path.join(creds_dir, 'old_krb5cc_%s'%username)
-        new_cache_fname = os.path.join(creds_dir, 'new_krb5cc_%s'%username)
-        keytab_fname = os.path.join(creds_dir, '%s.keytab'%username)
+        real_cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%username)
+        old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
+        new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
+        keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
 
         # First create a keytab file for the user if it does not exists
@@ -203,17 +206,23 @@ def create_voms_proxy(dn, acctgroup):
     return voms_proxy
 
 
-def refresh_proxies(access_map={}):
-    # access_map is a dict of list. Outermost dict is keyed on username.
-    access_map = {
-        'boyd': ['minverva', 'nova', 'mu2e', 'minos'],
-        'dbox': ['minverva', 'nova', 'mu2e', 'minos'],
-        'parag': ['minverva', 'nova', 'mu2e', 'minos'],
-    }
+def refresh_proxies():
+    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
+    already_processed=['']
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    lines = cmd_out.split("\n")
+    for line in lines:
+        if line not in already_processed:
+            already_processed.append(line)
+            check=line.split("^")
+            if len(check)==3:
+                ac_grp=check[0]
+                dn=check[1]
+                grp,user=ac_grp.split(".")
+                grp=grp.strip("group_")
+                print "refreshing proxy %s %s %s"%(dn,user,grp)
+                authorize(dn,user,grp)
 
-    for username in access_map:
-        for acctgroup in access_map[username]:
-            authorize('DN UNKNOWN DURING REFRESH', username, acctgroup)
 
 
 def _check_auth(dn, acctgroup):

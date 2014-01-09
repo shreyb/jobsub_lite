@@ -159,6 +159,9 @@ def authorize(dn, username, acctgroup, acctrole='Analysis'):
     creds_dir = os.path.join(creds_base_dir, acctgroup)
     logger.log('Using credentials dir: %s' % creds_dir)
     try:
+        ##TODO:if real_cache_name and keytab_fname are new enough
+        ##we should skip this step and go directly to voms-proxy-init
+        ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         if not os.path.isdir(creds_dir):
             os.makedirs(creds_dir, 0700)
@@ -188,7 +191,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis'):
         except:
             # Ignore file removal errors
             pass
-
+        ##TODO: maybe skip this too if x509_cache_fname is new enough?
         krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
@@ -209,6 +212,7 @@ def create_voms_proxy(dn, acctgroup):
 def refresh_proxies():
     cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
     already_processed=['']
+    queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     lines = cmd_out.split("\n")
     for line in lines:
@@ -219,9 +223,18 @@ def refresh_proxies():
                 ac_grp=check[0]
                 dn=check[1]
                 grp,user=ac_grp.split(".")
+                if user not in queued_users:
+                    queued_users.append(user)
                 grp=grp.strip("group_")
                 print "refreshing proxy %s %s %s"%(dn,user,grp)
                 authorize(dn,user,grp)
+    #todo: invalidate old proxies
+    #one_day_ago=int(time.time())-86400
+    #condor_history -format "%s^" accountinggroup \
+    #-format "%s^" x509userproxysubject -format "%s\n" owner \
+    #-constraint 'EnteredCurrentStatus > one_day_ago'
+    #can be checked against already_processed list to remove x509cc_(user)
+    #if user not in queued_users remove krb5cc_(user) and (user).keytab
 
 
 

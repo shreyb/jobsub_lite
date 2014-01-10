@@ -8,7 +8,7 @@ ignore_merge: false
 ines_per_diff: 300
 
 # The recipient for the commit:
-mailinglist: parag@fnal.gov
+mailinglist: jobsub-commit@fnal.gov
 
 
 # The from address. If not defined it will use 

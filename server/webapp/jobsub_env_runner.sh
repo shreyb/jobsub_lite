@@ -54,5 +54,5 @@ WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
 fi
-echo $RSLT
+echo "$RSLT"
 

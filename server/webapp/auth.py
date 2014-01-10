@@ -193,8 +193,8 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                 # Ignore file removal errors
                 pass
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
-        ##if needs_refresh(x509_cache_fname,age_limit):
-        krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
+        if needs_refresh(x509_cache_fname,age_limit):
+            krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')

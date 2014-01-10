@@ -2,6 +2,8 @@ import logger
 import os
 import errno
 import zipfile
+import time
+import sys
 
 
 def mkdir_p(path):
@@ -37,4 +39,17 @@ def create_zipfile(zip_file, zip_path, job_id=None):
     zipdir(zip_path, zip, job_id)
     zip.close()
 
-
+def needs_refresh(filepath,agelimit=3600):
+    rslt=False
+    age=sys.maxint
+    try:
+        if  os.path.exists(filepath):
+            st=os.stat(filepath)
+            age=(time.time()-st.st_mtime)
+    except:
+        pass
+    if age>agelimit:
+        rslt=True
+    #logger.log("needs_refresh:file %s age %s limit %s needs_refresh=%s"%(filepath,age,agelimit,rslt))
+    return rslt
+    

@@ -26,6 +26,7 @@ from distutils import spawn
 import cherrypy
 import logger
 import subprocessSupport
+from util import needs_refresh
 
 
 class AuthenticationError(Exception):
@@ -60,7 +61,6 @@ class Krb5Ticket:
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
-	#logger.log("kinit cmd:%s"%cmd)
         kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         if kinit_err:
             raise Exception("createKrbCache error: %s" % kinit_err)
@@ -154,12 +154,12 @@ def authenticate(dn):
     return username[0]
 
 
-def authorize(dn, username, acctgroup, acctrole='Analysis'):
+def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     creds_dir = os.path.join(creds_base_dir, acctgroup)
     logger.log('Using credentials dir: %s' % creds_dir)
     try:
-        ##TODO:if real_cache_name and keytab_fname are new enough
+        ##TODO:if real_cache_fname and keytab_fname are new enough
         ##we should skip this step and go directly to voms-proxy-init
         ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
@@ -172,26 +172,28 @@ def authorize(dn, username, acctgroup, acctrole='Analysis'):
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
 
         # First create a keytab file for the user if it does not exists
-        if not os.path.isfile(keytab_fname):
+        if needs_refresh(keytab_fname,age_limit):
             logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
             add_principal(principal, keytab_fname)
             logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
 
-        logger.log('Creating krb5 ticket ...')
-        krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
-        krb5_ticket.create()
-        logger.log('Creating krb5 ticket ... DONE')
+        if needs_refresh(real_cache_fname,age_limit):
+            logger.log('Creating krb5 ticket ...')
+            krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
+            krb5_ticket.create()
+            logger.log('Creating krb5 ticket ... DONE')
 
-        # Rename is atomic and silently overwrites destination
-        if os.path.exists(real_cache_fname):
-            os.rename(real_cache_fname, old_cache_fname)
-        os.rename(new_cache_fname, real_cache_fname)
-        try:
-            os.unlink(old_cache_fname)
-        except:
-            # Ignore file removal errors
-            pass
+            # Rename is atomic and silently overwrites destination
+            if os.path.exists(real_cache_fname):
+                os.rename(real_cache_fname, old_cache_fname)
+            os.rename(new_cache_fname, real_cache_fname)
+            try:
+                os.unlink(old_cache_fname)
+            except:
+                # Ignore file removal errors
+                pass
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
+        ##if needs_refresh(x509_cache_fname,age_limit):
         krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
@@ -201,19 +203,21 @@ def authorize(dn, username, acctgroup, acctrole='Analysis'):
 
 
 def create_voms_proxy(dn, acctgroup):
-    logger.log('Authenticating DN: %s' % dn)
+    logger.log('create_voms_proxy: Authenticating DN: %s' % dn)
     username = authenticate(dn)
-    logger.log('Authorizing user: %s' % username)
+    logger.log('create_voms_proxy: Authorizing user: %s' % username)
     voms_proxy = authorize(dn, username, acctgroup)
     logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
     return voms_proxy
 
 
-def refresh_proxies():
+def refresh_proxies(agelimit=3600):
     cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    if cmd_err:
+        raise Exception("command %s returned %s"%(cmd,cmd_err))
     lines = cmd_out.split("\n")
     for line in lines:
         if line not in already_processed:
@@ -226,8 +230,8 @@ def refresh_proxies():
                 if user not in queued_users:
                     queued_users.append(user)
                 grp=grp.strip("group_")
-                print "refreshing proxy %s %s %s"%(dn,user,grp)
-                authorize(dn,user,grp)
+                print "checking proxy %s %s %s"%(dn,user,grp)
+                authorize(dn,user,grp,'Analysis',agelimit)
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \
@@ -294,4 +298,7 @@ if __name__ == '__main__':
         if sys.argv[1] == '--test':
             test()
         elif sys.argv[1] == '--refresh-proxies':
-            refresh_proxies()
+            if len(sys.argv)>=3:
+                refresh_proxies(sys.argv[2])
+            else:
+                refresh_proxies()

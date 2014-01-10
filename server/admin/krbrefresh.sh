@@ -1,5 +1,30 @@
 #!/bin/sh
+
+
 AUTHORIZED_USER=`grep 'WSGIDaemonProcess jobsub' /etc/httpd/conf.d/jobsub_api.conf | sed s/^.*user=// | sed 's/\ .*$//'`
+
+if [ "$1" != "--refresh-proxies" ] ; then
+
+cat <<  USER_DOCUMENTATION
+###################################################################
+file:krbrefresh.sh
+usage: krbrefresh.sh [ -h ] 
+                     [--help] 
+                     [--refresh-proxies ]  [age_in_seconds]
+
+it must be run as user $AUTHORIZED_USER who has the ability to refresh user 
+kerberos principals and voms-proxies in \$JOBSUB_CREDENTIALS_DIR
+
+This script refreshes the kerberos proxies of any user in the queue 
+that has a kerberos principal older than [age_in_seconds].  If no
+[age_in_seconds] argument is given, the default of 3600 seconds is used.
+
+This script logs its actions to file /opt/jobsub/server/log/admin.log
+##################################################################
+USER_DOCUMENTATION
+exit 0
+fi
+
 ME=`whoami`
 if [ "$AUTHORIZED_USER" != "$ME" ]; then
     echo "this script must be run as user $AUTHORIZED_USER"
@@ -10,4 +35,7 @@ fi
 export PYTHONPATH=/opt/jobsub/lib/logger/:/opt/jobsub/lib/JobsubConfigParser/:/opt/jobsub/server/webapp
 grep  SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed s/SetEnv/export/ | sed 's/\([A-Z]\)\ /\1=/' > /tmp/jobsub_admin_env.sh
 source /tmp/jobsub_admin_env.sh
-/opt/jobsub/server/webapp/auth.py --refresh-proxies
+
+if [ "$1" = "--refresh-proxies" ]; then
+     /opt/jobsub/server/webapp/auth.py --refresh-proxies $2
+fi

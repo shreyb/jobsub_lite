@@ -7,7 +7,7 @@ echo "%_tmppath /tmp" >> ~/.rpmmacros
 mkdir -p ~/rpm/BUILD ~/rpm/RPMS ~/rpm/SOURCES ~/rpm/SPECS ~/rpm/SRPMS
 cp ./jobsub/packaging/jobsub_server.spec ~/rpm/SPECS
 mv ./jobsub ./${VERS}
-tar --exclude "config" --exclude "admin" --exclude "jobsub_tools" --exclude="*.pyc" --exclude="*client*" --exclude=".*" --exclude="doc" --exclude="packaging" --exclude="*.log" --exclude="*.sock" --exclude="dev_use_virtual_env.sh" --exclude="Readme" --exclude="setup" --exclude="*.pyo" --exclude="requirements.txt" -cf ${VERS}.tar -v ${VERS}
+tar --exclude "config"  --exclude "jobsub_tools" --exclude="*.pyc" --exclude="*client*" --exclude=".*" --exclude="doc" --exclude="packaging" --exclude="*.log" --exclude="*.sock" --exclude="dev_use_virtual_env.sh" --exclude="Readme" --exclude="setup" --exclude="*.pyo" --exclude="requirements.txt" -cf ${VERS}.tar -v ${VERS}
 mv ./${VERS} ./jobsub
 gzip ${VERS}.tar
 mv ${VERS}.tar.gz ~/rpm/SOURCES/

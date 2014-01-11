@@ -97,6 +97,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo
+/opt/jobsub/server/admin/krbrefresh.sh
+/opt/jobsub/server/admin/test_krbrefresh.sh
 
 %changelog
 * Fri Dec 13 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1-1

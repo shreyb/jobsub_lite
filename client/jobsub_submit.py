@@ -17,9 +17,12 @@ import os
 import getopt
 import optparse
 import time
+import traceback
 
 import constants
+import logSupport
 from jobsubClient import JobSubClient
+from jobsubClient import JobSubClientSubmissionError
 
 
 def split_client_server_args(parser, argv):
@@ -62,9 +65,9 @@ def required_args_present(options):
 
 
 def print_opts(options):
-    print '--------------------------------------------------------------------'
-    print '%s' % options
-    print '--------------------------------------------------------------------'
+    logSupport.dprint('------------------------------------------------------')
+    logSupport.dprint('%s' % options)
+    logSupport.dprint('------------------------------------------------------')
 
 
 """
@@ -113,24 +116,11 @@ def parse_opts(argv):
                       default=constants.JOBSUB_SERVER,
                       help='Alternate location of JobSub server to use')
 
-    # Job executable and Job args
-    #parser.add_option('--job-exe',
-    #                  dest='jobExe',
-    #                  action='store',
-    #                  metavar='<Job Executable>',
-    #                  help='Full path to the executable')
-
-    #parser.add_option('--job-args',
-    #                  dest='jobArgs',
-    #                  action='store',
-    #                  metavar='<Job Args>',
-    #                  help='Arguments to the job exe')
-
-    # Random server args
-    #parser.add_option('--jobsub-server-args',
-    #                  dest='serverArgs',
-    #                  action='callback',
-    #                  callback=parse_server_args)
+    parser.add_option('--debug',
+                      dest='debug',
+                      action='store_true',
+                      default=False,
+                      help='Print debug messages to stdout')
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
@@ -139,9 +129,6 @@ def parse_opts(argv):
 
     cli_argv, srv_argv = split_client_server_args(parser, argv)
 
-    print "\nSERVER ARGS: %s\n" % srv_argv
-    print "CLIENT ARGS: %s" % cli_argv
-    #sys.exit(1)
     options, remainder = parser.parse_args(cli_argv)
 
     if len(remainder) > 1:
@@ -156,15 +143,26 @@ def parse_opts(argv):
 
 def main(argv):
     options, srv_argv = parse_opts(argv)
-    #print_opts(options)
+    logSupport.init_logging(options.debug)
+    logSupport.dprint('SERVER_ARGS: ', srv_argv)
+    logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv)
-    stime = time.time()
-    js_client.submit()
-    etime = time.time()
-    print 'Remote Submission Processing Time: %s sec' % (etime - stime)
+    try:
+        stime = time.time()
+        js_client.submit()
+        etime = time.time()
+        print 'Remote Submission Processing Time: %s sec' % (etime - stime)
+    except JobSubClientSubmissionError, e:
+        print e
+        logSupport.dprint(traceback.format_exc())
+        return 1
+    except Exception, e:
+        print e
+        logSupport.dprint('%s' % traceback.print_exc())
+        return 1
 
 if __name__ == '__main__':
-    main(sys.argv)
+    sys.exit(main(sys.argv))
 
 # TO TEST RUN SOMETHING LIKE THE FOLLOWING
 

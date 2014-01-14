@@ -22,9 +22,15 @@ import cStringIO
 import platform
 import json
 import copy
+import traceback
 
 import constants
 import jobsubClientCredentials
+import logSupport
+
+class JobSubClientSubmissionError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "JobSub remote submission failed.")
 
 
 class JobSubClient:
@@ -65,12 +71,10 @@ class JobSubClient:
         ]
         creds = get_client_credentials()
 
-        print
-        print 'URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en)
-        print 'CREDENTIALS    : %s\n' % creds
-        print 'SUBMIT_URL     : %s\n' % self.submitURL
-        print 'SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en)
-        #sys.exit(1)
+        logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
+        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+        logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
+        logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
 
         # Create curl object and set curl options to use
@@ -96,11 +100,19 @@ class JobSubClient:
             post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
-        curl.perform()
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientSubmissionError
+
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
         curl.close()
 
+        print "Server response code: %s" % response_code
         if response_code == 200:
             value = response.getvalue()
             if response_content_type == 'application/json':
@@ -111,8 +123,6 @@ class JobSubClient:
                 print_formatted_response(response_err, msg_type='ERROR')
             else:
                 print_formatted_response(value)
-        else:
-            print "Server response code: %s" % response_code
         response.close()
 
     def requiresFileUpload(self, uri):
@@ -180,7 +190,7 @@ def get_capath():
     if not ca_dir:
         raise('Could not find CA Certificates. Set X509_CA_DIR')
 
-    print 'Using CA_DIR: %s' % ca_dir
+    logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
 

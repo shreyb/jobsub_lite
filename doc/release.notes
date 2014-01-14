@@ -1,3 +1,26 @@
-v0.1.1	Added support for new lib curl by setting SSL_VERIFYHOST = 1
+v0.1.2
+======
 
-v0.1	First version of JobSub
+CLIENT
+------
+* Client is now less verbose by default. Verbosity can be enabled by using
+  --debug option to the client.
+
+SERVER
+------
+* Location for UPS/UPD installation that hosts jobsub-tools is now
+  configurable in the server.
+* Location for all the relevant logging done by server components is now
+  configurable.
+* Added proxy refresh tool to keep the proxies refreshed.
+* Bug Fix: Fixed issues with the keytab management. Now only one keytab
+  file per user is created instead of per user per experiment.
+* Bug Fix: JobSub server rpm now retains previous config files.
+
+v0.1.1
+======
+* Added support for new lib curl by setting SSL_VERIFYHOST = 1
+
+v0.1
+====
+* First version of JobSub

@@ -101,5 +101,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/test_krbrefresh.sh
 
 %changelog
+* Mon Dec 23 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1.1-1
+- jobSub Server webapp v0.1.1
+
 * Fri Dec 13 2013 Parag Mhashilkar <parag@fnal.gov> - 0.1-1
 - First version of the JobSub server

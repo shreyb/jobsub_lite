@@ -337,3 +337,11 @@ v1_2o 12/19/13
 - moved code repository from svn to git users 'shouldnt' notice any difference
 - bug fix for https://cdcvs.fnal.gov/redmine/issues/5041
 - fix for RITM0079516 in v1_2m introduced a second bug, SAM_STATION had to be set for SAM Dags to work.  Now fixed.
+
+v1_2p 1/14/14
+=============
+- fix for Bug #5132  --SITE option is now case insensitive
+- fix for INC000000401664 jobsub finds python without direct path
+    to it in command line
+- fix for INC000000402330 use umask instead of chmod to control mode
+   of output files delivered by ifdhc/CPN

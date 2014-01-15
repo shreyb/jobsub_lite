@@ -16,8 +16,8 @@ fi
 rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 yum -y install yum-priorities
 rpm -Uvh http://repo.grid.iu.edu/osg/3.2/osg-3.2-el6-release-latest.rpm
-/usr/sbin/useradd -u 4287 -g 3302 grid
 echo condor:x:3302:grid >> /etc/group
+/usr/sbin/useradd -u 4287 -g 3302 grid
 
 yum -y install upsupdbootstrap-fnal
 su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools v1_2o -f Linux+2; ups declare -c jobsub_tools v1_2o -f Linux+2"

@@ -21,6 +21,10 @@ export X509_USER_KEY=/tmp/x509up_u8531
 export SERVER=https://${MACH}:8443
 export PYTHONPATH="../../client"
 
+$PYTHONPATH/jobsub_submit.py --group nova --debug \
+       --jobsub-server $SERVER \
+            -e SERVER --nowrapfile   file://"$@"
+
 $PYTHONPATH/jobsub_submit.py --group nova \
        --jobsub-server $SERVER \
-           -e SERVER --nowrapfile   file://"$@"
+           -g -e SERVER --nowrapfile   file://"$@"

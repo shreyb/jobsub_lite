@@ -1,5 +1,6 @@
 #!/bin/sh 
 SERVER=$1
+export GROUP=nova
 if [ "$SERVER" = "" ]; then
     echo "usage: $0 servername"
     run integration tests on servername

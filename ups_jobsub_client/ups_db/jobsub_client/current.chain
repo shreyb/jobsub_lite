@@ -1,0 +1,14 @@
+
+FILE = chain
+PRODUCT = jobsub_client
+CHAIN = current
+
+#*************************************************
+#
+FLAVOR = NULL
+VERSION = v0_1_2
+QUALIFIERS = ""
+  DECLARER = products
+  DECLARED = 2010-08-26 16.01.33 GMT
+  MODIFIER = products
+  MODIFIED = 2010-08-26 16.01.33 GMT

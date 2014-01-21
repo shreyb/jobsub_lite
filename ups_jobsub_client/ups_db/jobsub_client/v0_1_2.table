@@ -14,7 +14,7 @@ COMMON:
     setupenv()
     proddir()
     setupRequired(python v2_7_3)
-    setupRequired(pycurl 7_15_5)
+    setupRequired(pycurl )
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR} )
     envPrepend(PATH, ${UPS_PROD_DIR})
 

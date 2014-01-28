@@ -47,6 +47,8 @@ def split_client_server_args(parser, argv):
             opt = parser.get_option(argv[i].split('=')[0])
             if opt:
                 cli_argv.append(argv[i])
+            else:
+                srv_argv.append(argv[i])
         else:
             srv_argv.append(argv[i])
 

@@ -27,6 +27,8 @@ JOBSUB_SERVER = 'https://jobsub.fnal.gov'
 #JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/api/%s/acctgroups/%s/jobs'
 JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 
+JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
+
 JOBSUB_JOB_SANDBOX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/sandbox/'
 
 ################################################################################

@@ -28,6 +28,11 @@ import constants
 import jobsubClientCredentials
 import logSupport
 
+class JobSubClientError(Exception):
+    def __init__(self):
+        Exception.__init__(self, "JobSub client action failed.")
+
+
 class JobSubClientSubmissionError(Exception):
     def __init__(self):
         Exception.__init__(self, "JobSub remote submission failed.")
@@ -61,10 +66,12 @@ class JobSubClient:
                              self.server, self.acctGroup
                          )
 
-    def submit(self):
+        self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
+                             self.server, self.acctGroup
+                       )
 
-        # Reponse from executing curl
-        response = cStringIO.StringIO()
+
+    def submit(self):
 
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
@@ -77,23 +84,11 @@ class JobSubClient:
         logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
 
-        # Create curl object and set curl options to use
-        curl = pycurl.Curl()
-        curl.setopt(curl.URL, self.submitURL)
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(self.submitURL)
+
+        # Set additional curl options for submit
         curl.setopt(curl.POST, True)
-        curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
-        curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.SSLCERT, creds.get('cert'))
-        curl.setopt(curl.SSLKEY, creds.get('key'))
-        if platform.system() == 'Darwin':
-            curl.setopt(curl.CAINFO, './ca-bundle.crt')
-        else:
-            curl.setopt(curl.CAPATH, get_capath())
-        curl.setopt(curl.WRITEFUNCTION, response.write)
-        curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
@@ -131,6 +126,78 @@ class JobSubClient:
             if protocol in constants.JOB_EXE_SUPPORTED_URIs:
                 return True
         return False
+
+
+    def help(self):
+        curl, response = curl_secure_context(self.helpURL)
+        return_value = None
+
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        curl.close()
+
+        if response_code == 200:
+            value = response.getvalue()
+            if response_content_type == 'application/json':
+                return_value = json.loads(value)
+            else:
+                return_value = value
+        response.close()
+        return return_value
+
+
+def curl_secure_context(url):
+    """
+    Create a standard curl object for talking to http/https url set with most
+    standard options used. Does not set client credentials.
+
+    Returns the curl along with the response object
+    """
+
+    curl, response = curl_context(url)
+    creds = get_client_credentials()
+
+    curl.setopt(curl.SSLCERT, creds.get('cert'))
+    curl.setopt(curl.SSLKEY, creds.get('key'))
+    if platform.system() == 'Darwin':
+        curl.setopt(curl.CAINFO, './ca-bundle.crt')
+    else:
+        curl.setopt(curl.CAPATH, get_capath())
+
+    return (curl, response)
+
+
+def curl_context(url):
+    """
+    Create a standard curl object for talking to https url set with most
+    standard options used
+
+    Returns the curl along with the response object
+    """
+
+    # Reponse from executing curl
+    response = cStringIO.StringIO()
+
+    # Create curl object and set curl options to use
+    curl = pycurl.Curl()
+    curl.setopt(curl.URL, url)
+    #curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
+    curl.setopt(curl.FAILONERROR, True)
+    curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
+    curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
+    curl.setopt(curl.FAILONERROR, True)
+    curl.setopt(curl.WRITEFUNCTION, response.write)
+    curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
+
+    return (curl, response)
 
 
 def print_formatted_response(msg, msg_type='OUTPUT', ignore_empty_msg=True):

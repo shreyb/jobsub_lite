@@ -67,9 +67,8 @@ def required_args_present(options):
 
 
 def print_opts(options):
-    logSupport.dprint('------------------------------------------------------')
+    logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
-    logSupport.dprint('------------------------------------------------------')
 
 
 """
@@ -98,31 +97,42 @@ def parse_server_args(option, opt_str, value, parser):
 """
 
 def parse_opts(argv):
-    parser = optparse.OptionParser(usage='%prog [options]',
-                                   version='v0.1',
+    usage = '%prog [Client Options] [Server Options] user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
+    parser = optparse.OptionParser(usage=usage,
+                                   add_help_option=False,
                                    conflict_handler="resolve")
 
+    opt_group = optparse.OptionGroup(parser, "Client Options")
+
     # Required args
-    parser.add_option('-G', '--group',
-                      dest='acctGroup',
-                      type='string',
-                      action='store',
-                      metavar='<Group/Experiment/Subgroup>',
-                      help='Group/Experiment/Subgroup for priorities and accounting')
+    opt_group.add_option('-G', '--group',
+                         dest='acctGroup',
+                         type='string',
+                         action='store',
+                         metavar='<Group/Experiment/Subgroup>',
+                         help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
-    parser.add_option('--jobsub-server',
-                      dest='jobsubServer',
-                      action='store',
-                      metavar='<JobSub Server>',
-                      default=constants.JOBSUB_SERVER,
-                      help='Alternate location of JobSub server to use')
+    opt_group.add_option('--jobsub-server',
+                         dest='jobsubServer',
+                         action='store',
+                         metavar='<JobSub Server>',
+                         default=constants.JOBSUB_SERVER,
+                         help='Alternate location of JobSub server to use')
 
-    parser.add_option('--debug',
-                      dest='debug',
-                      action='store_true',
-                      default=False,
-                      help='Print debug messages to stdout')
+    opt_group.add_option('--debug',
+                         dest='debug',
+                         action='store_true',
+                         default=False,
+                         help='Print debug messages to stdout')
+
+    opt_group.add_option('-h', '--help',
+                         dest='help',
+                         action='store_true',
+                         default=False,
+                         help='Show this help message and exit')
+
+    parser.add_option_group(opt_group)
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
@@ -136,11 +146,42 @@ def parse_opts(argv):
     if len(remainder) > 1:
         parser.print_help(file)
 
+    if options.help:
+        if not required_args_present(options):
+            parser.print_help()
+        else:
+            parser.print_help()
+            header = "  Server Options:"
+            print '\n%s' % header
+            print_acctgroup_help(options)
+        sys.exit(0)
+
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
         parser.print_help()
         sys.exit(1)
     return (options, srv_argv)
+
+
+def print_acctgroup_help(options):
+    """
+    Format and print the help message from the server
+    """
+
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, [])
+    response = js_client.help()
+
+    out = response.get('out')
+
+    # Remove the duplicate lines from the server response
+    #    --help message 
+    #    Options:
+    for lineno in range(len(out)):
+        if out[lineno].lstrip().startswith('-h, --help') or (out[lineno].strip() == 'Options:'):
+            out[lineno] = ''
+            break
+    help_str = '  '.join(out[4:])
+    print help_str
 
 
 def main(argv):

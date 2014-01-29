@@ -1,5 +1,5 @@
 Name:           jobsub
-Version:        0.1.2
+Version:        0.1.2.1
 Release:        1
 Summary:        RESTful API for Jobsub
 
@@ -101,6 +101,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/test_krbrefresh.sh
 
 %changelog
+* Wed Jan 29 2014 Dennis Box <dbox@fnal.gov> - 0.1.2.1-1
+- Changed dependency from osg-ca-scripts to osg-ca-certs
+
 * Wed Jan 15 2014 Dennis Box <dbox@fnal.gov> - 0.1.2-1
 - jobSub Server webap v0.1.2
 

@@ -82,17 +82,16 @@ def get_sandbox(options):
     curl.setopt(curl.URL, submitURL)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
     curl.setopt(curl.SSL_VERIFYHOST, True)
-    curl.setopt(curl.FAILONERROR, True)
+    curl.setopt(curl.FAILONERROR, False)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.SSLCERT, creds.get('cert'))
     curl.setopt(curl.SSLKEY, creds.get('key'))
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
         curl.setopt(curl.CAPATH, get_capath())
-    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download'])
+    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download,application/json'])
 
     curl.perform()
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -104,7 +103,7 @@ def get_sandbox(options):
         print 'Downloaded to %s' % fn
     elif response_code == 404:
         with open(fn, 'r') as fp:
-            value = fp.readlines()
+            value = fp.read()
             if response_content_type == 'application/json':
                 response_dict = json.loads(value)
                 response_err = response_dict.get('err')

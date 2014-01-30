@@ -5,7 +5,8 @@ import optparse
 import pycurl
 import time
 import platform
-import cStringIO
+import json
+import os
 
 import constants
 from jobsubClient import get_capath, get_client_credentials, print_formatted_response
@@ -101,8 +102,18 @@ def get_sandbox(options):
 
     if response_code == 200:
         print 'Downloaded to %s' % fn
-    else:
-        print "Server response code: %s" % response_code
+    elif response_code == 404:
+        with open(fn, 'r') as fp:
+            value = fp.readlines()
+            if response_content_type == 'application/json':
+                response_dict = json.loads(value)
+                response_err = response_dict.get('err')
+                response_out = response_dict.get('out')
+                print_formatted_response(response_out)
+                print_formatted_response(response_err, msg_type='ERROR')
+            else:
+                print_formatted_response(value)
+        os.remove(fn)
 
 
 def main(argv):

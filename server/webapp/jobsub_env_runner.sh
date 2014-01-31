@@ -48,7 +48,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "$RSLT "  >> /tmp/jobsub_env_runner.log
 fi
 chmod -R g+w $CONDOR_TMP
-JID=`echo $RSLT | awk '{print $NF}'`
+JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then

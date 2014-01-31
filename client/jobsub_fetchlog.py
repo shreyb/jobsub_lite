@@ -5,7 +5,8 @@ import optparse
 import pycurl
 import time
 import platform
-import cStringIO
+import json
+import os
 
 import constants
 from jobsubClient import get_capath, get_client_credentials, print_formatted_response
@@ -81,17 +82,16 @@ def get_sandbox(options):
     curl.setopt(curl.URL, submitURL)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
     curl.setopt(curl.SSL_VERIFYHOST, True)
-    curl.setopt(curl.FAILONERROR, True)
+    curl.setopt(curl.FAILONERROR, False)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.SSLCERT, creds.get('cert'))
     curl.setopt(curl.SSLKEY, creds.get('key'))
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
         curl.setopt(curl.CAPATH, get_capath())
-    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download'])
+    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download,application/json'])
 
     curl.perform()
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -101,8 +101,18 @@ def get_sandbox(options):
 
     if response_code == 200:
         print 'Downloaded to %s' % fn
-    else:
-        print "Server response code: %s" % response_code
+    elif response_code == 404:
+        with open(fn, 'r') as fp:
+            value = fp.read()
+            if response_content_type == 'application/json':
+                response_dict = json.loads(value)
+                response_err = response_dict.get('err')
+                response_out = response_dict.get('out')
+                print_formatted_response(response_out)
+                print_formatted_response(response_err, msg_type='ERROR')
+            else:
+                print_formatted_response(value)
+        os.remove(fn)
 
 
 def main(argv):

@@ -30,22 +30,18 @@ class SandboxResource(object):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
-        job_log = os.path.join(command_path_root, 'job.log')
-        with open(job_log, 'r') as job_log_file:
-            job_records = job_log_file.readlines()
-            for job_record in job_records:
-                rec_job_id, rec_uid, rec_acctgroup, rec_workdir = job_record[:-2].split(' ')
-                if job_id == rec_job_id[:-1] and acctgroup == rec_acctgroup and uid == rec_uid:
-                    # found the path, zip data and return
-                    zip_path = os.path.join(command_path_root, acctgroup, uid, rec_workdir)
-                    zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
-                    create_zipfile(zip_file, zip_path, job_id)
-                    return serve_file(zip_file, "application/x-download", "attachment")
-            else:
-                # return error for no data found
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-                logger.log(err)
-                rc = {'err': err}
+        zip_path = os.path.join(command_path_root, acctgroup, uid, '%s.0' % job_id)
+        if os.path.exists(zip_path):
+            # found the path, zip data and return
+            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
+            create_zipfile(zip_file, zip_path, job_id)
+            return serve_file(zip_file, "application/x-download", "attachment")
+        else:
+            # return error for no data found
+            err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+            logger.log(err)
+            rc = {'err': err}
+            cherrypy.response.status = 404
 
         return rc
 

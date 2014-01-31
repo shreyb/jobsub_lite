@@ -48,11 +48,14 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "$RSLT "  >> /tmp/jobsub_env_runner.log
 fi
 chmod -R g+w $CONDOR_TMP
-JID=`echo $RSLT | awk '{print $NF}'`
+JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
+  cd ${COMMAND_PATH_ROOT}/$GROUP/$USER/
+  ln -s $WORKDIR_ID "${JID}0"
+  cd -
 fi
 echo "$RSLT"
 

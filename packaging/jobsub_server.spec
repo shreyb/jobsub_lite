@@ -1,6 +1,6 @@
 Name:           jobsub
-Version:        0.1.2.1
-Release:        1
+Version:        0.1.3
+Release:        0.1.rc1
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -99,6 +99,10 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/util.pyo
 /opt/jobsub/server/admin/krbrefresh.sh
 /opt/jobsub/server/admin/test_krbrefresh.sh
+/opt/jobsub/server/admin/fix_sandbox_links.py
+/opt/jobsub/server/admin/fix_sandbox_links.pyc
+/opt/jobsub/server/admin/fix_sandbox_links.pyo
+/opt/jobsub/server/admin/fix_sandbox_links.sh
 
 %changelog
 * Wed Jan 29 2014 Dennis Box <dbox@fnal.gov> - 0.1.2.1-1

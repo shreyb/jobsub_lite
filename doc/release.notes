@@ -4,6 +4,19 @@ v0.1.2.1
 
 CLIENT
 ------
+* Bug Fix: jobsub_submit.py --help provides experiment specific help. #5285
+
+SERVER
+------
+* Improved the way jobids are associated with the job'a directory. #5280
+* Bug Fix: Fixed jobsub_fetchlog.py where it would corrupt archieved logs. #5279
+
+================================================================================
+v0.1.2.1
+================================================================================
+
+CLIENT
+------
 * Fixed a bug in Client's argument parsing. #5267
 
 SERVER

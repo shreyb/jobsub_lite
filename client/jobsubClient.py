@@ -40,16 +40,34 @@ class JobSubClientSubmissionError(Exception):
 
 class JobSubClient:
 
-    def __init__(self, server, acct_group, server_argv, server_version='current'):
+    def __init__(self, server, acct_group, server_argv, dropboxServer, server_version='current'):
         self.server = server
+        self.dropboxServer = dropboxServer
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
         self.jobExeURI = get_jobexe_uri(self.serverArgv)
         self.jobExe = uri2path(self.jobExeURI)
+        self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
         self.serverEnvExports = get_server_env_exports(server_argv)
 
         srv_argv = copy.copy(server_argv)
+
+        if self.jobDropboxURIMap:
+            # upload the files
+            result = self.dropbox_upload()
+            box_id = result.get('box_id')
+            # replace uri with path on server
+            for idx in range(0, len(srv_argv)):
+                arg = srv_argv[idx]
+                if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
+                    if self.dropboxServer is None:
+                        key = self.jobDropboxURIMap.get(arg)
+                        if key is not None:
+                            srv_argv[idx] = result.get(key)
+                    else:
+                        filename = arg.split('/')[-1]
+                        srv_argv[idx] = constants.JOBSUB_DROPBOX_GET_URL_PATTERN % (self.dropboxServer, self.acctGroup, box_id, filename)
 
         if self.jobExeURI and self.jobExe:
             idx = get_jobexe_idx(srv_argv)
@@ -70,6 +88,57 @@ class JobSubClient:
                              self.server, self.acctGroup
                        )
 
+    def dropbox_upload(self):
+        result = dict()
+
+        # Reponse from executing curl
+        response = cStringIO.StringIO()
+
+        post_data = list()
+        creds = get_client_credentials()
+
+        dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
+        # Create curl object and set curl options to use
+        curl = pycurl.Curl()
+        curl.setopt(curl.URL, dropboxURL)
+        curl.setopt(curl.POST, True)
+        curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
+        curl.setopt(curl.FAILONERROR, True)
+        curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
+        curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
+        curl.setopt(curl.FAILONERROR, True)
+        curl.setopt(curl.SSLCERT, creds.get('cert'))
+        curl.setopt(curl.SSLKEY, creds.get('key'))
+        curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.WRITEFUNCTION, response.write)
+        curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
+
+        # If it is a local file upload the file
+        for file, key in self.jobDropboxURIMap.items():
+            post_data.append((key, (pycurl.FORM_FILE, uri2path(file))))
+        curl.setopt(curl.HTTPPOST, post_data)
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientSubmissionError
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        curl.close()
+
+        print "Server response code: %s" % response_code
+        if response_code == 200:
+            value = response.getvalue()
+            if response_content_type == 'application/json':
+                result = json.loads(value)
+            else:
+                print_formatted_response(value)
+        response.close()
+
+        return result
 
     def submit(self):
 
@@ -323,3 +392,14 @@ def get_jobexe_uri(argv):
 
 def uri2path(uri):
     return re.sub('^[a-z]+://', '', uri)
+
+
+def get_dropbox_uri_map(argv):
+    # make a map with keys of file path and value of sequence
+    map = dict()
+    idx = 0
+    for arg in argv:
+        if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
+            map[arg] = 'file%d' % idx
+            idx += 1
+    return map

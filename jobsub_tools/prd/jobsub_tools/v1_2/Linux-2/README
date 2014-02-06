@@ -345,3 +345,13 @@ v1_2p 1/14/14
     to it in command line
 - fix for INC000000402330 use umask instead of chmod to control mode
    of output files delivered by ifdhc/CPN
+
+v1_2q 2/6/14
+============-
+- partial implementation of feature 5284 --resource-provides, sets 
+    classad attributes and requirements.  No checking against glideinWMS 
+    settings yet so its (still) possible to generate a job that will 
+    never start
+- bug 5266   --use_gftp does a --force=cpn on some ifdhc calls 
+- fix for INC000000403944 -L and -N used together are allowed.
+

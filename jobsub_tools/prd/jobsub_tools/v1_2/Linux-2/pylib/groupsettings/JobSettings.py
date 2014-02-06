@@ -165,6 +165,8 @@ class JobSettings(object):
 		self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
 		self.settings['wn_ifdh_location']='/grid/fermiapp/products/common/etc/setups.sh'
 		self.settings['desired_os']=''
+		self.settings['default_grid_site']=''
+		self.settings['resource_list']=[]
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
 		#sys.exit
@@ -242,10 +244,11 @@ class JobSettings(object):
 						(stat,rslt)=commands.getstatusoutput(cmd) 
 						self.settings[x]=rslt
 			
+        def resource_callback(self,option, opt, value, p):
+            self.settings['resource_list'].append(value)
 
 	def initFileParser(self):
 		self.fileParser=JobsubConfigParser()
-		#self.configFile = self.fileParser.cnf
 		
 
 				
@@ -294,6 +297,8 @@ class JobSettings(object):
 
 		generic_group.add_option("-v", "--verbose", dest="verbose",action="store_true",default=False,
 							  help="dump internal state of program (useful for debugging)")
+		generic_group.add_option("--resource-provides", type="string", action="callback",callback=self.resource_callback,
+                        help="request specific resources by changing condor jdf file.  For example: --resource-provides=CVMFS=OSG will add +CVMFS=\"OSG\" to the job classad attributes and '&&(CVMFS==\"OSG\")' to the job requirements")
 
 		generic_group.add_option("-M","--mail_always", dest="notify",
 								 action="store_const",const=2,
@@ -415,9 +420,9 @@ class JobSettings(object):
 			err = "you may only send one test job at a time, -N=%d not allowed" % settings['queuecount']
 			raise InitializationError(err)
 			
-		if settings['nologbuffer'] and settings['queuecount'] > 1:
-			err = " --nologbuffer and -N=%d (where N>1) options are not allowed together " % settings['queuecount']
-			raise InitializationError(err)
+		#if settings['nologbuffer'] and settings['queuecount'] > 1:
+		#	err = " --nologbuffer and -N=%d (where N>1) options are not allowed together " % settings['queuecount']
+		#	raise InitializationError(err)
 			
 		if settings['nologbuffer'] and settings['use_gftp']:
 			err = " --use_gftp and --no_log_buffer together make no sense"
@@ -592,7 +597,10 @@ class JobSettings(object):
 		f.write("mkdir -p ${_CONDOR_SCRATCH_DIR}/${PROCESS}\n")
 		f.write("mkdir -p ${CONDOR_DIR_INPUT}\n")
 		#f.write("CPN=/grid/fermiapp/common/tools/cpn \n")
-		cmd="ifdh cp --force=cpn -D  "
+                if settings['use_gftp']:
+                    cmd="""ifdh cp --force=expgridftp -r -D  """
+                else:
+                    cmd="""ifdh cp --force=cpn -D  """
 		cnt=""
 		for idir in settings['input_dir_array']:
 			cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
@@ -964,18 +972,32 @@ class JobSettings(object):
 		if settings['grid']:
 			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 			f.write("+RunOnGrid			  = True\n")
+		        if settings['opportunistic']==0:
+			    f.write("""+DESIRED_USAGE_MODEL = "Dedicated"\n""")
+		        else:
+			    f.write("""+DESIRED_USAGE_MODEL = "Opportunistic"\n""")
 
+                        if not settings['site']: 
+                            if settings['default_grid_site']:
+                                settings['site']=settings['default_grid_site']
+                            else:
+                                settings['site']="Fermigrid"  
+                for res in settings['resource_list']:
+                    parts=res.split('=')
+                    if len(parts)>1:
+                        f.write("""+%s = "%s"\n"""%(parts[0],parts[1]))
+                        if job_iter<=1:
+                            settings['requirements']=settings['requirements']+\
+                                """&&(%s == "%s")"""%(parts[0],parts[1])
+                        
 		if settings['site']:
 			if settings['site']=='LOCAL':
 				pass
-				#if job_iter <=1:
-				#	settings['requirements']=settings['requirements'] + \
-				#	  ' && (GLIDEIN_Site=?=UNDEFINED)'
 			else:
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					  ' && ((IS_Glidein==true) && (stringListIMember(GLIDEIN_Site,DESIRED_Sites)))'
+					  ' && ((stringListIMember(GLIDEIN_Site,DESIRED_Sites))&& stringListIMember(Target.USAGE_MODEL, DESIRED_USAGE_MODEL))'
 
 
 					 
@@ -1076,6 +1098,13 @@ class JobSettings(object):
 		else:
 			f.write("transfer_executable	 = False\n")
 
+                for res in settings['resource_list']:
+                    parts=res.split('=')
+                    if len(parts)>1:
+                        f.write("""+%s = "%s"\n"""%(parts[0],parts[1]))
+                        if job_iter<=1:
+                            settings['requirements']=settings['requirements']+\
+                                """&&(%s == "%s")"""%(parts[0],parts[1])
 		if settings['grid']:
 
 			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])

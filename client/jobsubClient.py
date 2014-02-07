@@ -62,12 +62,18 @@ class JobSubClient:
                 if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
                     key = self.jobDropboxURIMap.get(arg)
                     if key is not None:
-                        if self.dropboxServer is None:
-                            values = result.get(key)
-                            srv_argv[idx] = values.get('path')
+                        values = result.get(key)
+                        if values is not None:
+                            if self.dropboxServer is None:
+                                srv_argv[idx] = values.get('path')
+                            else:
+                                url = values.get('url')
+                                srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
                         else:
-                            url = values.get('url')
-                            srv_argv[idx] = '%s/%s' % (self.dropboxServer, url)
+                            print "Dropbox upload failed with error:"
+                            print json.dumps(result)
+                            raise JobSubClientSubmissionError
+
 
         if self.jobExeURI and self.jobExe:
             idx = get_jobexe_idx(srv_argv)

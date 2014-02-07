@@ -40,7 +40,7 @@ class JobSubClientSubmissionError(Exception):
 
 class JobSubClient:
 
-    def __init__(self, server, acct_group, server_argv, dropboxServer, server_version='current'):
+    def __init__(self, server, acct_group, server_argv, dropboxServer=None, server_version='current'):
         self.server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version

@@ -78,7 +78,7 @@ class DropboxResource(object):
                 logger.log('dropbox_file_path: %s' % dropbox_file_path)
                 with open(dropbox_file_path, 'wb') as dst_file:
                     copyfileobj(arg_value.file, dst_file)
-                    file_map[arg_name] = { dropbox_file_path, dropbox_url }
+                    file_map[arg_name] = { 'path': dropbox_file_path, 'url': dropbox_url }
 
         return file_map
 

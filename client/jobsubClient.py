@@ -56,18 +56,18 @@ class JobSubClient:
         if self.jobDropboxURIMap:
             # upload the files
             result = self.dropbox_upload()
-            box_id = result.get('box_id')
             # replace uri with path on server
             for idx in range(0, len(srv_argv)):
                 arg = srv_argv[idx]
                 if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
-                    if self.dropboxServer is None:
-                        key = self.jobDropboxURIMap.get(arg)
-                        if key is not None:
-                            srv_argv[idx] = result.get(key)
-                    else:
-                        filename = arg.split('/')[-1]
-                        srv_argv[idx] = constants.JOBSUB_DROPBOX_GET_URL_PATTERN % (self.dropboxServer, self.acctGroup, box_id, filename)
+                    key = self.jobDropboxURIMap.get(arg)
+                    if key is not None:
+                        if self.dropboxServer is None:
+                            values = result.get(key)
+                            srv_argv[idx] = values.get('path')
+                        else:
+                            url = values.get('url')
+                            srv_argv[idx] = '%s/%s' % (self.dropboxServer, url)
 
         if self.jobExeURI and self.jobExe:
             idx = get_jobexe_idx(srv_argv)
@@ -195,7 +195,6 @@ class JobSubClient:
             if protocol in constants.JOB_EXE_SUPPORTED_URIs:
                 return True
         return False
-
 
     def help(self):
         curl, response = curl_secure_context(self.helpURL)

@@ -70,14 +70,15 @@ class DropboxResource(object):
         dropbox_path_root = get_dropbox_path_root()
         dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, box_id)
         mkdir_p(dropbox_path)
-        file_map = {'box_id': box_id}
+        file_map = dict()
         for arg_name, arg_value in kwargs.items():
             if hasattr(arg_value, 'file'):
                 dropbox_file_path = os.path.join(dropbox_path, arg_value.filename)
+                dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, box_id, arg_value.filename)
                 logger.log('dropbox_file_path: %s' % dropbox_file_path)
                 with open(dropbox_file_path, 'wb') as dst_file:
                     copyfileobj(arg_value.file, dst_file)
-                    file_map[arg_name] = dropbox_file_path
+                    file_map[arg_name] = { dropbox_file_path, dropbox_url }
 
         return file_map
 

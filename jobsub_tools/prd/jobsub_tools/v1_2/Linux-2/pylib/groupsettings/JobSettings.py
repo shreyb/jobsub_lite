@@ -985,10 +985,10 @@ class JobSettings(object):
                 for res in settings['resource_list']:
                     parts=res.split('=')
                     if len(parts)>1:
-                        f.write("""+%s = "%s"\n"""%(parts[0],parts[1]))
+                        f.write("""+DESIRED_%s = "%s"\n"""%(parts[0],parts[1]))
                         if job_iter<=1:
                             settings['requirements']=settings['requirements']+\
-                                """&&(%s == "%s")"""%(parts[0],parts[1])
+                                """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s))"""%(parts[0],parts[0])
                         
 		if settings['site']:
 			if settings['site']=='LOCAL':

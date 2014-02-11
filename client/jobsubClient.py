@@ -45,6 +45,7 @@ class JobSubClient:
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
+        self.credentials = get_client_credentials()
         self.jobExeURI = get_jobexe_uri(self.serverArgv)
         self.jobExe = uri2path(self.jobExeURI)
         self.serverEnvExports = get_server_env_exports(server_argv)
@@ -62,13 +63,21 @@ class JobSubClient:
 
         self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
-        self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
-                             self.server, self.acctGroup
-                         )
-
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
                              self.server, self.acctGroup
                        )
+
+        # Submit URL will depend on the VOMS Role
+        voms_proxy = jobsubClientCredentials.VOMSProxy(jobsubClientCredentials['cert'])
+        role = None
+        if len(voms_proxy.fqan) > 0:
+            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
+            if match.group(1) != 'NULL':
+                role = None
+        if role:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, role)
+        else:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
 
     def submit(self):
@@ -76,10 +85,9 @@ class JobSubClient:
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
-        creds = get_client_credentials()
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credenials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)

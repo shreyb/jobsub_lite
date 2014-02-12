@@ -31,6 +31,8 @@ JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
 
 JOBSUB_JOB_SANDBOX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/sandbox/'
 
+JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
+
 ################################################################################
 # HTTP/REST API Constants
 ################################################################################
@@ -52,6 +54,7 @@ JOBSUB_SSL_VERIFYHOST = 2
 ################################################################################
 
 JOB_EXE_SUPPORTED_URIs = ('file://',)
+DROPBOX_SUPPORTED_URI = 'dropbox://'
 
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
 

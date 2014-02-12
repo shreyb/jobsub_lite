@@ -46,6 +46,7 @@ mkdir -p /scratch/data
 mkdir -p /scratch/proxies
 mkdir -p /scratch/app
 mkdir -p /scratch/uploads/
+mkdir -p /scratch/dropbox/
 touch /scratch/uploads/job.log
 chown -R grid:condor /scratch
 chmod -R 777 /scratch

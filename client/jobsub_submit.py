@@ -120,6 +120,13 @@ def parse_opts(argv):
                          default=constants.JOBSUB_SERVER,
                          help='Alternate location of JobSub server to use')
 
+    parser.add_option('--dropbox-server',
+                      dest='dropboxServer',
+                      action='store',
+                      metavar='<Dropbox Server>',
+                      default=None,
+                      help='Alternate location of Dropbox server to use')
+
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
@@ -189,7 +196,7 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv, options.dropboxServer)
     try:
         stime = time.time()
         js_client.submit()

@@ -1,6 +1,10 @@
 from ConfigParser import SafeConfigParser
 import os
-import sys
+import socket
+try:
+    import logger
+except ImportError:
+    import fakelogger as logger
 
 class JobsubConfigParser(object):
 
@@ -18,12 +22,18 @@ class JobsubConfigParser(object):
 	def has_section(self,sect):
 		return self.parser.has_section(sect)
 
+	def has_option(self,sect,opt):
+		return self.parser.has_option(sect,opt)
+
+	def get(self,sect,opt):
+		return self.parser.get(sect,opt)
+
 	def items(self,sect):
 		return self.parser.items(sect)
 
 	def supportedGroups(self,host=None):
 		if host is None:
-			host=os.environ.get("HOSTNAME")
+			host=socket.gethostname()
 		p=self.parser
 		sect=p.sections()
 		if host in sect:
@@ -42,9 +52,9 @@ class JobsubConfigParser(object):
 		for x in [ "PWD", "HOME"]:
 			cnf=os.environ.get(x)+"/jobsub.ini"
 			if os.path.exists(cnf):
-				print "using %s for jobsub config"%cnf
+				logger.log("using %s for jobsub config"%cnf)
 				return cnf
-		print "error no config file found!"
+		logger.log("error no config file found!")
 		return None
 
 	

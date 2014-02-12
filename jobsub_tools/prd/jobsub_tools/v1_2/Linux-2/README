@@ -355,3 +355,14 @@ v1_2q 2/6/14
 - bug 5266   --use_gftp does a --force=cpn on some ifdhc calls 
 - fix for INC000000403944 -L and -N used together are allowed.
 
+v1_2r 2/12/14
+============
+- improved implementation of feature 5284  --resource-provides.  
+  --resource-provides cvmfs=osg,fermilab now checks for a has_cvmfs
+  entry in jobsub.ini and that osg or fermilab are allowed values.
+  The condor job classad then gets an attribute +DESIRED_cvmfs="osg,fermilab"
+  and a an appended requirement that DESIRED_cvmfs matches values in 
+  a machine classad attribute called HAS_cvmfs.
+
+
+

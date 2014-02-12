@@ -41,6 +41,17 @@ def get_command_path_root():
     return rc
 
 
+def get_dropbox_path_root():
+    rc = '/opt/jobsub/dropbox'
+    p = JobsubConfigParser()
+    submit_host = socket.gethostname()
+    if p.has_section(submit_host):
+        if p.has_option(submit_host, 'dropbox_path_root'):
+            rc = p.get(submit_host, 'dropbox_path_root')
+
+    return rc
+
+
 def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None'):
     jobsub_args.insert(0, workdir_id)
     jobsub_args.insert(0, acctgroup)

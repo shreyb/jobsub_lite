@@ -202,11 +202,11 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         raise AuthorizationError(dn, acctgroup)
 
 
-def create_voms_proxy(dn, acctgroup):
+def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authenticating DN: %s' % dn)
     username = authenticate(dn)
     logger.log('create_voms_proxy: Authorizing user: %s' % username)
-    voms_proxy = authorize(dn, username, acctgroup)
+    voms_proxy = authorize(dn, username, acctgroup, role)
     logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
     return voms_proxy
 
@@ -242,8 +242,8 @@ def refresh_proxies(agelimit=3600):
 
 
 
-def _check_auth(dn, acctgroup):
-    return create_voms_proxy(dn, acctgroup)
+def _check_auth(dn, acctgroup, role):
+    return create_voms_proxy(dn, acctgroup, role)
 
 
 def check_auth(func):
@@ -252,7 +252,11 @@ def check_auth(func):
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s' % (dn, acctgroup))
             try:
-                if _check_auth(dn, acctgroup):
+                role = 'Analysis'
+                tokens = acctgroup.split('--ROLE--')
+                if len(tokens) > 1:
+                    (acctgroup, role) = tokens[0:2]
+                if _check_auth(dn, acctgroup, role):
                     return func(self, acctgroup, *args, **kwargs)
                 else:
                     # return error for failed auth

@@ -92,7 +92,7 @@ class JobSubClient:
                        )
 
         # Submit URL will depend on the VOMS Role
-        voms_proxy = jobsubClientCredentials.VOMSProxy(jobsubClientCredentials['cert'])
+        voms_proxy = jobsubClientCredentials.VOMSProxy(self.credentials.get('cert'))
         role = None
         if len(voms_proxy.fqan) > 0:
             match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
@@ -113,7 +113,7 @@ class JobSubClient:
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
         # Create curl object and set curl options to use
-        curl, response = curl_secure_context(self.dropboxURL)
+        curl, response = curl_secure_context(dropboxURL)
         curl.setopt(curl.POST, True)
 
         # If it is a local file upload the file
@@ -150,7 +150,7 @@ class JobSubClient:
         ]
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
-        logSupport.dprint('CREDENTIALS    : %s\n' % self.credenials)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)

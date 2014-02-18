@@ -1,6 +1,6 @@
 #!/bin/sh 
 VERS=v1_2
-REV=q
+REV=r
 ./make_tablefile.py $VERS$REV
 
 if [ "$1" ==  "" ]; then
@@ -8,7 +8,8 @@ if [ "$1" ==  "" ]; then
 	echo "tars up jobsub_tools and distributes it to /fnal/ups/prd"
 	exit -1
 fi
-
+cp ../lib/JobsubConfigParser/* prd/jobsub_tools/v1_2/Linux-2/pylib/JobsubConfigParser/
+cp ../server/conf/jobsub.ini prd/jobsub_tools/v1_2/Linux-2/bin
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"
 scp db.jobsub_tools.tar products@$1.fnal.gov:/fnal/ups/db

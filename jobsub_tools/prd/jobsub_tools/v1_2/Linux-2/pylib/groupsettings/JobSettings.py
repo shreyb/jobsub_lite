@@ -167,6 +167,8 @@ class JobSettings(object):
 		self.settings['desired_os']=''
 		self.settings['default_grid_site']=''
 		self.settings['resource_list']=[]
+                self.settings['transfer_wrapfile']=False
+
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
 		#sys.exit
@@ -182,6 +184,12 @@ class JobSettings(object):
 			if new_settings[x] is not None:
 				self.settings[x]=new_settings[x]
 		self.runFileParser()
+                settings=self.settings
+                for x in settings.keys():
+                    if settings[x]=='True':
+                        settings[x]=True
+                    if settings[x]=='False':
+                        settings[x]=False
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
 		#sys.exit
@@ -233,6 +241,7 @@ class JobSettings(object):
 				cmd = "echo %s"%y
 				(stat,rslt)=commands.getstatusoutput(cmd) 
 				self.settings[x]=rslt
+
 		sbhst=os.environ.get("SUBMIT_HOST")
 		if sbhst is None:
 			sbhst = self.settings['submit_host']
@@ -514,31 +523,34 @@ class JobSettings(object):
 	def makeWrapFilePostamble(self):
 		#print "makeWrapFilePostamble"
 		settings=self.settings
+                exe_script=settings['exe_script']
+                if settings['transfer_wrapfile']:
+                    exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
 		f = open(settings['wrapfile'], 'a')
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
-		log_cmd = """ifdh log "%s:BEGIN EXECUTION %s %s "\n"""%(settings['user'],os.path.basename(settings['exe_script']),script_args)
+		log_cmd = """ifdh log "%s:BEGIN EXECUTION %s %s "\n"""%(settings['user'],os.path.basename(exe_script),script_args)
 		f.write(log_cmd)
 		if settings['joblogfile'] != "":
 			if settings['nologbuffer']==False:
-				f.write("%s %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % (settings['exe_script'],script_args))
+				f.write("%s %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % (exe_script,script_args))
 			else:
-				f.write("%s %s > %s  2>&1\n" % (settings['exe_script'],script_args,settings['joblogfile']))
+				f.write("%s %s > %s  2>&1\n" % (exe_script,script_args,settings['joblogfile']))
 
 		else:
 			f.write("%s %s  \n" % \
-						(settings['exe_script'],script_args))
+						(exe_script,script_args))
  
 
 		f.write("JOB_RET_STATUS=$?\n")
 
-		log_cmd = """ifdh log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(settings['user'],os.path.basename(settings['exe_script']))
+		log_cmd = """ifdh log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(settings['user'],os.path.basename(exe_script))
 		f.write(log_cmd)
 		
 		copy_cmd=log_cmd1=log_cmd2=cnt=append_cmd=''
 		if len(settings['output_dir_array'])>0:
-			my_tag="%s:%s"%(settings['user'],os.path.basename(settings['exe_script']))
+			my_tag="%s:%s"%(settings['user'],os.path.basename(exe_script))
                         if settings['use_gftp']:
                                 copy_cmd="""\tifdh cp --force=expgridftp -r -D  """
                         else:
@@ -909,6 +921,19 @@ class JobSettings(object):
 		else:
 			self.makeOtherCommandFile(job_iter)
 
+        def shouldTransferExecutable(self):
+            settings=self.settings
+            rsp="transfer_executable	 = False\n" 
+	    if settings['nowrapfile']\
+                    or settings['tar_file_name']\
+                    or settings['transfer_wrapfile']:
+	        rsp="transfer_executable	 = True\n"
+                if settings['transfer_wrapfile']:
+                    rsp = rsp + "transfer_input_files = %s\n"%settings['exe_script']
+            return rsp
+
+
+
         def handleResourceProvides(self,f,job_iter):
             settings=self.settings 
             submit_host=settings['submit_host'] 
@@ -938,7 +963,7 @@ class JobSettings(object):
                             f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
                         if job_iter<=1:
                             settings['requirements']=settings['requirements']+\
-                            """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s))"""%(opt,opt)
+                            """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
 			
 	def makeOtherCommandFile(self, job_iter=0 ):
 		#print "self.makeOtherCommandFile"
@@ -997,10 +1022,8 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-		if settings['nowrapfile'] or settings['tar_file_name']!="":
-			f.write("transfer_executable	 = True\n")
-		else:
-			f.write("transfer_executable	 = False\n")
+                tval=self.shouldTransferExecutable()
+                f.write(tval)
 
 		
 		if settings['grid']:
@@ -1121,10 +1144,8 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-		if settings['nowrapfile'] or settings['tar_file_name']!="":
-			f.write("transfer_executable	 = True\n")
-		else:
-			f.write("transfer_executable	 = False\n")
+                tval=self.shouldTransferExecutable()
+                f.write(tval)
 
                 self.handleResourceProvides(f,job_iter)
 		if settings['grid']:

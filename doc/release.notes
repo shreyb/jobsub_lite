@@ -1,4 +1,20 @@
 ================================================================================
+v0.1.4
+================================================================================
+
+CLIENT
+------
+* Client now uses fifebatch1.fnal.gov as the default JobSub server #5481
+
+SERVER
+------
+* Dropbox service now provides means for users to specify and upload files that
+  will be transferred with the job. #4976
+
+* Bug Fix: Fixed bug where Jobsub server would not create job specific 
+  directory if no executable is sepecified in the arguments. #5473
+
+================================================================================
 v0.1.3
 ================================================================================
 

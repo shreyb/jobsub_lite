@@ -1,6 +1,6 @@
 Name:           jobsub
-Version:        0.1.3
-Release:        0.1.rc1
+Version:        0.1.4
+Release:        1
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyo
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.py
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.pyc
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.pyo
 /opt/jobsub/lib/JobsubConfigParser/__init.py__
 /opt/jobsub/lib/logger/__init__.py
 /opt/jobsub/lib/logger/__init__.pyc

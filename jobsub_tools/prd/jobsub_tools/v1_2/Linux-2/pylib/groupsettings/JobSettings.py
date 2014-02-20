@@ -208,8 +208,12 @@ class JobSettings(object):
 			self.settings['script_args']=args[1:]
 			
 	def findConfigFile(self):
-		cnf = os.environ.get("JOBSUB_INI_FILE",None)
-		return cnf
+            if self.settings.has_key('jobsub_ini_file'):
+                cnf=self.settings['jobsub_ini_file']
+            else:
+		cnf = self.fileParser.findConfigFile()
+                self.settings['jobsub_ini_file']=cnf
+	    return cnf
 	
 	def runFileParser(self):
 		grp=os.environ.get("GROUP")
@@ -905,6 +909,36 @@ class JobSettings(object):
 		else:
 			self.makeOtherCommandFile(job_iter)
 
+        def handleResourceProvides(self,f,job_iter):
+            settings=self.settings 
+            submit_host=settings['submit_host'] 
+            fp=self.fileParser 
+            for res in settings['resource_list']: 
+                parts=res.split('=')
+                if len(parts)>1: 
+                    opt=parts[0]
+                    val=parts[1]
+                    has_opt=opt
+                    if opt.lower().find('has_')<0:
+                        has_opt="has_%s"%opt
+                    if not fp.has_option(submit_host,has_opt): 
+                        err="illegal --resource-provides option: %s is not supported on %s according to config file %s.\nSupported options will be under the [%s] section and start with 'has_',\nthe condor admin must add a 'has_%s' section and properly configure condor to use it for this option value to be valid"%(opt,submit_host,self.findConfigFile(),submit_host,opt)
+                        raise InitializationError(err)
+                    else: 
+                        allowed_vals=fp.get(submit_host,has_opt)
+                        vals_ok=False
+                        val_list=val.split(',')
+                        for check_val in val_list:
+                            if allowed_vals.upper().find(check_val.upper())>=0:
+                                vals_ok=True
+                        if not vals_ok: 
+                            err="illegal --resource-provides value: %s for option: %s is not supported on %s according to your config file %s.  Legal values are:%s"%(val,opt,submit_host,self.findConfigFile(),allowed_vals)
+                            raise InitializationError(err)
+                        else:
+                            f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
+                        if job_iter<=1:
+                            settings['requirements']=settings['requirements']+\
+                            """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s))"""%(opt,opt)
 			
 	def makeOtherCommandFile(self, job_iter=0 ):
 		#print "self.makeOtherCommandFile"
@@ -982,13 +1016,7 @@ class JobSettings(object):
                                 settings['site']=settings['default_grid_site']
                             else:
                                 settings['site']="Fermigrid"  
-                for res in settings['resource_list']:
-                    parts=res.split('=')
-                    if len(parts)>1:
-                        f.write("""+%s = "%s"\n"""%(parts[0],parts[1]))
-                        if job_iter<=1:
-                            settings['requirements']=settings['requirements']+\
-                                """&&(%s == "%s")"""%(parts[0],parts[1])
+                self.handleResourceProvides(f,job_iter)
                         
 		if settings['site']:
 			if settings['site']=='LOCAL':
@@ -1098,13 +1126,7 @@ class JobSettings(object):
 		else:
 			f.write("transfer_executable	 = False\n")
 
-                for res in settings['resource_list']:
-                    parts=res.split('=')
-                    if len(parts)>1:
-                        f.write("""+%s = "%s"\n"""%(parts[0],parts[1]))
-                        if job_iter<=1:
-                            settings['requirements']=settings['requirements']+\
-                                """&&(%s == "%s")"""%(parts[0],parts[1])
+                self.handleResourceProvides(f,job_iter)
 		if settings['grid']:
 
 			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])

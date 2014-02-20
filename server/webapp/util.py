@@ -26,7 +26,7 @@ def get_uid(subject_dn):
 
 
 def zipdir(path, zip, job_id):
-    for root, dirs, files in os.walk(path):
+    for root, dirs, files in os.walk(path, followlinks=False):
         for file in files:
             if job_id:
                 zip.write(os.path.join(root, file), os.path.join(job_id, file))

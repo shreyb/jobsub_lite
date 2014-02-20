@@ -1,7 +1,10 @@
 from ConfigParser import SafeConfigParser
 import os
-import logger
 import socket
+try:
+    import logger
+except ImportError:
+    import fakelogger as logger
 
 class JobsubConfigParser(object):
 

@@ -365,4 +365,6 @@ v1_2r 2/12/14
   a machine classad attribute called HAS_cvmfs.
 
 
-
+v1_2s 2/18/14
+=============
+- bug fixes revealed by user testing of v1_2r

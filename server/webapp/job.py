@@ -30,7 +30,10 @@ class SandboxResource(object):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
-        zip_path = os.path.join(command_path_root, acctgroup, uid, '%s.0' % job_id)
+        job_tokens = job_id.split('.')
+        if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
+            job_id = '%s.0' % job_id
+        zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
         if os.path.exists(zip_path):
             # found the path, zip data and return
             zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)

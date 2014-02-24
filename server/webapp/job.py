@@ -76,29 +76,31 @@ class AccountJobsResource(object):
     def __init__(self):
         self.sandbox = SandboxResource()
 
-    def doGET(self, job_id):
+    def doGET(self, acctgroup, job_id):
         schedd = condor.Schedd()
-        results = schedd.query()
-        if job_id is not None:
-            job_id = int(job_id)
-            for job in results:
-                # TODO: filter by jobs running for the user
-                if job['ClusterId'] == job_id:
+        subject_dn = cherrypy.request.headers.get('Auth-User')
+        uid = get_uid(subject_dn)
+        results = schedd.query('Owner =?= "%s"' % uid)
+        all_jobs = list()
+        for job in results:
+            env = dict([x.split('=') for x in job['Env'].split(';')])
+            if env.get('EXPERIMENT') == acctgroup:
+                if job_id is not None and job['ClusterId'] == job_id:
                     job_dict = dict()
                     for k, v in job.items():
                         job_dict[repr(k)] = repr(v)
-                    rc = {'out': job_dict}
+                        rc = {'out': job_dict}
                     break
-            else:
+                elif job_id is None:
+                    all_jobs.append(job['ClusterId'])
+        else:
+            if job_id is not None:
                 err = 'Job with id %s not found in condor queue' % job_id
                 logger.log(err)
                 rc = {'err': err}
-        else:
-            # TODO: filter by jobs running for the user
-            jobs = list()
-            for job in results:
-                jobs.append(job['ClusterId'])
-            rc = {'out': jobs}
+            else:
+                all_jobs.append(job['ClusterId'])
+                rc = {'out': all_jobs}
 
         return rc
 
@@ -155,7 +157,7 @@ class AccountJobsResource(object):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
-                    rc = self.doGET(job_id)
+                    rc = self.doGET(acctgroup, job_id)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

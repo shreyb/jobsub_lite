@@ -88,7 +88,7 @@ class AccountJobsResource(object):
         for job in results:
             env = dict([x.split('=') for x in job['Env'].split(';')])
             if env.get('EXPERIMENT') == acctgroup:
-                if job_id is not None and job['ClusterId'] == job_id:
+                if job_id is not None and job['ClusterId'] == int(job_id):
                     job_dict = dict()
                     for k, v in job.items():
                         job_dict[repr(k)] = repr(v)
@@ -102,7 +102,6 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
             else:
-                all_jobs.append(job['ClusterId'])
                 rc = {'out': all_jobs}
 
         return rc

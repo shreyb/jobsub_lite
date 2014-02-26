@@ -5,6 +5,7 @@ import re
 import platform
 import cherrypy
 import logger
+import math
 
 from util import encode_multipart_formdata
 
@@ -63,7 +64,7 @@ class SandboxResource(object):
         if job_id is not None:
             job_status = None
             all_jobs = get_condor_queue(acctgroup, uid)
-            classad = all_jobs.get(int(job_id))
+            classad = all_jobs.get(math.trunc(float(job_id)))
             if classad is not None:
                 job_status = condor_job_status.get(classad.get('JobStatus'))
             job_tokens = job_id.split('.')

@@ -44,6 +44,7 @@ def get_condor_queue(acctgroup, uid):
         env = dict([x.split('=') for x in classad['Env'].split(';')])
         if env.get('EXPERIMENT') == acctgroup:
             all_jobs[classad['ClusterId']] = classad
+    return all_jobs
 
 
 def classad_to_dict(classad):
@@ -64,7 +65,7 @@ class SandboxResource(object):
             all_jobs = get_condor_queue(acctgroup, uid)
             classad = all_jobs.get(int(job_id))
             if classad is not None:
-                job_status = classad.get('JobStatus')
+                job_status = condor_job_status.get(classad.get('JobStatus'))
             job_tokens = job_id.split('.')
             if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
                 job_id = '%s.0' % job_id
@@ -81,11 +82,10 @@ class SandboxResource(object):
                 with open(zip_file, 'rb') as fh:
                     fields = [('rc', rc)]
                     files = [('zip_file', zip_file, fh.read())]
-                    with open(os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id), 'wb') as outfile:
+                    outfilename = os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id)
+                    with open(outfilename, 'wb') as outfile:
                         content_type = encode_multipart_formdata(fields, files, outfile)
-                        outfile.close()
-
-                        return serve_file(outfile, content_type)
+                    return serve_file(outfilename, 'application/x-download')
             else:
                 # return error for no data found
                 err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
@@ -100,7 +100,7 @@ class SandboxResource(object):
                 for dir in dirs:
                     if os.path.islink(os.path.join(jobs_file_path, dir)):
                         sandbox_cluster_ids.append(dir)
-                rc = {'out', sandbox_cluster_ids}
+                rc = {'out': sandbox_cluster_ids}
             else:
                 # return error for no data found
                 err = 'No sandbox data found for user: %s, acctgroup: %s' % (uid, acctgroup)

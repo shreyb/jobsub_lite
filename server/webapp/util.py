@@ -6,6 +6,7 @@ import time
 import sys
 import mimetypes
 import base64
+import json
 
 
 def encode_multipart_formdata(fields, files, outfile):
@@ -27,7 +28,7 @@ def encode_multipart_formdata(fields, files, outfile):
         outfile.write('--' + SUBBOUNDARY + CRLF)
         outfile.write('Content-Type: application/json%s' % CRLF)
         outfile.write(CRLF)
-        outfile.write(value + CRLF)
+        outfile.write(json.dumps(value) + CRLF)
     for (key, filename, value) in files:
         outfile.write('--' + SUBBOUNDARY + CRLF)
         outfile.write('Content-Type: %s; name=%s%s' % (get_content_type(filename), filename, CRLF))

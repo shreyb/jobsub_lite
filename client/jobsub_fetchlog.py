@@ -78,7 +78,7 @@ def decode_multipart_formdata(infile):
             response_dict = json.loads(part.get_payload(decode=True))
             print_formatted_response('JobStatus: %s' % response_dict.get('job_status'))
         elif part.get_content_type() == 'application/zip':
-            filename = 'out_' + part.get_filename()
+            filename = part.get_filename().split('/')[-1]
             with open(filename, 'wb') as fp:
                 fp.write(part.get_payload(decode=True))
                 print 'Downloaded to %s' % filename
@@ -108,7 +108,7 @@ def get_sandbox(options):
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
         curl.setopt(curl.CAPATH, get_capath())
-    curl.setopt(curl.HTTPHEADER, ['Accept: multipart/alternative,application/json'])
+    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download,application/json'])
 
     curl.perform()
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)

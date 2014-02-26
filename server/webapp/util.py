@@ -4,6 +4,48 @@ import errno
 import zipfile
 import time
 import sys
+import mimetypes
+import base64
+
+
+def encode_multipart_formdata(fields, files, outfile):
+    """
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return (content_type, body) ready for httplib.HTTP instance
+    """
+    MAINBOUNDARY = 'cbsms-main-boundary'
+    SUBBOUNDARY = 'cbsms-sub-boundary'
+    CRLF = '\r\n'
+    main_content_type = 'multipart/alternative'
+    outfile.write('Content-Type: %s; boundary=%s%s' % (main_content_type, MAINBOUNDARY, CRLF))
+    outfile.write('--' + MAINBOUNDARY + CRLF)
+
+    sub_content_type = 'multipart/mixed; boundary=%s' % SUBBOUNDARY
+    outfile.write('Content-Type: %s%s' % (sub_content_type, CRLF))
+    for (key, value) in fields:
+        outfile.write('--' + SUBBOUNDARY + CRLF)
+        outfile.write('Content-Type: application/json%s' % CRLF)
+        outfile.write(CRLF)
+        outfile.write(value + CRLF)
+    for (key, filename, value) in files:
+        outfile.write('--' + SUBBOUNDARY + CRLF)
+        outfile.write('Content-Type: %s; name=%s%s' % (get_content_type(filename), filename, CRLF))
+        outfile.write('Content-Location: %s%s' % (filename, CRLF))
+        outfile.write('content-transfer-encoding: Base64%s' % CRLF)
+        outfile.write(CRLF)
+        outfile.write(base64.b64encode(value))
+        outfile.write(CRLF)
+
+    outfile.write('--' + SUBBOUNDARY + '--' + CRLF)
+    outfile.write('--' + MAINBOUNDARY + '--' + CRLF)
+    outfile.write(CRLF)
+
+    return main_content_type
+
+
+def get_content_type(filename):
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 
 def mkdir_p(path):
@@ -39,6 +81,7 @@ def create_zipfile(zip_file, zip_path, job_id=None):
     zipdir(zip_path, zip, job_id)
     zip.close()
 
+
 def needs_refresh(filepath,agelimit=3600):
     rslt=False
     agelimit=int(agelimit)
@@ -53,4 +96,4 @@ def needs_refresh(filepath,agelimit=3600):
         rslt=True
     #logger.log("needs_refresh:file %s age %s limit %s needs_refresh=%s"%(filepath,age,agelimit,rslt))
     return rslt
-    
+

@@ -6,6 +6,8 @@ import platform
 import cherrypy
 import logger
 
+from util import encode_multipart_formdata
+
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
@@ -24,27 +26,87 @@ from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_com
 from format import format_response
 
 
+condor_job_status = {
+    1: 'Idle',
+    2: 'Running',
+    3: 'Removed',
+    4: 'Completed',
+    5: 'Held',
+    6: 'Transferring Output',
+}
+
+
+def get_condor_queue(acctgroup, uid):
+    schedd = condor.Schedd()
+    results = schedd.query('Owner =?= "%s"' % uid)
+    all_jobs = dict()
+    for classad in results:
+        env = dict([x.split('=') for x in classad['Env'].split(';')])
+        if env.get('EXPERIMENT') == acctgroup:
+            all_jobs[classad['ClusterId']] = classad
+
+
+def classad_to_dict(classad):
+    job_dict = dict()
+    for k, v in classad.items():
+        job_dict[repr(k)] = repr(v)
+    return job_dict
+
+
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
-        job_tokens = job_id.split('.')
-        if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
-            job_id = '%s.0' % job_id
-        zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
-        if os.path.exists(zip_path):
-            # found the path, zip data and return
-            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
-            create_zipfile(zip_file, zip_path, job_id)
-            return serve_file(zip_file, "application/x-download", "attachment")
+        if job_id is not None:
+            job_status = None
+            all_jobs = get_condor_queue(acctgroup, uid)
+            classad = all_jobs.get(int(job_id))
+            if classad is not None:
+                job_status = classad.get('JobStatus')
+            job_tokens = job_id.split('.')
+            if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
+                job_id = '%s.0' % job_id
+            zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
+            if os.path.exists(zip_path):
+                # found the path, zip data and return
+                if job_status is None:
+                    job_status = 'Completed'
+                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
+                create_zipfile(zip_file, zip_path, job_id)
+
+                rc = {'job_status': job_status}
+
+                with open(zip_file, 'rb') as fh:
+                    fields = [('rc', rc)]
+                    files = [('zip_file', zip_file, fh.read())]
+                    with open(os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id), 'wb') as outfile:
+                        content_type = encode_multipart_formdata(fields, files, outfile)
+                        outfile.close()
+
+                        return serve_file(outfile, content_type)
+            else:
+                # return error for no data found
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+                logger.log(err)
+                rc = {'job_status': job_status, 'err': err}
+                cherrypy.response.status = 404
         else:
-            # return error for no data found
-            err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-            logger.log(err)
-            rc = {'err': err}
-            cherrypy.response.status = 404
+            jobs_file_path = os.path.join(command_path_root, acctgroup, uid)
+            sandbox_cluster_ids = list()
+            if os.path.exists(jobs_file_path):
+                root, dirs, files = os.walk(jobs_file_path, followlinks=False)
+                for dir in dirs:
+                    if os.path.islink(os.path.join(jobs_file_path, dir)):
+                        sandbox_cluster_ids.append(dir)
+                rc = {'out', sandbox_cluster_ids}
+            else:
+                # return error for no data found
+                err = 'No sandbox data found for user: %s, acctgroup: %s' % (uid, acctgroup)
+                logger.log(err)
+                rc = {'err': err}
+                cherrypy.response.status = 404
 
         return rc
 
@@ -80,30 +142,20 @@ class AccountJobsResource(object):
         self.sandbox = SandboxResource()
 
     def doGET(self, acctgroup, job_id):
-        schedd = condor.Schedd()
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
-        results = schedd.query('Owner =?= "%s"' % uid)
-        all_jobs = list()
-        for job in results:
-            env = dict([x.split('=') for x in job['Env'].split(';')])
-            if env.get('EXPERIMENT') == acctgroup:
-                if job_id is not None and job['ClusterId'] == job_id:
-                    job_dict = dict()
-                    for k, v in job.items():
-                        job_dict[repr(k)] = repr(v)
-                        rc = {'out': job_dict}
-                    break
-                elif job_id is None:
-                    all_jobs.append(job['ClusterId'])
-        else:
-            if job_id is not None:
+        all_jobs = get_condor_queue(acctgroup, uid)
+        if job_id is not None:
+            classad = all_jobs.get(int(job_id))
+            if classad is not None:
+                job_dict = classad_to_dict(classad)
+                rc = {'out': job_dict}
+            else:
                 err = 'Job with id %s not found in condor queue' % job_id
                 logger.log(err)
                 rc = {'err': err}
-            else:
-                all_jobs.append(job['ClusterId'])
-                rc = {'out': all_jobs}
+        else:
+            rc = {'out': all_jobs.keys()}
 
         return rc
 

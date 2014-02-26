@@ -46,6 +46,7 @@ class JobSubClient:
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
+        self.credentials = get_client_credentials()
         self.jobExeURI = get_jobexe_uri(self.serverArgv)
         self.jobExe = uri2path(self.jobExeURI)
         self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
@@ -86,38 +87,34 @@ class JobSubClient:
 
         self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
-        self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
-                             self.server, self.acctGroup
-                         )
-
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
                              self.server, self.acctGroup
                        )
 
+        # Submit URL will depend on the VOMS Role
+        voms_proxy = jobsubClientCredentials.VOMSProxy(self.credentials.get('cert'))
+        role = None
+        if len(voms_proxy.fqan) > 0:
+            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
+            if match.group(1) != 'NULL':
+                role = None
+        if role:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, role)
+        else:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+
     def dropbox_upload(self):
         result = dict()
+        post_data = list()
 
         # Reponse from executing curl
-        response = cStringIO.StringIO()
-
-        post_data = list()
-        creds = get_client_credentials()
+        ##response = cStringIO.StringIO()
+        ##creds = get_client_credentials()
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
         # Create curl object and set curl options to use
-        curl = pycurl.Curl()
-        curl.setopt(curl.URL, dropboxURL)
+        curl, response = curl_secure_context(dropboxURL)
         curl.setopt(curl.POST, True)
-        curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
-        curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.SSLCERT, creds.get('cert'))
-        curl.setopt(curl.SSLKEY, creds.get('key'))
-        curl.setopt(curl.CAPATH, get_capath())
-        curl.setopt(curl.WRITEFUNCTION, response.write)
-        curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 
         # If it is a local file upload the file
         for file, key in self.jobDropboxURIMap.items():
@@ -151,10 +148,9 @@ class JobSubClient:
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
-        creds = get_client_credentials()
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
@@ -241,6 +237,7 @@ def curl_secure_context(url):
 
     curl.setopt(curl.SSLCERT, creds.get('cert'))
     curl.setopt(curl.SSLKEY, creds.get('key'))
+    curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
@@ -263,11 +260,9 @@ def curl_context(url):
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
     curl.setopt(curl.URL, url)
-    #curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.WRITEFUNCTION, response.write)
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 

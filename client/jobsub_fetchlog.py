@@ -116,7 +116,6 @@ def get_sandbox(options):
     curl.close()
     fp.close()
 
-    print response_code
     if response_code == 200:
         with open(fn, 'rb') as infile:
             decode_multipart_formdata(infile)

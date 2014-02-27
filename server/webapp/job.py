@@ -74,7 +74,6 @@ def cleanup(zip_file, outfilename):
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
-        raise
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()

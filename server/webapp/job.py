@@ -37,14 +37,17 @@ condor_job_status = {
 }
 
 
-def get_condor_queue(acctgroup, uid):
+def get_condor_queue(acctgroup, uid, convert=False):
     schedd = condor.Schedd()
     results = schedd.query('Owner =?= "%s"' % uid)
     all_jobs = dict()
     for classad in results:
         env = dict([x.split('=') for x in classad['Env'].split(';')])
         if env.get('EXPERIMENT') == acctgroup:
-            all_jobs[classad['ClusterId']] = classad
+            key = classad['ClusterId']
+            if convert is True:
+                classad = classad_to_dict(classad)
+            all_jobs[key] = classad
     return all_jobs
 
 
@@ -145,8 +148,8 @@ class AccountJobsResource(object):
     def doGET(self, acctgroup, job_id):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
-        all_jobs = get_condor_queue(acctgroup, uid)
         if job_id is not None:
+            all_jobs = get_condor_queue(acctgroup, uid)
             classad = all_jobs.get(int(job_id))
             if classad is not None:
                 job_dict = classad_to_dict(classad)
@@ -156,7 +159,8 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         else:
-            rc = {'out': all_jobs.keys()}
+            all_jobs = get_condor_queue(acctgroup, uid, True)
+            rc = {'out': all_jobs}
 
         return rc
 

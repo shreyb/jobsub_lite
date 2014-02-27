@@ -102,6 +102,24 @@ class AccountJobsResource(object):
 
         return rc
 
+    #def doDELETE(self, acctgroup, job_id, kwargs):
+    def doDELETE(self, acctgroup, job_id):
+        rc = {'out': None, 'err': None}
+
+        if job_id:
+            subject_dn = cherrypy.request.headers.get('Auth-User')
+            uid = get_uid(subject_dn)
+            logger.log('Removing jobs %s for user %s with accounting group %s' % (job_id, uid, acctgroup))
+            schedd = condor.Schedd()
+            rc['out'] = schedd.act(condor.JobAction.Remove, [job_id])
+        else:
+            # Error because job_id is required to DELETE jobs
+            err = 'No job id specified with DELETE action'
+            logger.log(err)
+            rc['err'] = err
+
+        return rc
+
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
             logger.log('kwargs: %s' % str(kwargs))
@@ -156,6 +174,8 @@ class AccountJobsResource(object):
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
                     rc = self.doGET(job_id)
+                elif cherrypy.request.method == 'DELETE':
+                    rc = self.doDELETE(job_id)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

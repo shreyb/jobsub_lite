@@ -211,6 +211,11 @@ def create_voms_proxy(dn, acctgroup):
     return voms_proxy
 
 
+def get_x509_proxy_file(username, acctgroup):
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    creds_dir = os.path.join(creds_base_dir, acctgroup)
+    return os.path.join(creds_dir, 'x509cc_%s'%username)
+
 def refresh_proxies(agelimit=3600):
     cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
     already_processed=['']

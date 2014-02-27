@@ -130,7 +130,7 @@ def get_sandbox(options):
                 print_formatted_response(response_err, msg_type='ERROR')
             else:
                 print_formatted_response(value)
-        os.remove(fn)
+    os.remove(fn)
 
 
 def main(argv):

@@ -116,10 +116,11 @@ def get_sandbox(options):
     curl.close()
     fp.close()
 
+    print response_code
     if response_code == 200:
         with open(fn, 'rb') as infile:
             decode_multipart_formdata(infile)
-    elif response_code == 404:
+    else:
         with open(fn, 'r') as fp:
             value = fp.read()
             if response_content_type == 'application/json':

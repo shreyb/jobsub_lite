@@ -58,6 +58,19 @@ def classad_to_dict(classad):
     return job_dict
 
 
+def cleanup(zip_file, outfilename):
+    try:
+        os.remove(outfilename)
+    except:
+        err = 'Failed to remove encoded file at %s' % outfilename
+        logger.log(err)
+    try:
+        os.remove(zip_file)
+    except:
+        err = 'Failed to remove zip file at %s' % zip_file
+        logger.log(err)
+
+
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
@@ -89,7 +102,9 @@ class SandboxResource(object):
                     outfilename = os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id)
                     with open(outfilename, 'wb') as outfile:
                         content_type = encode_multipart_formdata(fields, files, outfile)
+                    cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file, outfilename=outfilename)
                     return serve_file(outfilename, 'application/x-download')
+
             else:
                 # return error for no data found
                 err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)

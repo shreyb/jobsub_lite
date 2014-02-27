@@ -7,7 +7,12 @@ if [ "$SERVER" = "" ]; then
     exit 0
 fi
 echo test simple submission
-./simple_submit.sh $SERVER simple_worker_script.sh 1
+RSLT=`./simple_submit.sh $SERVER simple_worker_script.sh 1`
+echo "$RSLT"
+JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
+GOTJID=`echo $JID| grep '[0-9].*'`
+SUBMIT_WORKED=$?
+
 echo test helpfile
 ./test_help.sh $SERVER
 echo test listing jobs
@@ -15,4 +20,4 @@ echo test listing jobs
 echo test condor_history
 echo NOT IMPLEMENTED
 echo test retrieving zip_file from sandbox
-./retrieve_sandbox.sh $SERVER 1
+./retrieve_sandbox.sh $SERVER $JID

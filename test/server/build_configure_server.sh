@@ -35,13 +35,13 @@ chown grid:condor /opt/jobsub/server/log
 
 
 
-mkdir -p /scratch/proxies
 mkdir -p /scratch/uploads/
+mkdir -p /scratch/dropbox
 touch /scratch/uploads/job.log
-chown -R grid:condor /scratch/proxies
+chown -R grid:condor /scratch/dropbox
 chown -R grid:condor /scratch/uploads
 chmod 755 /scratch
-chmod -R 700 /scratch/proxies
+chmod -R 755 /scratch/dropbox
 chmod -R 775 /scratch/uploads
 
 
@@ -61,7 +61,6 @@ chown -R grid /var/lib/condor
 
 
 /usr/sbin/osg-ca-manage setupCA --location root --url osg
-/sbin/service osg-update-certs-cron start
 /sbin/chkconfig fetch-crl-boot on
 /sbin/chkconfig fetch-crl-cron on
 

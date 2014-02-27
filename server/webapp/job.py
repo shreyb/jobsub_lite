@@ -74,6 +74,7 @@ def cleanup(zip_file, outfilename):
 class SandboxResource(object):
 
     def doGET(self, acctgroup, job_id, kwargs):
+        raise
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
@@ -141,16 +142,19 @@ class SandboxResource(object):
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
                     rc = {'err': err}
+                    cherrypy.response.status = 500
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err)
                 rc = {'err': err}
+                cherrypy.response.status = 500
         except:
             err = 'Exception on AccountJobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
-
+            cherrypy.response.status = 500
+  
         return rc
 
 

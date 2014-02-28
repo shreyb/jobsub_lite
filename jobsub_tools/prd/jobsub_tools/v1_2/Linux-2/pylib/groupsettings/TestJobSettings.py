@@ -220,7 +220,7 @@ class JobTest(unittest.TestCase):
         ns.settings['use_gftp']=True
         ns.makeCondorFiles()
         sys.stdout.close()
-        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=expgridftp -r -D    input_file_1 ${CONDOR_DIR_INPUT}/ \\\; input_file_2 ${CONDOR_DIR_INPUT}/' %s"%\
+        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=expgridftp     input_file_1 ${CONDOR_DIR_INPUT}/ \\\; input_file_2 ${CONDOR_DIR_INPUT}/' %s"%\
                                                  (ns.settings['wrapfile']))
 
         self.assertEqual(retVal,0,'gftp cant find input_file_1 in '+ns.settings['wrapfile'])

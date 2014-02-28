@@ -204,9 +204,9 @@ class JobSettings(object):
 		
 		#yuck
 		if self.settings['grid']:
-			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (IS_Glidein==true) '
+			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (target.IS_Glidein==true) '
 		else:
-			 self.settings['requirements'] = self.settings['requirements'] + ' && (IS_Glidein=?=UNDEFINED) '
+			 self.settings['requirements'] = self.settings['requirements'] + ' && (target.IS_Glidein=?=UNDEFINED) '
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
@@ -952,7 +952,7 @@ class JobSettings(object):
                             f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
                         if job_iter<=1:
                             settings['requirements']=settings['requirements']+\
-                            """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
+                            """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
 			
 	def makeOtherCommandFile(self, job_iter=0 ):
 		#print "self.makeOtherCommandFile"
@@ -1146,7 +1146,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					          ' && (IS_Glidein==true) && (stringListIMember(GLIDEIN_Site,DESIRED_Sites))'
+					          ' && (target.IS_Glidein==true) && (stringListIMember(target.GLIDEIN_Site,DESIRED_Sites))'
 
 			elif settings['opportunistic']==0:
 				f.write("+DESIRED_Sites = \"FNAL_%s\"\n" % settings['group'])

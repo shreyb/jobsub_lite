@@ -618,15 +618,15 @@ class JobSettings(object):
 		f.write("\n")
 
 
-
-		targetdir='/bin/pwd'
-		commands=JobUtils()
-		retVal,rslt=commands.getstatusoutput(targetdir)
-		f.write("if [ -d %s ]\nthen\n" % rslt)
-		f.write("  cd %s\nelse\n" %rslt)
-		f.write("  echo Cannot change to submission directory %s\n" % rslt )
-		f.write("  echo ...Working dir is thus `/bin/pwd`\n")
-		f.write("fi\n")
+                if settings['transfer_wrapfile']==False:
+		    targetdir='/bin/pwd'
+		    commands=JobUtils()
+		    retVal,rslt=commands.getstatusoutput(targetdir)
+		    f.write("if [ -d %s ]\nthen\n" % rslt)
+		    f.write("  cd %s\nelse\n" %rslt)
+		    f.write("  echo Cannot change to submission directory %s\n" % rslt )
+		    f.write("  echo ...Working dir is thus `/bin/pwd`\n")
+		    f.write("fi\n")
 
 		
 

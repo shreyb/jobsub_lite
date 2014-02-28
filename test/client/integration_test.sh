@@ -12,7 +12,8 @@ echo "$RSLT"
 JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 SUBMIT_WORKED=$?
-
+echo testing dropbox functionality
+./test_dropbox_submit.sh $SERVER simple_worker_script.sh 1
 echo test helpfile
 ./test_help.sh $SERVER
 echo test listing jobs

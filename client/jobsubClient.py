@@ -40,13 +40,15 @@ class JobSubClientSubmissionError(Exception):
 
 class JobSubClient:
 
-    def __init__(self, server, acct_group, server_argv, dropboxServer=None, server_version='current'):
+    def __init__(self, server, acct_group, acct_role, server_argv,
+                 dropboxServer=None, server_version='current'):
         self.server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
         self.credentials = get_client_credentials()
+        self.acctRole = get_acct_role(acct_role, self.credentials.get('cert'))
         self.jobExeURI = get_jobexe_uri(self.serverArgv)
         self.jobExe = uri2path(self.jobExeURI)
         self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
@@ -92,14 +94,8 @@ class JobSubClient:
                        )
 
         # Submit URL will depend on the VOMS Role
-        voms_proxy = jobsubClientCredentials.VOMSProxy(self.credentials.get('cert'))
-        role = None
-        if len(voms_proxy.fqan) > 0:
-            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
-            if match.group(1) != 'NULL':
-                role = None
-        if role:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, role)
+        if self.acctRole:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
@@ -333,6 +329,17 @@ def get_capath():
 ###################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
 ###################################################################################
+
+def get_acct_role(acct_role, proxy):
+    role = acct_role
+    if not role:
+        # If no role is specified, try to extract it from VOMS proxy
+        voms_proxy = jobsubClientCredentials.VOMSProxy(proxy)
+        if voms_proxy.fqan:
+            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
+            if match.group(1) != 'NULL':
+                role = match.group(1)
+    return role
 
 
 def is_uri_supported(uri):

@@ -368,3 +368,20 @@ v1_2r 2/12/14
 v1_2s 2/18/14
 =============
 - bug fixes revealed by user testing of v1_2r
+
+v1_2t 3/3/14
+============
+- Changes to jobsub.ini :
+    + various changes to make sure wrap.sh files get transported off site
+        if no shared bluearc mount is available
+    + wn_ifdh_location is now a list of possible ifdh UPS directories, the
+        jobsub wrapper script will test them until it finds an installation
+        of ifdhc.  Useful for probing cvmfs locations until ifdh is found
+    + jobsub.ini better commented, order of loading of sections documented
+    + $TRANSFER_INPUT_FILES enviroment variable, a comma seperated list, 
+        can be used to transfer input files to remote sites.  For example,
+        export TRANSFER_INPUT_FILES=file1.tar,file2.tar ; jobsub -g 
+        --site=somewhere will land file1.tar and file2.tar in the jobs working
+        directory on the remote site .
+    + INC000000405338 --use_gftp -f  not working for input from /pnfs, fixed
+    

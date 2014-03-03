@@ -1,6 +1,6 @@
 Name:           jobsub
 Version:        0.1.4
-Release:        1
+Release:        2
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -43,7 +43,8 @@ mkdir -p $RPM_BUILD_ROOT/scratch/app
 mkdir -p $RPM_BUILD_ROOT/scratch/data
 mkdir -p $RPM_BUILD_ROOT/scratch/proxies
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
-cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d
+mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
+cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
 
 
 %clean
@@ -53,8 +54,8 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc
 %config(noreplace) /etc/httpd/conf.d/jobsub_api.conf
-%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 %config(noreplace) /opt/jobsub/server/conf/jobsub_api.conf
+%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 /opt/jobsub/LICENSE.txt
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc
@@ -108,6 +109,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/fix_sandbox_links.sh
 
 %changelog
+* Thu Feb 27 2015 Dennis Box <dbox@fnal.gov> - 0.1.4-2
+- fixed some dropbox directory issues
+
 * Wed Jan 29 2014 Dennis Box <dbox@fnal.gov> - 0.1.2.1-1
 - Changed dependency from osg-ca-scripts to osg-ca-certs
 

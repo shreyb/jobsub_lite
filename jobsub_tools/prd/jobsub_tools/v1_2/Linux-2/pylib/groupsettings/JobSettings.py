@@ -211,9 +211,9 @@ class JobSettings(object):
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
-                    if settings[x]=='True':
+                    if settings[x].upper()=='TRUE':
                         settings[x]=True
-                    if settings[x]=='False':
+                    if settings[x].upper()=='FALSE':
                         settings[x]=False
 			
 	def findConfigFile(self):
@@ -917,7 +917,7 @@ class JobSettings(object):
             tInputFiles=settings['transfer_input_files']
             eScript=settings['exe_script']
             if settings['transfer_wrapfile']:
-                if eScript not in tInputFiles:
+                if eScript not in tInputFiles and os.path.exists(eScript):
                     if len(tInputFiles)>0:
                         tInputFiles=tInputFiles+",%s" % eScript
                     else:

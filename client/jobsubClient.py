@@ -46,53 +46,58 @@ class JobSubClient:
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
-        self.jobExeURI = get_jobexe_uri(self.serverArgv)
-        self.jobExe = uri2path(self.jobExeURI)
-        self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
-        self.serverEnvExports = get_server_env_exports(server_argv)
 
-        srv_argv = copy.copy(server_argv)
-
-        if self.jobDropboxURIMap:
-            # upload the files
-            result = self.dropbox_upload()
-            # replace uri with path on server
-            for idx in range(0, len(srv_argv)):
-                arg = srv_argv[idx]
-                if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
-                    key = self.jobDropboxURIMap.get(arg)
-                    if key is not None:
-                        values = result.get(key)
-                        if values is not None:
-                            if self.dropboxServer is None:
-                                srv_argv[idx] = values.get('path')
-                            else:
-                                url = values.get('url')
-                                srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
-                        else:
-                            print "Dropbox upload failed with error:"
-                            print json.dumps(result)
-                            raise JobSubClientSubmissionError
-
-
-        if self.jobExeURI and self.jobExe:
-            idx = get_jobexe_idx(srv_argv)
-            if self.requiresFileUpload(self.jobExeURI):
-                srv_argv[idx] = '@%s' % self.jobExe
-
-        if self.serverEnvExports:
-            srv_env_export_b64en = base64.urlsafe_b64encode(self.serverEnvExports)
-            srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
-
-        self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
+        self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
+                             self.server, self.acctGroup
+                       )
 
         self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
                              self.server, self.acctGroup
                          )
 
-        self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
-                             self.server, self.acctGroup
-                       )
+        # PM: Following is specific to job submission and dropbox
+        #     This should not be in the constructor 
+
+        if self.serverArgv: 
+            self.jobExeURI = get_jobexe_uri(self.serverArgv)
+            self.jobExe = uri2path(self.jobExeURI)
+            self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
+            self.serverEnvExports = get_server_env_exports(server_argv)
+
+            srv_argv = copy.copy(server_argv)
+
+            if self.jobDropboxURIMap:
+                # upload the files
+                result = self.dropbox_upload()
+                # replace uri with path on server
+                for idx in range(0, len(srv_argv)):
+                    arg = srv_argv[idx]
+                    if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
+                        key = self.jobDropboxURIMap.get(arg)
+                        if key is not None:
+                            values = result.get(key)
+                            if values is not None:
+                                if self.dropboxServer is None:
+                                    srv_argv[idx] = values.get('path')
+                                else:
+                                    url = values.get('url')
+                                    srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
+                            else:
+                                print "Dropbox upload failed with error:"
+                                print json.dumps(result)
+                                raise JobSubClientSubmissionError
+
+
+            if self.jobExeURI and self.jobExe:
+                idx = get_jobexe_idx(srv_argv)
+                if self.requiresFileUpload(self.jobExeURI):
+                    srv_argv[idx] = '@%s' % self.jobExe
+
+            if self.serverEnvExports:
+                srv_env_export_b64en = base64.urlsafe_b64encode(self.serverEnvExports)
+                srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
+
+            self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
     def dropbox_upload(self):
         result = dict()
@@ -146,8 +151,47 @@ class JobSubClient:
 
         return result
 
-    def submit(self):
 
+    def remove(self, jobid):
+        creds = get_client_credentials()
+        self.RemoveURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+                             self.server, self.acctGroup, jobid
+                         )
+
+        logSupport.dprint('REMOVE URL     : %s\n' % (self.removeURL))
+        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(self.removeURL)
+        curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
+
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        curl.close()
+
+        print "Server response code: %s" % response_code
+        if response_code == 200:
+            value = response.getvalue()
+            if response_content_type == 'application/json':
+                response_dict = json.loads(value)
+                response_err = response_dict.get('err')
+                response_out = response_dict.get('out')
+                print_formatted_response(response_out)
+                print_formatted_response(response_err, msg_type='ERROR')
+            else:
+                print_formatted_response(value)
+        response.close()
+
+
+    def submit(self):
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
@@ -195,12 +239,14 @@ class JobSubClient:
                 print_formatted_response(value)
         response.close()
 
+
     def requiresFileUpload(self, uri):
         if uri:
             protocol = '%s://' % (uri.split('://'))[0]
             if protocol in constants.JOB_EXE_SUPPORTED_URIs:
                 return True
         return False
+
 
     def help(self):
         curl, response = curl_secure_context(self.helpURL)

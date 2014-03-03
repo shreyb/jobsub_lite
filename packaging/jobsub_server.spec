@@ -44,7 +44,7 @@ mkdir -p $RPM_BUILD_ROOT/scratch/data
 mkdir -p $RPM_BUILD_ROOT/scratch/proxies
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
 mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
-cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d
+cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
 
 
 %clean
@@ -54,8 +54,8 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc
 %config(noreplace) /etc/httpd/conf.d/jobsub_api.conf
-%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 %config(noreplace) /opt/jobsub/server/conf/jobsub_api.conf
+%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 /opt/jobsub/LICENSE.txt
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc

@@ -168,6 +168,7 @@ class JobSettings(object):
 		self.settings['default_grid_site']=''
 		self.settings['resource_list']=[]
                 self.settings['transfer_wrapfile']=False
+                self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -906,15 +907,24 @@ class JobSettings(object):
 		else:
 			self.makeOtherCommandFile(job_iter)
 
-        def shouldTransferExecutable(self):
+        def shouldTransferInput(self):
             settings=self.settings
             rsp="transfer_executable	 = False\n" 
 	    if settings['nowrapfile']\
                     or settings['tar_file_name']\
                     or settings['transfer_wrapfile']:
 	        rsp="transfer_executable	 = True\n"
-                if settings['transfer_wrapfile']:
-                    rsp = rsp + "transfer_input_files = %s\n"%settings['exe_script']
+            tInputFiles=settings['transfer_input_files']
+            eScript=settings['exe_script']
+            if settings['transfer_wrapfile']:
+                if eScript not in tInputFiles:
+                    if len(tInputFiles)>0:
+                        tInputFiles=tInputFiles+",%s" % eScript
+                    else:
+                        tInputFiles=eScript
+            if len(tInputFiles)>0:
+                rsp=rsp+"transfer_input_files = %s\n" % tInputFiles
+
             return rsp
 
 
@@ -1007,7 +1017,7 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-                tval=self.shouldTransferExecutable()
+                tval=self.shouldTransferInput()
                 f.write(tval)
 
 		
@@ -1129,7 +1139,7 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-                tval=self.shouldTransferExecutable()
+                tval=self.shouldTransferInput()
                 f.write(tval)
 
                 self.handleResourceProvides(f,job_iter)

@@ -167,7 +167,7 @@ class JobSettings(object):
 		self.settings['desired_os']=''
 		self.settings['default_grid_site']=''
 		self.settings['resource_list']=[]
-                self.settings['transfer_wrapfile']=False
+                self.settings['transfer_executable']=False
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -211,10 +211,12 @@ class JobSettings(object):
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
-                    if settings[x].upper()=='TRUE':
-                        settings[x]=True
-                    if settings[x].upper()=='FALSE':
-                        settings[x]=False
+                    if type(settings[x])==type(str):
+                        print "%s=%s"%(x,settings[x])
+                        if settings[x].upper()=='TRUE':
+                            settings[x]=True
+                        if settings[x].upper()=='FALSE':
+                            settings[x]=False
 			
 	def findConfigFile(self):
             if self.settings.has_key('jobsub_ini_file'):
@@ -514,7 +516,7 @@ class JobSettings(object):
 		#print "makeWrapFilePostamble"
 		settings=self.settings
                 exe_script=settings['exe_script']
-                if settings['transfer_wrapfile']:
+                if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
 		f = open(settings['wrapfile'], 'a')
@@ -619,7 +621,7 @@ class JobSettings(object):
 		f.write("\n")
 
 
-                if settings['transfer_wrapfile']==False:
+                if settings['transfer_executable']==False:
 		    targetdir='/bin/pwd'
 		    commands=JobUtils()
 		    retVal,rslt=commands.getstatusoutput(targetdir)
@@ -912,11 +914,11 @@ class JobSettings(object):
             rsp="transfer_executable	 = False\n" 
 	    if settings['nowrapfile']\
                     or settings['tar_file_name']\
-                    or settings['transfer_wrapfile']:
+                    or settings['transfer_executable']:
 	        rsp="transfer_executable	 = True\n"
             tInputFiles=settings['transfer_input_files']
             eScript=settings['exe_script']
-            if settings['transfer_wrapfile']:
+            if settings['transfer_executable']:
                 if eScript not in tInputFiles and os.path.exists(eScript):
                     if len(tInputFiles)>0:
                         tInputFiles=tInputFiles+",%s" % eScript

@@ -378,10 +378,20 @@ v1_2t 3/3/14
         jobsub wrapper script will test them until it finds an installation
         of ifdhc.  Useful for probing cvmfs locations until ifdh is found
     + jobsub.ini better commented, order of loading of sections documented
+
+- New Environment Variables that can affect behavior:
     + $TRANSFER_INPUT_FILES enviroment variable, a comma seperated list, 
         can be used to transfer input files to remote sites.  For example,
         export TRANSFER_INPUT_FILES=file1.tar,file2.tar ; jobsub -g 
         --site=somewhere will land file1.tar and file2.tar in the jobs working
         directory on the remote site .
-    + INC000000405338 --use_gftp -f  not working for input from /pnfs, fixed
+    + $TRANSFER_EXECUTABLE - set to true or false.  If true, the executable
+        and the wrapfile both get shipped off to worker node and land in the
+        working directory.  This is inefficient if the executable is on a 
+        shared disk for the worker nodes and the submit node, default is 
+        false for gpsn01 and true for HA client/server nodes such as
+        fifebatch1.  Setting this to TRUE  is useful on gpsn01 for 
+        submitting to OSG.
+ 
+- INC000000405338 --use_gftp -f  not working for input from /pnfs, fixed
     

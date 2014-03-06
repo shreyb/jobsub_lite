@@ -397,6 +397,11 @@ v1_2t 3/3/14
     
 v1_2u 3/6/14
 ==============
+- RITM0076669 changed condor_rm wrapper behavior to exactly pass on
+    parameters to gpsn01's condor_rm.  The wrapper was needed because
+    of a condor bug where the parameter JOB_STOP_COUNT  was ignored,
+    this has since been fixed.
+
 - parsing of jobsub.ini file sometimes, but not always, interprets
     some_setting = True as some_setting = 'True', the string value
     where the boolean was intended causes initialization problems.

@@ -39,9 +39,6 @@ Jobsub Server REST API
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub
 cp -r ./ $RPM_BUILD_ROOT/opt/jobsub
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
-mkdir -p $RPM_BUILD_ROOT/scratch/app
-mkdir -p $RPM_BUILD_ROOT/scratch/data
-mkdir -p $RPM_BUILD_ROOT/scratch/proxies
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
 mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
 cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
@@ -107,6 +104,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/fix_sandbox_links.pyc
 /opt/jobsub/server/admin/fix_sandbox_links.pyo
 /opt/jobsub/server/admin/fix_sandbox_links.sh
+/scratch/uploads/
+/scratch/dropbox/
 
 %changelog
 * Thu Feb 27 2015 Dennis Box <dbox@fnal.gov> - 0.1.4-2

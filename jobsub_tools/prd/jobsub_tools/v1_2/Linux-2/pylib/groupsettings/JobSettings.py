@@ -217,7 +217,8 @@ class JobSettings(object):
                             settings[x]=True
                         if settings[x].upper()=='FALSE':
                             settings[x]=False
-			
+                if settings.has_key('transfer_wrapfile'):
+                        settings['tranfer_executable']=settings['transfer_wrapfile']
 	def findConfigFile(self):
             if self.settings.has_key('jobsub_ini_file'):
                 cnf=self.settings['jobsub_ini_file']

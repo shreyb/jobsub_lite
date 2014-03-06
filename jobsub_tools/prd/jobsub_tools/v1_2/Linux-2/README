@@ -395,3 +395,19 @@ v1_2t 3/3/14
  
 - INC000000405338 --use_gftp -f  not working for input from /pnfs, fixed
     
+v1_2u 3/6/14
+==============
+- parsing of jobsub.ini file sometimes, but not always, interprets
+    some_setting = True as some_setting = 'True', the string value
+    where the boolean was intended causes initialization problems.
+    this is fixed.
+
+- New Environment Variable that can affect behavior:
+
+    + $WN_IFDH_LOCATION - a list of possible setup scripts to be searched 
+    for ifdh in the wrapper script.  The default is to search bluearc,
+    then local ups, then oasis.opensciencegrid.org/fermilab.  
+    export WN_IFDH_LOCATION='/cvmfs/novacvs.fnal.gov/externals/setup /cvmfs/oasis.opensciencegrid.org/$EXPERIMENT/externals/setup' 
+    is an example of a setting that nova might want to use on the OSG to
+    set up the particular version of ifdh (and the rest of thier software
+    stack at the same time)

@@ -163,7 +163,7 @@ class JobSettings(object):
 		#self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
 		self.settings['downtime_file']='/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
 		self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
-		self.settings['wn_ifdh_location']='/grid/fermiapp/products/common/etc/setups.sh'
+		self.settings['wn_ifdh_location']=os.environ.get("WN_IFDH_LOCATION",'/grid/fermiapp/products/common/etc/setups.sh')
 		self.settings['desired_os']=''
 		self.settings['default_grid_site']=''
 		self.settings['resource_list']=[]
@@ -212,10 +212,9 @@ class JobSettings(object):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
                     if type(settings[x])==type(str):
-                        print "%s=%s"%(x,settings[x])
-                        if settings[x].upper()=='TRUE':
+                        if settings[x] in ['True','true','TRUE']:
                             settings[x]=True
-                        if settings[x].upper()=='FALSE':
+                        if settings[x] in ['False','false','FALSE']:
                             settings[x]=False
                 if settings.has_key('transfer_wrapfile'):
                         settings['tranfer_executable']=settings['transfer_wrapfile']

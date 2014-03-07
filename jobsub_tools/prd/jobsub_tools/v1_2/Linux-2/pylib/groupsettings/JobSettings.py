@@ -160,14 +160,15 @@ class JobSettings(object):
 		self.settings['jobsub_tools_dir']=os.environ.get("JOBSUB_TOOLS_DIR","/tmp")
 		self.settings['ups_shell']=os.environ.get("UPS_SHELL")
 		self.settings['gftp_funcs']=commands.gftpString()
-		self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
+		#self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
 		self.settings['downtime_file']='/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
 		self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
-		self.settings['wn_ifdh_location']='/grid/fermiapp/products/common/etc/setups.sh'
+		self.settings['wn_ifdh_location']=os.environ.get("WN_IFDH_LOCATION",'/grid/fermiapp/products/common/etc/setups.sh')
 		self.settings['desired_os']=''
 		self.settings['default_grid_site']=''
 		self.settings['resource_list']=[]
-                self.settings['transfer_wrapfile']=False
+                self.settings['transfer_executable']=False
+                self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -185,11 +186,6 @@ class JobSettings(object):
 				self.settings[x]=new_settings[x]
 		self.runFileParser()
                 settings=self.settings
-                for x in settings.keys():
-                    if settings[x]=='True':
-                        settings[x]=True
-                    if settings[x]=='False':
-                        settings[x]=False
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
 		#sys.exit
@@ -209,12 +205,19 @@ class JobSettings(object):
 		
 		#yuck
 		if self.settings['grid']:
-			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (IS_Glidein==true) '
+			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (target.IS_Glidein==true) '
 		else:
-			 self.settings['requirements'] = self.settings['requirements'] + ' && (IS_Glidein=?=UNDEFINED) '
+			 self.settings['requirements'] = self.settings['requirements'] + ' && (target.IS_Glidein=?=UNDEFINED) '
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
-			
+                for x in settings.keys():
+                    if type(settings[x])==type(str):
+                        if settings[x] in ['True','true','TRUE']:
+                            settings[x]=True
+                        if settings[x] in ['False','false','FALSE']:
+                            settings[x]=False
+                if settings.has_key('transfer_wrapfile'):
+                        settings['tranfer_executable']=settings['transfer_wrapfile']
 	def findConfigFile(self):
             if self.settings.has_key('jobsub_ini_file'):
                 cnf=self.settings['jobsub_ini_file']
@@ -226,36 +229,33 @@ class JobSettings(object):
 	def runFileParser(self):
 		grp=os.environ.get("GROUP")
 		commands=JobUtils()
+                pairs = []
 		if grp is None:
 			(stat,grp)=commands.getstatusoutput("id -gn")
 			user=os.environ.get("USER","fermilab")
 		exps = self.fileParser.sections()
 		if grp not in exps:
 			grp = "fermilab"
-		pairs = self.fileParser.items(grp)
+                if self.fileParser.has_section('default'):
+                        pairs.extend(self.fileParser.items('default'))
+                if self.fileParser.has_section(grp):
+                        pairs.extend(self.fileParser.items(grp))
+                sbhst=os.environ.get("SUBMIT_HOST")
+                if sbhst is None:
+                        sbhst = self.settings['submit_host']
+                if self.fileParser.has_section(sbhst):
+                        pairs.extend(self.fileParser.items(sbhst))
+                use_these=dict(pairs)
 		for (x,y) in pairs:
 			eval=os.environ.get(x.upper(),None)
 			if eval is not None:
 				self.settings[x]=eval
 			else:
-				cmd = "echo %s"%y
+                                yp = use_these[x]
+				cmd = "echo %s"%yp
 				(stat,rslt)=commands.getstatusoutput(cmd) 
 				self.settings[x]=rslt
 
-		sbhst=os.environ.get("SUBMIT_HOST")
-		if sbhst is None:
-			sbhst = self.settings['submit_host']
-		if self.fileParser.has_section(sbhst):
-			pairs = self.fileParser.items(sbhst)
-			if pairs is not None:
-				for (x,y) in pairs:
-					eval=os.environ.get(x.upper(),None)
-					if eval is not None:
-						self.settings[x]=eval
-					else:
-						cmd = "echo %s"%y
-						(stat,rslt)=commands.getstatusoutput(cmd) 
-						self.settings[x]=rslt
 			
         def resource_callback(self,option, opt, value, p):
             self.settings['resource_list'].append(value)
@@ -508,23 +508,15 @@ class JobSettings(object):
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 
 		f.write("\n")
-		f.write("""if [  -e "%s" ]; then \n"""%settings['wn_ifdh_location'])
-		f.write("source %s\n"%settings['wn_ifdh_location'])
-		f.write("setup ifdhc $IFDH_VERSION\n")
-		f.write("echo using `which ifdh`\n")
-		f.write("""export OSG_LOCATION=${OSG_LOCATION:="/home/grid/vdt"}\n""")
-
-		f.write("""if [ -e "$OSG_LOCATION/setup.sh" ]; then \n""")
-		f.write("source $OSG_LOCATION/setup.sh\n")
-		f.write("fi\n")
-		f.write("fi\n")
+                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
+                f.write(ifdh_setup)
 		f.close()
 
 	def makeWrapFilePostamble(self):
 		#print "makeWrapFilePostamble"
 		settings=self.settings
                 exe_script=settings['exe_script']
-                if settings['transfer_wrapfile']:
+                if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
 		f = open(settings['wrapfile'], 'a')
@@ -614,7 +606,7 @@ class JobSettings(object):
 		f.write("mkdir -p ${CONDOR_DIR_INPUT}\n")
 		#f.write("CPN=/grid/fermiapp/common/tools/cpn \n")
                 if settings['use_gftp']:
-                    cmd="""ifdh cp --force=expgridftp -r -D  """
+                    cmd="""ifdh cp --force=expgridftp  """
                 else:
                     cmd="""ifdh cp --force=cpn -D  """
 		cnt=""
@@ -629,15 +621,15 @@ class JobSettings(object):
 		f.write("\n")
 
 
-
-		targetdir='/bin/pwd'
-		commands=JobUtils()
-		retVal,rslt=commands.getstatusoutput(targetdir)
-		f.write("if [ -d %s ]\nthen\n" % rslt)
-		f.write("  cd %s\nelse\n" %rslt)
-		f.write("  echo Cannot change to submission directory %s\n" % rslt )
-		f.write("  echo ...Working dir is thus `/bin/pwd`\n")
-		f.write("fi\n")
+                if settings['transfer_executable']==False:
+		    targetdir='/bin/pwd'
+		    commands=JobUtils()
+		    retVal,rslt=commands.getstatusoutput(targetdir)
+		    f.write("if [ -d %s ]\nthen\n" % rslt)
+		    f.write("  cd %s\nelse\n" %rslt)
+		    f.write("  echo Cannot change to submission directory %s\n" % rslt )
+		    f.write("  echo ...Working dir is thus `/bin/pwd`\n")
+		    f.write("fi\n")
 
 		
 
@@ -720,10 +712,8 @@ class JobSettings(object):
 		f.write("DEFN=$2\n")
 		f.write("PRJ_NAME=$3\n")
 		f.write("SAM_USER=$4\n")
-                f.write("""if [ -e "%s" ]; then \n"""%settings['wn_ifdh_location'])
-                f.write("source %s\n"%settings['wn_ifdh_location'])
-		f.write("setup ifdhc\n")
-		f.write("fi\n")
+                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
+                f.write(ifdh_setup)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("ifdh describeDefinition $DEFN\n")
 		f.write("""if [ "$SAM_STATION" = "" ]; then\n""")
@@ -766,10 +756,8 @@ class JobSettings(object):
 		f.write("#!/bin/sh -x\n")
 		f.write("EXPERIMENT=$1\n")
 		f.write("PRJ_NAME=$2\n")
-                f.write("""if [ -e "%s" ]; then \n"""%settings['wn_ifdh_location'])
-                f.write("source %s\n"%settings['wn_ifdh_location'])
-		f.write("setup ifdhc\n")
-		f.write("fi\n")
+                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
+                f.write(ifdh_setup)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("CPURL=`ifdh findProject $PRJ_NAME ''` \n")
 		f.write("ifdh endProject $CPURL\n")		   
@@ -921,15 +909,24 @@ class JobSettings(object):
 		else:
 			self.makeOtherCommandFile(job_iter)
 
-        def shouldTransferExecutable(self):
+        def shouldTransferInput(self):
             settings=self.settings
             rsp="transfer_executable	 = False\n" 
 	    if settings['nowrapfile']\
                     or settings['tar_file_name']\
-                    or settings['transfer_wrapfile']:
+                    or settings['transfer_executable']:
 	        rsp="transfer_executable	 = True\n"
-                if settings['transfer_wrapfile']:
-                    rsp = rsp + "transfer_input_files = %s\n"%settings['exe_script']
+            tInputFiles=settings['transfer_input_files']
+            eScript=settings['exe_script']
+            if settings['transfer_executable']:
+                if eScript not in tInputFiles and os.path.exists(eScript):
+                    if len(tInputFiles)>0:
+                        tInputFiles=tInputFiles+",%s" % eScript
+                    else:
+                        tInputFiles=eScript
+            if len(tInputFiles)>0:
+                rsp=rsp+"transfer_input_files = %s\n" % tInputFiles
+
             return rsp
 
 
@@ -963,7 +960,7 @@ class JobSettings(object):
                             f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
                         if job_iter<=1:
                             settings['requirements']=settings['requirements']+\
-                            """&&(stringListsIntersect(toUpper(HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
+                            """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
 			
 	def makeOtherCommandFile(self, job_iter=0 ):
 		#print "self.makeOtherCommandFile"
@@ -1022,7 +1019,7 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-                tval=self.shouldTransferExecutable()
+                tval=self.shouldTransferInput()
                 f.write(tval)
 
 		
@@ -1048,7 +1045,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					  ' && ((stringListIMember(GLIDEIN_Site,DESIRED_Sites))&& stringListIMember(Target.USAGE_MODEL, DESIRED_USAGE_MODEL))'
+					  ' && ((stringListIMember(Target.GLIDEIN_Site,DESIRED_Sites))&& stringListIMember(Target.USAGE_MODEL, DESIRED_USAGE_MODEL))'
 
 
 					 
@@ -1144,7 +1141,7 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-                tval=self.shouldTransferExecutable()
+                tval=self.shouldTransferInput()
                 f.write(tval)
 
                 self.handleResourceProvides(f,job_iter)
@@ -1157,7 +1154,7 @@ class JobSettings(object):
 				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					          ' && (IS_Glidein==true) && (stringListIMember(GLIDEIN_Site,DESIRED_Sites))'
+					          ' && (target.IS_Glidein==true) && (stringListIMember(target.GLIDEIN_Site,DESIRED_Sites))'
 
 			elif settings['opportunistic']==0:
 				f.write("+DESIRED_Sites = \"FNAL_%s\"\n" % settings['group'])

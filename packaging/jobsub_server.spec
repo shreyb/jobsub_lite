@@ -1,6 +1,6 @@
 Name:           jobsub
-Version:        0.1.3
-Release:        0.1.rc1
+Version:        0.1.4
+Release:        5484_5485_5488
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -39,11 +39,9 @@ Jobsub Server REST API
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub
 cp -r ./ $RPM_BUILD_ROOT/opt/jobsub
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
-mkdir -p $RPM_BUILD_ROOT/scratch/app
-mkdir -p $RPM_BUILD_ROOT/scratch/data
-mkdir -p $RPM_BUILD_ROOT/scratch/proxies
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
-cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d
+mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
+cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
 
 
 %clean
@@ -53,12 +51,15 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc
 %config(noreplace) /etc/httpd/conf.d/jobsub_api.conf
-%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 %config(noreplace) /opt/jobsub/server/conf/jobsub_api.conf
+%config(noreplace) /opt/jobsub/server/conf/jobsub.ini
 /opt/jobsub/LICENSE.txt
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyo
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.py
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.pyc
+/opt/jobsub/lib/JobsubConfigParser/fakelogger.pyo
 /opt/jobsub/lib/JobsubConfigParser/__init.py__
 /opt/jobsub/lib/logger/__init__.py
 /opt/jobsub/lib/logger/__init__.pyc
@@ -103,8 +104,13 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/fix_sandbox_links.pyc
 /opt/jobsub/server/admin/fix_sandbox_links.pyo
 /opt/jobsub/server/admin/fix_sandbox_links.sh
+/scratch/uploads/
+/scratch/dropbox/
 
 %changelog
+* Thu Feb 27 2015 Dennis Box <dbox@fnal.gov> - 0.1.4-2
+- fixed some dropbox directory issues
+
 * Wed Jan 29 2014 Dennis Box <dbox@fnal.gov> - 0.1.2.1-1
 - Changed dependency from osg-ca-scripts to osg-ca-certs
 

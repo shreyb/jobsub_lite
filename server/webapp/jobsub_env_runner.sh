@@ -28,6 +28,8 @@ shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 setup jobsub_tools
+mkdir -p ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
+cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT == 0 ] ; then
@@ -53,7 +55,7 @@ GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
-  cd ${COMMAND_PATH_ROOT}/$GROUP/$USER/
+  cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
   ln -s $WORKDIR_ID "${JID}0"
   cd -
 fi

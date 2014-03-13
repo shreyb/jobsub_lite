@@ -44,26 +44,30 @@ COMMON:
     Execute("source ${JOBSUB_TOOLS_DIR}/bin/setup_condor",UPS_ENV)
 
 
+  ACTION=unsetup
+     Execute("source ${JOBSUB_TOOLS_DIR}/bin/unsetup_condor",UPS_ENV)
+     pathRemove(LD_LIBRARY_PATH, ${UPS_PROD_DIR}/lib/, ':' )
+     pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/, ':' )
+     pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/groupsettings, ':' )
+     pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/JobsubConfigParser, ':' )
+     envUnset(JOBSUB_TOOLS5LIB)
+     unproddir()
+     unsetupenv()
+
+
+
 END:
 
 GROUP:
   FLAVOR=ANY
   QUALIFIERS="build"
 
-COMMON:
-
-  ACTION=SETUP
-    envSet(JOBSUB_TOOLS_DIR, ${UPS_PROD_DIR})
-    envPrepend(LD_LIBRARY_PATH, ${UPS_PROD_DIR}/lib/, ':' )
-    envPrepend(PYTHON_PATH, ${UPS_PROD_DIR}/pylib/, ':' )
-    envPrepend(PATH, ${UPS_PROD_DIR}/bin)
-
 END:
 
 """
 
 current_template="""
-FILE = table
+FILE = chain
 PRODUCT = jobsub_tools
 CHAIN = current
 

@@ -1,0 +1,2 @@
+test "$UPS_SHELL" = "sh" &&  source ${JOBSUB_TOOLS_DIR}/bin/unsetup_condor.sh
+test "$UPS_SHELL" = "csh" && source ${JOBSUB_TOOLS_DIR}/bin/unsetup_condor.csh

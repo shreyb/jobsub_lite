@@ -12,6 +12,10 @@ setenv source_me `${JOBSUB_TOOLS_DIR}/bin/setup_condor_csh.py`
 unsetenv JOBSUB_UNSUPPORTED_EXPERIMENT
 
 source $source_me
+if ( "$?REMOVE_JOBSUB_UPS_SOURCE" = "0" ) then
+    /bin/rm $source_me
+endif
+
 /bin/rm $source_me
 unsetenv source_me
 

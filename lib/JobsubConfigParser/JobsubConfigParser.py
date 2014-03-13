@@ -84,20 +84,21 @@ class JobsubConfigParser(object):
                 #logger.log("findConfigFile")
                 cnf = os.environ.get("JOBSUB_INI_FILE",None)
                 ups=os.environ.get("JOBSUB_TOOLS_DIR",'')+"/bin/jobsub.ini"
-                not_default = cnf==ups
-                if cnf is not None and not_default:
+                ups_ini_file = cnf==ups
+                if cnf is not None: 
+                    if not ups_ini_file:
 		        logger.log("using %s for jobsub config"%cnf)
-			return cnf
+		    return cnf
 		for x in [ "PWD", "HOME" ]:
 			path=os.environ.get(x)
                         cnf=path + "/jobsub.ini"
-                        not_default = cnf==ups
+                        ups_ini_file = cnf==ups
 			if os.path.exists(cnf):
-                            if not_default:
+                            if not ups_ini_file:
 		                logger.log("using %s for jobsub config"%cnf)
 			    return cnf
                 if os.path.exists(ups):
-                    #logger.log("using default")
+                    #logger.log("using %s for jobsub config"%ups)
                     return ups
                 else:
 		    logger.log("error no config file found!")

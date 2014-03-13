@@ -12,7 +12,8 @@ def runConfig():
     fd = open(fn,"w")
     vars = os.environ.get("JOBSUB_INI_VARS")
     for var in vars.split():
-        fd.write("unset %s\n",var)
+        fd.write("unset %s\n"%var)
+    fd.write("unset JOBSUB_INI_FILE\n")
     fd.close()
     print fn
 

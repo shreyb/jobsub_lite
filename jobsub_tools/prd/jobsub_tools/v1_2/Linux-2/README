@@ -416,3 +416,11 @@ v1_2u 3/6/14
     is an example of a setting that nova might want to use on the OSG to
     set up the particular version of ifdh (and the rest of thier software
     stack at the same time)
+
+v1_2v 3/13/14
+================
+
+- ups unsetup left a messy environment behind which confused subsequent 
+  setups of jobsub_tools. Fixed
+- bug fixes to reading jobsub.ini, now uses the same library as the jobsub
+  server

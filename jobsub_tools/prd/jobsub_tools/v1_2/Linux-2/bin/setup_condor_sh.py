@@ -25,7 +25,7 @@ def runConfig():
 			eval=os.environ.get(var.upper(),None)
 			if eval is None:
 	        		val=scp.get(submit_host,var)
-				if len(val)==0 or val.find(' ')>0:
+				if len(val)==0 or val.find(' ')>=0:
 					val="'%s'"%val
         			fd.write( "export %s=%s\n"%(var.upper(),val))
 				jobsub_ini_vars=jobsub_ini_vars+var.upper()+" "

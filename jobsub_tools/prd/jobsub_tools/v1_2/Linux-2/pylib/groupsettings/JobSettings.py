@@ -211,7 +211,6 @@ class JobSettings(object):
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
-                    if type(settings[x])==type(str):
                         if settings[x] in ['True','true','TRUE']:
                             settings[x]=True
                         if settings[x] in ['False','false','FALSE']:

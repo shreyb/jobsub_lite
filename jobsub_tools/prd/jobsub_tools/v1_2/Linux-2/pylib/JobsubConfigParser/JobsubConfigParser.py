@@ -8,53 +8,99 @@ except ImportError:
 
 class JobsubConfigParser(object):
 
-	def __init__(self):
-		self.cnf=self.findConfigFile()
-		self.parser=SafeConfigParser()
-		self.parser.read(self.cnf)
+	def __init__(self,group=None,submit_host=None):
+	    self.cnf=self.findConfigFile()
+	    self.parser=SafeConfigParser()
+            self.group=group
+            if self.group is None:
+                self.group=os.environ.get("GROUP",None)
+            self.submit_host=submit_host
+            if self.submit_host is None:
+                self.submit_host=os.environ.get("SUBMIT_HOST",None)
+	    self.parser.read(self.cnf)
 
 	def sections(self):
-		return self.parser.sections()
+	    return self.parser.sections()
+	
+	def iniFile(self):
+	    return self.cnf
 	
 	def options(self,sect):
-		return self.parser.options(sect)
+            os = []
+            od = []
+            if sect == self.submit_host and \
+                    self.group is not None:
+                od = self.options(self.group)
+            else:
+                if self.has_section('default'):
+	            od=self.parser.options('default')
+            if self.has_section(sect):
+	        os=self.parser.options(sect)
+            for opt in od:
+                if opt not in os:
+	            os.append(opt)
+	    return os
 
 	def has_section(self,sect):
 		return self.parser.has_section(sect)
 
 	def has_option(self,sect,opt):
-		return self.parser.has_option(sect,opt)
-
-	def get(self,sect,opt):
-		return self.parser.get(sect,opt)
+           all_opts=self.options(sect)
+           return opt in all_opts 
 
 	def items(self,sect):
-		return self.parser.items(sect)
+	    pairs=[]
+	    if self.parser.has_section('default'):
+		pairs.extend(self.parser.items('default'))
+            if sect==self.submit_host and self.parser.has_section(self.group):
+                pairs.extend(self.parser.items(self.group))
+	    if self.parser.has_section(sect):
+		pairs.extend(self.parser.items(sect))
+            valdict=dict(pairs)
+	    return valdict.items()
+
+	def get(self,sect,opt):
+            itm=self.items(sect)
+            valdict=dict(itm)
+            if valdict.has_key(opt):
+                val=valdict[opt]
+                return val.strip("'")
+            return None
+			
+		
 
 	def supportedGroups(self,host=None):
-		if host is None:
-			host=socket.gethostname()
-		p=self.parser
-		sect=p.sections()
-		if host in sect:
-			opt=p.options(host)
-			if 'supported_groups' in opt:
-				str=p.get(host,'supported_groups')
-				return str.split()
-		return None
+	    if host is None:
+                host=self.submit_host
+	    if host is None:
+		host=socket.gethostname()
+	    str=self.get(host,'supported_groups')
+            if str is not None:
+		return str.split()
+    	    return []
 
 
         def findConfigFile(self):
+                #logger.log("findConfigFile")
                 cnf = os.environ.get("JOBSUB_INI_FILE",None)
-                if cnf is not None:
-			#print "using %s for jobsub config"%cnf
+                ups=os.environ.get("JOBSUB_TOOLS_DIR",'')+"/bin/jobsub.ini"
+                not_default = cnf==ups
+                if cnf is not None and not_default:
+		        logger.log("using %s for jobsub config"%cnf)
 			return cnf
-		for x in [ "PWD", "HOME"]:
-			cnf=os.environ.get(x)+"/jobsub.ini"
+		for x in [ "PWD", "HOME" ]:
+			path=os.environ.get(x)
+                        cnf=path + "/jobsub.ini"
+                        not_default = cnf==ups
 			if os.path.exists(cnf):
-				logger.log("using %s for jobsub config"%cnf)
-				return cnf
-		logger.log("error no config file found!")
+                            if not_default:
+		                logger.log("using %s for jobsub config"%cnf)
+			    return cnf
+                if os.path.exists(ups):
+                    #logger.log("using default")
+                    return ups
+                else:
+		    logger.log("error no config file found!")
 		return None
 
 	

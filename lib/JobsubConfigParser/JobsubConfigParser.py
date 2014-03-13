@@ -22,6 +22,9 @@ class JobsubConfigParser(object):
 	def sections(self):
 	    return self.parser.sections()
 	
+	def iniFile(self):
+	    return self.cnf
+	
 	def options(self,sect):
             os = []
             od = []
@@ -78,16 +81,26 @@ class JobsubConfigParser(object):
 
 
         def findConfigFile(self):
+                #logger.log("findConfigFile")
                 cnf = os.environ.get("JOBSUB_INI_FILE",None)
-                if cnf is not None:
+                ups=os.environ.get("JOBSUB_TOOLS_DIR",'')+"/bin/jobsub.ini"
+                not_default = cnf==ups
+                if cnf is not None and not_default:
 		        logger.log("using %s for jobsub config"%cnf)
 			return cnf
-		for x in [ "PWD", "HOME"]:
-			cnf=os.environ.get(x)+"/jobsub.ini"
+		for x in [ "PWD", "HOME" ]:
+			path=os.environ.get(x)
+                        cnf=path + "/jobsub.ini"
+                        not_default = cnf==ups
 			if os.path.exists(cnf):
+                            if not_default:
 		                logger.log("using %s for jobsub config"%cnf)
-				return cnf
-		logger.log("error no config file found!")
+			    return cnf
+                if os.path.exists(ups):
+                    #logger.log("using default")
+                    return ups
+                else:
+		    logger.log("error no config file found!")
 		return None
 
 	

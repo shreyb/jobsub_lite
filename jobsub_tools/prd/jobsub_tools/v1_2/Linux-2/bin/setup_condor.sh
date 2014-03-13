@@ -1,21 +1,22 @@
 #!/bin/sh
 
+if [ "$SUBMIT_HOST" = "" ]
+then
+	export SUBMIT_HOST=gpsn01.fnal.gov
+fi
+
+if [ "$GROUP" = "" ]
+then
+	export GROUP=`id -gn`
+fi
 export PATH=${PATH}:${JOBSUB_TOOLS_DIR}/bin/condor_wrappers
 export source_me=`${JOBSUB_TOOLS_DIR}/bin/setup_condor_sh.py`
 unset JOBSUB_UNSUPPORTED_EXPERIMENT
 
 source $source_me
-/bin/rm $source_me
+#/bin/rm $source_me
 unset source_me
 
-if [ "$JOBSUB_INI_FILE" != "${JOBSUB_TOOLS_DIR}/bin/jobsub.ini" ]; then
-	echo "using configuration file $JOBSUB_INI_FILE"
-fi
-
-if [ "$SUBMIT_HOST" = "" ]
-then
-	export SUBMIT_HOST=gpsn01.fnal.gov
-fi
 
 PARENT_DIR=`dirname $CONDOR_TMP`  > /dev/null 2>&1
 if [ ! -e $PARENT_DIR ]

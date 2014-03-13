@@ -1,5 +1,12 @@
 #!/bin/csh
 
+if ( "$?SUBMIT_HOST" == "0" ) then
+	setenv SUBMIT_HOST gpsn01.fnal.gov
+endif
+
+if ( "$?GROUP" == "0" ) then
+	setenv GROUP `id -gn`
+endif
 setenv PATH ${PATH}:${JOBSUB_TOOLS_DIR}/bin/condor_wrappers
 setenv source_me `${JOBSUB_TOOLS_DIR}/bin/setup_condor_csh.py`
 unsetenv JOBSUB_UNSUPPORTED_EXPERIMENT
@@ -8,13 +15,9 @@ source $source_me
 /bin/rm $source_me
 unsetenv source_me
 
-if ( "$?SUBMIT_HOST" == "0" ) then
-	setenv SUBMIT_HOST gpsn01.fnal.gov
-endif
-
-if ( "$JOBSUB_INI_FILE" != "${JOBSUB_TOOLS_DIR}/bin/jobsub.ini" ) then
-	echo "using configuration file $JOBSUB_INI_FILE"
-endif
+#if ( "$JOBSUB_INI_FILE" != "${JOBSUB_TOOLS_DIR}/bin/jobsub.ini" ) then
+#	echo "using configuration file $JOBSUB_INI_FILE"
+#endif
 
 setenv PARENT_DIR `dirname $CONDOR_TMP`
 

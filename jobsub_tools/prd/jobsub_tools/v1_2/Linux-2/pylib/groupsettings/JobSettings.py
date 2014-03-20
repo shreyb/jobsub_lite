@@ -116,7 +116,7 @@ class JobSettings(object):
 		self.settings['environment']='CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP='+\
 						  self.settings['condor_tmp']+';CONDOR_EXEC='+\
 						  self.settings['condor_exec']
-		self.settings['lines']=""
+		self.settings['lines']=[]
 		self.settings['group']=os.environ.get("GROUP","common")
 		self.settings['storage_group']=os.environ.get("STORAGE_GROUP")
 		self.settings['accountinggroup']=self.settings['group']
@@ -741,7 +741,7 @@ class JobSettings(object):
 		f.write("environment = %s\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
-		f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
+		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
                 self.handleResourceProvides(f)
@@ -749,7 +749,7 @@ class JobSettings(object):
 		#f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  \n")
                 f.write("requirements  = %s\n"%self.condorRequirements())
 
-		f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
+		#f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 		f.close()
 				
@@ -781,12 +781,12 @@ class JobSettings(object):
 		f.write("environment = %si\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
-		f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
+		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
                 self.handleResourceProvides(f)
                 f.write("requirements  = %s\n"%self.condorRequirements())
-		f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
+		#f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 
 		f.close()
@@ -937,13 +937,20 @@ class JobSettings(object):
 
             return rsp
 
-
+        def addToLineSetting(self,thingy):
+            
+            settings=self.settings
+            if settings['needs_appending']:
+                if 'lines' not in settings:
+                    settings['lines']=[]
+                settings['lines'].append(thingy)
 
         def handleResourceProvides(self,f,job_iter=0):
             settings=self.settings 
             submit_host=settings['submit_host'] 
             fp=self.fileParser 
 	    if 'lines' in settings and len(settings['lines']) >0:			
+		#print("lines setting=%s"%settings['lines'])
 		for thingy in settings['lines']:
                     f.write("%s\n" % thingy)
 	    if 'os' in settings:
@@ -1071,13 +1078,12 @@ class JobSettings(object):
                 f.write(tval)
 
 		if settings['grid']:
-			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
-			f.write("+RunOnGrid			  = True\n")
+			self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
+			self.addToLineSetting("+RunOnGrid			  = True")
 
                         if not settings['site']: 
                             if settings['default_grid_site']:
                                 settings['site']=settings['default_grid_site']
-                self.handleResourceProvides(f,job_iter)
                         
 
 
@@ -1085,19 +1091,19 @@ class JobSettings(object):
 
 
 		if settings['istestjob'] == True:
-			f.write("+AccountingGroup = \"group_testjobs\"\n")
+			self.addToLineSetting("+AccountingGroup = \"group_testjobs\"")
 
 		if settings['group'] != "" and settings['istestjob'] == False:			
-			f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
+			self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%(settings['accountinggroup'],settings['user']))
 
+                self.handleResourceProvides(f,job_iter)
 		f.write("requirements  = %s\n"%self.condorRequirements())
 
 		if 'lines' in settings and len(settings['lines']) >0:			
-			for thingy in settings['lines']:
-				f.write("%s\n" % thingy)
+		    for thingy in settings['lines']:
+			f.write("%s\n" % thingy)
 
 
-		#f.write("%s"%settings['lines'])
 		f.write("\n")
 		f.write("\n")
 		f.write("queue %s"%settings['queuecount'])
@@ -1174,7 +1180,6 @@ class JobSettings(object):
                 tval=self.shouldTransferInput()
                 f.write(tval)
 
-                self.handleResourceProvides(f,job_iter)
                 if job_iter <=1:
                     for x in settings['resource_list']:
                         (opt,val)=x.split('=')
@@ -1182,26 +1187,21 @@ class JobSettings(object):
                          """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(my.DESIRED_%s)))"""%(opt,opt)
 		if settings['grid']:
 
-			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
-			f.write("+RunOnGrid			  = True\n")
+                        if job_iter<=1:
+			    self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
+			    self.addToLineSetting("+RunOnGrid			  = True")
+			    settings['requirements']=settings['requirements'] + \
+				          '  && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))'
 
-			if settings['site']:
-				if job_iter <=1:
-					settings['requirements']=settings['requirements'] + \
-					          '  && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))'
-
-			elif settings['opportunistic']==0:
-				f.write("+DESIRED_Sites = \"FNAL_%s\"\n" % settings['group'])
-				if job_iter <=1:
-					settings['requirements']=settings['requirements'] + \
-						  ' && (GLIDEIN_Site=="FNAL_%s") && (target.AGroup=="group_%s")'%\
-						  (settings['group'],settings['group'])
-			else:
-				f.write("+DESIRED_Sites = \"FNAL_%s,FNAL_%s_opportunistic\"\n" % (settings['group'],settings['group']))
-				if job_iter <= 1:
-					settings['requirements']=settings['requirements'] +\
-					' && ((target.AGroup=="group_%s") && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)))'% \
-					(settings['group'])
+			if not settings['site']:
+			    if job_iter <= 1:
+			        settings['requirements']=settings['requirements'] + \
+				  '  && (target.AGroup==my.AGroup)'
+                        
+			    if settings['opportunistic']==0:
+				settings['site']="FNAL_%s" % settings['group']
+			    else:
+				settings['site']="FNAL_%s,FNAL_%s_opportunistic" % (settings['group'],settings['group'])
 
 			if job_iter <=1 and  'append_requirements' in settings:
 				for req in settings['append_requirements']:
@@ -1212,13 +1212,14 @@ class JobSettings(object):
 			if job_iter <=1:
 				settings['requirements']=settings['requirements'] + ' && (target.GLIDEIN_Site=?=UNDEFINED)'
 		if settings['istestjob'] == True:
-			f.write("+AccountingGroup = \"group_testjobs\"\n")
+			self.addToLineSetting("+AccountingGroup = \"group_testjobs\"")
 
 		if settings['group'] != "" and settings['istestjob'] == False:			
-			f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
+			self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%(settings['accountinggroup'],settings['user']))
 
-		f.write("+Agroup = \"group_%s\"\n"%settings['group'])
+		self.addToLineSetting("+Agroup = \"group_%s\""%settings['group'])
 
+                self.handleResourceProvides(f,job_iter)
 
                 if 'overwriterequirements' in settings:
 
@@ -1229,7 +1230,6 @@ class JobSettings(object):
 
 
 
-		f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
 		#f.write("%s"%settings['lines'])
 		f.write("\n")

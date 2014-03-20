@@ -52,7 +52,7 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['usedagman'],False)
         self.assertNotEqual(ns.settings['requirements'],None)
         self.assertNotEqual(ns.settings['environment'],None)
-        self.assertEqual(ns.settings['lines'],"")
+        self.assertEqual(ns.settings['lines'],[])
         self.assertNotEqual(ns.settings['group'],None)
         self.assertNotEqual(ns.settings['user'],None)
         self.assertEqual(ns.settings['output_tag_counter'],0)

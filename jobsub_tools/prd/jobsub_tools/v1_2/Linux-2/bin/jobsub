@@ -67,6 +67,8 @@ def doSubmit(settings):
             condor_setup_cmd = "source /opt/condor/condor.sh ; "
     elif settings.has_key('condor_setup_cmd'):
         condor_setup_cmd=settings['condor_setup_cmd']
+        if len(condor_setup_cmd)>0 and condor_setup_cmd.find(';')<0:
+            condor_setup_cmd=condor_setup_cmd+";"
 
     if settings['dataset_definition']=="":
         cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%(settings['condor_tmp'],settings['storage_group'],condor_setup_cmd,settings['cmdfile'])

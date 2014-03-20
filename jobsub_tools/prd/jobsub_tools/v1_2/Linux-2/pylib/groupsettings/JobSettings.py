@@ -165,10 +165,11 @@ class JobSettings(object):
 		self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
 		self.settings['wn_ifdh_location']=os.environ.get("WN_IFDH_LOCATION",'/grid/fermiapp/products/common/etc/setups.sh')
 		self.settings['desired_os']=''
-		self.settings['default_grid_site']=''
+		self.settings['default_grid_site']=False
 		self.settings['resource_list']=[]
                 self.settings['transfer_executable']=False
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
+                self.settings['needs_appending']=True
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -204,10 +205,6 @@ class JobSettings(object):
 		
 		
 		#yuck
-		if self.settings['grid']:
-			self.settings['requirements'] = self.settings['requirements'] + self.settings['desired_os'] + ' && (target.IS_Glidein==true) '
-		else:
-			 self.settings['requirements'] = self.settings['requirements'] + ' && (target.IS_Glidein=?=UNDEFINED) '
 		if(len(args)>1):
 			self.settings['script_args']=args[1:]
                 for x in settings.keys():
@@ -216,7 +213,9 @@ class JobSettings(object):
                         if settings[x] in ['False','false','FALSE']:
                             settings[x]=False
                 if settings.has_key('transfer_wrapfile'):
-                        settings['tranfer_executable']=settings['transfer_wrapfile']
+                    settings['tranfer_executable']=settings['transfer_wrapfile']
+                if settings.has_key('always_run_on_grid') and settings['always_run_on_grid']:
+                    settings['grid']=True
 	def findConfigFile(self):
             if self.settings.has_key('jobsub_ini_file'):
                 cnf=self.settings['jobsub_ini_file']
@@ -257,7 +256,9 @@ class JobSettings(object):
 
 			
         def resource_callback(self,option, opt, value, p):
+            #print "callback opt=%s val=%s"%(opt,value)
             self.settings['resource_list'].append(value)
+
 
 	def initFileParser(self):
 		self.fileParser=JobsubConfigParser()
@@ -694,7 +695,8 @@ class JobSettings(object):
 			while (job_iter <= job_count):
 				#print "calling self.makeCondorFiles2(%d)"%job_iter
 				self.makeCondorFiles2(job_iter)
-				job_iter += 1
+	    			job_iter += 1
+                                settings['needs_appending']=False
 
 				
 			self.makeDAGFile()
@@ -739,9 +741,14 @@ class JobSettings(object):
 		f.write("environment = %s\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
+		f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
+                f.write("transfer_executable     = True\n")
+                self.handleResourceProvides(f)
 
-		f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  && (GLIDEIN_Site=?=UNDEFINED)\n")
+		#f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  \n")
+                f.write("requirements  = %s\n"%self.condorRequirements())
+
 		f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 		f.close()
@@ -770,13 +777,15 @@ class JobSettings(object):
 		f.write("error		 = %s/samend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("log		   = %s/samend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
 		#f.write("environment   = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s;IFDH_BASE_URI=%s;\n"%\
-		#		(settings['condor_tmp'],settings['condor_exec'],settings['ifdh_base_uri']))
+		#			(settings['condor_tmp'],settings['condor_exec'],settings['ifdh_base_uri']))
 		f.write("environment = %si\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
+		f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
-
-		f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  && (GLIDEIN_Site=?=UNDEFINED)\n")
+                f.write("transfer_executable     = True\n")
+                self.handleResourceProvides(f)
+                f.write("requirements  = %s\n"%self.condorRequirements())
 		f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 
@@ -930,10 +939,15 @@ class JobSettings(object):
 
 
 
-        def handleResourceProvides(self,f,job_iter):
+        def handleResourceProvides(self,f,job_iter=0):
             settings=self.settings 
             submit_host=settings['submit_host'] 
             fp=self.fileParser 
+	    if 'os' in settings:
+		f.write("+DesiredOS =\"%s\"\n"%settings['os'])
+	    if settings['site']:
+		if settings['site']!='LOCAL':
+                    f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
             for res in settings['resource_list']: 
                 parts=res.split('=')
                 if len(parts)>1: 
@@ -957,10 +971,41 @@ class JobSettings(object):
                             raise InitializationError(err)
                         else:
                             f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
-                        if job_iter<=1:
-                            settings['requirements']=settings['requirements']+\
-                            """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(DESIRED_%s)))"""%(opt,opt)
 			
+        def condorRequirements(self):
+            #print "condorRequirements needs_appending=%s"%self.settings['needs_appending']
+            settings=self.settings
+            if settings['needs_appending']:
+                self.makeCondorRequirements()
+            return settings['requirements']
+
+
+
+        def makeCondorRequirements(self):     
+            settings = self.settings
+            if not settings['needs_appending']:
+                return settings['requirements']
+            settings['needs_appending']=False
+            requirements=settings['requirements']
+	    if 'overwriterequirements' in settings:
+		settings['requirements']=settings['overwriterequirements']
+                return settings['requirements']
+            if settings['grid']:
+                settings['requirements']=settings['requirements'] + '&& (target.IS_Glidein==true) '
+            if settings['site']:
+	        desired_site_req=' && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)) '	
+                settings['requirements']=settings['requirements'] +  desired_site_req
+            if 'desired_os' in settings and len(settings['desired_os'])>0:
+                settings['requirements']=settings['requirements'] + settings['desired_os'] 
+            for x in settings['resource_list']:
+                (opt,val)=x.split('=')
+                settings['requirements']=settings['requirements']+\
+                     """ && (stringListsIntersect(toUpper(target.HAS_%s), toUpper(my.DESIRED_%s)))"""%(opt,opt)
+            if 'append_requirements' in settings:
+		for req in settings['append_requirements']:
+		    settings['requirements'] = settings['requirements'] + " && %s " % req
+            return settings['requirements']
+
 	def makeOtherCommandFile(self, job_iter=0 ):
 		#print "self.makeOtherCommandFile"
 		settings = self.settings
@@ -1021,30 +1066,15 @@ class JobSettings(object):
                 tval=self.shouldTransferInput()
                 f.write(tval)
 
-		
 		if settings['grid']:
 			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 			f.write("+RunOnGrid			  = True\n")
-		        if settings['opportunistic']==0:
-			    f.write("""+DESIRED_USAGE_MODEL = "Dedicated"\n""")
-		        else:
-			    f.write("""+DESIRED_USAGE_MODEL = "Opportunistic"\n""")
 
                         if not settings['site']: 
                             if settings['default_grid_site']:
                                 settings['site']=settings['default_grid_site']
-                            else:
-                                settings['site']="Fermigrid"  
                 self.handleResourceProvides(f,job_iter)
                         
-		if settings['site']:
-			if settings['site']=='LOCAL':
-				pass
-			else:
-				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
-				if job_iter <=1:
-					settings['requirements']=settings['requirements'] + \
-					  ' && ((stringListIMember(Target.GLIDEIN_Site,DESIRED_Sites))&& stringListIMember(Target.USAGE_MODEL, DESIRED_USAGE_MODEL))'
 
 
 					 
@@ -1056,18 +1086,12 @@ class JobSettings(object):
 		if settings['group'] != "" and settings['istestjob'] == False:			
 			f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
 
-		if 'overwriterequirements' in settings:
-	
-			f.write("requirements  = %s\n"%settings['overwriterequirements'])
-		else:
-			f.write("requirements  = %s\n"%settings['requirements'])
+		f.write("requirements  = %s\n"%self.condorRequirements())
 
 		if 'lines' in settings and len(settings['lines']) >0:			
 			for thingy in settings['lines']:
 				f.write("%s\n" % thingy)
 
-		if 'os' in settings:
-			f.write("+DesiredOS =\"%s\"\n"%settings['os'])
 		f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
 		#f.write("%s"%settings['lines'])
@@ -1082,10 +1106,14 @@ class JobSettings(object):
 	def makeGPSN01CommandFile(self, job_iter=0 ):
 		#print "self.makeGPSN01CommandFile(%s)"%job_iter
 		settings = self.settings
+                if job_iter <=1:
+		    if settings['grid']:
+			settings['requirements'] = settings['requirements'] + settings['desired_os'] + ' && (target.IS_Glidein==true) '
+		    else:
+			settings['requirements'] = settings['requirements'] + ' && (target.IS_Glidein=?=UNDEFINED) '
 		settings['cmd_file_list'].append(settings['cmdfile'])
 		f = open(settings['cmdfile'], 'w')
 		f.write("universe	  = vanilla\n")
-
 		if settings['grid'] and settings['forcenoparrot'] \
 			   and settings['needafs'] and settings['forceparrot']:
 			settings['useparrot']=True
@@ -1144,28 +1172,32 @@ class JobSettings(object):
                 f.write(tval)
 
                 self.handleResourceProvides(f,job_iter)
+                if job_iter <=1:
+                    for x in settings['resource_list']:
+                        (opt,val)=x.split('=')
+                        settings['requirements']=settings['requirements']+\
+                         """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(my.DESIRED_%s)))"""%(opt,opt)
 		if settings['grid']:
 
 			f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 			f.write("+RunOnGrid			  = True\n")
 
 			if settings['site']:
-				f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-					          ' && (target.IS_Glidein==true) && (stringListIMember(target.GLIDEIN_Site,DESIRED_Sites))'
+					          '  && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))'
 
 			elif settings['opportunistic']==0:
 				f.write("+DESIRED_Sites = \"FNAL_%s\"\n" % settings['group'])
 				if job_iter <=1:
 					settings['requirements']=settings['requirements'] + \
-						  ' && (GLIDEIN_Site=="FNAL_%s") && (TARGET.AGroup=="group_%s")'%\
+						  ' && (GLIDEIN_Site=="FNAL_%s") && (target.AGroup=="group_%s")'%\
 						  (settings['group'],settings['group'])
 			else:
 				f.write("+DESIRED_Sites = \"FNAL_%s,FNAL_%s_opportunistic\"\n" % (settings['group'],settings['group']))
 				if job_iter <= 1:
 					settings['requirements']=settings['requirements'] +\
-					' && ((TARGET.AGroup=="group_%s") && (stringListIMember(GLIDEIN_Site,DESIRED_Sites)))'% \
+					' && ((target.AGroup=="group_%s") && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)))'% \
 					(settings['group'])
 
 			if job_iter <=1 and  'append_requirements' in settings:
@@ -1175,7 +1207,7 @@ class JobSettings(object):
 
 		else:
 			if job_iter <=1:
-				settings['requirements']=settings['requirements'] + ' && (GLIDEIN_Site=?=UNDEFINED)'
+				settings['requirements']=settings['requirements'] + ' && (target.GLIDEIN_Site=?=UNDEFINED)'
 		if settings['istestjob'] == True:
 			f.write("+AccountingGroup = \"group_testjobs\"\n")
 
@@ -1197,8 +1229,6 @@ class JobSettings(object):
 			for thingy in settings['lines']:
 				f.write("%s\n" % thingy)
 
-		if 'os' in settings:
-			f.write("+DesiredOS =\"%s\"\n"%settings['os'])
 		f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
 		#f.write("%s"%settings['lines'])

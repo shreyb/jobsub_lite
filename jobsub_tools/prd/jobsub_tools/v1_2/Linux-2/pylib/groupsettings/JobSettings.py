@@ -943,11 +943,15 @@ class JobSettings(object):
             settings=self.settings 
             submit_host=settings['submit_host'] 
             fp=self.fileParser 
+	    if 'lines' in settings and len(settings['lines']) >0:			
+		for thingy in settings['lines']:
+                    f.write("%s\n" % thingy)
 	    if 'os' in settings:
 		f.write("+DesiredOS =\"%s\"\n"%settings['os'])
 	    if settings['site']:
 		if settings['site']!='LOCAL':
                     f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
+            f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
             for res in settings['resource_list']: 
                 parts=res.split('=')
                 if len(parts)>1: 
@@ -1092,7 +1096,6 @@ class JobSettings(object):
 			for thingy in settings['lines']:
 				f.write("%s\n" % thingy)
 
-		f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
 		#f.write("%s"%settings['lines'])
 		f.write("\n")
@@ -1225,9 +1228,6 @@ class JobSettings(object):
 
 
 
-		if 'lines' in settings and len(settings['lines']) >0:			
-			for thingy in settings['lines']:
-				f.write("%s\n" % thingy)
 
 		f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 

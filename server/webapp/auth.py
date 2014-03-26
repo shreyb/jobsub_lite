@@ -169,7 +169,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
         new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
 
         # First create a keytab file for the user if it does not exists
         if needs_refresh(keytab_fname,age_limit):
@@ -193,7 +193,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                 # Ignore file removal errors
                 pass
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
-        if needs_refresh(x509_cache_fname,age_limit):
+        if needs_refresh(x509_cache_fname,0):
             krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
@@ -250,13 +250,15 @@ def check_auth(func):
     def check_auth_wrapper(self, acctgroup, *args, **kwargs):
         dn = cherrypy.request.headers.get('Auth-User')
         if dn and acctgroup:
-            logger.log('DN: %s, acctgroup: %s' % (dn, acctgroup))
+            logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
             try:
                 role = 'Analysis'
                 tokens = acctgroup.split('--ROLE--')
                 if len(tokens) > 1:
                     (acctgroup, role) = tokens[0:2]
+                    logger.log('found ROLE %s in %s' %(role,tokens))
                 if _check_auth(dn, acctgroup, role):
+                    kwargs['role']=role
                     return func(self, acctgroup, *args, **kwargs)
                 else:
                     # return error for failed auth

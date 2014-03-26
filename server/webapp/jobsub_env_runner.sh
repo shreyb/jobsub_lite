@@ -25,9 +25,16 @@ export GROUP=$1
 shift
 export WORKDIR_ID=$1
 shift
+export ROLE=$1
+shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 setup jobsub_tools
+
+if [ "$ROLE" != "None" ]; then
+	export X509_USER_PROXY=${X509_USER_PROXY}_${ROLE}
+fi
+
 mkdir -p ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 has_exports=`echo $1 |grep 'export_env=' `

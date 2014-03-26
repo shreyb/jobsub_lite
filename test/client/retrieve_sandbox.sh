@@ -11,7 +11,7 @@ if [ "$CLUSTER" = "" ];then
     CLUSTER=1
 fi
 export SERVER=https://${MACH}:8443
-
+CLUSTER=`echo $CLUSTER | sed 's/\..*//'`
 mkdir -p curl
 mkdir -p python
 #hardcode group for now

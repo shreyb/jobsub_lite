@@ -39,7 +39,7 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options] [Server Options] user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
+    usage = '%prog [Client Options]'
     parser = optparse.OptionParser(usage=usage,
                                    conflict_handler="resolve")
 
@@ -90,7 +90,7 @@ def parse_opts(argv):
     options, remainder = parser.parse_args(argv)
 
     if options.help or (len(remainder) > 1):
-        parser.print_help(file)
+        parser.print_help()
         sys.exit(0)
 
     if not required_args_present(options):

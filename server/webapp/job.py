@@ -19,7 +19,7 @@ from shutil import copyfileobj
 from cherrypy.lib.static import serve_file
 
 from util import get_uid, mkdir_p, create_zipfile
-from auth import check_auth
+from auth import check_auth, get_x509_proxy_file
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
 
@@ -63,7 +63,7 @@ class SandboxResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on AccountJobsResouce.index'
+            err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 
@@ -72,9 +72,9 @@ class SandboxResource(object):
 
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
-
     def __init__(self):
         self.sandbox = SandboxResource()
+
 
     def doGET(self, job_id):
         schedd = condor.Schedd()
@@ -102,16 +102,27 @@ class AccountJobsResource(object):
 
         return rc
 
-    #def doDELETE(self, acctgroup, job_id, kwargs):
+
     def doDELETE(self, acctgroup, job_id):
         rc = {'out': None, 'err': None}
 
         if job_id:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
-            uid = get_uid(subject_dn)
-            logger.log('Removing jobs %s for user %s with accounting group %s' % (job_id, uid, acctgroup))
+            dn = cherrypy.request.headers.get('Auth-User')
+            uid = get_uid(dn)
+            constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+            # Split the jobid to get cluster_id and proc_id
+            ids = job_id.split('.')
+            constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
+            if (len(ids) > 1) and (ids[1]):
+                constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
+
+            logger.log('Removing jobs for user %s with acctgroup %s and constraints %s' % (uid, acctgroup, constraint))
+
             schedd = condor.Schedd()
-            rc['out'] = schedd.act(condor.JobAction.Remove, [job_id])
+            out = schedd.act(condor.JobAction.Remove, constraint)
+            logger.log(('%s' % (out)).replace('\n', ' '))
+
+            rc['out']  = "Removed %s jobs matching your request" % out['TotalSuccess']
         else:
             # Error because job_id is required to DELETE jobs
             err = 'No job id specified with DELETE action'
@@ -119,6 +130,7 @@ class AccountJobsResource(object):
             rc['err'] = err
 
         return rc
+
 
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
@@ -175,7 +187,7 @@ class AccountJobsResource(object):
                 elif cherrypy.request.method == 'GET':
                     rc = self.doGET(job_id)
                 elif cherrypy.request.method == 'DELETE':
-                    rc = self.doDELETE(job_id)
+                    rc = self.doDELETE(acctgroup, job_id)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -186,10 +198,8 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on AccountJobsResouce.index'
+            err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 
         return rc
-
-

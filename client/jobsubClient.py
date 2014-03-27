@@ -99,6 +99,7 @@ class JobSubClient:
 
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
+
     def dropbox_upload(self):
         result = dict()
 
@@ -154,7 +155,7 @@ class JobSubClient:
 
     def remove(self, jobid):
         creds = get_client_credentials()
-        self.RemoveURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+        self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
                              self.server, self.acctGroup, jobid
                          )
 

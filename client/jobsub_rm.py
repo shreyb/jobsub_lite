@@ -61,8 +61,8 @@ def parse_opts(argv):
                          default=constants.JOBSUB_SERVER,
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--job',
-                         dest='jobid',
+    opt_group.add_option('--jobid',
+                         dest='jobId',
                          type='string',
                          action='store',
                          metavar='<Job ID>',
@@ -104,7 +104,7 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, options.dropboxServer)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None)
     try:
         for jid in options.jobId.split(','):
             stime = time.time()

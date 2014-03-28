@@ -236,7 +236,7 @@ class AccountJobsResource(object):
             jobsub_args = kwargs.get('jobsub_args_base64')
             if jobsub_args is not None:
 
-                jobsub_args = base64.urlsafe_b64decode(jobsub_args).rstrip()
+                jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()
                 logger.log('jobsub_args: %s' % jobsub_args)
                 jobsub_command = kwargs.get('jobsub_command')
                 role  = kwargs.get('role')

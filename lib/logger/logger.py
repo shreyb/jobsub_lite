@@ -11,8 +11,8 @@ def whereAmI(nFramesUp=1):
     #return "[%s:%d %s]" % (os.path.basename(co.co_filename), co.co_firstlineno,co.co_name)
 
 def log(msg='', context='', severity=logging.INFO, traceback=False):
-    here=whereAmI()
-    msg=here+' '+ msg
+    here = whereAmI()
+    msg = '%s %s' % (here, msg)
     if cherrypy.request.app is None:
         setup_admin_logger()
         log_to_admin(msg,context,severity,traceback)

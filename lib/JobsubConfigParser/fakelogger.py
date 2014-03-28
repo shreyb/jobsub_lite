@@ -1,6 +1,6 @@
-
+import sys
 
 
 
 def log(msg):
-    print msg
+    print >> sys.stderr, msg

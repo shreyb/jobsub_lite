@@ -1,8 +1,18 @@
 import logging
 import cherrypy
 import os
+import sys
+
+def whereAmI(nFramesUp=1):
+    """ Create a string naming the function n frames up on the stack.
+    """
+    co = sys._getframe(nFramesUp+1).f_code
+    return "[%s:%s]" % (os.path.basename(co.co_filename), co.co_name)
+    #return "[%s:%d %s]" % (os.path.basename(co.co_filename), co.co_firstlineno,co.co_name)
 
 def log(msg='', context='', severity=logging.INFO, traceback=False):
+    here=whereAmI()
+    msg=here+' '+ msg
     if cherrypy.request.app is None:
         setup_admin_logger()
         log_to_admin(msg,context,severity,traceback)

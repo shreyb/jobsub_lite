@@ -1,7 +1,7 @@
 #!/bin/bash
 # run as ./jobsub/packaging/package.sh from directory above jobsub
 VERS=jobsub-0.1.4
-REL=1
+REL=5484_5485_5488
 echo "%_topdir ${HOME}/rpm" > ~/.rpmmacros
 echo "%_tmppath /tmp" >> ~/.rpmmacros
 mkdir -p ~/rpm/BUILD ~/rpm/RPMS ~/rpm/SOURCES ~/rpm/SPECS ~/rpm/SRPMS

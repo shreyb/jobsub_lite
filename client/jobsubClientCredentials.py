@@ -29,10 +29,96 @@ class Credentials():
         pass
 
     def isValid(self):
-        raise NotImplementedError
+        # A crude check. Need to find libraries to do it.
+        if self.exists() and not self.expired():
+            return True
+        return False
+
 
     def exists(self):
         raise NotImplementedError
+
+
+    def expired(self):
+        raise NotImplementedError
+
+
+class X509Credentials(Credentials):
+
+    def __init__(self, cert, key):
+        Credentials.__init__(self)
+        self.cert = cert
+        self.key = key
+
+
+    def exists(self):
+        if (self.cert and self.key and
+            os.path.exists(cert) and os.path.exists(key)):
+            return True
+        return False
+
+
+    def expired(self):
+        if not self.exists():
+            raise CredentialsNotFoundError()
+        now = time.time()
+        stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
+        etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
+        if (stime < now) and (now < etime):
+            return False
+        return True
+
+
+class X509Proxy(X509Credentials):
+
+    def __init__(self, proxy_file=None):
+        if proxy_file:
+            self.proxyFile = proxy_file
+        else:
+            self.proxy_file = self.getDefaultProxyFile()
+
+        X509Credentials.__init__(self, cert=self.proxyFile, key=self.proxyFile)
+
+        try:
+            lt = x509_lifetime(self.proxyFile)
+            self.validFrom = lt['stime']
+            self.validTo = lt['etime']
+        except:
+            self.validFrom = None
+            self.validTo = None
+            raise
+
+
+    def getDefaultProxyFile(self):
+        proxy_file = os.environ.get('X509_USER_PROXY',
+                                    constants.X509_PROXY_DEFAULT_FILE)
+
+        if proxy_file and os.path.exists(proxy_file):
+            raise CredentialsNotFoundError()
+
+        return proxy_file
+
+
+class VOMSProxy(X509Proxy):
+
+    def __init__(self, proxy_file=None):
+        X509Proxy.__init__(self, proxy_file=proxy_file)
+        self.fqan = self.getFQAN()
+
+
+    def getFQAN(self):
+        voms_cmd = spawn.find_executable("voms-proxy-info")
+        if not voms_cmd:
+            raise Exception("Unable to find command 'voms-proxy-info' in the PATH.\nSTDERR:\n%s"%klist_err)
+
+        cmd = '%s -file %s -fqan' % (voms_cmd, self.proxyFile)
+        fqan = []
+        try:
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+            fqan = cmd_out.strip().splitlines()
+        except:
+            pass
+        return fqan
 
 
 class Krb5Ticket(Credentials):
@@ -45,10 +131,10 @@ class Krb5Ticket(Credentials):
             self.validFrom = lt['stime']
             self.validTo = lt['etime']
         except:
-            raise
             self.krb5CredCache = None
             self.validFrom = None
             self.validTo = None
+            raise
 
 
     def __str__(self):
@@ -60,28 +146,14 @@ class Krb5Ticket(Credentials):
 
 
     def getKrb5CredCache(self):
-        cache_file = None
 
-        #if not is_os_linux():
-        #    raise CredentialsNotFoundError()
-
-        krb5_cc = constants.KRB5_DEFAULT_CC
-        if ('KRB5CCNAME' in os.environ):
-            krb5_cc = os.environ.get('KRB5CCNAME')
-
+        krb5_cc = os.environ.get('KRB5CCNAME', constants.KRB5_DEFAULT_CC)
         cache_file = krb5_cc.split(':')[-1]
 
         if not os.path.exists(cache_file):
             raise CredentialsNotFoundError()
 
         return cache_file
-
-
-    def isValid(self):
-        # A crude check. Need to find libraries to do it.
-        if self.exists() and not self.expired():
-            return True
-        return False
 
 
     def exists(self):
@@ -108,7 +180,7 @@ def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
 
     cmd = '%s -o %s' % (kx509_cmd, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
-    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
 
 def krb5_ticket_lifetime(cache):
@@ -116,10 +188,25 @@ def krb5_ticket_lifetime(cache):
     if not klist_cmd:
         raise Exception("Unable to find command 'klist' in the PATH")
     cmd = '%s -c %s' % (klist_cmd, cache)
-    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd)
-    lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, klist_out))[0]
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, cmd_out))[0]
     return {'stime': ' '.join(lt.split()[:2]),
             'etime': ' '.join(lt.split()[2:4])}
+
+def x509_lifetime(cert):
+    openssl_cmd = spawn.find_executable("openssl")
+    if not openssl_cmd:
+        raise Exception("Unable to find command 'openssl' in the PATH")
+    cmd = '%s x509 -in %s -noout -startdate -enddate' % (openssl_cmd, cert)
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    lt = {'stime': None, 'etime': None}
+    for line in cmd_out.strip().splitlines():
+        if line.startswith('notBefore='):
+            lt['stime'] = line[10:]
+        elif line.startswith('notAfter='):
+            lt['etime'] = line[9:]
+    return lt
+
 
 # Simple tests that work on Linux
 #k = Krb5Ticket()

@@ -13,8 +13,8 @@ export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group nova --debug \
        --jobsub-server $SERVER \
-            -e SERVER --nowrapfile   file://"$@"
+            -e SERVER --nowrapfile  file://"$@"
 
 $EXEPATH/jobsub_submit.py --group nova \
        --jobsub-server $SERVER \
-           -g -e SERVER --nowrapfile   file://"$@"
+           -g -e SERVER --nowrapfile  file://"$@"

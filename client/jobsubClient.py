@@ -40,25 +40,31 @@ class JobSubClientSubmissionError(Exception):
 
 class JobSubClient:
 
-    def __init__(self, server, acct_group, server_argv, dropboxServer=None, server_version='current'):
+    def __init__(self, server, acct_group, acct_role, server_argv,
+                 dropboxServer=None, server_version='current'):
         self.server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
 
+        self.credentials = get_client_credentials()
+        self.acctRole = get_acct_role(acct_role, self.credentials.get('cert'))
+
+        # Help URL
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
                              self.server, self.acctGroup
                        )
+        # Submit URL: Depends on the VOMS Role
+        if self.acctRole:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+        else:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
-        self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (
-                             self.server, self.acctGroup
-                         )
+        # TODO: Following is specific to the job submission and dropbox
+        #       This should be pulled out of the constructor
 
-        # PM: Following is specific to job submission and dropbox
-        #     This should not be in the constructor 
-
-        if self.serverArgv: 
+        if self.serverArgv:
             self.jobExeURI = get_jobexe_uri(self.serverArgv)
             self.jobExe = uri2path(self.jobExeURI)
             self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
@@ -87,7 +93,6 @@ class JobSubClient:
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
 
-
             if self.jobExeURI and self.jobExe:
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.jobExeURI):
@@ -102,28 +107,13 @@ class JobSubClient:
 
     def dropbox_upload(self):
         result = dict()
-
-        # Reponse from executing curl
-        response = cStringIO.StringIO()
-
         post_data = list()
-        creds = get_client_credentials()
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
+
         # Create curl object and set curl options to use
-        curl = pycurl.Curl()
-        curl.setopt(curl.URL, dropboxURL)
+        curl, response = curl_secure_context(dropboxURL, self.credentials)
         curl.setopt(curl.POST, True)
-        curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
-        curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-        curl.setopt(curl.FAILONERROR, True)
-        curl.setopt(curl.SSLCERT, creds.get('cert'))
-        curl.setopt(curl.SSLKEY, creds.get('key'))
-        curl.setopt(curl.CAPATH, get_capath())
-        curl.setopt(curl.WRITEFUNCTION, response.write)
-        curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 
         # If it is a local file upload the file
         for file, key in self.jobDropboxURIMap.items():
@@ -153,106 +143,19 @@ class JobSubClient:
         return result
 
 
-    def release(self, jobid):
-        post_data = [
-            ('job_action', 'RELEASE')
-        ]
-        creds = get_client_credentials()
-        self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN % (
-                             self.server, self.acctGroup, jobid
-                         )
-
-        logSupport.dprint('RELEASE URL     : %s\n' % (self.releaseURL))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
-
-        # Get curl & resposne object to use
-        curl, response = curl_secure_context(self.releaseURL)
-        curl.setopt(curl.CUSTOMREQUEST, 'PUT')
-        curl.setopt(curl.HTTPPOST, post_data)
-
-        try:
-            curl.perform()
-        except pycurl.error, error:
-            errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError
-
-        self.printResponse(curl, response)
-        curl.close()
-        response.close()
-
-
-    def hold(self, jobid):
-        post_data = [
-            ('job_action', 'HOLD')
-        ]
-        creds = get_client_credentials()
-        self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN % (
-                           self.server, self.acctGroup, jobid
-                       )
-
-        logSupport.dprint('HOLD URL       : %s\n' % (self.holdURL))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
-
-        # Get curl & resposne object to use
-        curl, response = curl_secure_context(self.holdURL)
-        curl.setopt(curl.CUSTOMREQUEST, 'PUT')
-        curl.setopt(curl.HTTPPOST, post_data)
-
-        try:
-            curl.perform()
-        except pycurl.error, error:
-            errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError
-
-        self.printResponse(curl, response)
-        curl.close()
-        response.close()
-
-
-    def remove(self, jobid):
-        creds = get_client_credentials()
-        self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
-                             self.server, self.acctGroup, jobid
-                         )
-
-        logSupport.dprint('REMOVE URL     : %s\n' % (self.removeURL))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
-
-        # Get curl & resposne object to use
-        curl, response = curl_secure_context(self.removeURL)
-        curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
-
-        try:
-            curl.perform()
-        except pycurl.error, error:
-            errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError
-
-        self.printResponse(curl, response)
-        curl.close()
-        response.close()
-
-
     def submit(self):
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en)
         ]
-        creds = get_client_credentials()
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
-        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
         #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
 
         # Get curl & resposne object to use
-        curl, response = curl_secure_context(self.submitURL)
+        curl, response = curl_secure_context(self.submitURL, self.credentials)
 
         # Set additional curl options for submit
         curl.setopt(curl.POST, True)
@@ -275,6 +178,72 @@ class JobSubClient:
         response.close()
 
 
+    def changeJobState(self, url, http_custom_request, post_data=None):
+        """
+        Generic API to perform job actions like remove/hold/release
+        """
+
+        logSupport.dprint('ACTION URL     : %s\n' % url)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(url, self.credentials)
+        curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
+        if post_data:
+            curl.setopt(curl.HTTPPOST, post_data)
+
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError
+
+        self.printResponse(curl, response)
+        curl.close()
+        response.close()
+
+
+    def release(self, jobid):
+        post_data = [
+            ('job_action', 'RELEASE')
+        ]
+        if self.acctRole:
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
+        else:
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
+        self.changeJobState(self.releaseURL, 'PUT', post_data)
+
+
+    def hold(self, jobid):
+        post_data = [
+            ('job_action', 'HOLD')
+        ]
+        if self.acctRole:
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
+        else:
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
+        self.changeJobState(self.holdURL, 'PUT', post_data)
+
+
+    def remove(self, jobid):
+        if self.acctRole:
+            self.deleteURL = constants.JOBSUB_JOB_DELETE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
+        else:
+            self.deleteURL = constants.JOBSUB_JOB_DELETE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
+        self.changeJobState(self.deleteURL, 'DELETE')
+
+
     def requiresFileUpload(self, uri):
         if uri:
             protocol = '%s://' % (uri.split('://'))[0]
@@ -284,7 +253,7 @@ class JobSubClient:
 
 
     def help(self):
-        curl, response = curl_secure_context(self.helpURL)
+        curl, response = curl_secure_context(self.helpURL, self.credentials)
         return_value = None
 
         try:
@@ -329,7 +298,7 @@ class JobSubClient:
                 print_formatted_response(value)
 
 
-def curl_secure_context(url):
+def curl_secure_context(url, credentials):
     """
     Create a standard curl object for talking to http/https url set with most
     standard options used. Does not set client credentials.
@@ -338,10 +307,10 @@ def curl_secure_context(url):
     """
 
     curl, response = curl_context(url)
-    creds = get_client_credentials()
 
-    curl.setopt(curl.SSLCERT, creds.get('cert'))
-    curl.setopt(curl.SSLKEY, creds.get('key'))
+    curl.setopt(curl.SSLCERT, credentials.get('cert'))
+    curl.setopt(curl.SSLKEY, credentials.get('key'))
+    curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
     else:
@@ -364,11 +333,9 @@ def curl_context(url):
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
     curl.setopt(curl.URL, url)
-    #curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.FAILONERROR, True)
     curl.setopt(curl.WRITEFUNCTION, response.write)
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
 
@@ -439,6 +406,17 @@ def get_capath():
 ###################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
 ###################################################################################
+
+def get_acct_role(acct_role, proxy):
+    role = acct_role
+    if not role:
+        # If no role is specified, try to extract it from VOMS proxy
+        voms_proxy = jobsubClientCredentials.VOMSProxy(proxy)
+        if voms_proxy.fqan:
+            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
+            if match.group(1) != 'NULL':
+                role = match.group(1)
+    return role
 
 
 def is_uri_supported(uri):

@@ -368,3 +368,90 @@ v1_2r 2/12/14
 v1_2s 2/18/14
 =============
 - bug fixes revealed by user testing of v1_2r
+
+v1_2t 3/3/14
+============
+- Changes to jobsub.ini :
+    + various changes to make sure wrap.sh files get transported off site
+        if no shared bluearc mount is available
+    + wn_ifdh_location is now a list of possible ifdh UPS directories, the
+        jobsub wrapper script will test them until it finds an installation
+        of ifdhc.  Useful for probing cvmfs locations until ifdh is found
+    + jobsub.ini better commented, order of loading of sections documented
+
+- New Environment Variables that can affect behavior:
+    + $TRANSFER_INPUT_FILES enviroment variable, a comma seperated list, 
+        can be used to transfer input files to remote sites.  For example,
+        export TRANSFER_INPUT_FILES=file1.tar,file2.tar ; jobsub -g 
+        --site=somewhere will land file1.tar and file2.tar in the jobs working
+        directory on the remote site .
+    + $TRANSFER_EXECUTABLE - set to true or false.  If true, the executable
+        and the wrapfile both get shipped off to worker node and land in the
+        working directory.  This is inefficient if the executable is on a 
+        shared disk for the worker nodes and the submit node, default is 
+        false for gpsn01 and true for HA client/server nodes such as
+        fifebatch1.  Setting this to TRUE  is useful on gpsn01 for 
+        submitting to OSG.
+ 
+- INC000000405338 --use_gftp -f  not working for input from /pnfs, fixed
+    
+v1_2u 3/6/14
+==============
+- RITM0076669 changed condor_rm wrapper behavior to exactly pass on
+    parameters to gpsn01's condor_rm.  The wrapper was needed because
+    of a condor bug where the parameter JOB_STOP_COUNT  was ignored,
+    this has since been fixed.
+
+- parsing of jobsub.ini file sometimes, but not always, interprets
+    some_setting = True as some_setting = 'True', the string value
+    where the boolean was intended causes initialization problems.
+    this is fixed.
+
+- New Environment Variable that can affect behavior:
+
+    + $WN_IFDH_LOCATION - a list of possible setup scripts to be searched 
+    for ifdh in the wrapper script.  The default is to search bluearc,
+    then local ups, then oasis.opensciencegrid.org/fermilab.  
+    export WN_IFDH_LOCATION='/cvmfs/novacvs.fnal.gov/externals/setup /cvmfs/oasis.opensciencegrid.org/$EXPERIMENT/externals/setup' 
+    is an example of a setting that nova might want to use on the OSG to
+    set up the particular version of ifdh (and the rest of thier software
+    stack at the same time)
+
+v1_2v 3/13/14
+================
+
+- ups unsetup left a messy environment behind which confused subsequent 
+  setups of jobsub_tools. Fixed
+- bug fixes to reading jobsub.ini, now uses the same library as the jobsub
+  server
+
+
+v1_2x 3/20/14
+==================================
+
+- consider this a pre-release of v1_3, intended to be  fully 
+    HA-jobsub-server compatible and more grid-aware and grid-compatible 
+    when run on gpsn01
+
+- SAM.begin and SAM.end jobs in DAGs prior to this release always ran 
+    locally on the submit_node. This places an unnecessary  maintenance 
+    burden on the HA-jobsub-server so these jobs now run where the rest 
+    of the DAG runs as specified by input to jobsub
+
+- bug fixes
+    + SAM.begin and SAM.end jobs now get the entire environment and 
+    condor attributes and requriements generated with -l --resource-provides 
+    --append_condor_requirements etc
+    + a bug searching for ifdh in the wn_ifdh_location list, where it 
+    failed to stop after finding correct version from the list 
+    has been fixed
+    + more careful and complete usage of (my.attribute = target.some_attribute) 
+    generation convention in generated condor job requirements
+
+- new settings in jobsub.ini
+    + always_run_on_grid - if set to True for submit_host has the same 
+    effect as always using -g when submitting. Useful for submit_hosts 
+    which do not have local condor pools
+    + default_grid_site - if present for submit_host is the glidein entry 
+    point that submission is sent to if no --site parameter specified.  
+    Disabled if not present or set to False

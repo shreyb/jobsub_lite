@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+import os
 import sys
+import json
 import optparse
 import pycurl
 import time
 import platform
-import json
-import os
+import email
 
 import constants
 from jobsubClient import get_capath, get_client_credentials, print_formatted_response
@@ -67,6 +68,22 @@ def parse_opts(argv):
     return options
 
 
+def decode_multipart_formdata(infile):
+    msg = email.message_from_file(infile)
+
+    for part in msg.walk():
+        if part.get_content_maintype() == 'multipart':
+            continue
+        if part.get_content_type() == 'application/json':
+            response_dict = json.loads(part.get_payload(decode=True))
+            print_formatted_response('JobStatus: %s' % response_dict.get('job_status'))
+        elif part.get_content_type() == 'application/zip':
+            filename = part.get_filename().split('/')[-1]
+            with open(filename, 'wb') as fp:
+                fp.write(part.get_payload(decode=True))
+                print 'Downloaded to %s' % filename
+
+
 def get_sandbox(options):
     creds = get_client_credentials()
     submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
@@ -75,8 +92,8 @@ def get_sandbox(options):
     print 'CREDENTIALS    : %s\n' % creds
     print 'SUBMIT_URL     : %s\n' % submitURL
 
-    fn = '%s.zip' % options.jobId
-    fp = open(fn, 'w')
+    fn = '%s.encoded' % options.jobId
+    fp = open(fn, 'wb')
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
     curl.setopt(curl.URL, submitURL)
@@ -100,8 +117,9 @@ def get_sandbox(options):
     fp.close()
 
     if response_code == 200:
-        print 'Downloaded to %s' % fn
-    elif response_code == 404:
+        with open(fn, 'rb') as infile:
+            decode_multipart_formdata(infile)
+    else:
         with open(fn, 'r') as fp:
             value = fp.read()
             if response_content_type == 'application/json':
@@ -112,7 +130,7 @@ def get_sandbox(options):
                 print_formatted_response(response_err, msg_type='ERROR')
             else:
                 print_formatted_response(value)
-        os.remove(fn)
+    os.remove(fn)
 
 
 def main(argv):

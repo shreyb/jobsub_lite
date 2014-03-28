@@ -153,6 +153,66 @@ class JobSubClient:
         return result
 
 
+    def release(self, jobid):
+        post_data = [
+            ('job_action', 'RELEASE')
+        ]
+        creds = get_client_credentials()
+        self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN % (
+                             self.server, self.acctGroup, jobid
+                         )
+
+        logSupport.dprint('RELEASE URL     : %s\n' % (self.releaseURL))
+        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(self.releaseURL)
+        curl.setopt(curl.CUSTOMREQUEST, 'PUT')
+        curl.setopt(curl.HTTPPOST, post_data)
+
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError
+
+        self.printResponse(curl, response)
+        curl.close()
+        response.close()
+
+
+    def hold(self, jobid):
+        post_data = [
+            ('job_action', 'HOLD')
+        ]
+        creds = get_client_credentials()
+        self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN % (
+                           self.server, self.acctGroup, jobid
+                       )
+
+        logSupport.dprint('HOLD URL       : %s\n' % (self.holdURL))
+        logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(self.holdURL)
+        curl.setopt(curl.CUSTOMREQUEST, 'PUT')
+        curl.setopt(curl.HTTPPOST, post_data)
+
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            print "PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError
+
+        self.printResponse(curl, response)
+        curl.close()
+        response.close()
+
+
     def remove(self, jobid):
         creds = get_client_credentials()
         self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
@@ -174,21 +234,8 @@ class JobSubClient:
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientError
 
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        self.printResponse(curl, response)
         curl.close()
-
-        print "Server response code: %s" % response_code
-        if response_code == 200:
-            value = response.getvalue()
-            if response_content_type == 'application/json':
-                response_dict = json.loads(value)
-                response_err = response_dict.get('err')
-                response_out = response_dict.get('out')
-                print_formatted_response(response_out)
-                print_formatted_response(response_err, msg_type='ERROR')
-            else:
-                print_formatted_response(value)
         response.close()
 
 
@@ -223,21 +270,8 @@ class JobSubClient:
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError
 
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        self.printResponse(curl, response)
         curl.close()
-
-        print "Server response code: %s" % response_code
-        if response_code == 200:
-            value = response.getvalue()
-            if response_content_type == 'application/json':
-                response_dict = json.loads(value)
-                response_err = response_dict.get('err')
-                response_out = response_dict.get('out')
-                print_formatted_response(response_out)
-                print_formatted_response(response_err, msg_type='ERROR')
-            else:
-                print_formatted_response(value)
         response.close()
 
 
@@ -273,6 +307,26 @@ class JobSubClient:
                 return_value = value
         response.close()
         return return_value
+
+
+    def printResponse(self, curl, response):
+        """
+        Given the curl and response objects print the response on screen
+        """
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        print "Server response code: %s" % response_code
+        if response_code == 200:
+            value = response.getvalue()
+            if response_content_type == 'application/json':
+                response_dict = json.loads(value)
+                response_err = response_dict.get('err')
+                response_out = response_dict.get('out')
+                print_formatted_response(response_out)
+                print_formatted_response(response_err, msg_type='ERROR')
+            else:
+                print_formatted_response(value)
 
 
 def curl_secure_context(url):

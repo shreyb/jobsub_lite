@@ -1,6 +1,6 @@
 #!/bin/sh
 
-
+usage="USAGE: $0 <path to rpm file>"
 remote_cmd() {
     cmd=$1
     ssh $repologin "$cmd"
@@ -10,6 +10,7 @@ rpmfile=$1
 
 if [ "$rpmfile" = "" ]; then
     echo "Specify rpm file"
+    echo $usage
     exit 1
 fi
 

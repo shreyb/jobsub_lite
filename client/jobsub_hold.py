@@ -66,7 +66,7 @@ def parse_opts(argv):
                          type='string',
                          action='store',
                          metavar='<Job ID>',
-                         help='CSV list of Job Ids to remove')
+                         help='CSV list of Job Ids to hold')
 
     opt_group.add_option('--debug',
                          dest='debug',
@@ -108,9 +108,9 @@ def main(argv):
     try:
         for jid in options.jobId.split(','):
             stime = time.time()
-            js_client.remove(jid)
+            js_client.hold(jid)
             etime = time.time()
-            print 'Remote Removal Processing Time: %s sec' % (etime - stime)
+            print 'Remote Hold Processing Time: %s sec' % (etime - stime)
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

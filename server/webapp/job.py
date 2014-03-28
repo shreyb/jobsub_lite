@@ -74,6 +74,11 @@ class SandboxResource(object):
 class AccountJobsResource(object):
     def __init__(self):
         self.sandbox = SandboxResource()
+        self.condorActions = {
+            'REMOVE': condor.JobAction.Remove,
+            'HOLD': condor.JobAction.Hold,
+            'RELEASE': condor.JobAction.Release,
+        }
 
 
     def doGET(self, job_id):
@@ -107,27 +112,39 @@ class AccountJobsResource(object):
         rc = {'out': None, 'err': None}
 
         if job_id:
-            dn = cherrypy.request.headers.get('Auth-User')
-            uid = get_uid(dn)
-            constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
-            # Split the jobid to get cluster_id and proc_id
-            ids = job_id.split('.')
-            constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
-            if (len(ids) > 1) and (ids[1]):
-                constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
-
-            logger.log('Removing jobs for user %s with acctgroup %s and constraints %s' % (uid, acctgroup, constraint))
-
-            schedd = condor.Schedd()
-            out = schedd.act(condor.JobAction.Remove, constraint)
-            logger.log(('%s' % (out)).replace('\n', ' '))
-
-            rc['out']  = "Removed %s jobs matching your request" % out['TotalSuccess']
+            rc['out'] = self.doJobAction(
+                            acctgroup, job_id,
+                            self.condorActions['REMOVE'])
         else:
             # Error because job_id is required to DELETE jobs
             err = 'No job id specified with DELETE action'
             logger.log(err)
             rc['err'] = err
+
+        return rc
+
+
+    def doPUT(self, acctgroup, job_id, kwargs):
+        rc = {'out': None, 'err': None}
+
+        job_action = kwargs.get('job_action')
+        if job_action and job_id:
+
+            if job_action.upper() in self.condorActions:
+                rc['out'] = self.doJobAction(
+                                acctgroup, job_id,
+                                self.condorActions[job_action.upper()])
+            else:
+                rc['err'] = '%s is not a valid action on jobs' % job_action
+
+        elif not job_id:
+            # Error because job_id is required to DELETE jobs
+            rc['err'] = 'No job id specified with DELETE action'
+        else:
+            # Error because no args informing the action hold/release given
+            rc['err'] = 'No action (hold/release) specified with PUT action'
+
+        logger.log(rc)
 
         return rc
 
@@ -188,6 +205,8 @@ class AccountJobsResource(object):
                     rc = self.doGET(job_id)
                 elif cherrypy.request.method == 'DELETE':
                     rc = self.doDELETE(acctgroup, job_id)
+                elif cherrypy.request.method == 'PUT':
+                    rc = self.doPUT(acctgroup, job_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -203,3 +222,23 @@ class AccountJobsResource(object):
             rc = {'err': err}
 
         return rc
+
+
+
+    def doJobAction(self, acctgroup, job_id, job_action):
+        dn = cherrypy.request.headers.get('Auth-User')
+        uid = get_uid(dn)
+        constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+        # Split the jobid to get cluster_id and proc_id
+        ids = job_id.split('.')
+        constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
+        if (len(ids) > 1) and (ids[1]):
+            constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
+
+        logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
+
+        schedd = condor.Schedd()
+        out = schedd.act(job_action, constraint)
+        logger.log(('%s' % (out)).replace('\n', ' '))
+
+        return "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])

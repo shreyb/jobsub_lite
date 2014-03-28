@@ -235,13 +235,13 @@ class JobSubClient:
 
     def remove(self, jobid):
         if self.acctRole:
-            self.deleteURL = constants.JOBSUB_JOB_DELETE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.deleteURL = constants.JOBSUB_JOB_DELETE_URL_PATTERN % (
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
                                  self.server, self.acctGroup, jobid
                              )
 
-        self.changeJobState(self.deleteURL, 'DELETE')
+        self.changeJobState(self.removeURL, 'DELETE')
 
 
     def requiresFileUpload(self, uri):

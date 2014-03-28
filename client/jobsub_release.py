@@ -61,6 +61,14 @@ def parse_opts(argv):
                          default=constants.JOBSUB_SERVER,
                          help='Alternate location of JobSub server to use')
 
+    opt_group.add_option('--role',
+                         dest='acctRole',
+                         type='string',
+                         action='store',
+                         metavar='<VOMS Role>',
+                         default=None,
+                         help='VOMS Role for priorities and accounting')
+
     opt_group.add_option('--jobid',
                          dest='jobId',
                          type='string',
@@ -104,7 +112,8 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup,
+                             options.acctRole, None)
     try:
         for jid in options.jobId.split(','):
             stime = time.time()

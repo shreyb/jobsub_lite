@@ -113,6 +113,14 @@ def parse_opts(argv):
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
+    opt_group.add_option('--role',
+                         dest='acctRole',
+                         type='string',
+                         action='store',
+                         metavar='<VOMS Role>',
+                         default=None,
+                         help='VOMS Role for priorities and accounting')
+
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
@@ -120,12 +128,12 @@ def parse_opts(argv):
                          default=constants.JOBSUB_SERVER,
                          help='Alternate location of JobSub server to use')
 
-    parser.add_option('--dropbox-server',
-                      dest='dropboxServer',
-                      action='store',
-                      metavar='<Dropbox Server>',
-                      default=None,
-                      help='Alternate location of Dropbox server to use')
+    opt_group.add_option('--dropbox-server',
+                         dest='dropboxServer',
+                         action='store',
+                         metavar='<Dropbox Server>',
+                         default=None,
+                         help='Alternate location of Dropbox server to use')
 
     opt_group.add_option('--debug',
                          dest='debug',
@@ -175,7 +183,7 @@ def print_acctgroup_help(options):
     Format and print the help message from the server
     """
 
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, [])
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
     response = js_client.help()
 
     out = response.get('out')
@@ -196,7 +204,8 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, srv_argv, options.dropboxServer)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup,
+                             options.acctRole, srv_argv, options.dropboxServer)
     try:
         stime = time.time()
         js_client.submit()

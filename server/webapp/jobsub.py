@@ -52,14 +52,15 @@ def get_dropbox_path_root():
     return rc
 
 
-def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None'):
+def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='None'):
+    jobsub_args.insert(0, role)
     jobsub_args.insert(0, workdir_id)
     jobsub_args.insert(0, acctgroup)
     jobsub_args.insert(0, uid)
 
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
     command = [envrunner] + jobsub_args
-    logger.log('jobsub command: %s' % command)
+    logger.log('jobsub.py:execute_jobsub_command:jobsub command: %s' % command)
     pp = Popen(command, stdout=PIPE, stderr=PIPE)
     result = {
         'out': pp.stdout.readlines(),

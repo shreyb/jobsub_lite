@@ -1,5 +1,6 @@
 import base64
-import threading
+#import threading
+import random
 import os
 import re
 import platform
@@ -184,19 +185,22 @@ class AccountJobsResource(object):
 
     def doPOST(self, acctgroup, job_id, kwargs):
         if job_id is None:
-            logger.log('kwargs: %s' % str(kwargs))
+            logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             if jobsub_args is not None:
+
                 jobsub_args = base64.urlsafe_b64decode(jobsub_args).rstrip()
                 logger.log('jobsub_args: %s' % jobsub_args)
                 jobsub_command = kwargs.get('jobsub_command')
-                logger.log('jobsub_command: %s' % jobsub_command)
+                role  = kwargs.get('role')
+                logger.log('job.py:doPost:jobsub_command %s' %(jobsub_command))
+                logger.log('job.py:doPost:role %s ' % (role))
                 subject_dn = cherrypy.request.headers.get('Auth-User')
                 uid = get_uid(subject_dn)
                 command_path_root = get_command_path_root()
-                ts = datetime.now().strftime("%Y-%m-%d_%H%M%S") # add request id
-                thread_id = threading.current_thread().ident
-                workdir_id = '%s_%s' % (ts, thread_id)
+                ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f") # add request id
+                uniquer=random.randrange(0,10000)
+                workdir_id = '%s_%s' % (ts, uniquer)
                 command_path = os.path.join(command_path_root, acctgroup, uid, workdir_id)
                 logger.log('command_path: %s' % command_path)
                 mkdir_p(command_path)
@@ -212,7 +216,7 @@ class AccountJobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
 
-                rc = execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id)
+                rc = execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id, role)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'

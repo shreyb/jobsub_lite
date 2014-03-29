@@ -1,6 +1,6 @@
 Name:           jobsub
-Version:        0.1.4
-Release:        5484_5485_5488
+Version:        __VERSION__
+Release:        __RELEASE__
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System

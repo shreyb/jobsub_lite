@@ -10,10 +10,17 @@ import ReleaseManagerLib
 
 def usage():
     print "%s <version> <SourceDir> <ReleaseDir>" % os.path.basename(sys.argv[0])
-    print "Example: %s v2.5.3 /tmp/glideinwms /tmp/release_dir" % os.path.basename(sys.argv[0])
+    print ""
+    print "Example: Release Candidate rc3 for v0.2 (ie version v0.2.rc3)"
+    print "release.py --version=0.2 --rc=3 --source-dir=/cloud/login/parag/wspace/jobsub/code/jobsub --release-dir=/var/tmp/parag --rpm-release=1"
+    print ""
+    print "Example: Final Release v0.2"
+    print "release.py --version=0.2 --source-dir=/cloud/login/parag/wspace/jobsub/code/jobsub --release-dir=/var/tmp/parag --rpm-release=1"
+    print ""
 
 def parse_opts(argv):
-    parser = optparse.OptionParser(usage='%prog [options]',
+    #parser = optparse.OptionParser(usage='%prog [options]',
+    parser = optparse.OptionParser(usage=usage(),
                                    version='v0.1',
                                    conflict_handler="resolve")
     parser.add_option('--version',

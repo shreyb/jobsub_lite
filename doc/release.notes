@@ -1,4 +1,24 @@
 ================================================================================
+v0.2
+================================================================================
+
+CLIENT
+------
+* Client provides jobsub_rm.py to enable users to remove jobs. #5531
+* Client provides jobsub_hold.py to enable users to hold jobs. #5532
+* Client provides jobsub_release.py to enable users to release jobs. #5532
+* Client now provides means to interface with dropbox service. #4975
+* Client command allow users to specify VOMS role using --role option. #5546
+
+SERVER
+------
+* Server now supports job submission using different VOMS roles. #5066
+* Server supports API that enable users to remove jobs. #5531
+* Server supports API that enable users to hold jobs. #5532
+* Server supports API that enable users to release jobs. #5532
+* Bug Fix: Fixed AccountJobsResouce.index exception issue in the server. #5750
+
+================================================================================
 v0.1.4
 ================================================================================
 
@@ -10,7 +30,6 @@ SERVER
 ------
 * Dropbox service now provides means for users to specify and upload files that
   will be transferred with the job. #4976
-
 * Bug Fix: Fixed bug where Jobsub server would not create job specific 
   directory if no executable is sepecified in the arguments. #5473
 

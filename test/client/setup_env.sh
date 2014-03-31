@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -e "$JOBSUB_CLIENT_DIR" ] then
+if [ -e "$JOBSUB_CLIENT_DIR" ];  then
     export EXEPATH=$JOBSUB_CLIENT_DIR
 else
     grep 5\. /etc/redhat-release > /dev/null 2>&1

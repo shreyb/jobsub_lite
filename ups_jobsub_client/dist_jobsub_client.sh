@@ -1,16 +1,17 @@
 #!/bin/sh 
-if [ "$#" != "3" ]; then
-    echo "usage: dist_jobsub_client.sh target-machine release-version url-to-tarball"
-    exit 0
+if [ "$#" != "3" ] ; then
+	echo "usage $0 target_machine release-version url-to-tarball"
+	echo "tars up jobsub_client and distributes it to /fnal/ups/prd"
+        echo "example: have just built "
+        echo "\$HOME/0.2.rc2/jobsub-client-v0.2.rc2.tgz using release.py"
+        echo "and wish to install it on novagpvm01:"
+        echo ""
+        echo "./dist_jobsub_client.sh novagpvm01 v0.2.rc2 \$HOME/0.2.rc2/jobsub-client-v0.2.rc2.tgz "
+	exit -1
 fi
 VERS=$2
 REV=''
 
-if [ "$1" ==  "" ]; then
-	echo "usage $0 target_machine"
-	echo "tars up jobsub_client and distributes it to /fnal/ups/prd"
-	exit -1
-fi
 
 ./make_tablefile.py $VERS$REV
 cd ups_db

@@ -19,7 +19,11 @@ scp db.jobsub_client.tar products@$1.fnal.gov:/fnal/ups/db
 ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_client.tar; rm db.jobsub_client.tar; "
 rm  db.jobsub_client.tar
 cd -
-wget $3
+if [ -e "$3" ] ; then
+    cp $3 .
+else
+    wget $3
+fi
 TARBALL=`basename $3`
 tar xzvf $TARBALL
 rm $TARBALL

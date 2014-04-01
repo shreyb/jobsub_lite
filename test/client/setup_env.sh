@@ -14,7 +14,7 @@ else
     export X509_USER_CERT=/tmp/x509up_u${UID}
     export X509_USER_KEY=/tmp/x509up_u${UID}
 
-    export EXEPATH="../../client"
+    export EXEPATH=`pwd`"/../../client"
     if [ "$PYTHONPATH" = "" ]; then
             export PYTHONPATH=$EXEPATH
     else

@@ -20,5 +20,5 @@ cd curl
 curl -k --cert /tmp/x509up_u${UID} -H "Accept: application/x-download" -o $CLUSTER.zip -X GET $SERVER/jobsub/acctgroups/${GROUP}/jobs/${CLUSTER}/sandbox/
 cd -
 cd python
-../$EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job $CLUSTER
+$EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job $CLUSTER
 cd -

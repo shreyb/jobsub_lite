@@ -19,6 +19,9 @@ from shutil import copyfileobj
 
 class HelpResource(object):
     def doGET(self, acctgroup):
+        """ Executes the jobsub tools command with the help argument and returns the output.
+            API call is /jobsub/acctgroups/<group_id>/help
+        """
         jobsub_args = ['--help']
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
@@ -56,6 +59,9 @@ class HelpResource(object):
 @cherrypy.popargs('box_id', 'filename')
 class DropboxResource(object):
     def doGET(self, acctgroup, box_id, filename):
+        """ Serve files from Dropbox service
+            API is /jobsub/acctgroups/<group_id>/dropbox/<box_id>/<filename>/
+        """
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         dropbox_path_root = get_dropbox_path_root()
@@ -64,6 +70,9 @@ class DropboxResource(object):
         return serve_file(dropbox_file_path, "application/x-download", "attachment")
 
     def doPOST(self, acctgroup, kwargs):
+        """ Upload files to Dropbox service. Return JSON object describing location of files.
+            API is /jobsub/acctgroups/<group_id>/dropbox/
+        """
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         box_id = str(uuid.uuid4())
@@ -129,6 +138,9 @@ class AccountingGroupsResource(object):
         self.dropbox = DropboxResource()
 
     def doGET(self, acctgroup):
+        """ Query list of accounting groups. Returns a JSON list object.
+            API is /jobsub/acctgroups/
+        """
         if acctgroup is None:
             return {'out': get_supported_accountinggroups()}
         else:

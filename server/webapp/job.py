@@ -39,6 +39,10 @@ condor_job_status = {
 
 
 def get_condor_queue(acctgroup, uid, convert=False):
+    """ Uses the Condor Python bindings to get information for scheduled jobs.
+        Returns a map of objects with the Cluster Id as the key
+    """
+
     schedd = condor.Schedd()
     results = schedd.query('Owner =?= "%s"' % uid)
     all_jobs = dict()
@@ -53,6 +57,8 @@ def get_condor_queue(acctgroup, uid, convert=False):
 
 
 def classad_to_dict(classad):
+    """ Converts a ClassAd object to a dictionary. Used for serialization to JSON.
+    """
     job_dict = dict()
     for k, v in classad.items():
         job_dict[repr(k)] = repr(v)
@@ -60,6 +66,9 @@ def classad_to_dict(classad):
 
 
 def cleanup(zip_file, outfilename):
+    """ Hook function to cleanup sandbox files after request has been processed
+    """
+             
     try:
         os.remove(outfilename)
     except:
@@ -73,6 +82,10 @@ def cleanup(zip_file, outfilename):
 
 
 class SandboxResource(object):
+    """ Download compressed output sandbox for a given job
+        API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
+    """
+
 
     def doGET(self, acctgroup, job_id, kwargs):
         subject_dn = cherrypy.request.headers.get('Auth-User')
@@ -170,6 +183,16 @@ class AccountJobsResource(object):
 
 
     def doGET(self, acctgroup, job_id):
+        """ Serves the following APIs:
+
+            Query a single job. Returns a JSON map of the ClassAd 
+            object that matches the job id
+            API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
+
+            Query list of jobs. Returns a JSON map of all the ClassAd 
+            objects in the queue
+            API is /jobsub/acctgroups/<group_id>/jobs/
+        """
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         if job_id is not None:
@@ -231,6 +254,10 @@ class AccountJobsResource(object):
 
 
     def doPOST(self, acctgroup, job_id, kwargs):
+        """ Create/Submit a new job. Returns the output from the jobsub tools.
+            API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
+        """
+
         if job_id is None:
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -256,8 +283,10 @@ class AccountJobsResource(object):
                     logger.log('command_file_path: %s' % command_file_path)
                     with open(command_file_path, 'wb') as dst_file:
                         copyfileobj(jobsub_command.file, dst_file)
-                    # replace the command file name in the arguments with the path on the local machine
-                    command_tag = '@(.*)%s' % jobsub_command.filename
+                    # replace the command file name in the arguments with 
+                    # the path on the local machine.  It should be the 
+                    # last '@' in the args
+                    command_tag = '@(?!.*@)(.*)%s' % jobsub_command.filename
                     jobsub_args = re.sub(command_tag, command_file_path, jobsub_args)
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 

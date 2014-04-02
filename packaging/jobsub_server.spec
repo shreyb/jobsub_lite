@@ -108,7 +108,10 @@ rm -rf $RPM_BUILD_ROOT
 /scratch/dropbox/
 
 %changelog
-* Thu Feb 27 2015 Dennis Box <dbox@fnal.gov> - 0.1.4-2
+* Wed Apr 02 2014 Dennis Box <dbox@fnal.gov> - 0.2-1
+- Jobsub version v0.2
+
+* Thu Feb 27 2014 Dennis Box <dbox@fnal.gov> - 0.1.4-2
 - fixed some dropbox directory issues
 
 * Wed Jan 29 2014 Dennis Box <dbox@fnal.gov> - 0.1.2.1-1

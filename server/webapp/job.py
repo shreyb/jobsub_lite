@@ -315,7 +315,7 @@ class AccountJobsResource(object):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
-                    rc = self.doGET(job_id)
+                    rc = self.doGET(acctgroup,job_id)
                 elif cherrypy.request.method == 'DELETE':
                     rc = self.doDELETE(acctgroup, job_id)
                 elif cherrypy.request.method == 'PUT':

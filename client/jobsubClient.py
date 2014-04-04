@@ -23,6 +23,7 @@ import platform
 import json
 import copy
 import traceback
+import pprint 
 
 import constants
 import jobsubClientCredentials
@@ -243,6 +244,15 @@ class JobSubClient:
 
         self.changeJobState(self.removeURL, 'DELETE')
 
+    def list(self, jobid=None):
+            if jobid is None:
+                self.listURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+            else:
+                self.listURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
+            self.changeJobState(self.listURL, 'GET')
 
     def requiresFileUpload(self, uri):
         if uri:
@@ -347,9 +357,12 @@ def print_formatted_response(msg, msg_type='OUTPUT', ignore_empty_msg=True):
         return
     print 'Response %s:' % msg_type
     if isinstance(msg, (str, int, float, unicode)):
-        print '%s' % msg
+        print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):
         print '%s' % '\n'.join(msg)
+    elif isinstance(msg, (dict)):
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(msg)
 
 
 def get_client_credentials():

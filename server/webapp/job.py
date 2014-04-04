@@ -7,7 +7,7 @@ import platform
 import cherrypy
 import logger
 import math
-
+import subprocessSupport 
 from util import encode_multipart_formdata
 
 if platform.system() == 'Linux':
@@ -206,8 +206,9 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         else:
-            all_jobs = get_condor_queue(acctgroup, uid, True)
-            rc = {'out': all_jobs}
+            all_jobs, cmd_err = subprocessSupport.iexe_cmd('condor_q -global -wide')
+            #all_jobs = get_condor_queue(acctgroup, uid, True)
+            rc = {'out': all_jobs.split('\n')}
 
         return rc
 

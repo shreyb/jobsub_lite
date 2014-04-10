@@ -112,7 +112,7 @@ class VOMSProxy(X509Proxy):
     def getFQAN(self):
         voms_cmd = spawn.find_executable("voms-proxy-info")
         if not voms_cmd:
-            raise Exception("Unable to find command 'voms-proxy-info' in the PATH.\nSTDERR:\n%s"%klist_err)
+            raise Exception("Unable to find command 'voms-proxy-info' in the PATH.")
 
         cmd = '%s -file %s -fqan' % (voms_cmd, self.proxyFile)
         fqan = []

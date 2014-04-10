@@ -11,10 +11,10 @@ shift
 
 export SERVER=https://${MACH}:8443
 
-$EXEPATH/jobsub_submit.py --group nova --debug \
+$EXEPATH/jobsub_submit.py --group $GROUP --debug \
        --jobsub-server $SERVER \
             -e SERVER --nowrapfile  file://"$@"
 
-$EXEPATH/jobsub_submit.py --group nova \
+$EXEPATH/jobsub_submit.py --group $GROUP \
        --jobsub-server $SERVER \
            -g -e SERVER --nowrapfile  file://"$@"

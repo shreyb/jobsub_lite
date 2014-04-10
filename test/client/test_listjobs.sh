@@ -5,4 +5,4 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 MACH=$1
-curl -k  --cert /tmp/x509up_u${UID}  -H "Accept: text/html" -X GET https://${MACH}:8443/jobsub/acctgroups/nova/jobs/
+curl -k  --cert /tmp/x509up_u${UID}  -H "Accept: text/html" -X GET https://${MACH}:8443/jobsub/acctgroups/$GROUP/jobs/

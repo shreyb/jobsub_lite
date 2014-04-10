@@ -10,7 +10,6 @@ shift
 JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 
 export SERVER=https://${MACH}:8443
-GROUP=nova
 echo before
 condor_q -name $MACH -pool $MACH
 $EXEPATH/jobsub_rm.py --group $GROUP --jobsub-server $SERVER  --jobid $JOBLIST

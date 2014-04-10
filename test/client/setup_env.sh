@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ "$GROUP" == "" ]; then
+        export GROUP=nova
+fi
+
+
 if [ -e "$JOBSUB_CLIENT_DIR" ];  then
     export EXEPATH=$JOBSUB_CLIENT_DIR
 else

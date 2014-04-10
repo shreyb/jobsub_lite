@@ -103,7 +103,10 @@ class VOMSProxy(X509Proxy):
 
     def __init__(self, proxy_file=None):
         X509Proxy.__init__(self, proxy_file=proxy_file)
-        self.fqan = self.getFQAN()
+        try:
+            self.fqan = self.getFQAN()
+        except:
+            self.fqan = None
 
 
     def getFQAN(self):

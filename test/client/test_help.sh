@@ -1,5 +1,4 @@
 #!/bin/sh
-GROUP=`id -gn`
 if [ "$1" = "" ]; then
     echo "usage: $0 servername"
     echo "test that jobsub help is implemented on server"

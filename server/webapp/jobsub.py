@@ -6,6 +6,11 @@ import socket
 
 from JobsubConfigParser import JobsubConfigParser
 
+class AcctGroupNotConfiguredError(Exception):
+    def __init__(self, acctgroup):
+        self.acctgroup = acctgroup
+        Exception.__init__(self, "AcctGroup='%s' not configured on this server" % (self.acctgroup))
+
 
 def is_supported_accountinggroup(accountinggroup):
     rc = False
@@ -37,6 +42,18 @@ def get_command_path_root():
     if p.has_section(submit_host):
         if p.has_option(submit_host, 'command_path_root'):
             rc = p.get(submit_host, 'command_path_root')
+
+    return rc
+
+
+def get_voms(acctgroup):
+    rc = 'fermilab:/fermilab/%s' % acctgroup
+    p = JobsubConfigParser()
+    if p.has_section(acctgroup):
+        if p.has_option(acctgroup, 'voms'):
+            rc = p.get(acctgroup, 'voms')
+    else:
+        raise AcctGroupNotConfiguredError(acctgroup)
 
     return rc
 

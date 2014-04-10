@@ -27,7 +27,7 @@ import cherrypy
 import logger
 import subprocessSupport
 from util import needs_refresh
-
+from jobsub import get_voms
 
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
@@ -73,7 +73,10 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
-    voms_attrs = 'fermilab:/fermilab/%s' % acctgroup
+
+    # Any excpetion raised will result in Authorization Error by the caller
+    voms_attrs = get_voms(acctgroup)
+
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
     cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
@@ -82,7 +85,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     except:
         # Catch and ignore warnings
-        #warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
+        # warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
         proxy_created_pattern = 'Creating proxy  Done'
         tb = traceback.format_exc()
         if len(re.findall(proxy_created_pattern, tb)):

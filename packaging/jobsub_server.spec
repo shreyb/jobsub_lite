@@ -1,6 +1,6 @@
 Name:           jobsub
-Version:        __VERSION__
-Release:        __RELEASE__
+Version:        0.2.1
+Release:        5525
 Summary:        RESTful API for Jobsub
 
 Group:          Applications/System
@@ -95,6 +95,15 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/subprocessSupport.py
 /opt/jobsub/server/webapp/subprocessSupport.pyc
 /opt/jobsub/server/webapp/subprocessSupport.pyo
+/opt/jobsub/server/webapp/condor_commands.py
+/opt/jobsub/server/webapp/condor_commands.pyc
+/opt/jobsub/server/webapp/condor_commands.pyo
+/opt/jobsub/server/webapp/sandbox.py
+/opt/jobsub/server/webapp/sandbox.pyc
+/opt/jobsub/server/webapp/sandbox.pyo
+/opt/jobsub/server/webapp/history.py
+/opt/jobsub/server/webapp/history.pyc
+/opt/jobsub/server/webapp/history.pyo
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo

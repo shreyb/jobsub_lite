@@ -1,188 +1,42 @@
 import base64
-#import threading
 import random
 import os
 import re
-import platform
 import cherrypy
 import logger
 import math
 import subprocessSupport 
-from util import encode_multipart_formdata
-
-if platform.system() == 'Linux':
-    try:
-        import htcondor as condor
-        import classad
-    except:
-        logger.log('Cannot import htcondor. Have the condor python bindings been installed?')
 
 from datetime import datetime
 from shutil import copyfileobj
 
 from cherrypy.lib.static import serve_file
 
-from util import get_uid, mkdir_p, create_zipfile
-from auth import check_auth, get_x509_proxy_file
-from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
+from util import get_uid, mkdir_p
+from auth import check_auth
+from jobsub import is_supported_accountinggroup
+from jobsub import execute_jobsub_command
+from jobsub import get_command_path_root
 from format import format_response
+from condor_commands import condor, api_condor_q,ui_condor_q
+from condor_commands import classad_to_dict,constructFilter
+from sandbox import SandboxResource
+from history import HistoryResource
 
-
-condor_job_status = {
-    1: 'Idle',
-    2: 'Running',
-    3: 'Removed',
-    4: 'Completed',
-    5: 'Held',
-    6: 'Transferring Output',
-}
-
-
-def get_condor_queue(acctgroup, uid, convert=False):
-    """ Uses the Condor Python bindings to get information for scheduled jobs.
-        Returns a map of objects with the Cluster Id as the key
-    """
-
-    schedd = condor.Schedd()
-    results = schedd.query('Owner =?= "%s"' % uid)
-    all_jobs = dict()
-    for classad in results:
-        env = dict([x.split('=') for x in classad['Env'].split(';')])
-        if env.get('EXPERIMENT') == acctgroup:
-            key = classad['ClusterId']
-            if convert is True:
-                classad = classad_to_dict(classad)
-            all_jobs[key] = classad
-    return all_jobs
-
-
-def classad_to_dict(classad):
-    """ Converts a ClassAd object to a dictionary. Used for serialization to JSON.
-    """
-    job_dict = dict()
-    for k, v in classad.items():
-        job_dict[repr(k)] = repr(v)
-    return job_dict
-
-
-def cleanup(zip_file, outfilename):
-    """ Hook function to cleanup sandbox files after request has been processed
-    """
-             
-    try:
-        os.remove(outfilename)
-    except:
-        err = 'Failed to remove encoded file at %s' % outfilename
-        logger.log(err)
-    try:
-        os.remove(zip_file)
-    except:
-        err = 'Failed to remove zip file at %s' % zip_file
-        logger.log(err)
-
-
-class SandboxResource(object):
-    """ Download compressed output sandbox for a given job
-        API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
-    """
-
-
-    def doGET(self, acctgroup, job_id, kwargs):
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
-        command_path_root = get_command_path_root()
-        if job_id is not None:
-            job_status = None
-            all_jobs = get_condor_queue(acctgroup, uid)
-            classad = all_jobs.get(math.trunc(float(job_id)))
-            if classad is not None:
-                job_status = condor_job_status.get(classad.get('JobStatus'))
-            job_tokens = job_id.split('.')
-            if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
-                job_id = '%s.0' % job_id
-            zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
-            if os.path.exists(zip_path):
-                # found the path, zip data and return
-                if job_status is None:
-                    job_status = 'Completed'
-                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
-                create_zipfile(zip_file, zip_path, job_id)
-
-                rc = {'job_status': job_status}
-
-                with open(zip_file, 'rb') as fh:
-                    fields = [('rc', rc)]
-                    files = [('zip_file', zip_file, fh.read())]
-                    outfilename = os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id)
-                    with open(outfilename, 'wb') as outfile:
-                        content_type = encode_multipart_formdata(fields, files, outfile)
-                    cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file, outfilename=outfilename)
-                    return serve_file(outfilename, 'application/x-download')
-
-            else:
-                # return error for no data found
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-                logger.log(err)
-                rc = {'job_status': job_status, 'err': err}
-                cherrypy.response.status = 404
-        else:
-            jobs_file_path = os.path.join(command_path_root, acctgroup, uid)
-            sandbox_cluster_ids = list()
-            if os.path.exists(jobs_file_path):
-                root, dirs, files = os.walk(jobs_file_path, followlinks=False)
-                for dir in dirs:
-                    if os.path.islink(os.path.join(jobs_file_path, dir)):
-                        sandbox_cluster_ids.append(dir)
-                rc = {'out': sandbox_cluster_ids}
-            else:
-                # return error for no data found
-                err = 'No sandbox data found for user: %s, acctgroup: %s' % (uid, acctgroup)
-                logger.log(err)
-                rc = {'err': err}
-                cherrypy.response.status = 404
-
-        return rc
-
-    @cherrypy.expose
-    @format_response
-    @check_auth
-    def index(self, acctgroup, job_id, **kwargs):
-        try:
-            if is_supported_accountinggroup(acctgroup):
-                if cherrypy.request.method == 'GET':
-                    rc = self.doGET(acctgroup, job_id, kwargs)
-                else:
-                    err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
-                    rc = {'err': err}
-                    cherrypy.response.status = 500
-            else:
-                # return error for unsupported acctgroup
-                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                logger.log(err)
-                rc = {'err': err}
-                cherrypy.response.status = 500
-        except:
-            err = 'Exception on AccountJobsResource.index'
-            logger.log(err, traceback=True)
-            rc = {'err': err}
-            cherrypy.response.status = 500
-  
-        return rc
 
 
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
         self.sandbox = SandboxResource()
+        self.history = HistoryResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
             'RELEASE': condor.JobAction.Release,
         }
 
-
-    def doGET(self, acctgroup, job_id):
+    def doGET(self, acctgroup, job_id, kwargs):
         """ Serves the following APIs:
 
             Query a single job. Returns a JSON map of the ClassAd 
@@ -195,20 +49,15 @@ class AccountJobsResource(object):
         """
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
-        if job_id is not None:
-            all_jobs = get_condor_queue(acctgroup, uid)
-            classad = all_jobs.get(int(job_id))
-            if classad is not None:
-                job_dict = classad_to_dict(classad)
-                rc = {'out': job_dict}
-            else:
-                err = 'Job with id %s not found in condor queue' % job_id
-                logger.log(err)
-                rc = {'err': err}
+        filter = constructFilter(acctgroup,uid,job_id)
+        q=ui_condor_q(filter)
+        all_jobs=q.split('\n')
+        if len(all_jobs)<=1:
+            logger.log('condor_q %s returned no jobs'%filter)
+            err = 'Job with id %s not found in condor queue' % job_id
+            rc={'err':err}
         else:
-            all_jobs, cmd_err = subprocessSupport.iexe_cmd('condor_q -global -wide')
-            #all_jobs = get_condor_queue(acctgroup, uid, True)
-            rc = {'out': all_jobs.split('\n')}
+            rc={'out':all_jobs}
 
         return rc
 
@@ -316,7 +165,7 @@ class AccountJobsResource(object):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
-                    rc = self.doGET(acctgroup,job_id)
+                    rc = self.doGET(acctgroup,job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     rc = self.doDELETE(acctgroup, job_id)
                 elif cherrypy.request.method == 'PUT':

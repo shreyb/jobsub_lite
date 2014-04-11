@@ -201,6 +201,7 @@ class JobSubClient:
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientError
 
+        logSupport.dprint('RESPONSE    : %s\n' % response)
         self.printResponse(curl, response)
         curl.close()
         response.close()
@@ -244,11 +245,23 @@ class JobSubClient:
 
         self.changeJobState(self.removeURL, 'DELETE')
 
+    def history(self, userid=None, jobid=None):
+            if jobid is None and userid is None:
+                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (self.server, self.acctGroup)
+            else:
+                self.histURL = constants.JOBSUB_HISTORY_WITH_USER_PATTERN % (
+                                 self.server, self.acctGroup, userid
+                             )
+            if jobid is not None:
+                self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
+
+            self.changeJobState(self.histURL, 'GET')
+
     def list(self, jobid=None):
             if jobid is None:
-                self.listURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+                self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
             else:
-                self.listURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+                self.listURL = constants.JOBSUB_Q_GROUP_JOBID_URL_PATTERN % (
                                  self.server, self.acctGroup, jobid
                              )
 

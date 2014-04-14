@@ -28,11 +28,15 @@ JOBSUB_SERVER = 'https://jobsub.fnal.gov'
 JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/'
 
+JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
 JOBSUB_Q_WITH_GROUP_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_Q_GROUP_JOBID_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 
 JOBSUB_HISTORY_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/history/'
-JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/jobs/history/%s/'
+#JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/jobs/history/%s/'
+
+JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/users/%s/jobs/history'
+
 
 JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
 

@@ -31,7 +31,7 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer :
+        if options.jobsubServer :
             return True
     except AttributeError:
         return False
@@ -45,7 +45,7 @@ def parse_opts(argv):
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
-    # Required args
+    # Optional args
     opt_group.add_option('-G', '--group',
                          dest='acctGroup',
                          type='string',
@@ -53,7 +53,6 @@ def parse_opts(argv):
                          metavar='<Group/Experiment/Subgroup>',
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
-    # Optional args
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
                          action='store',

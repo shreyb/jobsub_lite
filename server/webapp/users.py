@@ -3,26 +3,30 @@ import logger
 
 from auth import check_auth
 from format import format_response
-from condor_commands import ui_condor_history,constructFilter
+from condor_commands import ui_condor_q, constructFilter
+#from history import HistoryResource
+from queued_jobs import QueuedJobsResource
 
 
 
 
 @cherrypy.popargs('user_id')
-class HistoryResource(object):
+class UsersResource(object):
+    def __init__(self):
+        self.jobs=QueuedJobsResource()
 
     def doGET(self, user_id,kwargs):
         """ Query list of user_ids. Returns a JSON list object.
-	    API is /acctgroups/<group>/users/<user_id>jobs/history
+	    API is /acctgroups/<group>/users
+	    API is /acctgroups/<group>/users/<user_id>
+	    API is /acctgroups/<group>/users/<user_id>?job_id=<number>
         """
         acctgroup=kwargs.get('acctgroup')
         job_id=kwargs.get('job_id')
-        if user_id is None:
-            user_id = kwargs.get('user_id')
         filter = constructFilter(acctgroup,user_id,job_id)
         logger.log("filter=%s"%filter)
-	history = ui_condor_history( filter  )
-        return {'out': history.split('\n')}
+	all_jobs = ui_condor_q( filter  )
+        return {'out': all_jobs.split("\n")}
 
     @cherrypy.expose
     @format_response
@@ -46,7 +50,7 @@ class HistoryResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on HistoryResouce.index'
+            err = 'Exception on UsersResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 

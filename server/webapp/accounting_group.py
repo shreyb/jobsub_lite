@@ -11,6 +11,7 @@ from jobsub import get_supported_accountinggroups
 from jobsub import execute_jobsub_command
 from jobsub import get_dropbox_path_root
 from util import mkdir_p
+from users import UsersResource
 
 from cherrypy.lib.static import serve_file
 
@@ -134,6 +135,7 @@ class DropboxResource(object):
 class AccountingGroupsResource(object):
     def __init__(self):
         self.jobs = AccountJobsResource()
+        self.users = UsersResource()
         self.help = HelpResource()
         self.dropbox = DropboxResource()
 

@@ -2,6 +2,7 @@ import cherrypy
 import os
 
 from accounting_group import AccountingGroupsResource
+from queued_jobs import QueuedJobsResource
 from util import mkdir_p
 
 
@@ -11,6 +12,7 @@ class Root(object):
 
 root = Root()
 root.acctgroups = AccountingGroupsResource()
+root.jobs = QueuedJobsResource()
 
 
 def application(environ, start_response):

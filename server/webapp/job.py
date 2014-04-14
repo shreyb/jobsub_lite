@@ -29,7 +29,7 @@ from history import HistoryResource
 class AccountJobsResource(object):
     def __init__(self):
         self.sandbox = SandboxResource()
-        self.history = HistoryResource()
+	self.history = HistoryResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
@@ -50,6 +50,7 @@ class AccountJobsResource(object):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         filter = constructFilter(acctgroup,uid,job_id)
+        logger.log('filter=%s'%filter)
         q=ui_condor_q(filter)
         all_jobs=q.split('\n')
         if len(all_jobs)<=1:
@@ -155,6 +156,12 @@ class AccountJobsResource(object):
             rc = {'err': err}
 
         return rc
+   
+    @cherrypy.expose
+    @format_response
+    def default(self,kwargs):
+	logger.log('kwargs=%s'%kwargs)
+	return {'out':"kwargs=%s"%kwargs}
 
     @cherrypy.expose
     @format_response

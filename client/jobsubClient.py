@@ -258,7 +258,9 @@ class JobSubClient:
             self.changeJobState(self.histURL, 'GET')
 
     def list(self, jobid=None):
-            if jobid is None:
+            if jobid is None and self.acctGroup is None:
+                self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
+            elif jobid is None:
                 self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
             else:
                 self.listURL = constants.JOBSUB_Q_GROUP_JOBID_URL_PATTERN % (

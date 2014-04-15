@@ -49,6 +49,16 @@ def parse_opts(argv):
                       default=constants.JOBSUB_SERVER,
                       help='Alternate location of JobSub server to use')
 
+    parser.add_option('--timeout',
+                      dest='timeout',
+                      type='int',
+                      action='store',
+                      metavar='<Timeout>',
+                      default=None,
+                      help='Timeout for the operation in sec')
+
+
+
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
@@ -83,7 +93,10 @@ def get_sandbox(options):
     curl.setopt(curl.WRITEFUNCTION, fp.write)
     curl.setopt(curl.SSL_VERIFYHOST, True)
     curl.setopt(curl.FAILONERROR, False)
-    curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
+    timeout = constants.JOBSUB_PYCURL_TIMEOUT
+    if options.timeout:
+        timeout = options.timeout
+    curl.setopt(curl.TIMEOUT, timeout)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
     curl.setopt(curl.SSLCERT, creds.get('cert'))
     curl.setopt(curl.SSLKEY, creds.get('key'))

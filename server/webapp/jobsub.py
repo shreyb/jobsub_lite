@@ -83,6 +83,13 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='
         'out': pp.stdout.readlines(),
         'err': pp.stderr.readlines()
     }
+    errlist=result['err']
+    newlist=[]
+    ignore_msg='jobsub.ini for jobsub config'
+    for m in errlist:
+        if ignore_msg not in m:
+            newlist.append(m)
+    result['err']=newlist
     logger.log('jobsub command result: %s' % str(result))
 
     return result

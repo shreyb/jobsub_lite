@@ -25,15 +25,16 @@ condor_job_status = {
 
 
 
-def cleanup(zip_file, outfilename):
+def cleanup(zip_file, outfilename=None):
     """ Hook function to cleanup sandbox files after request has been processed
     """
              
-    try:
-        os.remove(outfilename)
-    except:
-        err = 'Failed to remove encoded file at %s' % outfilename
-        logger.log(err)
+    if outfilename is not None:
+        try:
+            os.remove(outfilename)
+        except:
+            err = 'Failed to remove encoded file at %s' % outfilename
+            logger.log(err)
     try:
         os.remove(zip_file)
     except:
@@ -51,55 +52,39 @@ class SandboxResource(object):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
-        if job_id is not None:
-            job_status = None
-            all_jobs = api_condor_q(acctgroup, uid)
-            classad = all_jobs.get(math.trunc(float(job_id)))
-            if classad is not None:
-                job_status = condor_job_status.get(classad.get('JobStatus'))
-            job_tokens = job_id.split('.')
-            if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
-                job_id = '%s.0' % job_id
-            zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
-            if os.path.exists(zip_path):
-                # found the path, zip data and return
-                if job_status is None:
-                    job_status = 'Completed'
-                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
-                create_zipfile(zip_file, zip_path, job_id)
-
-                rc = {'job_status': job_status}
-
-                with open(zip_file, 'rb') as fh:
-                    fields = [('rc', rc)]
-                    files = [('zip_file', zip_file, fh.read())]
-                    outfilename = os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id)
-                    with open(outfilename, 'wb') as outfile:
-                        content_type = encode_multipart_formdata(fields, files, outfile)
-                    cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file, outfilename=outfilename)
-                    return serve_file(outfilename, 'application/x-download')
-
-            else:
-                # return error for no data found
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-                logger.log(err)
-                rc = {'job_status': job_status, 'err': err}
-                cherrypy.response.status = 404
+        if job_id is None:
+            job_tokens = ['0']
         else:
+            job_tokens = job_id.split('.')
+        job_id = '%s.0' % job_tokens[0]
+        zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
+        if os.path.exists(zip_path):
+            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_tokens[0])
+            create_zipfile(zip_file, zip_path, job_id)
+
+            rc = {'out': zip_file}
+
+            cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file)
+            logger.log('returning %s'%zip_file)
+            return serve_file(zip_file, 'application/x-download','attachment')
+
+        else:
+            # return error for no data found
+            err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+            logger.log(err)
+            #rc = {'err': err}
+            cherrypy.response.status = 404
             jobs_file_path = os.path.join(command_path_root, acctgroup, uid)
             sandbox_cluster_ids = list()
             if os.path.exists(jobs_file_path):
-                root, dirs, files = os.walk(jobs_file_path, followlinks=False)
+		logger.log('walking %s'%jobs_file_path)
+                dirs=os.listdir(jobs_file_path)
                 for dir in dirs:
                     if os.path.islink(os.path.join(jobs_file_path, dir)):
                         sandbox_cluster_ids.append(dir)
-                rc = {'out': sandbox_cluster_ids}
-            else:
-                # return error for no data found
-                err = 'No sandbox data found for user: %s, acctgroup: %s' % (uid, acctgroup)
-                logger.log(err)
-                rc = {'err': err}
-                cherrypy.response.status = 404
+                sandbox_cluster_ids.sort()
+	    outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:%s"% (uid,acctgroup,sandbox_cluster_ids)
+            rc = {'out': outmsg , 'err':err }
 
         return rc
 

@@ -9,4 +9,4 @@ source ./setup_env.sh
 export SERVER=https://${MACH}:8443
 
 
-$EXEPATH/jobsub_q.py --group $GROUP --jobsub-server $SERVER
+$EXEPATH/jobsub_history.py --group $GROUP --jobsub-server $SERVER

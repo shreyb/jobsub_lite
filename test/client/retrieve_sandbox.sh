@@ -22,3 +22,4 @@ cd -
 cd python
 $EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job $CLUSTER
 cd -
+$EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job 18  --timeout 1

@@ -38,8 +38,8 @@ echo testing dropbox functionality
 echo test helpfile
 ./test_help.sh $SERVER >$1.help.log 2>1&
 echo test listing jobs
-./test_listjobs.sh $SERVER >$1.list.log 2>1&
+sh -x ./test_listjobs.sh $SERVER >$1.list.log 2>1&
 echo test condor_history
-echo NOT IMPLEMENTED
+./test_history.sh $SERVER >$1.history.log 2>1&
 echo test retrieving zip_file from sandbox
 ./retrieve_sandbox.sh $SERVER $JID >$1.sandbox.log 2>1&

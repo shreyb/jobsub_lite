@@ -23,7 +23,7 @@ def required_args_present(options):
 
 def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
-                                   version='v0.1',
+                                   version='v0.2',
                                    conflict_handler="resolve")
 
     # Required args

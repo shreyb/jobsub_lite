@@ -1,4 +1,29 @@
 ================================================================================
+v0.2.1
+================================================================================
+
+CLIENT
+------
+* Client provides jobsub_q.py to enable users to see queued jobs. #5525
+* Client provides jobsub_history.py to enable users to see job history.
+  #5525 #5518
+* Client now shows less debuggin info by default. #5768
+* Bug Fix: Client now correctly handles the case when voms-proxy-info command
+  is not available in it's PATH. #5874
+* Bug Fix: jobsub_fetchlog.py will create log files with proper dir structure.
+  #5827
+* Bug Fix: jobsub_fetchlog.py support --timeout option to prevent timeout
+  whle downloading large sandboxes. Default value is 30 sec. #5879
+
+SERVER
+------
+* Server now supports authentication using non Fermilab VOMS. #5812
+* Server supports API that enable users to see queued jobs. #5525
+* Server supports API that enable users to see job history. #5525 #5518
+* Bug Fix: Fixed regular expression bug in the server. Server now correctly
+  supports notify_user option. #5813
+
+================================================================================
 v0.2
 ================================================================================
 

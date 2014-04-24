@@ -91,6 +91,8 @@ class JobsubConfigParser(object):
 		    return cnf
 		for x in [ "PWD", "HOME" ]:
 			path=os.environ.get(x)
+			if path is None:
+				path='/dev/null'
                         cnf=path + "/jobsub.ini"
                         ups_ini_file = cnf==ups
 			if os.path.exists(cnf):

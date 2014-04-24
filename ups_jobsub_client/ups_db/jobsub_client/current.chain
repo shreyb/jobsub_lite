@@ -6,7 +6,7 @@ CHAIN = current
 #*************************************************
 #
 FLAVOR = NULL
-VERSION = v0.2
+VERSION = v0.2.1
 QUALIFIERS = ""
   DECLARER = products
   DECLARED = 2010-08-26 16.01.33 GMT

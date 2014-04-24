@@ -20,22 +20,30 @@ class JobUtils(object):
 			print "\n\nJobUtils output is %s\n---DONE---\n" %(val)
 		return(retVal,val)
         def ifdhString(self):
-            fs="""
-has_ifdh=1
-for setup_file in %s ; do
-if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
-     source $setup_file
-     find_ifdh1=`ups list -a ifdhc $IFDH_VERSION`
-     find_ifdh2=`echo $find_ifdh1 | grep ifdh`
-     has_ifdh=$?
-     if [ "$has_ifdh" = "0" ] ; then
-        setup ifdhc $IFDH_VERSION
-        break
-     else
-        unset PRODUCTS
+            fs="""cat << '_HEREDOC_' > %s
+#!/bin/sh
+#
+which ifdh > /dev/null 2>&1
+has_ifdh=$?
+if [ "$has_ifdh" -ne "0" ] ; then
+    unset PRODUCTS
+    for setup_file in %s ; do
+      if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
+         source $setup_file
+         ups exist ifdhc $IFDH_VERSION
+         has_ifdh=$?
+         if [ "$has_ifdh" = "0" ] ; then
+             setup ifdhc $IFDH_VERSION
+             break
+         else
+            unset PRODUCTS
+         fi
      fi
+   done
 fi
-done
+ifdh "$@"
+_HEREDOC_
+chmod +x %s
             """	
             return fs
 

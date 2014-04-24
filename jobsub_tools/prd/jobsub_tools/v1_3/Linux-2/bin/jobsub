@@ -71,9 +71,9 @@ def doSubmit(settings):
             condor_setup_cmd=condor_setup_cmd+";"
 
     if settings['dataset_definition']=="":
-        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%(settings['condor_tmp'],settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
+        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
     else:
-        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxjobs 2000 %s'"%(settings['condor_tmp'],settings['storage_group'],condor_setup_cmd,settings['dagfile'])
+        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxjobs 2000 %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['dagfile'])
       
 
     

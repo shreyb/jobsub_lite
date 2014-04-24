@@ -170,6 +170,7 @@ class JobSettings(object):
                 self.settings['transfer_executable']=False
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
                 self.settings['needs_appending']=True
+                self.settings['ifdh_cmd']='${TMP}/ifdh.sh'
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -427,9 +428,9 @@ class JobSettings(object):
 		for arg in settings['added_environment']:
 			if os.environ.has_key(arg)==False:
 				err = "you used -e %s , but $%s must be set first for this to work!"%(arg,arg)
-				raise InitializationError(err)
-		
-		if settings['istestjob'] and settings['queuecount'] > 1:
+                                raise InitializationError(err)
+                                                    
+                if settings['istestjob'] and settings['queuecount'] > 1:
 			err = "you may only send one test job at a time, -N=%d not allowed" % settings['queuecount']
 			raise InitializationError(err)
 			
@@ -508,13 +509,16 @@ class JobSettings(object):
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 
 		f.write("\n")
-                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
-                f.write(ifdh_setup)
-		f.close()
+                #ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
+                #f.write(ifdh_setup)
+                ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
+                f.write(ifdh_pgm_text)
+
 
 	def makeWrapFilePostamble(self):
 		#print "makeWrapFilePostamble"
 		settings=self.settings
+		ifdh_cmd=settings['ifdh_cmd']
                 exe_script=settings['exe_script']
                 if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
@@ -522,7 +526,7 @@ class JobSettings(object):
 		f = open(settings['wrapfile'], 'a')
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
-		log_cmd = """ifdh log "%s:BEGIN EXECUTION %s %s "\n"""%(settings['user'],os.path.basename(exe_script),script_args)
+		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
 		f.write(log_cmd)
 		if settings['joblogfile'] != "":
 			if settings['nologbuffer']==False:
@@ -537,16 +541,16 @@ class JobSettings(object):
 
 		f.write("JOB_RET_STATUS=$?\n")
 
-		log_cmd = """ifdh log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(settings['user'],os.path.basename(exe_script))
+		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script))
 		f.write(log_cmd)
 		
 		copy_cmd=log_cmd1=log_cmd2=cnt=append_cmd=''
 		if len(settings['output_dir_array'])>0:
 			my_tag="%s:%s"%(settings['user'],os.path.basename(exe_script))
                         if settings['use_gftp']:
-                                copy_cmd="""\tifdh cp --force=expgridftp -r -D  """
+                                copy_cmd="""\t%s cp --force=expgridftp -r -D  """%ifdh_cmd
                         else:
-                                copy_cmd="""\tifdh cp --force=cpn -D  """
+                                copy_cmd="""\t%s cp  -D  """%ifdh_cmd
 
 
 			for tag in settings['output_dir_array']:
@@ -562,8 +566,8 @@ class JobSettings(object):
 					#append_cmd=append_cmd+"""; chmod g+w %s/*"""%tag[1]
 				cnt='\;'
 					
-			log_cmd1 = """\tifdh log "%s BEGIN %s "\n"""%(my_tag,copy_cmd)
-			log_cmd2 = """\tifdh log "%s FINISHED %s "\n"""%(my_tag,copy_cmd)				
+			log_cmd1 = """\t%s log "%s BEGIN %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
+			log_cmd2 = """\t%s log "%s FINISHED %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)				
 	
 		f.write(log_cmd1)
 		f.write("%s %s\n"%(copy_cmd,append_cmd))
@@ -571,7 +575,7 @@ class JobSettings(object):
 
 			
 		if settings['joblogfile'] != "":
-			f.write("ifdh cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(settings['joblogfile']))
+			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
 
 		f.write("exit $JOB_RET_STATUS\n")
 		f.close
@@ -583,7 +587,7 @@ class JobSettings(object):
 	def makeWrapFile(self):
 		#print "makeWrapFile"
 		settings=self.settings
-
+		ifdh_cmd=settings['ifdh_cmd']
 		f = open(settings['wrapfile'], 'a')
 
 
@@ -606,17 +610,17 @@ class JobSettings(object):
 		f.write("mkdir -p ${CONDOR_DIR_INPUT}\n")
 		#f.write("CPN=/grid/fermiapp/common/tools/cpn \n")
                 if settings['use_gftp']:
-                    cmd="""ifdh cp --force=expgridftp  """
+                    cmd="""%s cp --force=expgridftp  """%ifdh_cmd
                 else:
-                    cmd="""ifdh cp --force=cpn -D  """
+                    cmd="""%s  cp  -D  """%ifdh_cmd
 		cnt=""
 		for idir in settings['input_dir_array']:
 			cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
 			cnt="\;"
 		if len(settings['input_dir_array'])>0:
-			f.write("""ifdh log "%s BEGIN %s"\n"""%(settings['user'],cmd))
+			f.write("""%s  log "%s BEGIN %s"\n"""%(ifdh_cmd,settings['user'],cmd))
 			f.write("%s\n"%cmd)
-			f.write("""ifdh log "%s FINISHED %s"\n"""%(settings['user'],cmd))
+			f.write("""%s  log "%s FINISHED %s"\n"""%(ifdh_cmd,settings['user'],cmd))
 			
 		f.write("\n")
 
@@ -737,6 +741,7 @@ class JobSettings(object):
 		f.write("error		 = %s/sambegin-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("log		   = %s/sambegin-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
 		#f.write("environment   = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s;IFDH_BASE_URI=%s;\n"%\
+
 		#		(settings['condor_tmp'],settings['condor_exec'],settings['ifdh_base_uri']))
 		f.write("environment = %s\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
@@ -766,7 +771,7 @@ class JobSettings(object):
                 f.write(ifdh_setup)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("CPURL=`ifdh findProject $PRJ_NAME ''` \n")
-		f.write("ifdh endProject $CPURL\n")		   
+		f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])		   
 		f.close()
 		f = open(settings['samendfile'], 'w')
 		f.write("universe	  = vanilla\n")
@@ -1192,6 +1197,7 @@ class JobSettings(object):
 			    self.addToLineSetting("+RunOnGrid			  = True")
 			    settings['requirements']=settings['requirements'] + \
 				          '  && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))'
+
 
 			if not settings['site']:
 			    if job_iter <= 1:

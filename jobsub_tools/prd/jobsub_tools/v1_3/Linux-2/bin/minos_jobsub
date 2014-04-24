@@ -4,8 +4,8 @@
 # to the local MINOS nodes and the FNAL Grid nodes.
 # 
 
-VERSION=20120229
-SVN_ID="\$Id$"
+VERSION=20140415
+
 # who are we?
 thisscript=`basename $0`
 fullargs="$@"
@@ -508,7 +508,6 @@ then
   echo '+AccountingGroup = "group_'$GROUP'"' >> $CMDFILE
 fi
 
-echo '+GeneratedBy = "'$SVN_ID'"' >> $CMDFILE
 # finish up
 echo "requirements  = "$REQUIREMENTS >> $CMDFILE
 echo -e ${LINES} >> $CMDFILE
@@ -682,11 +681,11 @@ then
   if [ "`hostname`" = "minos25.fnal.gov" ]
   then
     # cd /tmp --> temporary fix to keep shadow exceptions from happening
-    curr=`/bin/pwd` ; cd /tmp
+    curr=`/bin/pwd` ; cd /var/empty
     /opt/condor/bin/condor_submit $CMDFILE
     cd $curr
   else
-    ssh -akx minos25.fnal.gov "/bin/bash -c \"cd /tmp ; \
+    ssh -akx minos25.fnal.gov "/bin/bash -c \"cd /var/empty ; \
          export CONDOR_CONFIG=/opt/condor/etc/condor_config ; \
          /opt/condor/bin/condor_submit $CMDFILE\""
     status=$?
@@ -698,4 +697,10 @@ then
 else
   echo $CMDFILE
 fi
+
+exit
+
+20140415   kreymer
+
+Changed /tmp to /var/empty working dirctory to evade condor output
 

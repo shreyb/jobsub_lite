@@ -11,6 +11,7 @@ from auth import check_auth, get_x509_proxy_file
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
 from condor_commands import api_condor_q
+from datetime import datetime
 
 
 condor_job_status = {
@@ -59,7 +60,8 @@ class SandboxResource(object):
         job_id = '%s.0' % job_tokens[0]
         zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
         if os.path.exists(zip_path):
-            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_tokens[0])
+            ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
+            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.zip' % (job_tokens[0],ts))
             create_zipfile(zip_file, zip_path, job_id)
 
             rc = {'out': zip_file}

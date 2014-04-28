@@ -18,7 +18,6 @@ else
 	exit -1
 fi
 
-#GROUP,USER passed in command line
 export USER=$1
 shift
 export GROUP=$1
@@ -48,7 +47,6 @@ if [ $RSLT == 0 ] ; then
 	shift
 fi
 export JOBSUB_CMD="jobsub -l "+Owner=\"$USER\"" $@"
-#export JOBSUB_CMD="jobsub  $@"
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi
@@ -63,8 +61,19 @@ WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
   cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
+  #keep the old link for now for backward compatibility
   ln -s $WORKDIR_ID "${JID}0"
+
+  #new link.  TODO- jobsub_tools needs to support condor_submit -name
+  #so multiple schedds on same server can be supported 
+  #
+  SCHEDD=`condor_status -schedd -format "@%s"  name`
+  ln -s $WORKDIR_ID "${JID}0${SCHEDD}"
   cd -
 fi
 echo "$RSLT"
 
+if [ "$WORKED" = "0" ]; then
+   echo
+   echo "use job id ${JID}0${SCHEDD} to retrieve output"
+fi

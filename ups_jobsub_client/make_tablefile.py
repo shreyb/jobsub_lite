@@ -35,10 +35,13 @@ COMMON:
   ACTION=SETUP
     setupenv()
     proddir()
-    setupRequired(python v2_7_3)
-    setupRequired(pycurl )
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR} )
     envPrepend(PATH, ${UPS_PROD_DIR})
+    execute("grep ' 5\.' /etc/redhat-release ",NO_UPS_ENV, IS_SL5 )
+    if( test -n "$IS_SL5" )
+      setupOptional(python v2_7_3)
+      setupOptional(pycurl )
+    endif( test -n "$IS_SL5" )
 
 
 END:

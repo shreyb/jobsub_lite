@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+from condor_commands import schedd_name
 import logger
 import os
 import socket
@@ -70,6 +71,7 @@ def get_dropbox_path_root():
 
 
 def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='None'):
+    jobsub_args.insert(0, schedd_name())
     jobsub_args.insert(0, role)
     jobsub_args.insert(0, workdir_id)
     jobsub_args.insert(0, acctgroup)
@@ -77,7 +79,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='
 
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
     command = [envrunner] + jobsub_args
-    logger.log('jobsub.py:execute_jobsub_command:jobsub command: %s' % command)
+    logger.log('jobsub command: %s' % command)
     pp = Popen(command, stdout=PIPE, stderr=PIPE)
     result = {
         'out': pp.stdout.readlines(),

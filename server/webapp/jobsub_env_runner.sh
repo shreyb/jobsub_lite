@@ -26,6 +26,8 @@ export WORKDIR_ID=$1
 shift
 export ROLE=$1
 shift
+export SCHEDD=$1
+shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 setup jobsub_tools
@@ -67,7 +69,7 @@ if [ "$WORKED" = "0" ]; then
   #new link.  TODO- jobsub_tools needs to support condor_submit -name
   #so multiple schedds on same server can be supported 
   #
-  SCHEDD=`condor_status -schedd -format "@%s"  name`
+  #SCHEDD=`condor_status -schedd -format "@%s"  name`
   ln -s $WORKDIR_ID "${JID}0${SCHEDD}"
   cd -
 fi

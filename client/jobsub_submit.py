@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
+from defaultServer import defaultServer
 
 
 def split_client_server_args(parser, argv):
@@ -125,7 +126,7 @@ def parse_opts(argv):
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
-                         default=constants.JOBSUB_SERVER,
+                         default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
     opt_group.add_option('--dropbox-server',

@@ -7,6 +7,7 @@ import time
 import platform
 import json
 import os
+from defaultServer import defaultServer
 
 import constants
 from jobsubClient import get_capath, get_client_credentials, print_formatted_response
@@ -46,7 +47,7 @@ def parse_opts(argv):
                       dest='jobsubServer',
                       action='store',
                       metavar='<JobSub Server>',
-                      default=constants.JOBSUB_SERVER,
+                      default=defaultServer(),
                       help='Alternate location of JobSub server to use')
 
     parser.add_option('--timeout',

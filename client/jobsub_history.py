@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
+from defaultServer import defaultServer
 
 def print_opts(options):
     logSupport.dprint('COMMAND LINE OPTIONS:')
@@ -58,7 +59,7 @@ def parse_opts(argv):
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
-                         default=constants.JOBSUB_SERVER,
+                         default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
     opt_group.add_option('--user',

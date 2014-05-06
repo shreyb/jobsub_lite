@@ -206,8 +206,18 @@ class JobSubClient:
         curl.close()
         response.close()
 
+    def checkID(self,jobid):
+        if jobid is None:
+            return jobid
+        if jobid.find('@')>=0:
+            jobid,server = jobid.split('@')
+            self.server="https://%s:8443"%server
+        if jobid=='':
+            jobid = None
+        return jobid
 
     def release(self, jobid):
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
@@ -222,6 +232,7 @@ class JobSubClient:
 
 
     def hold(self, jobid):
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
@@ -236,6 +247,7 @@ class JobSubClient:
 
 
     def remove(self, jobid):
+        jobid=self.checkID(jobid)
         if self.acctRole:
             self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
@@ -246,6 +258,7 @@ class JobSubClient:
         self.changeJobState(self.removeURL, 'DELETE')
 
     def history(self, userid=None, jobid=None):
+            jobid=self.checkID(jobid)
             if jobid is None and userid is None:
                 self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (self.server, self.acctGroup)
             else:
@@ -258,6 +271,7 @@ class JobSubClient:
             self.changeJobState(self.histURL, 'GET')
 
     def list(self, jobid=None):
+            jobid=self.checkID(jobid)
             if jobid is None and self.acctGroup is None:
                 self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
             elif jobid is None:

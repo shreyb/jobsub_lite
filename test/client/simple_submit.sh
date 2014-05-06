@@ -12,9 +12,9 @@ shift
 export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group $GROUP --debug \
-       --jobsub-server $SERVER \
+       $SERVER_SPEC \
             -e SERVER --nowrapfile  file://"$@"
 
 $EXEPATH/jobsub_submit.py --group $GROUP \
-       --jobsub-server $SERVER \
+       $SERVER_SPEC \
            -g -e SERVER --nowrapfile  file://"$@"

@@ -5,8 +5,7 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 source ./setup_env.sh
-MACH=$1
-CLUSTER=$2
+CLUSTER=$1
 if [ "$CLUSTER" = "" ];then
     CLUSTER=1
 fi

@@ -4,9 +4,9 @@ if [ "$1" = "" ]; then
     echo "test that jobs can be listed  on server"
     exit 0
 fi
-MACH=$1
 source ./setup_env.sh
-export SERVER=https://${MACH}:8443
 
+JOB=$1
 
-$EXEPATH/jobsub_history.py --group $GROUP --jobsub-server $SERVER
+$EXEPATH/jobsub_history.py --group $GROUP $SERVER_SPEC
+$EXEPATH/jobsub_history.py --group $GROUP $SERVER_SPEC --jobid $JOB

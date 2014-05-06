@@ -19,8 +19,8 @@ import os
 ################################################################################
 
 # Default JobSub Server
-JOBSUB_SERVER = 'https://jobsub.fnal.gov'
-
+#JOBSUB_SERVER = 'https://jobsub.fnal.gov'
+JOBSUB_SERVER_LIST = ['https://fermicloud136.fnal.gov:8443','https://fermicloud137.fnal.gov:8443']
 # Default JobSub job submission url pattern
 # https://server.com/jobsub/api/<api-version>/accountinggroups/<exp-name>/jobs
 

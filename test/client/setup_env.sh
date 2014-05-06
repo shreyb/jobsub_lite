@@ -26,3 +26,15 @@ else
             export PYTHONPATH=$EXEPATH:$PYTHONPATH
     fi
 fi
+export MACH=$1
+shift
+export SERVER=https://${MACH}:8443
+if [ "$MACH" = "default" ]; then
+    export SERVER_SPEC=""
+else
+    export SERVER_SPEC=" --jobsub-server $SERVER "
+fi
+if [ "$POOL" = "" ]; then
+    export POOL=$MACH
+fi
+

@@ -6,14 +6,13 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 source ./setup_env.sh
-export MACH=$1
-shift
 tar cfv stuff.tar * > /dev/null
 
 export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group $GROUP --debug \
-       --jobsub-server $SERVER dropbox://stuff.tar \
+       $SERVER_SPEC \
+              dropbox://stuff.tar \
             -e SERVER --nowrapfile  file://"$@"
 rm stuff.tar
 

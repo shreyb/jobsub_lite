@@ -12,6 +12,8 @@ import json
 import subprocessSupport
 import socket
 
+
+
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
@@ -37,6 +39,11 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
 
     if jobid is None:
         job_cnst = 'True'
+    elif jobid.find('@')>=0:
+	    clusterid,host=jobid.split('@')
+	if clusterid.find('.')<0:
+		clusterid=clusterid+'.0'
+	job_cnst = """regexp("%s#%s.*",GlobalJobId)""" %(host,clusterid)
     else:
         lorw = ' -long '
         job_cnst = 'ClusterID==%d'%(math.trunc(float(jobid)))
@@ -55,7 +62,7 @@ def ui_condor_q(filter=None):
     if filter is None:
         cmd = 'condor_q -global -wide'
     else:
-        cmd = 'condor_q %s' % filter
+        cmd = 'condor_q -g -wide %s' % filter
 
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
     return all_jobs

@@ -5,6 +5,5 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 
-MACH=$1
 . setup_env.sh
 curl -k  --cert /tmp/x509up_u${UID}  -H "Accept: text/html" -X GET https://${MACH}:8443/jobsub/acctgroups/$GROUP

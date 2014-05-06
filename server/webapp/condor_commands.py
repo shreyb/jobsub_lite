@@ -115,3 +115,10 @@ def classad_to_dict(classad):
             job_dict[repr(k)] = repr(v)
         return job_dict
 
+def schedd_name():
+        """ returns the name of the local schedd
+        """
+        cmd="""condor_status -schedd -format '%s' name -constraint 'regexp("<%s",MyAddress)'""" % ('%s',socket.gethostbyname(socket.gethostname()))
+        schedd, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        return schedd
+

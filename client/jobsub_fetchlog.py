@@ -7,6 +7,9 @@ import time
 import platform
 import json
 import os
+import errno
+import zipfile
+
 from defaultServer import defaultServer
 
 import constants
@@ -58,6 +61,14 @@ def parse_opts(argv):
                       default=None,
                       help='Timeout for the operation in sec')
 
+    parser.add_option('--unzipdir',
+                      dest='unzipdir',
+                      type='string',
+                      action='store',
+                      metavar='<Unzip Dir>',
+                      default=None,
+                      help='Directory to automatically unzip logs into')
+
 
 
     if len(argv) < 1:
@@ -77,10 +88,22 @@ def parse_opts(argv):
 
     return options
 
+def checkUnzipDir(unzipDir):
+    try:
+        os.makedirs(unzipDir)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
 def get_sandbox(options):
     creds = get_client_credentials()
+    if options.jobId.find('@')>0:
+        job,mach=options.jobId.split('@')
+        options.jobsubServer="https://%s:8443"%mach
+        options.jobId=job
     submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
+
+    checkUnzipDir( options.unzipdir )
 
     print
     print 'CREDENTIALS    : %s\n' % creds
@@ -115,6 +138,15 @@ def get_sandbox(options):
 
     if response_code == 200:
         print 'Downloaded to %s' % fn
+        if options.unzipdir is not None:
+            print "Moved files to %s"%options.unzipdir
+            z=zipfile.ZipFile(fn)
+            for f in z.namelist():
+                b=os.path.basename(f)
+                t="%s/%s"%(options.unzipdir,b)
+                z.extract(f,t)
+            os.remove(fn)
+        
     elif response_code == 404:
         with open(fn, 'r') as fp:
             value = fp.read()

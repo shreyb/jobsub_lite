@@ -220,7 +220,7 @@ def get_x509_proxy_file(username, acctgroup):
     return os.path.join(creds_dir, 'x509cc_%s'%username)
 
 def refresh_proxies(agelimit=3600):
-    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
+    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -238,8 +238,10 @@ def refresh_proxies(agelimit=3600):
                 if user not in queued_users:
                     queued_users.append(user)
                 grp=grp.strip("group_")
-                print "checking proxy %s %s %s"%(dn,user,grp)
-                authorize(dn,user,grp,'Analysis',agelimit)
+		proxy_name=os.path.basename(check[2])
+		x,uid,role=proxy_name.split('_')	
+                print "checking proxy %s %s %s %s"%(dn,user,grp,role)
+                authorize(dn,user,grp,role,agelimit)
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \

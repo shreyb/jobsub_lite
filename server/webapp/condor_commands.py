@@ -40,12 +40,12 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
     if jobid is None:
         job_cnst = 'True'
     elif jobid.find('@')>=0:
-            x=jobid.split('@')
-            l=len(x)
-	    clusterid=x[0]
-            host=x[l-1]
-            if clusterid.find('.')<0:
-	        clusterid=clusterid+'.0'
+        x=jobid.split('@')
+        l=len(x)
+	clusterid=x[0]
+        host=x[l-1]
+        if clusterid.find('.')<0:
+	    clusterid=clusterid+'.0'
 	job_cnst = """regexp("%s#%s.*",GlobalJobId)""" %(host,clusterid)
     else:
         lorw = ' -long '

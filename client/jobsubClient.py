@@ -179,7 +179,8 @@ class JobSubClient:
         response.close()
 
 
-    def changeJobState(self, url, http_custom_request, post_data=None):
+    def changeJobState(self, url, http_custom_request, post_data=None,
+                       ssl_verifyhost=True):
         """
         Generic API to perform job actions like remove/hold/release
         """
@@ -192,6 +193,8 @@ class JobSubClient:
         curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
         if post_data:
             curl.setopt(curl.HTTPPOST, post_data)
+        if not ssl_verify_host:
+            curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         try:
             curl.perform()
@@ -268,7 +271,7 @@ class JobSubClient:
             if jobid is not None:
                 self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
 
-            self.changeJobState(self.histURL, 'GET')
+            self.changeJobState(self.histURL, 'GET', ssl_verifyhost=False)
 
     def list(self, jobid=None):
             jobid=self.checkID(jobid)

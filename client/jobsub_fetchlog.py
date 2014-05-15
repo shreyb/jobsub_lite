@@ -115,7 +115,7 @@ def get_sandbox(options):
     curl = pycurl.Curl()
     curl.setopt(curl.URL, submitURL)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
-    curl.setopt(curl.SSL_VERIFYHOST, True)
+    curl.setopt(curl.SSL_VERIFYHOST, 0)
     curl.setopt(curl.FAILONERROR, False)
     timeout = constants.JOBSUB_PYCURL_TIMEOUT
     if options.timeout:
@@ -146,7 +146,7 @@ def get_sandbox(options):
                 t="%s/%s"%(options.unzipdir,b)
                 z.extract(f,t)
             os.remove(fn)
-        
+
     elif response_code == 404:
         with open(fn, 'r') as fp:
             value = fp.read()

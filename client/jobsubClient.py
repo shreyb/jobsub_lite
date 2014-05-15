@@ -220,7 +220,7 @@ class JobSubClient:
         return jobid
 
     def release(self, jobid):
-        jobid=self.checkID(jobid)
+        #jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
@@ -235,7 +235,7 @@ class JobSubClient:
 
 
     def hold(self, jobid):
-        jobid=self.checkID(jobid)
+        #jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
@@ -250,7 +250,7 @@ class JobSubClient:
 
 
     def remove(self, jobid):
-        jobid=self.checkID(jobid)
+        #jobid=self.checkID(jobid)
         if self.acctRole:
             self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
@@ -274,7 +274,7 @@ class JobSubClient:
             self.changeJobState(self.histURL, 'GET', ssl_verifyhost=False)
 
     def list(self, jobid=None):
-            jobid=self.checkID(jobid)
+            #jobid=self.checkID(jobid)
             if jobid is None and self.acctGroup is None:
                 self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
             elif jobid is None:

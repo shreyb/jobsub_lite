@@ -66,7 +66,7 @@ class Krb5Ticket:
             raise Exception("createKrbCache error: %s" % kinit_err)
 
 
-def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole='Analysis'):
+def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
     krb5cc_to_x509(krb5cc, x509_fname=proxy_fname)
 

@@ -129,6 +129,7 @@ class AccountJobsResource(object):
                 workdir_id = '%s_%s' % (ts, uniquer)
                 command_path = os.path.join(command_path_root, acctgroup, uid, workdir_id)
                 logger.log('command_path: %s' % command_path)
+		os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,role)
                 mkdir_p(command_path)
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path, jobsub_command.filename)

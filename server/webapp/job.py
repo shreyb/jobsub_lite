@@ -13,7 +13,7 @@ from shutil import copyfileobj
 from cherrypy.lib.static import serve_file
 
 from util import get_uid, mkdir_p
-from auth import check_auth
+from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_jobsub_command
 from jobsub import get_command_path_root
@@ -28,6 +28,7 @@ from history import HistoryResource
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
+	self.role=None
         self.sandbox = SandboxResource()
 	self.history = HistoryResource()
         self.condorActions = {
@@ -168,6 +169,7 @@ class AccountJobsResource(object):
     @check_auth
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
+            self.role = kwargs.get('role')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
@@ -200,14 +202,23 @@ class AccountJobsResource(object):
         uid = get_uid(dn)
         constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
         # Split the jobid to get cluster_id and proc_id
-        ids = job_id.split('.')
+	stuff=job_id.split('@')
+	schedd_name='@'.join(stuff[1:])
+	logger.log("schedd_name is %s"%schedd_name)
+        ids = stuff[0].split('.')
         constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
         if (len(ids) > 1) and (ids[1]):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
-
-        schedd = condor.Schedd()
+	coll = condor.Collector()
+	if schedd_name == '':
+		schedd=condor.Schedd()
+	else:
+		schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
+        	schedd = condor.Schedd(schedd_addr)
+	#os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup)
+	os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,self.role)
         out = schedd.act(job_action, constraint)
         logger.log(('%s' % (out)).replace('\n', ' '))
 

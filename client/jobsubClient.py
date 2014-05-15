@@ -193,7 +193,7 @@ class JobSubClient:
         curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
         if post_data:
             curl.setopt(curl.HTTPPOST, post_data)
-        if not ssl_verify_host:
+        if not ssl_verifyhost:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         try:

@@ -66,7 +66,7 @@ class Krb5Ticket:
             raise Exception("createKrbCache error: %s" % kinit_err)
 
 
-def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
+def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole='Analysis'):
     # First convert the krb5cc to regular x509 credentials
     krb5cc_to_x509(krb5cc, x509_fname=proxy_fname)
 
@@ -156,23 +156,32 @@ def authenticate(dn):
 
     return username[0]
 
+def x509_proxy_fname(username,acctgroup,acctrole=None):
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    creds_dir = os.path.join(creds_base_dir, acctgroup)
+    if not os.path.isdir(creds_dir):
+        os.makedirs(creds_dir, 0700)
+    logger.log('Using credentials dir: %s' % creds_dir)
+    if acctrole:
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
+    else:
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
+    logger.log('returning x509_proxy_name=%s'%x509_cache_fname)
+    return x509_cache_fname
+
 
 def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    creds_dir = os.path.join(creds_base_dir, acctgroup)
-    logger.log('Using credentials dir: %s' % creds_dir)
     try:
         ##TODO:if real_cache_fname and keytab_fname are new enough
         ##we should skip this step and go directly to voms-proxy-init
         ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        if not os.path.isdir(creds_dir):
-            os.makedirs(creds_dir, 0700)
         real_cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
         new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
+        x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
 
         # First create a keytab file for the user if it does not exists
         if needs_refresh(keytab_fname,age_limit):
@@ -214,10 +223,6 @@ def create_voms_proxy(dn, acctgroup, role):
     return voms_proxy
 
 
-def get_x509_proxy_file(username, acctgroup):
-    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    creds_dir = os.path.join(creds_base_dir, acctgroup)
-    return os.path.join(creds_dir, 'x509cc_%s'%username)
 
 def refresh_proxies(agelimit=3600):
     cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '

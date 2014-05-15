@@ -7,7 +7,7 @@ from util import encode_multipart_formdata
 from cherrypy.lib.static import serve_file
 
 from util import get_uid, mkdir_p, create_zipfile
-from auth import check_auth, get_x509_proxy_file
+from auth import check_auth
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
 from condor_commands import api_condor_q

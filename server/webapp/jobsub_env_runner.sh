@@ -48,7 +48,8 @@ if [ $RSLT == 0 ] ; then
 	source $file
 	shift
 fi
-export JOBSUB_CMD="jobsub -l "+Owner=\"$USER\"" $@"
+JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
+export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $@"
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi
@@ -76,6 +77,6 @@ fi
 echo "$RSLT"
 
 if [ "$WORKED" = "0" ]; then
-   echo
-   echo "use job id ${JID}0@${SCHEDD} to retrieve output"
+   echo "JobsubJobId of first job: ${JID}0@${SCHEDD}"
+   echo "Use job id ${JID}0@${SCHEDD} to retrieve output"
 fi

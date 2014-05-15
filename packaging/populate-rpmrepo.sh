@@ -1,12 +1,13 @@
 #!/bin/sh
 
-usage="USAGE: $0 <path to rpm file>"
+usage="USAGE: $0 <path to rpm file> [prod]"
 remote_cmd() {
     cmd=$1
     ssh $repologin "$cmd"
 }
 
 rpmfile=$1
+repo=$2
 
 if [ "$rpmfile" = "" ]; then
     echo "Specify rpm file"
@@ -21,7 +22,7 @@ versionlist='6'
 #For now only 64bit support
 archlist='x86_64'
 # Create repo for dev (developers) and one for production (operations)
-flavors='dev prod'
+flavors='dev'
 
 #make changes where appropiate (eg: scp new rpms)
 for flavor in $flavors; do

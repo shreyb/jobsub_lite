@@ -38,7 +38,7 @@ def parse_opts(argv):
                       metavar='<Group/Experiment/Subgroup>',
                       help='Group/Experiment/Subgroup for priorities and accounting')
 
-    parser.add_option('-J', '--job',
+    parser.add_option('-J', '--job','--jobid',
                       dest='jobId',
                       type='string',
                       action='store',
@@ -89,6 +89,8 @@ def parse_opts(argv):
     return options
 
 def checkUnzipDir(unzipDir):
+    if not unzipDir:
+        return
     try:
         os.makedirs(unzipDir)
     except OSError as exception:
@@ -100,10 +102,11 @@ def get_sandbox(options):
     if options.jobId.find('@')>0:
         job,mach=options.jobId.split('@')
         options.jobsubServer="https://%s:8443"%mach
-        options.jobId=job
+        #options.jobId=job
     submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
 
     checkUnzipDir( options.unzipdir )
+
 
     print
     print 'CREDENTIALS    : %s\n' % creds

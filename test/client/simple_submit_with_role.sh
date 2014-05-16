@@ -13,11 +13,11 @@ cp $JOB role_Production.sh
 
 
 
-$EXEPATH/jobsub_submit.py --role=Production --group $GROUP --debug \
+$EXEPATH/jobsub_submit.py --role=Production --group $GROUP  \
         $SERVER_SPEC \
            -g  -e SERVER  file://role_Production.sh "$@"
 
-$EXEPATH/jobsub_submit.py --role=Analysis  --group $GROUP --debug \
+$EXEPATH/jobsub_submit.py --role=Analysis  --group $GROUP  \
         $SERVER_SPEC \
           -g  -e SERVER  file://role_Analysis.sh "$@"
 

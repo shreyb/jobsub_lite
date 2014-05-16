@@ -6,8 +6,6 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 source ./setup_env.sh
-export MACH=$1
-shift
 
 export SERVER=https://${MACH}:8443
 

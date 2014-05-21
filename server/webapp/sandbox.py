@@ -6,7 +6,7 @@ from util import encode_multipart_formdata
 
 from cherrypy.lib.static import serve_file
 
-from util import get_uid, mkdir_p, create_zipfile
+from util import get_uid, mkdir_p, create_zipfile, create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
@@ -49,7 +49,9 @@ class SandboxResource(object):
     """
 
 
+    #@format_response
     def doGET(self, acctgroup, job_id, kwargs):
+	logger.log(kwargs)
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
@@ -61,8 +63,14 @@ class SandboxResource(object):
         zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
         if os.path.exists(zip_path):
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
-            zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.zip' % (job_tokens[0],ts))
-            create_zipfile(zip_file, zip_path, job_id)
+            format=kwargs.get('archive_format')
+            logger.log('archive_format:%s'%format)
+            if format and format=='zip':
+                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.zip'%(job_tokens[0],ts))
+                create_zipfile(zip_file, zip_path, job_id)
+            else:           
+                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.tgz'%(job_tokens[0],ts))
+                create_tarfile(zip_file, zip_path, job_id)
 
             rc = {'out': zip_file}
 
@@ -83,10 +91,12 @@ class SandboxResource(object):
                 dirs=os.listdir(jobs_file_path)
                 for dir in dirs:
                     if os.path.islink(os.path.join(jobs_file_path, dir)):
-                        sandbox_cluster_ids.append(dir)
+			frag="""<a href="../../%s/sandbox/">%s</a>"""%(dir,dir)
+                        sandbox_cluster_ids.append(frag)
                 sandbox_cluster_ids.sort()
-	    outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:%s"% (uid,acctgroup,sandbox_cluster_ids)
-            rc = {'out': outmsg , 'err':err }
+	    outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (uid,acctgroup)
+	    sandbox_cluster_ids.insert(0,outmsg)
+            rc = {'out': sandbox_cluster_ids , 'err':err }
 
         return rc
 

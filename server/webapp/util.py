@@ -2,6 +2,7 @@ import logger
 import os
 import errno
 import zipfile
+import tarfile
 import time
 import sys
 import mimetypes
@@ -82,6 +83,16 @@ def create_zipfile(zip_file, zip_path, job_id=None):
     zipdir(zip_path, zip, job_id)
     zip.close()
 
+def create_tarfile(tar_file, tar_path, job_id=None):
+    tar = tarfile.open(tar_file,'w:gz')
+    os.chdir(tar_path)
+    logger.log('creating tar of %s'%tar_path)
+    files=os.listdir(tar_path)
+    for file in files:
+	f1=os.path.realpath(file)
+	f2=os.path.basename(f1)
+	tar.add(f1,f2)
+    tar.close()
 
 def needs_refresh(filepath,agelimit=3600):
     if not os.path.exists(filepath):

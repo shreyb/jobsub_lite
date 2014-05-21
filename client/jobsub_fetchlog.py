@@ -9,6 +9,8 @@ import json
 import os
 import errno
 import zipfile
+import tarfile
+import shutil
 
 from defaultServer import defaultServer
 
@@ -69,6 +71,13 @@ def parse_opts(argv):
                       default=None,
                       help='Directory to automatically unzip logs into')
 
+    parser.add_option('--archive-format',
+                      dest='format',
+                      type='string',
+                      action='store',
+                      metavar='<Archive Format>',
+                      default='tar',
+                      help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
 
     if len(argv) < 1:
@@ -104,6 +113,8 @@ def get_sandbox(options):
         options.jobsubServer="https://%s:8443"%mach
         #options.jobId=job
     submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
+    if options.format=='zip':
+        submitURL="%s?archive_format=zip"%(submitURL)
 
     checkUnzipDir( options.unzipdir )
 
@@ -112,7 +123,11 @@ def get_sandbox(options):
     print 'CREDENTIALS    : %s\n' % creds
     print 'SUBMIT_URL     : %s\n' % submitURL
 
-    fn = '%s.zip' % options.jobId
+    if options.format=='zip':
+        fn = '%s.zip' % options.jobId
+    else:
+        fn = '%s.tgz' % options.jobId
+
     fp = open(fn, 'w')
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
@@ -143,11 +158,21 @@ def get_sandbox(options):
         print 'Downloaded to %s' % fn
         if options.unzipdir is not None:
             print "Moved files to %s"%options.unzipdir
-            z=zipfile.ZipFile(fn)
-            for f in z.namelist():
-                b=os.path.basename(f)
-                t="%s/%s"%(options.unzipdir,b)
-                z.extract(f,t)
+            if options.format=='zip':
+                z=zipfile.ZipFile(fn)
+                z.extractall(options.unzipdir)
+                d=''
+                for f in z.namelist():
+                    b=os.path.basename(f)
+                    s=os.path.join(options.unzipdir,f)
+                    d=os.path.dirname(s)
+                    t=os.path.join(options.unzipdir,b)
+                    shutil.move(s,t)
+                os.rmdir(d)
+            else:
+                t=tarfile.open(fn)
+                t.extractall(options.unzipdir)
+                t.close()
             os.remove(fn)
 
     elif response_code == 404:

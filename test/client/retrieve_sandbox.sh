@@ -10,7 +10,7 @@ if [ "$CLUSTER" = "" ];then
     CLUSTER=1
 fi
 export SERVER=https://${MACH}:8443
-CLUSTER=`echo $CLUSTER | sed 's/\..*//'`
+#CLUSTER=`echo $CLUSTER | sed 's/\..*//'`
 mkdir -p curl
 mkdir -p python
 #hardcode group for now
@@ -21,4 +21,4 @@ cd -
 cd python
 $EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job $CLUSTER
 cd -
-$EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --job 18  --timeout 1
+$EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER  --jobid $CLUSTER --unzipdir UNZIPDIR  

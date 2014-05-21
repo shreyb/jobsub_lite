@@ -54,7 +54,7 @@ class AccountJobsResource(object):
         logger.log('filter=%s'%filter)
         q=ui_condor_q(filter)
         all_jobs=q.split('\n')
-        if len(all_jobs)<=1:
+        if len(all_jobs)<1:
             logger.log('condor_q %s returned no jobs'%filter)
             err = 'Job with id %s not found in condor queue' % job_id
             rc={'err':err}

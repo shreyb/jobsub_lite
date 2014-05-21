@@ -181,12 +181,15 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
         new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
+        new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
 
         # First create a keytab file for the user if it does not exists
         if needs_refresh(keytab_fname,age_limit):
             logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
-            add_principal(principal, keytab_fname)
+            add_principal(principal, new_keytab_fname)
+            if os.path.exists(new_keytab_fname):
+                os.rename(new_keytab_fname,keytab_fname)
             logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
 
         if needs_refresh(real_cache_fname,age_limit):

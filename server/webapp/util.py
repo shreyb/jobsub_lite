@@ -84,6 +84,10 @@ def create_zipfile(zip_file, zip_path, job_id=None):
 
 
 def needs_refresh(filepath,agelimit=3600):
+    if not os.path.exists(filepath):
+        return True
+    if agelimit == sys.maxint:
+        return False
     rslt=False
     agelimit=int(agelimit)
     age=sys.maxint

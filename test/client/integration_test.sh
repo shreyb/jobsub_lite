@@ -40,6 +40,6 @@ sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$1.list.log 2>&1
 echo test condor_history
 sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 >$1.history.log 2>&1
 echo test retrieving zip_file from sandbox
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID22 >$1.sandbox.log 2>&1
+sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.log 2>&1
 echo testing removing job
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.log  2>&1

@@ -245,7 +245,7 @@ def refresh_proxies(agelimit=3600):
                 grp,user=ac_grp.split(".")
                 if user not in queued_users:
                     queued_users.append(user)
-                grp=grp.strip("group_")
+                grp=grp.replace("group_","")
 		proxy_name=os.path.basename(check[2])
 		x,uid,role=proxy_name.split('_')	
                 print "checking proxy %s %s %s %s"%(dn,user,grp,role)

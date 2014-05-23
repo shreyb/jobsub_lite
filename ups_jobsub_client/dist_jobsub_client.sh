@@ -13,6 +13,10 @@ VERS=$2
 REV=''
 
 
+mkdir -p ups_db/jobsub_client
+if [ -e jobsub ]; then
+	rm -rf jobsub
+fi
 ./make_tablefile.py $VERS$REV
 cd ups_db
 tar cvf db.jobsub_client.tar jobsub_client 

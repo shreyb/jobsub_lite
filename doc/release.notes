@@ -4,9 +4,25 @@ v0.3
 
 CLIENT
 ------
+* Support Jobsub deployment in HA mode. #6279 #5098 #6029 #5756
+* Improved the jobsub_fetchlog to download sandbox in tgz format instead of
+  of zip and auto extract it in a given directory. #6270 #5533
+* Bug Fix: jobsub_client ups packagae now correctly sets up python and pycurl
+  dependencies on RHEL 6 based machines. #5993
+* Bug Fix: Client commands now correctly use default jobsub server on
+  fifebatch.fnal.gov when --jobsub-server is not used. #6176
 
 SERVER
 ------
+* Support Jobsub deployment in HA mode. #6279 #5098 #6029 #5756
+* Jobs submitted by jobsub server now have jobsub jobid in the job
+  classad. #6280
+* Bug Fix: Improved Server authentication method. It reuses user keytabs
+  whenever possible. #6261
+* Bug Fix: Fixed a bug where proxy refresh tool would not refresh credentials
+  under certain conditions. #6281
+* Bug Fix: Resolved a race condition in sandbox filename when using
+  jobsub_fetchlog.py. #5769
 
 ================================================================================
 v0.2.1

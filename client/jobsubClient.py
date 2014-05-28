@@ -30,13 +30,13 @@ import jobsubClientCredentials
 import logSupport
 
 class JobSubClientError(Exception):
-    def __init__(self):
-        Exception.__init__(self, "JobSub client action failed.")
+    def __init__(self,errMsg="JobSub client action failed."):
+        Exception.__init__(self, errMsg)
 
 
 class JobSubClientSubmissionError(Exception):
-    def __init__(self):
-        Exception.__init__(self, "JobSub remote submission failed.")
+    def __init__(self,errMsg="JobSub remote submission failed."):
+        Exception.__init__(self, errMsg)
 
 
 class JobSubClient:
@@ -72,7 +72,10 @@ class JobSubClient:
             self.serverEnvExports = get_server_env_exports(server_argv)
 
             srv_argv = copy.copy(server_argv)
-
+            if not os.path.exists(self.jobExe):
+                err="file %s not found. Exiting" % self.jobExe
+                raise JobSubClientError(err)
+                
             if self.jobDropboxURIMap:
                 # upload the files
                 result = self.dropbox_upload()

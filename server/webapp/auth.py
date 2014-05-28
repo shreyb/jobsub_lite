@@ -27,6 +27,7 @@ import cherrypy
 import logger
 import subprocessSupport
 from util import needs_refresh
+from tempfile import NamedTemporaryFile
 from jobsub import get_voms
 
 class AuthenticationError(Exception):
@@ -61,6 +62,7 @@ class Krb5Ticket:
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
+        logger.log(cmd)
         kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         if kinit_err:
             raise Exception("createKrbCache error: %s" % kinit_err)
@@ -68,9 +70,15 @@ class Krb5Ticket:
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
-    krb5cc_to_x509(krb5cc, x509_fname=proxy_fname)
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname,delete=False)
+    new_proxy_fname=new_proxy_file.name
+    logger.log("new_proxy_fname=%s"%new_proxy_fname)
+    new_proxy_file.close()
+    krb5cc_to_x509(krb5cc, x509_fname=new_proxy_fname)
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
@@ -80,7 +88,8 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
     cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
-    cmd_env = {'X509_USER_PROXY': proxy_fname}
+    cmd_env = {'X509_USER_PROXY': new_proxy_fname}
+    logger.log(cmd)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     except:
@@ -94,6 +103,11 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         else:
             # Anything else we should just raise
             raise
+    cmd = "%s -exists -file %s"%(voms_proxy_info_exe,new_proxy_fname)
+    logger.log(cmd)
+    ret_code = os.system(cmd)
+    if ret_code == 0:
+	os.rename(new_proxy_fname,proxy_fname)
 
 
 
@@ -106,6 +120,7 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
 
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
+    logger.log(cmd)
     klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
 
@@ -169,6 +184,12 @@ def x509_proxy_fname(username,acctgroup,acctrole=None):
     logger.log('returning x509_proxy_name=%s'%x509_cache_fname)
     return x509_cache_fname
 
+NEVER_REFRESH=sys.maxint
+REFRESH_DAILY=24*60*60
+REFRESH_EVERY_4_HOURS=4*60*60
+#for stress testing
+#REFRESH_DAILY=24
+#REFRESH_EVERY_4_HOURS=4
 
 def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
@@ -179,36 +200,33 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         real_cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
-        new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
         new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
 
         # First create a keytab file for the user if it does not exists
-        if needs_refresh(keytab_fname,age_limit):
+        if needs_refresh(keytab_fname,NEVER_REFRESH):
             logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
             add_principal(principal, new_keytab_fname)
             if os.path.exists(new_keytab_fname):
                 os.rename(new_keytab_fname,keytab_fname)
             logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
 
-        if needs_refresh(real_cache_fname,age_limit):
+        if needs_refresh(real_cache_fname,REFRESH_DAILY):
+            new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+            new_cache_fname = new_cache_file.name
+            logger.log("new_cache_fname=%s"%new_cache_fname)
+	    new_cache_file.close()
             logger.log('Creating krb5 ticket ...')
             krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
             krb5_ticket.create()
             logger.log('Creating krb5 ticket ... DONE')
 
             # Rename is atomic and silently overwrites destination
-            if os.path.exists(real_cache_fname):
-                os.rename(real_cache_fname, old_cache_fname)
-            os.rename(new_cache_fname, real_cache_fname)
-            try:
-                os.unlink(old_cache_fname)
-            except:
-                # Ignore file removal errors
-                pass
+            if os.path.exists(new_cache_fname):
+                 os.rename(new_cache_fname, real_cache_fname)
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
-        if needs_refresh(x509_cache_fname,0):
+        if needs_refresh(x509_cache_fname,REFRESH_EVERY_4_HOURS):
             krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:

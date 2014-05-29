@@ -24,10 +24,11 @@ import json
 import copy
 import traceback
 import pprint 
-
 import constants
 import jobsubClientCredentials
 import logSupport
+from distutils import spawn
+import subprocess 
 
 class JobSubClientError(Exception):
     def __init__(self,errMsg="JobSub client action failed."):
@@ -43,6 +44,7 @@ class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, server_version='current'):
+        force_refresh()
         self.server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
@@ -107,6 +109,10 @@ class JobSubClient:
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
+
+
+
+
 
 
     def dropbox_upload(self):
@@ -450,6 +456,18 @@ def get_capath():
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
+def force_refresh():
+    getcert_exe = spawn.find_executable("getcert")
+    echo_exe = spawn.find_executable("echo")
+    cmd = "%s 'asdf' | %s   > /dev/null 2>&1  " % (echo_exe,getcert_exe)
+    x=subprocess.call(cmd,shell=True)
+    if x != 0 :
+        print """ 
+        command:"%s" 
+        returned exit code %s, and may have failed.
+        Please run this command maually to determine the problem and 
+        open a service desk ticket if needed. """%(cmd)
+          
 
 ###################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS

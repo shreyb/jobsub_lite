@@ -15,7 +15,7 @@ import shutil
 from defaultServer import defaultServer
 
 import constants
-from jobsubClient import get_capath, get_client_credentials, print_formatted_response
+from jobsubClient import get_capath, get_client_credentials, print_formatted_response, force_refresh
 
 
 def required_args_present(options):
@@ -88,7 +88,8 @@ def parse_opts(argv):
     options, remainder = parser.parse_args(argv)
 
     if len(remainder) > 1:
-        parser.print_help(file)
+        #parser.print_help(file)
+        parser.print_help()
 
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
@@ -117,7 +118,7 @@ def get_sandbox(options):
         submitURL="%s?archive_format=zip"%(submitURL)
 
     checkUnzipDir( options.unzipdir )
-
+    force_refresh()
 
     print
     print 'CREDENTIALS    : %s\n' % creds

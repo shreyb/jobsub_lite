@@ -44,7 +44,6 @@ class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, server_version='current'):
-        force_refresh()
         self.server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
@@ -52,7 +51,7 @@ class JobSubClient:
         self.serverArgv = server_argv
 
         self.credentials = get_client_credentials()
-        self.acctRole = get_acct_role(acct_role, self.credentials.get('cert'))
+        self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
 
         # Help URL
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
@@ -422,26 +421,25 @@ def get_client_credentials():
     """
 
     creds = {}
-    cert = None
-    key = None
+    env_cert = cert = None
+    env_key = key = None
 
     if os.environ.get('X509_USER_PROXY'):
-        cert = os.environ.get('X509_USER_PROXY')
-        key = os.environ.get('X509_USER_PROXY')
+        env_cert = os.environ.get('X509_USER_PROXY')
+        env_key = os.environ.get('X509_USER_PROXY')
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
-        cert = os.environ.get('X509_USER_CERT')
-        key = os.environ.get('X509_USER_KEY')
+        env_cert = os.environ.get('X509_USER_CERT')
+        env_key = os.environ.get('X509_USER_KEY')
     elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
+        env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
+    krb5_creds = jobsubClientCredentials.Krb5Ticket()
+    if krb5_creds.isValid():
+        jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
         cert = key = constants.X509_PROXY_DEFAULT_FILE
     else:
-        krb5_creds = jobsubClientCredentials.Krb5Ticket()
-        if krb5_creds.isValid():
-            jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
-            cert = key = constants.X509_PROXY_DEFAULT_FILE
-        else:
-            raise Exception("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
+        raise Exception("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
-    return {'cert': cert, 'key': key}
+    return {'cert': cert, 'key': key, 'env_cert': env_cert, 'env_key': env_key}
 
 def get_capath():
     system_ca_dir = '/etc/grid-security/certificates'
@@ -456,17 +454,6 @@ def get_capath():
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
-def force_refresh():
-    getcert_exe = spawn.find_executable("getcert")
-    echo_exe = spawn.find_executable("echo")
-    cmd = "%s 'asdf' | %s   > /dev/null 2>&1  " % (echo_exe,getcert_exe)
-    x=subprocess.call(cmd,shell=True)
-    if x != 0 :
-        print """ 
-        command:"%s" 
-        returned exit code %s, and may have failed.
-        Please run this command maually to determine the problem and 
-        open a service desk ticket if needed. """%(cmd)
           
 
 ###################################################################################

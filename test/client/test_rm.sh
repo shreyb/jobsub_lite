@@ -9,8 +9,8 @@ JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 
 export SERVER=https://${MACH}:8443
 echo before
-condor_q -name $MACH -pool $POOL
+$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
 $EXEPATH/jobsub_rm.py --group $GROUP $SERVER_SPEC  --jobid $JOBLIST
 echo after 
-condor_q -name $MACH -pool $POOL
+$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
 

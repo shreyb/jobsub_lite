@@ -15,7 +15,7 @@ import shutil
 from defaultServer import defaultServer
 
 import constants
-from jobsubClient import get_capath, get_client_credentials, print_formatted_response, force_refresh
+from jobsubClient import get_capath, get_client_credentials, print_formatted_response
 
 
 def required_args_present(options):
@@ -118,7 +118,6 @@ def get_sandbox(options):
         submitURL="%s?archive_format=zip"%(submitURL)
 
     checkUnzipDir( options.unzipdir )
-    force_refresh()
 
     print
     print 'CREDENTIALS    : %s\n' % creds

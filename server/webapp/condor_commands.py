@@ -1,4 +1,5 @@
 import logger
+import traceback
 import math
 import platform
 import os
@@ -11,7 +12,7 @@ import base64
 import json
 import subprocessSupport
 import socket
-
+import re
 
 
 if platform.system() == 'Linux':
@@ -89,8 +90,18 @@ def ui_condor_q(filter=None):
     else:
         cmd = 'condor_q -g %s %s' % (condor_format(),filter)
 
-    all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    return munge_jobid(all_jobs)
+    try:
+        all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        return munge_jobid(all_jobs)
+    except:
+	tb = traceback.format_exc()
+        logger.log(tb)
+        no_jobs="All queues are empty"
+        if len(re.findall(no_jobs, tb)):
+            return no_jobs
+        else:
+            return tb
+
 
 def all_known_jobs(acct_group,uid=None,jobid=None):
     filter=constructFilter(acct_group,uid,jobid)

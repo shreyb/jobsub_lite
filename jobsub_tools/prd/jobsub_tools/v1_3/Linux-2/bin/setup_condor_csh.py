@@ -23,7 +23,7 @@ def runConfig():
 	if scp.has_section(submit_host):
 		for var in scp.options(submit_host):
 			eval=os.environ.get(var.upper(),None)
-			if eval is None:
+			if eval is None or var.upper()=='GROUP':
 	        		val=scp.get(submit_host,var)
 				if len(val)==0 or val.find(' ')>=0:
 					val="'%s'"%val

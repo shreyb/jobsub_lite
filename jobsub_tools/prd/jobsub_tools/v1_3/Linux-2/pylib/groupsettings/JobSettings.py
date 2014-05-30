@@ -717,8 +717,8 @@ class JobSettings(object):
 		f.write("DEFN=$2\n")
 		f.write("PRJ_NAME=$3\n")
 		f.write("SAM_USER=$4\n")
-                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
-                f.write(ifdh_setup)
+                ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
+                f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("ifdh describeDefinition $DEFN\n")
 		f.write("""if [ "$SAM_STATION" = "" ]; then\n""")
@@ -767,8 +767,8 @@ class JobSettings(object):
 		f.write("#!/bin/sh -x\n")
 		f.write("EXPERIMENT=$1\n")
 		f.write("PRJ_NAME=$2\n")
-                ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
-                f.write(ifdh_setup)
+                ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
+                f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("CPURL=`ifdh findProject $PRJ_NAME ''` \n")
 		f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])		   

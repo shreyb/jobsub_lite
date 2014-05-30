@@ -1,4 +1,20 @@
 ================================================================================
+v0.3.1
+================================================================================
+
+CLIENT
+------
+* Improved error reporting in case of errors. #6365 #6373
+* Bug Fix: Client tools create jobsub specific credentials and do not over write
+  credentials available from the user's environment. #6260
+* Bug Fix: jobsub_q now correctly reports when all queue are empty. #6347
+
+SERVER
+------
+* Bug Fix: Fixed race condition in credential handling under heavy loads. #6354
+* Bug Fix: Fixed user keytab file creation to work with the HA setup. #6261
+
+================================================================================
 v0.3
 ================================================================================
 

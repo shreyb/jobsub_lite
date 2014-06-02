@@ -15,7 +15,7 @@ if [ "$rpmfile" = "" ]; then
     exit 1
 fi
 
-repologin='parag@web1.fnal.gov'
+repologin="$USER@web1.fnal.gov"
 repodir='/var/www/html/files/jobsub'
 #For now only SL6 support
 versionlist='6'

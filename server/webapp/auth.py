@@ -204,8 +204,12 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
 
-        # First create a keytab file for the user if it does not exists
-        if needs_refresh(keytab_fname,NEVER_REFRESH):
+        #First create a keytab file for the user if it does not exists
+        #NO! do not create keytab
+        #NEVER_REFRESH flag unreliable across different releases
+        #of util.needs_refresh
+        #if needs_refresh(keytab_fname,NEVER_REFRESH):
+        if False:
             logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
             add_principal(principal, new_keytab_fname)
             if os.path.exists(new_keytab_fname):

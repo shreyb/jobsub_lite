@@ -151,11 +151,11 @@ class JobTest(unittest.TestCase):
         self.assertEqual(retVal,0)
 
 
-        (retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['sambeginfile'])
-        self.assertEqual(retVal,0)
+        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['sambeginfile'])
+        #self.assertEqual(retVal,0)
         
-        (retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['samendfile'])
-        self.assertEqual(retVal,0)
+        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['samendfile'])
+        #self.assertEqual(retVal,0)
 
         (retVal,output)=commands.getstatusoutput("wc -l %s"%ns.settings['dagfile'])
         response="8 %s"%ns.settings['dagfile']
@@ -202,9 +202,10 @@ class JobTest(unittest.TestCase):
         ns.settings['exe_script']=ns.__class__.__name__+"_CPNtest.sh"
         ns.makeCondorFiles()
         sys.stdout.close()
-        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=cpn -D    input_file_1 ${CONDOR_DIR_INPUT}/ \\\; input_file_2 ${CONDOR_DIR_INPUT}/'  %s"%ns.settings['wrapfile'])
+        (retVal,output)=commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+-D\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/ \\\; input_file_2 \$\{CONDOR_DIR_INPUT\}\/'  %s"%ns.settings['wrapfile'])
         self.assertEqual(retVal,0,'cpn cant find input_file_1 in '+ns.settings['wrapfile'])
-        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=cpn -D      ${CONDOR_DIR_FOO}/\* this_is_the_foo_dir  \\\;   ${CONDOR_DIR_BAR}/\* this_is_the_bar_dir' %s"%ns.settings['wrapfile'])
+
+        (retVal,output)=commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+-D\s+\$\{CONDOR_DIR_FOO\}\/\*\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\*\s+this_is_the_bar_dir' %s"%ns.settings['wrapfile'])
         self.assertEqual(retVal,0,'cpn cant transfer out CONDOR_DIR_FOO in file '+ns.settings['wrapfile'])
         
         
@@ -220,12 +221,12 @@ class JobTest(unittest.TestCase):
         ns.settings['use_gftp']=True
         ns.makeCondorFiles()
         sys.stdout.close()
-        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=expgridftp    input_file_1 ${CONDOR_DIR_INPUT}/ \\\; input_file_2 ${CONDOR_DIR_INPUT}/' %s"%\
+        (retVal,output)=commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force=expgridftp\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/\s+\\\;\s+input_file_2\s+\$\{CONDOR_DIR_INPUT\}\/' %s"%\
                                                  (ns.settings['wrapfile']))
 
         self.assertEqual(retVal,0,'gftp cant find input_file_1 in '+ns.settings['wrapfile'])
         
-        (retVal,output)=commands.getstatusoutput("grep 'ifdh cp --force=expgridftp -r -D     ${CONDOR_DIR_FOO}/ this_is_the_foo_dir  \\\;  ${CONDOR_DIR_BAR}/ this_is_the_bar_dir' %s"%\
+        (retVal,output)=commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s"%\
                                                  (ns.settings['wrapfile']))
         self.assertEqual(retVal,0,'gftp cant transfer out CONDOR_DIR_BAR in file '+ns.settings['wrapfile'])
         

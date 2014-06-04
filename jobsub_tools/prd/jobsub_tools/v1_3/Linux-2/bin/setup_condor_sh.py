@@ -18,6 +18,12 @@ def runConfig():
     scp=JobsubConfigParser(grp,submit_host)
     if submit_host is None and scp.has_option(grp,'submit_host'):
     	submit_host = scp.get(grp,'submit_host')
+
+    if scp.has_section(grp):
+        if scp.has_option(grp,'group'):
+            val=scp.get(grp,'group')
+            fd.write( "export GROUP=%s\n"%(val))
+
     jobsub_ini_vars="JOBSUB_INI_VARS "
     if submit_host is not None:
 	if scp.has_section(submit_host):

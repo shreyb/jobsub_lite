@@ -1104,11 +1104,6 @@ class JobSettings(object):
                 self.handleResourceProvides(f,job_iter)
 		f.write("requirements  = %s\n"%self.condorRequirements())
 
-		if 'lines' in settings and len(settings['lines']) >0:			
-		    for thingy in settings['lines']:
-			f.write("%s\n" % thingy)
-
-
 		f.write("\n")
 		f.write("\n")
 		f.write("queue %s"%settings['queuecount'])
@@ -1218,10 +1213,10 @@ class JobSettings(object):
 			if job_iter <=1:
 				settings['requirements']=settings['requirements'] + ' && (target.GLIDEIN_Site=?=UNDEFINED)'
 		if settings['istestjob'] == True:
-			self.addToLineSetting("+AccountingGroup = \"group_testjobs\"")
+			f.write("+AccountingGroup = \"group_testjobs\"\n")
 
 		if settings['group'] != "" and settings['istestjob'] == False:			
-			self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%(settings['accountinggroup'],settings['user']))
+			f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
 
 		self.addToLineSetting("+Agroup = \"group_%s\""%settings['group'])
 

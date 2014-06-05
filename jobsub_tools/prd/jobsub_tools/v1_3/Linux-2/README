@@ -470,3 +470,9 @@ v1_3_1 5/30/14
 ===============================================================
 - INC000000416076 jobsub picking the wrong $GROUP for experiments
   where gid name different than VOMS group name, fixed.
+
+
+v1_3_1_1 6/5/14
+===============================================================
+- INC000000417210   -l +AccountingGroup = "group_highprio.minervapro" 
+  generates incorrect condor jdf on gpsn01 - fixed

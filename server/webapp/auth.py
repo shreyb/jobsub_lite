@@ -124,6 +124,7 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
 
+
 def kadmin_password():
     passwd_file = os.environ.get('KADMIN_PASSWD_FILE')
     logger.log('Using KADMIN PASSWORD FILE: %s' % passwd_file)
@@ -184,10 +185,8 @@ def x509_proxy_fname(username,acctgroup,acctrole=None):
     logger.log('returning x509_proxy_name=%s'%x509_cache_fname)
     return x509_cache_fname
 
-NEVER_REFRESH=sys.maxint
-REFRESH_DAILY=24*60*60
-REFRESH_EVERY_4_HOURS=4*60*60
-#for stress testing
+#for stress testing,add as second parameter to needs_refresh()
+# these times are in seconds, not hours so refresh every 24 seconds for daily
 #REFRESH_DAILY=24
 #REFRESH_EVERY_4_HOURS=4
 
@@ -204,19 +203,8 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
 
-        #First create a keytab file for the user if it does not exists
-        #NO! do not create keytab
-        #NEVER_REFRESH flag unreliable across different releases
-        #of util.needs_refresh
-        #if needs_refresh(keytab_fname,NEVER_REFRESH):
-        if False:
-            logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
-            add_principal(principal, new_keytab_fname)
-            if os.path.exists(new_keytab_fname):
-                os.rename(new_keytab_fname,keytab_fname)
-            logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
 
-        if needs_refresh(real_cache_fname,REFRESH_DAILY):
+        if not is_valid_cache(real_cache_fname):
             new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
             new_cache_fname = new_cache_file.name
             logger.log("new_cache_fname=%s"%new_cache_fname)
@@ -230,7 +218,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
             if os.path.exists(new_cache_fname):
                  os.rename(new_cache_fname, real_cache_fname)
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
-        if needs_refresh(x509_cache_fname,REFRESH_EVERY_4_HOURS):
+        if needs_refresh(x509_cache_fname):
             krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
@@ -238,6 +226,17 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
 
+def is_valid_cache(cache_name):
+    klist_exe=spawn.find_executable("klist")
+    cmd ="%s -s -c %s"%(klist_exe,cache_name)
+    try:
+        logger.log(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        logger.log("%s is still valid"%cache_name)
+        return True
+    except:
+        logger.log("%s is expired,invalid, or does not exist"%cache_name)
+        return False
 
 def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authenticating DN: %s' % dn)

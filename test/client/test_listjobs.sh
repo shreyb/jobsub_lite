@@ -8,5 +8,5 @@ source ./setup_env.sh
 
 JOB=$1
 
-$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC
+$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --debug
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --jobid $JOB

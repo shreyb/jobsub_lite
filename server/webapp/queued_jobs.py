@@ -19,6 +19,7 @@ class QueuedJobsResource(object):
 
     def doGET(self, user_id,kwargs):
         """ Query list of user_ids. Returns a JSON list object.
+	    API is /jobsub/jobs
 	    API is /acctgroups/<group>/users/<uid>/jobs
         """
         acctgroup=kwargs.get('acctgroup')

@@ -69,6 +69,14 @@ def parse_opts(argv):
                          default=None,
                          help='VOMS Role for priorities and accounting')
 
+    opt_group.add_option('--user',
+                         dest='userId',
+                         type='string',
+                         action='store',
+                         metavar='<User ID>',
+                         default=None,
+                         help='user id to query in queue')
+
     opt_group.add_option('--jobid',
                          dest='jobId',
                          type='string',
@@ -118,7 +126,7 @@ def main(argv):
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
     try:
             stime = time.time()
-            js_client.list(options.jobId)
+            js_client.list(options.jobId,options.userId)
             etime = time.time()
             print 'Remote Listing Processing Time: %s sec' % (etime - stime)
     except JobSubClientError, e:

@@ -14,7 +14,7 @@ export SERVER=https://${MACH}:8443
 mkdir -p curl
 mkdir -p python
 #hardcode group for now
-GROUP=nova
+#GROUP=nova
 cd curl
 curl -k --cert /tmp/x509up_u${UID} -H "Accept: application/x-download" -o $CLUSTER.zip -X GET $SERVER/jobsub/acctgroups/${GROUP}/jobs/${CLUSTER}/sandbox/
 cd -

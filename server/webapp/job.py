@@ -49,7 +49,8 @@ class AccountJobsResource(object):
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
         subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
+        #uid = get_uid(subject_dn)
+	uid = kwargs.get('user_id')
         filter = constructFilter(acctgroup,uid,job_id)
         logger.log('filter=%s'%filter)
         q=ui_condor_q(filter)

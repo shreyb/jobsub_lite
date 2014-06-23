@@ -423,7 +423,7 @@ def get_client_credentials():
     creds = {}
     env_cert = cert = None
     env_key = key = None
-
+    cred_dict={}
     if os.environ.get('X509_USER_PROXY'):
         env_cert = os.environ.get('X509_USER_PROXY')
         env_key = os.environ.get('X509_USER_PROXY')
@@ -432,14 +432,17 @@ def get_client_credentials():
         env_key = os.environ.get('X509_USER_KEY')
     elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
         env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
+    if env_cert is not None:
+        cred_dict['env_cert']=env_cert
+        cred_dict['env_key']=env_key
     krb5_creds = jobsubClientCredentials.Krb5Ticket()
     if krb5_creds.isValid():
         jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
-        cert = key = constants.X509_PROXY_DEFAULT_FILE
+        cred_dict['cert']=cred_dict['key'] = constants.X509_PROXY_DEFAULT_FILE
     else:
         raise Exception("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
-    return {'cert': cert, 'key': key, 'env_cert': env_cert, 'env_key': env_key}
+    return cred_dict
 
 def get_capath():
     system_ca_dir = '/etc/grid-security/certificates'

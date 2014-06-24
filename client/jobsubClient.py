@@ -30,6 +30,15 @@ import logSupport
 from distutils import spawn
 import subprocess 
 
+def version_string():
+    ver = constants.__rpmversion__
+    rc = constants.__rpmrelease__
+    if rc and rc != '':
+        vs="%s.%s"%(ver,rc)
+        return vs
+    else:
+        return ver
+
 class JobSubClientError(Exception):
     def __init__(self,errMsg="JobSub client action failed."):
         Exception.__init__(self, errMsg)

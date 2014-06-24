@@ -15,7 +15,7 @@ import shutil
 from defaultServer import defaultServer
 
 import constants
-from jobsubClient import get_capath, get_client_credentials, print_formatted_response
+from jobsubClient import get_capath, get_client_credentials, print_formatted_response, version_string
 
 
 def required_args_present(options):
@@ -29,7 +29,7 @@ def required_args_present(options):
 
 def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
-                                   version='v0.2',
+                                   version=version_string(),
                                    conflict_handler="resolve")
 
     # Required args

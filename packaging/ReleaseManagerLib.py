@@ -86,6 +86,8 @@ class TaskClean(TaskRelease):
     #   execute
 
 
+
+
 class TaskSetupReleaseDir(TaskRelease):
 
     def __init__(self, rel):
@@ -107,22 +109,39 @@ class TaskTar(TaskRelease):
         self.releaseFilename = 'glideinWMS_%s.tgz' % self.release.version
         self.excludePattern = self.excludes.commonPattern
         self.tarExe = which('tar')
+        self.updateFileList = []
     #   __init__
 
     def execute(self):
         exclude = ""
         if len(self.excludePattern) > 0:
             exclude = "--exclude='" +  string.join(self.excludePattern, "' --exclude='") + "'"
-        #cmd = 'cd %s/..; /bin/tar %s -czf %s/%s glideinwms' % \
-        #      (self.release.sourceDir, exclude, self.release.releaseDir, self.releaseFilename)
         src_dir = '%s/../src/%s' % (self.release.releaseDir,
                                     self.release.version)
-        cmd = 'rm -rf %s; mkdir -p %s; cp -r %s %s/%s; cd %s; %s %s -czf %s/%s %s' % \
-              (src_dir, src_dir, self.release.sourceDir, src_dir, self.releaseDirname, src_dir, self.tarExe, exclude, self.release.releaseDir, self.releaseFilename, self.releaseDirname)
+        cmd = 'rm -rf %s; mkdir -p %s; cp -r %s %s/%s' % \
+              (src_dir, src_dir, self.release.sourceDir, src_dir, self.releaseDirname)
+        print "%s" % cmd
+        execute_cmd(cmd)
+        for f in self.updateFileList:
+            self.updateFile(f)
+        cmd = 'cd %s; %s %s -czf %s/%s %s' % \
+              (src_dir, self.tarExe, exclude, self.release.releaseDir, self.releaseFilename, self.releaseDirname)
         print "%s" % cmd
         execute_cmd(cmd)
         self.status = 'COMPLETE'
-    #   execute
+
+    def updateFile(self,fileName):
+        print 'updating %s' % fileName
+        fd = open(fileName, 'r')
+        specs = fd.readlines()
+        fd.close()
+        
+        fd = open(fileName, 'w')
+        for line in specs:
+            line = line.replace('__VERSION__', self.release.serverRPMVersion)
+            line = line.replace('__RELEASE__', self.release.serverRPMRelease)
+            fd.write(line)
+        fd.close()
 
 
 class TaskClientTar(TaskTar):
@@ -133,7 +152,8 @@ class TaskClientTar(TaskTar):
         self.releaseDirname = 'jobsub'
         self.releaseFilename = 'jobsub-client-v%s.tgz' % self.release.clientVersion
         self.excludePattern = self.excludes.clientPattern
-    #   __init__
+        _constants_py = os.path.join(self.release.releaseDir,'..','src',self.release.serverRPMVersion, 'jobsub','client','constants.py')
+        self.updateFileList.append(_constants_py)
 
 class TaskServerRPM(TaskTar):
 
@@ -143,6 +163,10 @@ class TaskServerRPM(TaskTar):
         self.releaseDirname = 'jobsub-%s' % self.release.serverRPMVersion
         self.releaseFilename = 'jobsub-%s.tar.gz' % self.release.serverRPMVersion
         self.excludePattern = self.excludes.serverPattern
+    
+        edit_dir = os.path.join(self.release.releaseDir,'..','src',self.release.serverRPMVersion)
+        _rpm_specs_infile = "%s/jobsub-%s/packaging/jobsub_server.spec"%(edit_dir,self.release.serverRPMVersion)
+        self.updateFileList.append(_rpm_specs_infile)
     #   __init__
 
 
@@ -166,18 +190,6 @@ class TaskServerRPM(TaskTar):
         shutil.move(os.path.join(self.release.releaseDir, self.releaseFilename),
                     rpm_src_dir)
 
-        # Create the spec file
-        #shutil.copyfile(rpm_specs_file, os.path.join(rpm_specs_dir, os.path.basename(rpm_specs_file)))
-        fd = open(rpm_specs_infile, 'r')
-        specs = fd.readlines()
-        fd.close()
-        
-        fd = open(rpm_specs_outfile, 'w')
-        for line in specs:
-            line = line.replace('__VERSION__', self.release.serverRPMVersion)
-            line = line.replace('__RELEASE__', self.release.serverRPMRelease)
-            fd.write(line)
-        fd.close()
 
         # Create rpmmacros file
         rpm_macros_file = os.path.join(os.path.expanduser('~'), '.rpmmacros')
@@ -187,7 +199,7 @@ class TaskServerRPM(TaskTar):
         fd.close()
 
         # Create the rpm
-        cmd = 'rpmbuild -bb %s' % rpm_specs_outfile
+        cmd = 'rpmbuild -bb %s' % self.updateFileList[0] 
         print "%s" % cmd
         execute_cmd(cmd)
         rpm_filename = os.path.basename(rpm_file)

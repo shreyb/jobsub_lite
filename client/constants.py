@@ -18,6 +18,11 @@ import os
 # JOBSUB Constants
 ################################################################################
 
+#Version strings to be set by release.py
+__rpmversion__='__VERSION__'
+__rpmrelease__='__RELEASE__'
+
+
 # Default JobSub Server
 JOBSUB_SERVER = 'https://fifebatch.fnal.gov:8443'
 #JOBSUB_SERVER_LIST = ['https://fermicloud136.fnal.gov:8443','https://fermicloud137.fnal.gov:8443']

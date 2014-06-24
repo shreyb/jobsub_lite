@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
+from jobsubClient import version_string
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -42,6 +43,7 @@ def required_args_present(options):
 def parse_opts(argv):
     usage = '%prog [Client Options]'
     parser = optparse.OptionParser(usage=usage,
+                                   version=version_string(),
                                    conflict_handler="resolve")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")

@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
+from jobsubClient import version_string
 from defaultServer import defaultServer
 
 
@@ -100,6 +101,7 @@ def parse_server_args(option, opt_str, value, parser):
 def parse_opts(argv):
     usage = '%prog [Client Options] [Server Options] user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
     parser = optparse.OptionParser(usage=usage,
+                                   version=version_string(),
                                    add_help_option=False,
                                    conflict_handler="resolve")
 

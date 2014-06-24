@@ -50,7 +50,7 @@ class UsersResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on UsersResouce.index'
+            err = 'Exception on UsersResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 

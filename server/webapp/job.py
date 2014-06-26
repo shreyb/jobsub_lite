@@ -134,14 +134,14 @@ class AccountJobsResource(object):
                 mkdir_p(command_path)
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
+                    cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     with open(command_file_path, 'wb') as dst_file:
                         copyfileobj(jobsub_command.file, dst_file)
                     # replace the command file name in the arguments with 
-                    # the path on the local machine.  It should be the 
-                    # last '@' in the args
-                    command_tag = '@(?!.*@)(.*)%s' % jobsub_command.filename
-                    jobsub_args = re.sub(command_tag, command_file_path, jobsub_args)
+                    # the path on the local machine.  
+                    command_tag = ' \@\/(.*)%s' % jobsub_command.filename
+                    jobsub_args = re.sub(command_tag, cf_path_w_space, jobsub_args)
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')

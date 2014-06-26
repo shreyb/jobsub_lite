@@ -2,6 +2,7 @@ import cherrypy
 import logger
 import uuid
 import os
+import sys
 
 from util import get_uid
 from auth import check_auth
@@ -11,11 +12,12 @@ from jobsub import get_supported_accountinggroups
 from jobsub import execute_jobsub_command
 from jobsub import get_dropbox_path_root
 from util import mkdir_p
+from util import digest_for_file
 from users import UsersResource
 
 from cherrypy.lib.static import serve_file
 
-from shutil import copyfileobj
+from shutil import copyfileobj, rmtree
 
 
 class HelpResource(object):
@@ -49,8 +51,8 @@ class HelpResource(object):
                 err = 'User has not supplied subject dn'
                 logger.log(err)
                 rc = {'err': err}
-        except:
-            err = 'Exception on HelpResource.index'
+        except :
+            err = 'Exception on HelpResource.index %s'% sys.exc_info()[1]
             logger.log(err, traceback=True)
             rc = {'err': err}
 
@@ -78,17 +80,59 @@ class DropboxResource(object):
         uid = get_uid(subject_dn)
         box_id = str(uuid.uuid4())
         dropbox_path_root = get_dropbox_path_root()
-        dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, box_id)
-        mkdir_p(dropbox_path)
+        #dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, box_id)
+        #mkdir_p(dropbox_path)
         file_map = dict()
         for arg_name, arg_value in kwargs.items():
+            logger.log("arg_name=%s arg_value=%s"%(arg_name,arg_value))
             if hasattr(arg_value, 'file'):
+		#logger.log(dir(arg_value))
+                #gets a little tricky here, older clients can supply file0 file1 etc for arg_name
+                #new clients supply sha1 hexdigests for arg_name. Check if it already exists in
+                #either case
+		if arg_name.find('file')<0:
+                    supplied_digest=arg_name
+                    phldr=arg_name
+                else:
+                    supplied_digest=False
+                    phldr=box_id
+                dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, phldr)
+		mkdir_p(dropbox_path)
                 dropbox_file_path = os.path.join(dropbox_path, arg_value.filename)
-                dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, box_id, arg_value.filename)
+                dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, phldr, arg_value.filename)
                 logger.log('dropbox_file_path: %s' % dropbox_file_path)
-                with open(dropbox_file_path, 'wb') as dst_file:
-                    copyfileobj(arg_value.file, dst_file)
-                    file_map[arg_name] = { 'path': dropbox_file_path, 'url': dropbox_url }
+		if supplied_digest and \
+                   os.path.exists(dropbox_file_path) and \
+                   supplied_digest==digest_for_file(dropbox_file_path):
+
+                   downloaded=False
+                else:
+                    with open(dropbox_file_path, 'wb') as dst_file:
+                        copyfileobj(arg_value.file, dst_file)
+                    downloaded=True
+		if not supplied_digest:
+                    derived_digest=digest_for_file(dropbox_file_path)
+                    new_dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, derived_digest) 
+                    new_dropbox_file_path = os.path.join(dropbox_path_root, acctgroup, uid, derived_digest, arg_value.filename)
+                    dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, derived_digest, arg_value.filename)
+                    if os.path.exists(new_dropbox_path):
+                        rmtree(dropbox_path)
+                    else:
+                        os.rename(dropbox_path,new_dropbox_path)
+                    dropbox_file_path=new_dropbox_file_path
+
+		
+                file_map[arg_name] = { 'path': dropbox_file_path, 'url': dropbox_url }
+
+		logger.log('supplied_digest=%s downloaded=%s digest_for_file=%s'%\
+                          (supplied_digest,downloaded,digest_for_file(dropbox_file_path)))
+
+		if supplied_digest and \
+                   downloaded and \
+                   supplied_digest != digest_for_file(dropbox_file_path):
+                    err=" checksum error on %s during transfer "%dropbox_file_path
+		    logger.log(err)
+                    raise Exception(err)
 
         return file_map
 
@@ -124,7 +168,7 @@ class DropboxResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on DropboxResource.index'
+            err = 'Exception on DropboxResource.index:%s' % sys.exc_info()[1]
             logger.log(err, traceback=True)
             rc = {'err': err}
 
@@ -168,7 +212,7 @@ class AccountingGroupsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on AccountingJobsResource.index'
+            err = 'Exception on AccountingGroupsResource.index: %s'% sys.exc_info()[1]
             logger.log(err, traceback=True)
             rc = {'err': err}
 

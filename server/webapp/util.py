@@ -8,6 +8,7 @@ import sys
 import mimetypes
 import base64
 import json
+import hashlib
 
 
 def encode_multipart_formdata(fields, files, outfile):
@@ -113,3 +114,15 @@ def needs_refresh(filepath,agelimit=3600):
     #logger.log("needs_refresh:file %s age %s limit %s needs_refresh=%s"%(filepath,age,agelimit,rslt))
     return rslt
 
+
+def digest_for_file(fileName, block_size=2**20):
+    dig = hashlib.sha1()
+    f=open(fileName,'r')
+    while True:
+        data = f.read(block_size)
+        if not data:
+            break
+        dig.update(data)
+    f.close()
+    x=dig.hexdigest()
+    return x

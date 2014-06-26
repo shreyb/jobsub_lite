@@ -29,6 +29,7 @@ import jobsubClientCredentials
 import logSupport
 from distutils import spawn
 import subprocess 
+import hashlib
 
 def version_string():
     ver = constants.__rpmversion__
@@ -80,13 +81,13 @@ class JobSubClient:
             self.jobExe = uri2path(self.jobExeURI)
             self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
             self.serverEnvExports = get_server_env_exports(server_argv)
-
             srv_argv = copy.copy(server_argv)
             if not os.path.exists(self.jobExe):
-                err="file %s not found. Exiting" % self.jobExe
+                err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
                 raise JobSubClientError(err)
                 
             if self.jobDropboxURIMap:
+		tfiles=[]
                 # upload the files
                 result = self.dropbox_upload()
                 # replace uri with path on server
@@ -102,10 +103,14 @@ class JobSubClient:
                                 else:
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
+				tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
+		if len(tfiles)>0:
+			transfer_input_files=','.join(tfiles)
+			self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
 
             if self.jobExeURI and self.jobExe:
                 idx = get_jobexe_idx(srv_argv)
@@ -549,6 +554,19 @@ def get_dropbox_uri_map(argv):
     idx = 0
     for arg in argv:
         if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
-            map[arg] = 'file%d' % idx
+            map[arg] = digest_for_file(uri2path(arg))
             idx += 1
     return map
+
+
+def digest_for_file(fileName, block_size=2**20):
+    dig = hashlib.sha1()
+    f=open(fileName,'r')
+    while True:
+        data = f.read(block_size)
+        if not data:
+            break
+        dig.update(data)
+    f.close()
+    x=dig.hexdigest()
+    return x

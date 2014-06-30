@@ -63,13 +63,13 @@ def parse_opts(argv):
                       default=None,
                       help='Timeout for the operation in sec')
 
-    parser.add_option('--unzipdir',
-                      dest='unzipdir',
+    parser.add_option('--dest-dir','--untardir','--destdir',
+                      dest='destdir',
                       type='string',
                       action='store',
-                      metavar='<Unzip Dir>',
+                      metavar='<Dest Dir>',
                       default=None,
-                      help='Directory to automatically unzip logs into')
+                      help='Directory to automatically unarchive logs into')
 
     parser.add_option('--archive-format',
                       dest='format',
@@ -98,11 +98,11 @@ def parse_opts(argv):
 
     return options
 
-def checkUnzipDir(unzipDir):
-    if not unzipDir:
+def checkDestDir(destDir):
+    if not destDir:
         return
     try:
-        os.makedirs(unzipDir)
+        os.makedirs(destDir)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
@@ -117,7 +117,7 @@ def get_sandbox(options):
     if options.format=='zip':
         submitURL="%s?archive_format=zip"%(submitURL)
 
-    checkUnzipDir( options.unzipdir )
+    checkDestDir( options.destdir )
 
     print
     print 'CREDENTIALS    : %s\n' % creds
@@ -156,22 +156,22 @@ def get_sandbox(options):
 
     if response_code == 200:
         print 'Downloaded to %s' % fn
-        if options.unzipdir is not None:
-            print "Moved files to %s"%options.unzipdir
+        if options.destdir is not None:
+            print "Moved files to %s"%options.destdir
             if options.format=='zip':
                 z=zipfile.ZipFile(fn)
-                z.extractall(options.unzipdir)
+                z.extractall(options.destdir)
                 d=''
                 for f in z.namelist():
                     b=os.path.basename(f)
-                    s=os.path.join(options.unzipdir,f)
+                    s=os.path.join(options.destdir,f)
                     d=os.path.dirname(s)
-                    t=os.path.join(options.unzipdir,b)
+                    t=os.path.join(options.destdir,b)
                     shutil.move(s,t)
                 os.rmdir(d)
             else:
                 t=tarfile.open(fn)
-                t.extractall(options.unzipdir)
+                t.extractall(options.destdir)
                 t.close()
             os.remove(fn)
 

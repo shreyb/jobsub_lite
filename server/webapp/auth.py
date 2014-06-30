@@ -301,17 +301,17 @@ def check_auth(func):
                     return func(self, acctgroup, *args, **kwargs)
                 else:
                     # return error for failed auth
-                    err = 'User authorization has failed'
+                    err = 'User authorization has failed:%s'%sys.exc_info()[1]
                     logger.log(err)
                     rc = {'err': err}
             except:
                 # return error for failed auth
-                err = 'User authorization has failed'
+                err = 'User authorization has failed:%s'% sys.exc_info()[1]
                 logger.log(err)
                 rc = {'err': err}
         else:
             # return error for no subject_dn and acct group
-            err = 'User has not supplied subject DN and/or accounting group'
+            err = 'User has not supplied subject DN and/or accounting group:%s'%sys.exc_info()[1]
             logger.log(err)
             rc = {'err': err}
         return rc

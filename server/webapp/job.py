@@ -140,7 +140,7 @@ class AccountJobsResource(object):
                         copyfileobj(jobsub_command.file, dst_file)
                     # replace the command file name in the arguments with 
                     # the path on the local machine.  
-                    command_tag = ' \@\/(.*)%s' % jobsub_command.filename
+                    command_tag = '\ \@(\S*)%s' % jobsub_command.filename
                     jobsub_args = re.sub(command_tag, cf_path_w_space, jobsub_args)
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 

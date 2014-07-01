@@ -36,10 +36,15 @@ GET_URLS=${GET_URLS}" /jobsub/users/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/ "
 
-#some GET URLS that deliberately won't work to test 404
+#some GET URLS that deliberately won't work to test 404 or not
 
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/jobs/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/help/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/resource_doesnt_exist/ "
+GET_URLS=${GET_URLS}" /jobsub/users/user_doesnt_exist/ "
+GET_URLS=${GET_URLS}" /jobsub/users/user_doesnt_exist/jobs/ "
+
 
 #some GET URLS that are implemented but not documented - put in JobSub-API-v0.5.pdf
 #this is ticket #5929
@@ -69,4 +74,4 @@ echo
 echo 
 echo quick and dirty report of which pages are implemented or not
 echo
-grep 'HTTP/1.1' ${MACH}.*.out
+grep 'HTTP/1.1' ${MACH}.*out

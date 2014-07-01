@@ -46,3 +46,4 @@ echo test retrieving zip_file from sandbox
 sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$GROUP.log 2>&1
 echo testing removing job
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$GROUP.log  2>&1
+./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP

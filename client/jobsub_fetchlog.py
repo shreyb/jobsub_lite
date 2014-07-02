@@ -175,7 +175,7 @@ def get_sandbox(options):
                 t.close()
             os.remove(fn)
 
-    elif response_code == 404:
+    else:
         with open(fn, 'r') as fp:
             value = fp.read()
             if response_content_type == 'application/json':

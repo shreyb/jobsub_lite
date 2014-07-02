@@ -222,11 +222,14 @@ class JobSubClient:
             curl.perform()
         except pycurl.error, error:
             errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError
+            x=curl.getinfo(pycurl.RESPONSE_CODE)
+	    #if x not in [200,401,404]:
+            if True:
+                err = "HTTP response:%s PyCurl Error %s: %s" % (x,errno, errstr)
+                print err
+            	logSupport.dprint(traceback.format_exc())
+            	raise JobSubClientError(err)
 
-        logSupport.dprint('RESPONSE    : %s\n' % response)
         self.printResponse(curl, response)
         curl.close()
         response.close()
@@ -350,16 +353,18 @@ class JobSubClient:
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
         print "Server response code: %s" % response_code
-        if response_code == 200:
-            value = response.getvalue()
-            if response_content_type == 'application/json':
+        value = response.getvalue()
+        if response_content_type == 'application/json':
+            try:
                 response_dict = json.loads(value)
                 response_err = response_dict.get('err')
                 response_out = response_dict.get('out')
                 print_formatted_response(response_out)
                 print_formatted_response(response_err, msg_type='ERROR')
-            else:
+            except:
                 print_formatted_response(value)
+        else:
+            print_formatted_response(value)
 
 
 def curl_secure_context(url, credentials):
@@ -397,7 +402,7 @@ def curl_context(url):
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
     curl.setopt(curl.URL, url)
-    curl.setopt(curl.FAILONERROR, True)
+    curl.setopt(curl.FAILONERROR, False)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
     curl.setopt(curl.WRITEFUNCTION, response.write)

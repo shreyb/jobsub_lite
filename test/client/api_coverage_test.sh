@@ -52,6 +52,7 @@ GET_URLS=${GET_URLS}" /jobsub/users/user_doesnt_exist/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/history/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/?job_id=1.0@${MACH}.fnal.gov "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/ "
 
 #some URLS that need to be implemented and put in the API doc
@@ -60,7 +61,7 @@ GET_URLS=${GET_URLS}" /jobsub/version/ "
 
 
 for URL in ${GET_URLS}; do
-   cmd_pt=`echo $URL | tr {'/','.'} | tr {'@','.'}`
+   cmd_pt=`echo $URL | tr {'/','.'} | tr {'@','.'} | tr {'?','.'}`
    outfile="${MACH}.html${cmd_pt}out"
    cmd="curl $GET_FLAGS https://${MACH}.fnal.gov:8443${URL} "
 

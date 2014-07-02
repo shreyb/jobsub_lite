@@ -32,6 +32,7 @@ from jobsub import get_voms
 
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
+        cherrypy.response.status = 401
         self.dn = dn
         self.acctgroup = acctgroup
         Exception.__init__(self, "Error authenticating DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
@@ -39,6 +40,7 @@ class AuthenticationError(Exception):
 
 class AuthorizationError(Exception):
     def __init__(self, dn, acctgroup=''):
+        cherrypy.response.status = 401
         self.dn = dn
         self.acctgroup = acctgroup
         Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
@@ -287,6 +289,7 @@ def _check_auth(dn, acctgroup, role):
 
 def check_auth(func):
     def check_auth_wrapper(self, acctgroup, *args, **kwargs):
+        logger.log(traceback=True)
         dn = cherrypy.request.headers.get('Auth-User')
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
@@ -302,11 +305,13 @@ def check_auth(func):
                 else:
                     # return error for failed auth
                     err = 'User authorization has failed:%s'%sys.exc_info()[1]
+                    cherrypy.response.status = 401
                     logger.log(err)
                     rc = {'err': err}
             except:
                 # return error for failed auth
                 err = 'User authorization has failed:%s'% sys.exc_info()[1]
+                cherrypy.response.status = 401
                 logger.log(err)
                 rc = {'err': err}
         else:
@@ -314,6 +319,7 @@ def check_auth(func):
             err = 'User has not supplied subject DN and/or accounting group:%s'%sys.exc_info()[1]
             logger.log(err)
             rc = {'err': err}
+            cherrypy.response.status = 401
         return rc
 
     return check_auth_wrapper

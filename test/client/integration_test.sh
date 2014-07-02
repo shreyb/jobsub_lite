@@ -47,4 +47,4 @@ sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$GROUP.log 2>
 echo testing removing job
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$GROUP.log  2>&1
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
-for bug in `ls bug_tests`; do cd bug_tests/$bug ; ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ; cd - ; done
+for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

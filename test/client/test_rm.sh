@@ -10,8 +10,7 @@ JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 export SERVER=https://${MACH}:8443
 echo before
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
-echo test removing joblist=${JOBLIST}
-$EXEPATH/jobsub_rm.py --group $GROUP $SERVER_SPEC  --jobid $JOBLIST --debug
+$EXEPATH/jobsub_rm.py --group $GROUP $SERVER_SPEC  --jobid $JOBLIST
 echo after 
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
 

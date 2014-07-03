@@ -50,7 +50,7 @@ class HelpResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on HelpResource.index'
+            err = 'Exception on JobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 
@@ -124,7 +124,7 @@ class DropboxResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on DropboxResource.index'
+            err = 'Exception on JobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 
@@ -168,7 +168,7 @@ class AccountingGroupsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on AccountingJobsResource.index'
+            err = 'Exception on JobsResouce.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
 

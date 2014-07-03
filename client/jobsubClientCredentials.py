@@ -179,7 +179,7 @@ class Krb5Ticket(Credentials):
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
     kx509_cmd = spawn.find_executable("kx509")
     if not kx509_cmd:
-        raise Exception("Unable to find command 'kx509' in the PATH")
+        raise Exception("Unable to find command 'kx509' in the PATH.\nSTDERR:\n%s"%klist_err)
 
     cmd = '%s -o %s' % (kx509_cmd, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}

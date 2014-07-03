@@ -449,7 +449,7 @@ def get_capath():
     if (not ca_dir) and (os.path.exists(system_ca_dir)):
         ca_dir = system_ca_dir
     if not ca_dir:
-        raise Exception('Could not find CA Certificates. Set X509_CA_DIR')
+        raise('Could not find CA Certificates. Set X509_CA_DIR')
 
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir

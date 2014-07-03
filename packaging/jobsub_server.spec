@@ -123,13 +123,6 @@ rm -rf $RPM_BUILD_ROOT
 /scratch/dropbox/
 
 %changelog
-
-* Tue Jun 10 2014 Dennis Box <dbox@fnal.gov> - 0.3.1.1-1
-- Jobsub version v0.3.1.1 - bugfix for v0.3.1
-
-* Wed Jun 04 2014 Parag Mhashilkar <parag@fnal.gov> - 0.3.1-1
-- Jobsub version v0.3.1
-
 * Fri May 23 2014 Parag Mhashilkar <parag@fnal.gov> - 0.3-1
 - Jobsub version v0.3. Support for HA.
 

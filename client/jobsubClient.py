@@ -42,11 +42,13 @@ def version_string():
 
 class JobSubClientError(Exception):
     def __init__(self,errMsg="JobSub client action failed."):
+        sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 
 class JobSubClientSubmissionError(Exception):
     def __init__(self,errMsg="JobSub remote submission failed."):
+        sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 
@@ -146,9 +148,9 @@ class JobSubClient:
             curl.perform()
         except pycurl.error, error:
             errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
+            err= "PyCurl Error %s: %s" % (errno, errstr)
             logSupport.dprint(traceback.format_exc())
-            raise JobSubClientSubmissionError
+            raise JobSubClientSubmissionError(err)
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
@@ -192,9 +194,9 @@ class JobSubClient:
             curl.perform()
         except pycurl.error, error:
             errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
+            err="PyCurl Error %s: %s" % (errno, errstr)
             logSupport.dprint(traceback.format_exc())
-            raise JobSubClientSubmissionError
+            raise JobSubClientSubmissionError(err)
 
         self.printResponse(curl, response)
         curl.close()
@@ -327,9 +329,10 @@ class JobSubClient:
             curl.perform()
         except pycurl.error, error:
             errno, errstr = error
-            print "PyCurl Error %s: %s" % (errno, errstr)
+            err="PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(err)
             logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError
+            raise JobSubClientError(err)
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
@@ -459,7 +462,7 @@ def get_client_credentials():
         jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
         cred_dict['cert']=cred_dict['key'] = constants.X509_PROXY_DEFAULT_FILE
     else:
-        raise Exception("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
+        raise JobSubClientError("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
     return cred_dict
 
@@ -471,7 +474,7 @@ def get_capath():
     if (not ca_dir) and (os.path.exists(system_ca_dir)):
         ca_dir = system_ca_dir
     if not ca_dir:
-        raise Exception('Could not find CA Certificates. Set X509_CA_DIR')
+        raise JobSubClientError('Could not find CA Certificates. Set X509_CA_DIR')
 
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir

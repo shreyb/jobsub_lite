@@ -1,6 +1,6 @@
 #!/bin/sh 
 VERS=v1_3
-REV=_1
+REV=_1_1
 ./make_tablefile.py $VERS$REV
 
 if [ "$1" ==  "" ]; then
@@ -13,7 +13,7 @@ cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"
 scp db.jobsub_tools.tar products@$1.fnal.gov:/fnal/ups/db
-ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_tools.tar; rm db.jobsub_tools.tar; rm jobsub_tools/${VERS}c.fifebatch.version"
+ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_tools.tar; rm db.jobsub_tools.tar; "
 rm  db.jobsub_tools.tar
 cd ../prd
 cd jobsub_tools/${VERS}/Linux-2

@@ -470,3 +470,22 @@ v1_3_1 5/30/14
 ===============================================================
 - INC000000416076 jobsub picking the wrong $GROUP for experiments
   where gid name different than VOMS group name, fixed.
+
+
+v1_3_1_1 6/6/14
+===============================================================
+- INC000000417210   -l +AccountingGroup = "group_highprio.minervapro" 
+  generates incorrect condor jdf on gpsn01 - fixed
+- Feature 5907 Limit size of output/error that users bring back
+  jobsub.ini setting max_jobsub_log_size = 5000000 (5MB) . Log files
+  will be truncated from the end back to this size.
+- (no issue number) Seaquest bluearc mounts were changed from
+  /seaquest/app and /seaquest/data to /e906/app and /e906/data
+  on 5/15/14. Gcso had to  manually edit jobsub.ini files to
+  reflect this, changed here so they don't have to any more. 
+
+v1_3_1_2 7/2/14
+================================================================
+- bug 6586 SAM Dag files incorrectly call ifdh
+- bug 6549 --append_condor_requirements doesnt (on GPSN01 on local batch)
+- test suite improved

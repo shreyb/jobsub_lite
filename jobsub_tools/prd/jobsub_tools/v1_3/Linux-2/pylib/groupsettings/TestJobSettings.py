@@ -5,6 +5,7 @@ import unittest
 import sys
 import os
 import commands
+import tempfile
 #from test import test_support
 
 from JobSettings import JobSettings
@@ -21,7 +22,13 @@ class JobTest(unittest.TestCase):
         
     def setUp(self):
         """set up JobSettings"""
-        self.ns=JobSettings()
+        self.tmpdir=tempfile.mkdtemp()
+        os.environ['CONDOR_TMP']=self.tmpdir
+        os.environ['CONDOR_EXEC']=self.tmpdir
+        if not hasattr(self,'ns'):
+            setattr(self,'ns',JobSettings())
+        self.ns.settings['condor_tmp']=self.tmpdir
+        self.ns.settings['condor_exec']=self.tmpdir
 ##         if self.ns == None:
 ##             print "constructing"
 ##             self.ns = JobSettings()
@@ -33,8 +40,8 @@ class JobTest(unittest.TestCase):
     
         self.assertEqual(ns.settings['output_tag_array'],{})
 
-        self.assertNotEqual(ns.settings['condor_tmp'],None)
-        self.assertNotEqual(ns.settings['condor_exec'],None)
+        self.assertEqual(ns.settings['condor_tmp'],self.tmpdir)
+        self.assertEqual(ns.settings['condor_exec'],self.tmpdir)
         self.assertEqual(ns.settings['condor_config'],None)
         self.assertNotEqual(ns.settings['local_condor'],None)
         self.assertNotEqual(ns.settings['group_condor'],None)

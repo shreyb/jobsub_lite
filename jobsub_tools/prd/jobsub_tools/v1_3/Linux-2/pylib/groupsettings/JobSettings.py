@@ -171,6 +171,7 @@ class JobSettings(object):
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
                 self.settings['needs_appending']=True
                 self.settings['ifdh_cmd']='${TMP}/ifdh.sh'
+		self.settings['jobsub_max_log_size']=5000000
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -507,6 +508,9 @@ class JobSettings(object):
 		f.write("export TMPDIR=$_CONDOR_SCRATCH_DIR\n")
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
+		f.write("""if [ "${JOBSUB_MAX_LOG_SIZE}" = "" ] ; then JOBSUB_MAX_LOG_SIZE=%s ; fi \n"""%settings['jobsub_max_log_size'])
+                f.write("""exec 7>&1; exec >${TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${TMP}/JOBSUB_ERR_FILE\n""")
+
 
 		f.write("\n")
                 #ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
@@ -576,6 +580,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
 		f.close
@@ -719,12 +724,13 @@ class JobSettings(object):
 		f.write("SAM_USER=$4\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
+                f.write("\n")
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
-		f.write("ifdh describeDefinition $DEFN\n")
+		f.write("%s describeDefinition $DEFN\n"%settings['ifdh_cmd'])
 		f.write("""if [ "$SAM_STATION" = "" ]; then\n""")
 		f.write("""SAM_STATION=$EXPERIMENT\n""")
 		f.write("fi\n")
-		f.write("ifdh startProject $PRJ_NAME $SAM_STATION $DEFN  $SAM_USER $EXPERIMENT\n")		   
+		f.write("%s startProject $PRJ_NAME $SAM_STATION $DEFN  $SAM_USER $EXPERIMENT\n"%settings['ifdh_cmd'])		   
 		f.close()
 		cmd = "chmod +x %s" % sambeginexe
 		commands=JobUtils()
@@ -769,6 +775,7 @@ class JobSettings(object):
 		f.write("PRJ_NAME=$2\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
+                f.write("\n")
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("CPURL=`ifdh findProject $PRJ_NAME ''` \n")
 		f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])		   
@@ -1104,11 +1111,6 @@ class JobSettings(object):
                 self.handleResourceProvides(f,job_iter)
 		f.write("requirements  = %s\n"%self.condorRequirements())
 
-		if 'lines' in settings and len(settings['lines']) >0:			
-		    for thingy in settings['lines']:
-			f.write("%s\n" % thingy)
-
-
 		f.write("\n")
 		f.write("\n")
 		f.write("queue %s"%settings['queuecount'])
@@ -1209,19 +1211,23 @@ class JobSettings(object):
 			    else:
 				settings['site']="FNAL_%s,FNAL_%s_opportunistic" % (settings['group'],settings['group'])
 
-			if job_iter <=1 and  'append_requirements' in settings:
-				for req in settings['append_requirements']:
-					settings['requirements'] = settings['requirements'] + " && %s " % req
+		        if job_iter <=1 and  'append_requirements' in settings:
+			    for req in settings['append_requirements']:
+				settings['requirements'] = settings['requirements'] + " && %s " % req
 	
 
 		else:
 			if job_iter <=1:
 				settings['requirements']=settings['requirements'] + ' && (target.GLIDEIN_Site=?=UNDEFINED)'
+                        if 'append_requirements' in settings:
+                            for req in settings['append_requirements']:
+                                settings['requirements'] = settings['requirements'] + " && %s " % req
+
 		if settings['istestjob'] == True:
-			self.addToLineSetting("+AccountingGroup = \"group_testjobs\"")
+			f.write("+AccountingGroup = \"group_testjobs\"\n")
 
 		if settings['group'] != "" and settings['istestjob'] == False:			
-			self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%(settings['accountinggroup'],settings['user']))
+			f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
 
 		self.addToLineSetting("+Agroup = \"group_%s\""%settings['group'])
 

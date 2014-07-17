@@ -2,7 +2,7 @@
 # $Id$
 
 import unittest
-from JobSettings import JobSettings
+#from JobSettings import JobSettings
 from MinervaSettings import MinervaSettings
 from TestJobSettings import JobTest
 
@@ -12,6 +12,7 @@ class MinervaTest(JobTest):
 
     def setUp(self):
         self.ns = MinervaSettings()
+        super(MinervaTest,self).setUp()
 
 
     def testMinervaConstructor(self):

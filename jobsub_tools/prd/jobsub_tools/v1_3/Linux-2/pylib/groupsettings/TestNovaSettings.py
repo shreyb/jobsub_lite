@@ -11,6 +11,7 @@ class NovaTest(JobTest):
 
     def setUp(self):
         self.ns = NovaSettings()
+        super(NovaTest,self).setUp() 
 
     def testNovaConstructor(self):
         """exercise NovaSettings constructor"""

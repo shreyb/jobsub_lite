@@ -225,10 +225,11 @@ class JobSubClient:
         except pycurl.error, error:
             errno, errstr = error
             x=curl.getinfo(pycurl.RESPONSE_CODE)
-	    #if x not in [200,401,404]:
             if True:
                 err = "HTTP response:%s PyCurl Error %s: %s" % (x,errno, errstr)
-                print err
+                if errno == 60:
+                    err=err+"\nDid you remember to include the port number to "
+                    err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
             	logSupport.dprint(traceback.format_exc())
             	raise JobSubClientError(err)
 

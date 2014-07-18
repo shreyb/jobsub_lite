@@ -53,6 +53,7 @@ if [ "${KRB5CCNAME}" != "" ]; then
    BK=`basename ${KRB5CCNAME}`
    if [ -e "${_CONDOR_JOB_IWD}/${BK}" ]; then
       export KRB5CCNAME="${_CONDOR_JOB_IWD}/${BK}"
+      chmod 400 ${KRB5CCNAME}
    fi
 fi
             """

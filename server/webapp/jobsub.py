@@ -48,12 +48,12 @@ def get_command_path_root():
     return rc
 
 
-def can_transfer_krb5cc(acctgroup):
+def should_transfer_krb5cc(acctgroup):
     can_transfer=False
     p = JobsubConfigParser()
     if p.has_section(acctgroup):
-        if p.has_option(acctgroup, 'can_transfer_krbcc'):
-            can_transfer = p.get(acctgroup, 'can_transfer_krbcc')
+        if p.has_option(acctgroup, 'transfer_krbcc_to_job'):
+            can_transfer = p.get(acctgroup, 'transfer_krbcc_to_job')
 	    if can_transfer=='False':
 		can_transfer=False
     if can_transfer:
@@ -103,7 +103,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='
     child_env['WORKDIR_ID']=workdir_id
     child_env['GROUP']=acctgroup
     child_env['USER']=uid
-    if can_transfer_krb5cc(acctgroup):
+    if should_transfer_krb5cc(acctgroup):
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
         logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))

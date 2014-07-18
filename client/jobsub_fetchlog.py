@@ -30,7 +30,8 @@ def required_args_present(options):
 def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
                                    version=version_string(),
-                                   conflict_handler="resolve")
+                                   conflict_handler="resolve",
+                                   epilog="questions or comments may be sent to jobsub-support@fnal.gov")
 
     # Required args
     parser.add_option('-G', '--group',

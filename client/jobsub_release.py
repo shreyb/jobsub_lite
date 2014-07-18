@@ -44,7 +44,8 @@ def parse_opts(argv):
     usage = '%prog [Client Options]'
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
-                                   conflict_handler="resolve")
+                                   conflict_handler="resolve",
+                                   epilog="questions or comments may be sent to jobsub-support@fnal.gov")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

@@ -48,8 +48,13 @@ else
    TEC=" -l encrypt_input_files=$ENCRYPT_INPUT_FILES -e TRANSFER_INPUT_FILES -e KRB5CCNAME"
 fi
 
+JSV=""
+if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
+    JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
+fi
+
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $@"
+export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log

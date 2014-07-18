@@ -47,6 +47,17 @@ chmod +x %s
             """	
             return fs
 
+        def krb5ccNameString(self):
+            ks = """
+if [ "${KRB5CCNAME}" != "" ]; then
+   BK=`basename ${KRB5CCNAME}`
+   if [ -e "${_CONDOR_JOB_IWD}/${BK}" ]; then
+      export KRB5CCNAME="${_CONDOR_JOB_IWD}/${BK}"
+   fi
+fi
+            """
+            return ks
+
 	def parrotString(self):
 		ps="""
 #!/bin/sh

@@ -34,6 +34,7 @@ class MyCmdParser(OptionParser):
 	https://cdcvs.fnal.gov/redmine/projects/ifront/wiki/UsingJobSub
 	and on this machine at 
 	$JOBSUB_TOOLS_DIR/docs/
+        address questions to the mailing list jobsub-support@fnal.gov
 	
 
 		
@@ -171,7 +172,7 @@ class JobSettings(object):
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
                 self.settings['needs_appending']=True
                 self.settings['ifdh_cmd']='${TMP}/ifdh.sh'
-		self.settings['jobsub_max_log_size']=5000000
+		self.settings['jobsub_max_joblog_size']=5000000
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -509,10 +510,11 @@ class JobSettings(object):
 		f.write("export TMPDIR=$_CONDOR_SCRATCH_DIR\n")
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
-		f.write("""if [ "${JOBSUB_MAX_LOG_SIZE}" = "" ] ; then JOBSUB_MAX_LOG_SIZE=%s ; fi \n"""%settings['jobsub_max_log_size'])
+		f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
                 f.write("""exec 7>&1; exec >${TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${TMP}/JOBSUB_ERR_FILE\n""")
 
-
+		f.write("\n")
+                f.write(JobUtils().krb5ccNameString())
 		f.write("\n")
                 #ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
                 #f.write(ifdh_setup)
@@ -581,7 +583,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
-                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
 		f.close
@@ -723,6 +725,9 @@ class JobSettings(object):
 		f.write("#DEFN=$2\n")
 		f.write("#PRJ_NAME=$3\n")
 		f.write("#GRID_USER=$4\n")
+		f.write("\n")
+                f.write(JobUtils().krb5ccNameString())
+		f.write("\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
                 f.write("\n")
@@ -744,6 +749,10 @@ class JobSettings(object):
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("%s describeDefinition $SAM_DATASET\n"%settings['ifdh_cmd'])
 		f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])		   
+                f.write("EXITSTATUS=$?\n")
+                f.write("echo ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
+                f.write("exit $EXITSTATUS\n")
+
 		f.close()
 		cmd = "chmod +x %s" % sambeginexe
 		commands=JobUtils()
@@ -786,12 +795,18 @@ class JobSettings(object):
 		f = open(samendexe,'wx')
 		f.write("#!/bin/sh -x\n")
 		f.write("PRJ_NAME=$1\n")
+		f.write("\n")
+                f.write(JobUtils().krb5ccNameString())
+		f.write("\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
                 f.write("\n")
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
 		f.write("CPURL=`%s findProject $PRJ_NAME ''` \n" % settings['ifdh_cmd'])
 		f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])		   
+                f.write("EXITSTATUS=$?\n")
+                f.write("echo ifdh endProject $CPURL exited with status $EXITSTATUS\n")
+                f.write("exit $EXITSTATUS\n")
 		f.close()
 		f = open(settings['samendfile'], 'w')
 		f.write("universe	  = vanilla\n")
@@ -1036,7 +1051,7 @@ class JobSettings(object):
                 k2=key+"="
                 if envStr.find(k2)<0 :
                     val=envDict[key]
-                    if self.settings.has_key(val):
+                    if self.settings.has_key(val) and self.settings[val]!='':
                         envStr="%s;%s=%s"%(envStr,key,self.settings[val])
             l2=len(envStr)
             if l2>l1:

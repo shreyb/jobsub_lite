@@ -110,6 +110,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/history.py
 /opt/jobsub/server/webapp/history.pyc
 /opt/jobsub/server/webapp/history.pyo
+/opt/jobsub/server/webapp/not_implemented.py
+/opt/jobsub/server/webapp/not_implemented.pyc
+/opt/jobsub/server/webapp/not_implemented.pyo
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo

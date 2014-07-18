@@ -345,7 +345,7 @@ class JobSettings(object):
 		generic_group.add_option("-g","--grid", dest="grid",action="store_true",
 							  help="run job on the FNAL GP  grid. Other flags can modify target sites to include other areas of the Open Science Grid")
 		
-		generic_group.add_option("--nowrapfile", dest="nowrapfile",action="store_false",
+		generic_group.add_option("--nowrapfile", dest="nowrapfilex",action="store_true",
                         help="DISABLED: formerly was 'do not generate shell wrapper for fermigrid operations. (default is to generate a wrapfile)' This flag now does nothing. The wrapfiles work off site and protect file systems from user error")
 		
 
@@ -454,6 +454,9 @@ class JobSettings(object):
 			err = "you must specify a --tar_file_name if you create a tar file using --input_tar_dir"
 			raise InitializationError(err)
 
+                if settings.has_key('nowrapfilex') and settings['nowrapfilex']:
+                    print "WARNING the --nowrapfile option has been disabled at the request of the Grid Operations group.  Your jobs will be submitted with a wrapper and should still run normally. If they do not please open a service desk ticket or send mail to  jobsub-support@fnal.gov "
+                    settings['nowrapfilex']=False
 		if settings['nowrapfile']:
 
 			if len(settings['output_dir_array'])>0:

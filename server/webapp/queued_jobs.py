@@ -5,6 +5,7 @@ from auth import check_auth
 from format import format_response
 from condor_commands import ui_condor_q,constructFilter
 from history import HistoryResource
+from summary import JobSummaryResource
 
 
 
@@ -16,6 +17,7 @@ class QueuedJobsResource(object):
 
     def __init__(self):
         self.history=HistoryResource()
+	self.summary=JobSummaryResource()
 
     def doGET(self, user_id,kwargs):
         """ Query list of user_ids. Returns a JSON list object.

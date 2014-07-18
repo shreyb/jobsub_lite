@@ -218,6 +218,8 @@ class JobSettings(object):
                     settings['tranfer_executable']=settings['transfer_wrapfile']
                 if settings.has_key('always_run_on_grid') and settings['always_run_on_grid']:
                     settings['grid']=True
+                if settings['tar_file_name']:
+                    settings['tar_file_basename']=os.path.basename(settings['tar_file_name'])
 	def findConfigFile(self):
             if self.settings.has_key('jobsub_ini_file'):
                 cnf=self.settings['jobsub_ini_file']
@@ -286,8 +288,8 @@ class JobSettings(object):
 ##							   help="output file  ")
 
 		
-		file_group.add_option("-a", "--needafs", dest="needafs",action="store_true",default=False,
-							  help="run on afs using parrot (this is discouraged)  ")
+		#file_group.add_option("-a", "--needafs", dest="needafs",action="store_true",default=False,
+		#					  help="run on afs using parrot (this is discouraged)  ")
 
 		#file_group.add_option("--tar_directory", dest="tar_directory",action="store",
 		#					  help="put contents of TAR_DIRECTORY into self extracting tarfile.  On worker node, untar and then run your_script with your_script_arguments")
@@ -342,8 +344,8 @@ class JobSettings(object):
 		generic_group.add_option("-g","--grid", dest="grid",action="store_true",
 							  help="run job on the FNAL GP  grid. Other flags can modify target sites to include other areas of the Open Science Grid")
 		
-		generic_group.add_option("--nowrapfile", dest="nowrapfile",action="store_true",
-							  help="do not generate shell wrapper for fermigrid operations. (default is to generate a wrapfile)")
+		generic_group.add_option("--nowrapfile", dest="nowrapfile",action="store_false",
+                        help="DISABLED: formerly was 'do not generate shell wrapper for fermigrid operations. (default is to generate a wrapfile)' This flag now does nothing. The wrapfiles work off site and protect file systems from user error")
 		
 
 		file_group.add_option("--use_gftp", dest="use_gftp",action="store_true",default=False,
@@ -357,7 +359,6 @@ class JobSettings(object):
 
 		generic_group.add_option("--override", dest="override",nargs=2, action="store",default=(1,1),
 							  help="override some other value: --override 'requirements' 'gack==TRUE' would produce the same condor command file as --overwrite_condor_requirements 'gack==TRUE' if you want to use this option, test it first with -n to see what you get as output ")
-
 
 		generic_group.add_option("-C",dest="usepwd",action="store_true",default=False,
 							  help="execute on grid from directory you are currently in")
@@ -381,13 +382,13 @@ class JobSettings(object):
 		file_group.add_option("--overwrite_tar_file", dest="overwrite_tar_file",action="store_true",
 							  help="overwrite TAR_FILE_NAME when creating tarfile using --input_tar_dir")
 		
-		generic_group.add_option("-p", dest="forceparrot",
-								 action="store_true",default=False,
-								 help="use parrot to run on afs (only makes sense with -a flag)")
+		#generic_group.add_option("-p", dest="forceparrot",
+		#						 action="store_true",default=False,
+		#						 help="use parrot to run on afs (only makes sense with -a flag)")
 
-		generic_group.add_option("--pOff", dest="forcenoparrot",
-								 action="store_true",default=False,
-								 help="turn parrot off explicitly (this is the default)")
+		#generic_group.add_option("--pOff", dest="forcenoparrot",
+		#						 action="store_true",default=False,
+		#						 help="turn parrot off explicitly (this is the default)")
 
 
 		generic_group.add_option("-n","--no_submit", dest="submit",action="store_false",default=True,
@@ -718,19 +719,31 @@ class JobSettings(object):
 		sambeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
 		f = open(sambeginexe,'wx')
 		f.write("#!/bin/sh -x\n")
-		f.write("EXPERIMENT=$1\n")
-		f.write("DEFN=$2\n")
-		f.write("PRJ_NAME=$3\n")
-		f.write("SAM_USER=$4\n")
+		f.write("#EXPERIMENT=$1\n")
+		f.write("#DEFN=$2\n")
+		f.write("#PRJ_NAME=$3\n")
+		f.write("#GRID_USER=$4\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
                 f.write("\n")
-		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
-		f.write("%s describeDefinition $DEFN\n"%settings['ifdh_cmd'])
 		f.write("""if [ "$SAM_STATION" = "" ]; then\n""")
-		f.write("""SAM_STATION=$EXPERIMENT\n""")
+		f.write("""SAM_STATION=$1\n""")
 		f.write("fi\n")
-		f.write("%s startProject $PRJ_NAME $SAM_STATION $DEFN  $SAM_USER $EXPERIMENT\n"%settings['ifdh_cmd'])		   
+		f.write("""if [ "$SAM_GROUP" = "" ]; then\n""")
+		f.write("""SAM_GROUP=$1\n""")
+		f.write("fi\n")
+		f.write("""if [ "$SAM_DATASET" = "" ]; then\n""")
+		f.write("""SAM_DATASET=$2\n""")
+		f.write("fi\n")
+		f.write("""if [ "$SAM_PROJECT" = "" ]; then\n""")
+		f.write("""SAM_PROJECT=$3\n""")
+		f.write("fi\n")
+		f.write("""if [ "$SAM_USER" = "" ]; then\n""")
+		f.write("""SAM_USER=$4\n""")
+		f.write("fi\n")
+		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
+		f.write("%s describeDefinition $SAM_DATASET\n"%settings['ifdh_cmd'])
+		f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])		   
 		f.close()
 		cmd = "chmod +x %s" % sambeginexe
 		commands=JobUtils()
@@ -755,6 +768,7 @@ class JobSettings(object):
 		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
                 self.handleResourceProvides(f)
 
 		#f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  \n")
@@ -771,31 +785,28 @@ class JobSettings(object):
 		samendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
 		f = open(samendexe,'wx')
 		f.write("#!/bin/sh -x\n")
-		f.write("EXPERIMENT=$1\n")
-		f.write("PRJ_NAME=$2\n")
+		f.write("PRJ_NAME=$1\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
                 f.write("\n")
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
-		f.write("CPURL=`ifdh findProject $PRJ_NAME ''` \n")
+		f.write("CPURL=`%s findProject $PRJ_NAME ''` \n" % settings['ifdh_cmd'])
 		f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])		   
 		f.close()
 		f = open(settings['samendfile'], 'w')
 		f.write("universe	  = vanilla\n")
 		f.write("executable	= %s\n"%samendexe)
-		f.write("arguments	 = %s %s\n"%(settings['group'],
-												 settings['project_name']))
+		f.write("arguments	 = %s \n"%(settings['project_name']))
 		f.write("output		= %s/samend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("error		 = %s/samend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("log		   = %s/samend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-		#f.write("environment   = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s;IFDH_BASE_URI=%s;\n"%\
-		#			(settings['condor_tmp'],settings['condor_exec'],settings['ifdh_base_uri']))
 		f.write("environment = %si\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
 		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
                 self.handleResourceProvides(f)
                 f.write("requirements  = %s\n"%self.condorRequirements())
 		#f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
@@ -932,9 +943,7 @@ class JobSettings(object):
         def shouldTransferInput(self):
             settings=self.settings
             rsp="transfer_executable	 = False\n" 
-	    if settings['nowrapfile']\
-                    or settings['tar_file_name']\
-                    or settings['transfer_executable']:
+	    if settings['transfer_executable']:
 	        rsp="transfer_executable	 = True\n"
             tInputFiles=settings['transfer_input_files']
             eScript=settings['exe_script']
@@ -944,6 +953,13 @@ class JobSettings(object):
                         tInputFiles=tInputFiles+",%s" % eScript
                     else:
                         tInputFiles=eScript
+            if settings['tar_file_name']:
+                t=settings['tar_file_name']
+                if t not in tInputFiles and os.path.exists(t):
+                    if len(tInputFiles)>0:
+                        tInputFiles=tInputFiles+",%s" % t 
+                    else:
+                        tInputFiles=t
             if len(tInputFiles)>0:
                 rsp=rsp+"transfer_input_files = %s\n" % tInputFiles
 
@@ -1002,6 +1018,31 @@ class JobSettings(object):
                 self.makeCondorRequirements()
             return settings['requirements']
 
+        def completeEnvList(self):
+            envDict={
+                    'SAM_USER':'user',
+                    'GRID_USER':'user',
+                    'SAM_GROUP':'group',
+                    'EXPERIMENT':'group',
+                    'SAM_STATION':'group',
+                    'IFDH_BASE_URI':'ifdh_base_uri',
+                    'SAM_PROJECT':'project_name',
+                    'SAM_PROJECT_NAME':'project_name',
+                    'INPUT_TAR_FILE':'tar_file_basename',
+                    }
+            envStr=self.settings['environment']
+            l1=len(envStr)
+            for key in envDict.keys():
+                k2=key+"="
+                if envStr.find(k2)<0 :
+                    val=envDict[key]
+                    if self.settings.has_key(val):
+                        envStr="%s;%s=%s"%(envStr,key,self.settings[val])
+            l2=len(envStr)
+            if l2>l1:
+                self.settings['environment']=envStr
+
+
 
 
         def makeCondorRequirements(self):     
@@ -1036,38 +1077,15 @@ class JobSettings(object):
 		f = open(settings['cmdfile'], 'w')
 		f.write("universe	  = vanilla\n")
 
-		if settings['tar_file_name']!="":
-			settings['useparrot']=False
-			f.write("executable	= %s\n"%settings['tar_file_name'])
-			
-		elif settings['nowrapfile']:
-			settings['useparrot']=False
-			f.write("executable	= %s\n"%settings['exe_script'])
-		else:
-			settings['useparrot']=False
-			f.write("executable	= %s\n"%settings['wrapfile'])
+		f.write("executable	= %s\n"%settings['wrapfile'])
 		args = ""
-		if settings['tar_file_name']!="":
-			args = "./"+os.path.basename(settings['exe_script'])+ " "
 		for arg in settings['script_args']:
 			args = args+" "+arg+" "
 		if job_iter <=1:
 			for arg in settings['added_environment']:
 				settings['environment'] = settings['environment']+";"+\
-										  arg+'='+os.environ.get(arg)
-			settings['environment']=settings['environment']+\
-									 ";GRID_USER=%s"%settings['user']
-			settings['environment']=settings['environment']+\
-									 ";EXPERIMENT=%s"%settings['group']
-		
-			settings['environment']=settings['environment']+\
-									 ";IFDH_BASE_URI=%s"%\
-									 (settings['ifdh_base_uri'])
-			#print "testing project name(=%s)"%settings['project_name']
-			if settings['project_name'] != "":
-				settings['environment']=settings['environment']+\
-										 ';SAM_PROJECT_NAME=%s'%\
-										 settings['project_name']
+		        	  arg+'='+os.environ.get(arg)
+                        self.completeEnvList()
 		#print "after environment=%s"%settings['environment']
 		f.write("arguments	 = %s\n"%args)
 		f.write("output		= %s\n"%settings['outfile'])
@@ -1083,7 +1101,7 @@ class JobSettings(object):
 			f.write("notification  = Error\n")
 		else:
 			f.write("notification  = Always\n")
-		f.write("when_to_transfer_output = ON_EXIT\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
                 tval=self.shouldTransferInput()
@@ -1153,19 +1171,7 @@ class JobSettings(object):
 			for arg in settings['added_environment']:
 				settings['environment'] = settings['environment']+";"+\
 										  arg+'='+os.environ.get(arg)
-			settings['environment']=settings['environment']+\
-									 ";GRID_USER=%s"%settings['user']
-			settings['environment']=settings['environment']+\
-									 ";EXPERIMENT=%s"%settings['group']
-		
-			settings['environment']=settings['environment']+\
-									 ";IFDH_BASE_URI=%s"%\
-									 (settings['ifdh_base_uri'])
-			#print "testing project name(=%s)"%settings['project_name']
-			if settings['project_name'] != "":
-				settings['environment']=settings['environment']+\
-										 ';SAM_PROJECT_NAME=%s'%\
-										 settings['project_name']
+                        self.completeEnvList()
 		#print "after environment=%s"%settings['environment']
 		f.write("arguments	 = %s\n"%args)
 		f.write("output		= %s\n"%settings['outfile'])
@@ -1181,10 +1187,12 @@ class JobSettings(object):
 			f.write("notification  = Error\n")
 		else:
 			f.write("notification  = Always\n")
-		f.write("when_to_transfer_output = ON_EXIT\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
-                tval=self.shouldTransferInput()
+                #tval=self.shouldTransferInput()
+                tval="transfer_executable     = False\n"
+
                 f.write(tval)
 
                 if job_iter <=1:

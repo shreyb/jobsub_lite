@@ -71,8 +71,8 @@ HTTP_POST = 'POST'
 # PyCurl Constants
 ################################################################################
 
-JOBSUB_PYCURL_CONNECTTIMEOUT = 5
-JOBSUB_PYCURL_TIMEOUT = 30
+JOBSUB_PYCURL_CONNECTTIMEOUT = 10
+JOBSUB_PYCURL_TIMEOUT = 600
 JOBSUB_SSL_VERIFYHOST = 2
 
 ################################################################################

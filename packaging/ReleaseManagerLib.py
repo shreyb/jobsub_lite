@@ -166,7 +166,9 @@ class TaskServerRPM(TaskTar):
     
         edit_dir = os.path.join(self.release.releaseDir,'..','src',self.release.serverRPMVersion)
         _rpm_specs_infile = "%s/jobsub-%s/packaging/jobsub_server.spec"%(edit_dir,self.release.serverRPMVersion)
+        _jobsub_api_py_infile = "%s/jobsub-%s/server/webapp/jobsub_api.py"%(edit_dir,self.release.serverRPMVersion)
         self.updateFileList.append(_rpm_specs_infile)
+        self.updateFileList.append(_jobsub_api_py_infile)
     #   __init__
 
 

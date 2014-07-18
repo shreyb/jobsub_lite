@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-#DEBUG_JOBSUB=TRUE
+DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -18,23 +18,12 @@ else
 	exit -1
 fi
 
-export USER=$1
-shift
-export GROUP=$1
-shift
-export WORKDIR_ID=$1
-shift
-export ROLE=$1
-shift
-export SCHEDD=$1
-shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
+
 setup jobsub_tools
 
-#if [ "$ROLE" != "None" ]; then
-#	export X509_USER_PROXY=${X509_USER_PROXY}_${ROLE}
-#fi
+
 
 mkdir -p ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
@@ -47,9 +36,26 @@ if [ $RSLT == 0 ] ; then
 	echo $cmds > $file
 	source $file
 	shift
+        if [ "$DEBUG_JOBSUB" = "" ]; then
+          rm $file
+        fi
 fi
+      
+if [ "$ENCRYPT_INPUT_FILES" = "" ]; then
+   TEC=""
+else
+   export TRANSFER_INPUT_FILES=${ENCRYPT_INPUT_FILES}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
+   TEC=" -l encrypt_input_files=$ENCRYPT_INPUT_FILES -e TRANSFER_INPUT_FILES -e KRB5CCNAME"
+fi
+
+JSV=""
+if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
+    JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
+fi
+
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $@"
+export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $@"
+
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi

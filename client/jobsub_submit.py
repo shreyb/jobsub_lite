@@ -103,7 +103,8 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    add_help_option=False,
-                                   conflict_handler="resolve")
+                                   conflict_handler="resolve",
+                                   epilog="questions or comments may be sent to jobsub-support@fnal.gov")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

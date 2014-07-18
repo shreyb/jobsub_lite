@@ -489,3 +489,16 @@ v1_3_1_2 7/2/14
 - bug 6586 SAM Dag files incorrectly call ifdh
 - bug 6549 --append_condor_requirements doesnt (on GPSN01 on local batch)
 - test suite improved
+
+v1_3_1_3 7/18/14
+===========================================================
+- nowrapfile disabled per request of Grid Operations Group
+- changes for jobsub_client v0.4:
+    --tar_file_name and server generated krb5cc file 
+      pointed to by $INPUT_TAR_DIR and $KRB5CCNAME env variables
+    -- SAM_GROUP SAM_STATION SAM_DATASET SAM_PROJECT SAM_USER all
+      can be passed in with -e option and have intended effect 
+      in SAM dags ie 
+ ifdh startProject  $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
+ NB you do not *have* to set these, should work as before if you do not
+

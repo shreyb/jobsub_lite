@@ -116,6 +116,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo
+/opt/jobsub/server/webapp/version.py
+/opt/jobsub/server/webapp/version.pyc
+/opt/jobsub/server/webapp/version.pyo
 /opt/jobsub/server/admin/krbrefresh.sh
 /opt/jobsub/server/admin/test_krbrefresh.sh
 /opt/jobsub/server/admin/fix_sandbox_links.py

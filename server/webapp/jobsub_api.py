@@ -4,6 +4,7 @@ import os
 from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
 from not_implemented import NotImplementedResource
+from version import VersionResource
 from util import mkdir_p
 
 
@@ -15,7 +16,7 @@ root = Root()
 root.acctgroups = AccountingGroupsResource()
 root.jobs = QueuedJobsResource()
 root.users = NotImplementedResource()
-root.version = NotImplementedResource()
+root.version = VersionResource()
 
 
 def application(environ, start_response):

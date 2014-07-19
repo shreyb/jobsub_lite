@@ -80,6 +80,13 @@ def parse_opts(argv):
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
+    opt_group.add_option('--summary',
+                         dest='summary',
+                         action='store_true',
+                         default=False,
+                         metavar='<summary>',
+                         help='provide a summary (like ifront_q) ')
+
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
@@ -121,7 +128,10 @@ def main(argv):
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
     try:
             stime = time.time()
-            js_client.list(options.jobId)
+            if options.summary:
+                js_client.summary()
+            else:
+                js_client.list(options.jobId)
             etime = time.time()
             print 'Remote Listing Processing Time: %s sec' % (etime - stime)
     except JobSubClientError, e:

@@ -301,6 +301,11 @@ class JobSubClient:
 
             self.changeJobState(self.histURL, 'GET', ssl_verifyhost=False)
 
+    def summary(self):
+            self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % ( self.server)
+            self.changeJobState(self.listURL, 'GET')
+
+
     def list(self, jobid=None):
             #jobid=self.checkID(jobid)
             if jobid is None and self.acctGroup is None:

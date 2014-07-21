@@ -16,7 +16,7 @@ class VersionResource(object):
         if version is not None:
         	return {'out': 'Jobsub Server rpm release %s'%version}
         else:
-		return {'out': "I'm sorry Dave, I can't tell you that right now. Please contact jobsub-support@fnal.gov or open a service desk ticket"}
+		return {'out': "Version not set. Please contact jobsub-support@fnal.gov or open a service desk ticket"}
 
     @cherrypy.expose
     @format_response

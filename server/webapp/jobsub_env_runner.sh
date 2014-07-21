@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-DEBUG_JOBSUB=TRUE
+#DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -53,8 +53,13 @@ if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
     JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
 fi
 
+JCV=""
+if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
+    JCV=" -l +JobsubClientVersion=\"$JOBSUB_CLIENT_VERSION\" "
+fi
+
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $@"
+export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log

@@ -170,7 +170,8 @@ class JobSubClient:
 
     def submit(self):
         post_data = [
-            ('jobsub_args_base64', self.serverArgs_b64en)
+            ('jobsub_args_base64', self.serverArgs_b64en),
+            ('jobsub_client_version', version_string()),
         ]
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))

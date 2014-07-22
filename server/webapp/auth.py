@@ -89,7 +89,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
 
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
-    cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
+    cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
     try:

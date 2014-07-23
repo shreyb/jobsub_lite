@@ -103,7 +103,8 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id='None',role='
     child_env['WORKDIR_ID']=workdir_id
     child_env['GROUP']=acctgroup
     child_env['USER']=uid
-    child_env['JOBSUB_CLIENT_VERSION']=jobsub_client_version
+    if jobsub_client_version and type(jobsub_client_version)==type(str()):
+        child_env['JOBSUB_CLIENT_VERSION']=jobsub_client_version
     if should_transfer_krb5cc(acctgroup):
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)

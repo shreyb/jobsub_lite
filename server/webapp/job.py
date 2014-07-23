@@ -135,6 +135,7 @@ class AccountJobsResource(object):
                 mkdir_p(command_path)
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
+                    os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     with open(command_file_path, 'wb') as dst_file:

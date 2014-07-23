@@ -20,6 +20,15 @@ class JobTest(unittest.TestCase):
 ##         #super(JobTest,self).__init__()
 ##         self.ns=None
         
+
+    currentResult = None # holds last result object passed to run method
+
+    def run(self, result=None):
+        self.currentResult = result # remember result for use in tearDown
+        unittest.TestCase.run(self, result) # call superclass run method
+
+
+
     def setUp(self):
         """set up JobSettings"""
         self.tmpdir=tempfile.mkdtemp()
@@ -32,7 +41,18 @@ class JobTest(unittest.TestCase):
 ##         if self.ns == None:
 ##             print "constructing"
 ##             self.ns = JobSettings()
-        
+
+    def tearDown(self):
+        ok = self.currentResult.wasSuccessful()
+        errors = self.currentResult.errors
+        failures = self.currentResult.failures
+	if ok:
+		#print "test ok, removing %s"%self.tmpdir
+		import shutil
+		shutil.rmtree(self.tmpdir)
+	else:
+		"""test failed, output saved to %s"""%self.tmpdir
+
     def testConstructor(self):
         """test that JobSettings constructor initializes correctly"""
         #self.setUp()

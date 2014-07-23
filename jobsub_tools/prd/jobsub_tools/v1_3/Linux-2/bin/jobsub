@@ -34,6 +34,8 @@ def iterArgs():
         job_settings = LbneSettings()
     elif experiment_env == "e875" or experiment_env == "minos":
         job_settings = MinosSettings()
+    elif experiment_env == "cdf" or experiment_env == "cdf":
+        job_settings = CdfSettings()
     else:
         job_settings = JobSettings()
         

@@ -64,7 +64,7 @@ def parse_opts(argv):
                       default=None,
                       help='Timeout for the operation in sec')
 
-    parser.add_option('--dest-dir','--untardir','--destdir',
+    parser.add_option('--dest-dir','--unzipdir','--destdir',
                       dest='destdir',
                       type='string',
                       action='store',

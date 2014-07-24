@@ -97,7 +97,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
-    child_env = os.environ
+    child_env = os.environ.copy()
     child_env['SCHEDD']=schedd_name()
     child_env['ROLE']=str(role)
     child_env['WORKDIR_ID']=str(workdir_id)

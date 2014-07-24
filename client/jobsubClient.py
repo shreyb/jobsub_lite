@@ -42,7 +42,7 @@ def version_string():
     if rel:
         rc = p.findall(rel)
         if rc:
-            ver_str = '%s %s' % (ver, rc[-1].replace('.', ''))
+            ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
 
     return ver_str
 

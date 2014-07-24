@@ -33,12 +33,19 @@ import hashlib
 
 def version_string():
     ver = constants.__rpmversion__
-    rc = constants.__rpmrelease__
-    if rc and rc != '':
-        vs="%s.%s"%(ver,rc)
-        return vs
-    else:
-        return ver
+    rel = constants.__rpmrelease__
+
+    ver_str = ver
+
+    # Release candidates are in rpmrelease with specific pattern
+    p = re.compile('\.rc[1-9]+$')
+    if rel:
+        rc = p.findall(rel)
+        if rc:
+            ver_str = '%s %s' % (ver, rc[-1].replace('.', ''))
+
+    return ver_str
+
 
 class JobSubClientError(Exception):
     def __init__(self,errMsg="JobSub client action failed."):
@@ -481,12 +488,12 @@ def get_capath():
     if (not ca_dir) and (os.path.exists(system_ca_dir)):
         ca_dir = system_ca_dir
     if not ca_dir:
-        raise JobSubClientError('Could not find CA Certificates in %s. Set X509_CERT_DIR in the environment.' % system_ca_dir)
+        raise JobSubClientError('Could not find CA Certificates. Set X509_CA_DIR')
 
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
-
+          
 
 ###################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS

@@ -20,7 +20,7 @@ CLIENT
 * Bug Fix: Fixed several issues with jobsub_submit. #6523 #6561 #6562 #6563
 * Bug Fix: Fixed a bug where client would sometimes not find user
   credentials correctly. #6436
-# Bug Fix: Tweaked the curl timeout to reduce timeout while executing long
+* Bug Fix: Tweaked the curl timeout to reduce timeout while executing long
   running tasks like job submission and fetching output. #6513
 
 SERVER
@@ -36,9 +36,9 @@ SERVER
   transfer from the client. #6664
 * Bug Fix: Server now generates RFC proxies to be used with the jobs. #6659
 * Bug Fix: Fixed duplicate file issues in the dropbox. #6563
-# Bug Fix: Server now correctly returns error code 501 for unimplemented
+* Bug Fix: Server now correctly returns error code 501 for unimplemented
   APIs. #6647
-# Bug Fix: Files transferred to the dropbox are now correctly made available
+* Bug Fix: Files transferred to the dropbox are now correctly made available
   to the job using HTCondor's internal transfer mechanism. #6562
 
 ================================================================================

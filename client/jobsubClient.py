@@ -481,12 +481,12 @@ def get_capath():
     if (not ca_dir) and (os.path.exists(system_ca_dir)):
         ca_dir = system_ca_dir
     if not ca_dir:
-        raise JobSubClientError('Could not find CA Certificates. Set X509_CA_DIR')
+        raise JobSubClientError('Could not find CA Certificates in %s. Set X509_CERT_DIR in the environment.' % system_ca_dir)
 
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
-          
+
 
 ###################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS

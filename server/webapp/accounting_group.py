@@ -3,6 +3,7 @@ import logger
 import uuid
 import os
 import sys
+import socket
 
 from util import get_uid
 from auth import check_auth
@@ -122,7 +123,11 @@ class DropboxResource(object):
                     dropbox_file_path=new_dropbox_file_path
 
 		
-                file_map[arg_name] = { 'path': dropbox_file_path, 'url': dropbox_url }
+                file_map[arg_name] = { 
+                        'path': dropbox_file_path, 
+                        'url': dropbox_url ,
+                        'host':socket.gethostname()
+                        }
 
 		logger.log('supplied_digest=%s downloaded=%s digest_for_file=%s'%\
                           (supplied_digest,downloaded,digest_for_file(dropbox_file_path)))

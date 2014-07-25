@@ -11,8 +11,16 @@ export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group $GROUP --debug \
        $SERVER_SPEC \
-            -e SERVER --nowrapfile  file://"$@"
+            -e SERVER   file://"$@"
+T1=$?
 
 $EXEPATH/jobsub_submit.py --group $GROUP \
        $SERVER_SPEC \
-           -g -e SERVER --nowrapfile  file://"$@"
+           -g -e SERVER   file://"$@"
+T2=$?
+
+! (( $T1 || $T2 ))
+T3=$?
+echo $0 exiting with status $T3
+exit $T3
+

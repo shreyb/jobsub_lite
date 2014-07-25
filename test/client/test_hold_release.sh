@@ -9,12 +9,21 @@ JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 
 echo before
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
+T1=$?
 echo holding joblist=${JOBLIST}
 $EXEPATH/jobsub_hold.py --group $GROUP $SERVER_SPEC  --jobid $JOBLIST --debug
+T2=$?
 echo after hold
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
+T3=$?
 echo releasing joblist=${JOBLIST}
 $EXEPATH/jobsub_release.py --group $GROUP $SERVER_SPEC  --jobid $JOBLIST --debug
+T4=$?
 echo after release
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC  
+T5=$?
+! (( $T1 || $T2 || $T3 || $T4 || $T5 ))
+T6=$?
 
+echo $0 exiting with status $T6
+exit $T6

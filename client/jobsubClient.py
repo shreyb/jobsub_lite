@@ -64,6 +64,7 @@ class JobSubClient:
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, server_version='current'):
         self.server = server
+        actual_server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
         self.acctGroup = acct_group
@@ -76,15 +77,10 @@ class JobSubClient:
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
                              self.server, self.acctGroup
                        )
-        # Submit URL: Depends on the VOMS Role
-        if self.acctRole:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
-        else:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
         # TODO: Following is specific to the job submission and dropbox
         #       This should be pulled out of the constructor
-
+        
         if self.serverArgv:
             self.jobExeURI = get_jobexe_uri(self.serverArgv)
             self.jobExe = uri2path(self.jobExeURI)
@@ -95,6 +91,7 @@ class JobSubClient:
                 err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
                 raise JobSubClientError(err)
                 
+
             if self.jobDropboxURIMap:
 		tfiles=[]
                 # upload the files
@@ -109,6 +106,7 @@ class JobSubClient:
                             if values is not None:
                                 if self.dropboxServer is None:
                                     srv_argv[idx] = values.get('path')
+                                    actual_server = "https://%s:8443/"%str(values.get('host'))
                                 else:
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
@@ -120,6 +118,8 @@ class JobSubClient:
 		if len(tfiles)>0:
 			transfer_input_files=','.join(tfiles)
 			self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
+                        if self.dropboxServer is None and self.server != actual_server:
+                            self.server=actual_server
 
             if self.jobExeURI and self.jobExe:
                 idx = get_jobexe_idx(srv_argv)
@@ -131,7 +131,11 @@ class JobSubClient:
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
-
+        # Submit URL: Depends on the VOMS Role
+        if self.acctRole:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+        else:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
 
 
@@ -192,6 +196,11 @@ class JobSubClient:
 
         # Set additional curl options for submit
         curl.setopt(curl.POST, True)
+        #if we uploaded a dropbox file we saved the actual hostname to self.server and sel.submitURL
+        #so we need to disable SSL_VERIFYHOST
+        if self.jobDropboxURIMap and self.dropboxServer is None:
+            curl.setopt(curl.SSL_VERIFYHOST, 0)
+
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
@@ -418,7 +427,7 @@ def curl_context(url):
 
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
-    curl.setopt(curl.URL, url)
+    curl.setopt(curl.URL, str(url))
     curl.setopt(curl.FAILONERROR, False)
     curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)

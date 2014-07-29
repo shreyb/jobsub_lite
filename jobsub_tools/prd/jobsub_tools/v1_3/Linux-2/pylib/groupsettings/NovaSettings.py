@@ -19,7 +19,8 @@ class NovaSettings(JobSettings):
 
 
     def initCmdParser(self):
-        #cmdParser = self.cmdParser
+        cmdParser = self.cmdParser
+        #print "NovaSettings.initCmdParser()"
         self.nova_group = OptionGroup(self.cmdParser, "Nova Specific Options")
         self.cmdParser.add_option_group(self.nova_group)
         self.nova_group.add_option("--SMU", dest="use_smu",

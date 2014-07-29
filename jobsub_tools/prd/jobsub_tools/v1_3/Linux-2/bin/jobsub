@@ -38,6 +38,8 @@ def iterArgs():
         job_settings = CdfSettings()
     else:
         job_settings = JobSettings()
+
+    #print "job_settings class is %s"%job_settings.__class__.__name__
         
     job_settings.runCmdParser()
 

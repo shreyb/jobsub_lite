@@ -15,17 +15,27 @@ class CdfTest(JobTest):
 
     def testCdfConstructor(self):
 
+	""" Test Cdf Constructor"""
         ns = self.ns    
         #self.assertEqual('up','down','I create my own reality')
         super(CdfTest,self).testConstructor()
 
 
     def testCdfGoodInput(self):
+	""" Test Cdf Good Input"""
+        ns=self.ns
+        ns.runCmdParser(['--outLocation=outLocationValue','some_script'])
+        self.assertEqual(ns.settings['outLocation'],'outLocationValue','setting --outLocation Test FAILED')
+        #ns.runCmdParser(['--procType','procTypeValue'])
+        #self.assertEqual(ns.settings['procType'],'procTypeValue','setting --procType test FAILED')
+        #ns.runCmdParser(['--start','startValue'])
+        #self.assertEqual(ns.settings['start'],'startValue','setting --start FAILED')
         super(CdfTest,self).testGoodInput()
 
         
     def testCdfBadInput(self):
 
+	""" Test Cdf Bad Input"""
         ns = self.ns
         super(CdfTest,self).testBadInput()
                          

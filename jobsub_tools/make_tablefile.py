@@ -50,6 +50,7 @@ COMMON:
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/, ':' )
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/groupsettings, ':' )
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/JobsubConfigParser, ':' )
+     pathRemove(PATH, ${UPS_PROD_DIR}/bin)
      envUnset(JOBSUB_TOOLS5LIB)
      unproddir()
      unsetupenv()

@@ -490,6 +490,7 @@ class JobSettings(object):
 		#print "jobsettings makeWrapFilePreamble"
 		settings=self.settings
 		f = open(settings['wrapfile'], 'a')
+		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILEPREAMBLE#############\n")
 		f.write("#!/bin/sh\n")
 		f.write("#\n")
                 f.write("umask 002\n")
@@ -519,21 +520,23 @@ class JobSettings(object):
 		f.write("\n")
                 f.write(JobUtils().krb5ccNameString())
 		f.write("\n")
-                #ifdh_setup=JobUtils().ifdhString()%settings['wn_ifdh_location']
-                #f.write(ifdh_setup)
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
+		f.write("\n")
+		self.wrapFileCopyInput(f)
+		f.write("########END JOBSETTINGS MAKEWRAPFILEPREAMBLE#############\n")
+		f.close
 
 
-	def makeWrapFilePostamble(self):
-		#print "makeWrapFilePostamble"
+
+	def wrapFileExecuteJob(self,f):
 		settings=self.settings
 		ifdh_cmd=settings['ifdh_cmd']
                 exe_script=settings['exe_script']
                 if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
-		f = open(settings['wrapfile'], 'a')
+		f.write("########BEGIN JOBSETTINGS wrapFileExecuteJob #############\n")
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
 		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
@@ -553,7 +556,20 @@ class JobSettings(object):
 
 		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script))
 		f.write(log_cmd)
+		f.write("########END JOBSETTINGS wrapFileExecuteJob #############\n")
 		
+
+	def makeWrapFilePostamble(self):
+		#print "makeWrapFilePostamble"
+		settings=self.settings
+		ifdh_cmd=settings['ifdh_cmd']
+                exe_script=settings['exe_script']
+                if settings['transfer_executable']:
+                    exe_script=os.path.basename(settings['exe_script'])
+		script_args=''
+		f = open(settings['wrapfile'], 'a')
+		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
+	 	#self.wrapFileExecuteJob(f)	
 		copy_cmd=log_cmd1=log_cmd2=cnt=append_cmd=''
 		if len(settings['output_dir_array'])>0:
 			my_tag="%s:%s"%(settings['user'],os.path.basename(exe_script))
@@ -589,17 +605,19 @@ class JobSettings(object):
                 f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
+		f.write("########END JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
 		f.close
 		cmd = "chmod +x %s" % settings['wrapfile'] 
 		commands=JobUtils()
 		(retVal,rslt)=commands.getstatusoutput(cmd)
 
 		
-	def makeWrapFile(self):
+		
+	def wrapFileCopyInput(self,f):
 		#print "makeWrapFile"
 		settings=self.settings
 		ifdh_cmd=settings['ifdh_cmd']
-		f = open(settings['wrapfile'], 'a')
+		f.write("########BEGIN JOBSETTINGS wrapFileCopyInput#############\n")
 
 
 		f.write("export PATH=\"${PATH}:.\"\n")
@@ -619,7 +637,6 @@ class JobSettings(object):
 		f.write("export CONDOR_DIR_INPUT=${_CONDOR_SCRATCH_DIR}/${PROCESS}/TRANSFERRED_INPUT_FILES\n")
 		f.write("mkdir -p ${_CONDOR_SCRATCH_DIR}/${PROCESS}\n")
 		f.write("mkdir -p ${CONDOR_DIR_INPUT}\n")
-		#f.write("CPN=/grid/fermiapp/common/tools/cpn \n")
                 if settings['use_gftp']:
                     cmd="""%s cp --force=expgridftp  """%ifdh_cmd
                 else:
@@ -645,9 +662,20 @@ class JobSettings(object):
 		    f.write("  echo Cannot change to submission directory %s\n" % rslt )
 		    f.write("  echo ...Working dir is thus `/bin/pwd`\n")
 		    f.write("fi\n")
-
 		
+		f.write("########END JOBSETTINGS wrapFileCopyInput#############\n")
 
+	def makeWrapFile(self):
+		#print "makeWrapFile"
+		settings=self.settings
+		ifdh_cmd=settings['ifdh_cmd']
+		f = open(settings['wrapfile'], 'a')
+		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILE#############\n")
+
+		#self.wrapFileCopyInput(f)
+		self.wrapFileExecuteJob(f)
+		f.write("\n")	
+		f.write("########END JOBSETTINGS MAKEWRAPFILE#############\n")
 		f.close()
 
 

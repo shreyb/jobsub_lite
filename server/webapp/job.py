@@ -114,6 +114,7 @@ class AccountJobsResource(object):
         if job_id is None:
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
+            jobsub_client_version = kwargs.get('jobsub_client_version')
             if jobsub_args is not None:
 
                 jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()
@@ -134,6 +135,7 @@ class AccountJobsResource(object):
                 mkdir_p(command_path)
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
+                    os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     with open(command_file_path, 'wb') as dst_file:
@@ -146,7 +148,7 @@ class AccountJobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
 
-                rc = execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id, role)
+                rc = execute_jobsub_command(acctgroup=acctgroup, uid=uid, jobsub_args=jobsub_args, workdir_id=workdir_id, role=role, jobsub_client_version=jobsub_client_version)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'

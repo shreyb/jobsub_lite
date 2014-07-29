@@ -34,6 +34,7 @@ JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/'
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
+JOBSUB_Q_SUMMARY_URL_PATTERN = '%s/jobsub/jobs/summary/'
 JOBSUB_Q_WITH_GROUP_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_Q_GROUP_JOBID_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 
@@ -71,8 +72,8 @@ HTTP_POST = 'POST'
 # PyCurl Constants
 ################################################################################
 
-JOBSUB_PYCURL_CONNECTTIMEOUT = 5
-JOBSUB_PYCURL_TIMEOUT = 30
+JOBSUB_PYCURL_CONNECTTIMEOUT = 10
+JOBSUB_PYCURL_TIMEOUT = 600
 JOBSUB_SSL_VERIFYHOST = 2
 
 ################################################################################

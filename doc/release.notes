@@ -1,4 +1,47 @@
 ================================================================================
+v0.4
+================================================================================
+
+CLIENT
+------
+* Dropped he '.py' extension from the client executables. For example, users
+  should be using jobsub_fetchlog, jobsub_history, jobsub_hold, jobsub_q,
+  jobsub_release, jobsub_remote.sh, jobsub_rm, jobsub_submit. Executables
+  with .py extension are deprecated
+* jobsub-support@fnal.gov is advertised with --help option. #6359
+* jobsub_q now supports --summary is now equivalent of ifront_q. #5535
+* Jobsub client tools now support --version option. #5576 #6429
+* Improved client error message reporting in certain cases. #6364 #6366 #6367
+  #6375 #6507
+* Bug Fix: Jobsub client does not insist on a particular python version if it
+  is recent enough. #6571
+* Bug Fix: Fixed an issue where client would crash when no X509_CA_DIR is not
+  set. #6489
+* Bug Fix: Fixed several issues with jobsub_submit. #6523 #6561 #6562 #6563
+* Bug Fix: Fixed a bug where client would sometimes not find user
+  credentials correctly. #6436
+* Bug Fix: Tweaked the curl timeout to reduce timeout while executing long
+  running tasks like job submission and fetching output. #6513
+
+SERVER
+------
+* Relevant KRB credentials are made available to user job to be used with the
+  CDF infrastructure. #6541
+* Server now advertises the jobsub client and server versions in the
+  job's classad. #5576 #6589
+* Only recent MB of job's stdout/stderr is brought back to the server. The
+  size is configurable using jobsub_max_log_size and is limited to 5MB max per
+  HTCondor job. #5907
+* Bug Fix: Server now correctly sets the job executables permissions after
+  transfer from the client. #6664
+* Bug Fix: Server now generates RFC proxies to be used with the jobs. #6659
+* Bug Fix: Fixed duplicate file issues in the dropbox. #6563
+* Bug Fix: Server now correctly returns error code 501 for unimplemented
+  APIs. #6647
+* Bug Fix: Files transferred to the dropbox are now correctly made available
+  to the job using HTCondor's internal transfer mechanism. #6562
+
+================================================================================
 v0.3.1
 ================================================================================
 

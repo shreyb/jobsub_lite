@@ -54,6 +54,7 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/?job_id=1.0@${MACH}.fnal.gov "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/ "
+GET_URLS=${GET_URLS}" /jobsub/jobs/summary/ "
 
 #some URLS that need to be implemented and put in the API doc
 

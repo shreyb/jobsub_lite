@@ -16,9 +16,15 @@ cp $JOB role_Production.sh
 $EXEPATH/jobsub_submit.py --role=Production --group $GROUP  \
         $SERVER_SPEC \
            -g  -e SERVER  file://role_Production.sh "$@"
-
+T1=$?
 $EXEPATH/jobsub_submit.py --role=Analysis  --group $GROUP  \
         $SERVER_SPEC \
           -g  -e SERVER  file://role_Analysis.sh "$@"
-
+T2=$?
 rm role_Analysis.sh role_Production.sh
+
+! (( $T1 || $T2 ))
+T3=$?
+echo $0 exiting with status $T3
+exit $T3
+

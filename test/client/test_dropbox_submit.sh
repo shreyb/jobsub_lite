@@ -12,7 +12,9 @@ export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group $GROUP --debug \
        $SERVER_SPEC \
-              dropbox://stuff.tar \
+              --tar_file_name dropbox://stuff.tar \
             -e SERVER --nowrapfile  file://"$@"
+SUBMIT_WORKED=$?
 rm stuff.tar
-
+echo $0 exiting with status $SUBMIT_WORKED
+exit $SUBMIT_WORKED

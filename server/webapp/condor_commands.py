@@ -26,6 +26,13 @@ def ui_condor_userprio():
         all_users, cmd_err = subprocessSupport.iexe_cmd('condor_userprio -allusers')
         return all_users
 
+def ui_condor_queued_jobs_summary():
+        all_queued1, cmd_err = subprocessSupport.iexe_cmd('condor_status -submitter -wide')
+        all_queued2, cmd_err = subprocessSupport.iexe_cmd('/opt/jobsub/server/webapp/ifront_q.sh')
+        all_queued="%s\n%s"%(all_queued1,all_queued2)
+        return all_queued
+
+
 def condor_format():
     fmt=""" -format '%s ' GlobalJobId -format '%-14s ' Owner -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%s ' Cmd -format '%s ' Arguments -format '\n' Owner """
     return fmt

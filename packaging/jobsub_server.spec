@@ -92,6 +92,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/jobsub_api.pyc
 /opt/jobsub/server/webapp/jobsub_api.pyo
 /opt/jobsub/server/webapp/jobsub_env_runner.sh
+/opt/jobsub/server/webapp/ifront_q.sh
 /opt/jobsub/server/webapp/subprocessSupport.py
 /opt/jobsub/server/webapp/subprocessSupport.pyc
 /opt/jobsub/server/webapp/subprocessSupport.pyo
@@ -110,9 +111,18 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/history.py
 /opt/jobsub/server/webapp/history.pyc
 /opt/jobsub/server/webapp/history.pyo
+/opt/jobsub/server/webapp/not_implemented.py
+/opt/jobsub/server/webapp/not_implemented.pyc
+/opt/jobsub/server/webapp/not_implemented.pyo
 /opt/jobsub/server/webapp/util.py
 /opt/jobsub/server/webapp/util.pyc
 /opt/jobsub/server/webapp/util.pyo
+/opt/jobsub/server/webapp/version.py
+/opt/jobsub/server/webapp/version.pyc
+/opt/jobsub/server/webapp/version.pyo
+/opt/jobsub/server/webapp/summary.py
+/opt/jobsub/server/webapp/summary.pyc
+/opt/jobsub/server/webapp/summary.pyo
 /opt/jobsub/server/admin/krbrefresh.sh
 /opt/jobsub/server/admin/test_krbrefresh.sh
 /opt/jobsub/server/admin/fix_sandbox_links.py

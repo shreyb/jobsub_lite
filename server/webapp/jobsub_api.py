@@ -3,6 +3,8 @@ import os
 
 from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
+from not_implemented import NotImplementedResource
+from version import VersionResource
 from util import mkdir_p
 
 
@@ -13,6 +15,8 @@ class Root(object):
 root = Root()
 root.acctgroups = AccountingGroupsResource()
 root.jobs = QueuedJobsResource()
+root.users = NotImplementedResource()
+root.version = VersionResource()
 
 
 def application(environ, start_response):
@@ -21,7 +25,7 @@ def application(environ, start_response):
     os.environ['JOBSUB_UPS_LOCATION'] = environ['JOBSUB_UPS_LOCATION']
     os.environ['JOBSUB_CREDENTIALS_DIR'] = os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
     os.environ['KADMIN_PASSWD_FILE'] = os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
-
+    os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')
     if appname is not None:

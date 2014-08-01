@@ -502,3 +502,22 @@ v1_3_1_3 7/18/14
  ifdh startProject  $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
  NB you do not *have* to set these, should work as before if you do not
 
+v1_3_1_4_rc1
+============================================================
+- partial implementation of ticket 6697
+
+  All the input flags to CafSubmit now present for jobsub
+  when GROUP=cdf.  Most of them are no-ops however.
+ 
+  Input tar file is unwound by the wrapper script and the
+  rest of the input arguments are executed in-line in the resulting
+  directory tree
+
+  CAF_SECTION, CAF_JOB_BEGIN_SECTION, CAF_JOB_END_SECTION,
+  CAF_JID all present in execution environment.  CAF_JOB_BEGIN_SECTION
+  is always 1 CAF_JOB_END_SECTION is how many jobs were submitted. This
+  will be fixed later.
+
+  at end of job, tarball named with CAF_SECTION is created
+  and scp'ed out, --outLocation value used  when present,
+  sent to fcdficaf2 if not used.

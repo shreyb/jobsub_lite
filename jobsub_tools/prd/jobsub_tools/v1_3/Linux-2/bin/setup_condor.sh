@@ -14,41 +14,48 @@ export source_me=`${JOBSUB_TOOLS_DIR}/bin/setup_condor_sh.py`
 unset JOBSUB_UNSUPPORTED_EXPERIMENT
 
 source $source_me
-if [ "$REMOVE_JOBSUB_UPS_SOURCE" = "" ]
+if [ "$SAVE_SOURCE_ME" = "" ]
 then
     /bin/rm $source_me
 fi
 unset source_me
 
+if [ "$CONDOR_TMP" != "" ]; then
+	PARENT_DIR=`dirname $CONDOR_TMP`  > /dev/null 2>&1
+	if [ ! -e $PARENT_DIR ]; then
+    		mkdir -p $PARENT_DIR
+    		chgrp ${STORAGE_GROUP} $PARENT_DIR
+    		chmod g+w $PARENT_DIR
+	fi
 
-PARENT_DIR=`dirname $CONDOR_TMP`  > /dev/null 2>&1
-if [ ! -e $PARENT_DIR ]
-then
-    mkdir -p $PARENT_DIR
-    chgrp ${STORAGE_GROUP} $PARENT_DIR
-    chmod g+w $PARENT_DIR
-fi
-
-if [ ! -e $CONDOR_TMP ]
-then
-    mkdir -p $CONDOR_TMP
-    chgrp ${STORAGE_GROUP} $CONDOR_TMP 
-    chmod g+w $CONDOR_TMP
+	if [ ! -e $CONDOR_TMP ]; then
+    		mkdir -p $CONDOR_TMP
+    		chgrp ${STORAGE_GROUP} $CONDOR_TMP 
+    		chmod g+w $CONDOR_TMP
+	fi
+else
+	echo "ERROR, \$CONDOR_TMP not set!"
+	echo "probable reason: \$GROUP=$GROUP or \$SUBMIT_HOST=$SUBMIT_HOST "
+	echo "not in \$JOBSUB_INI_FILE=$JOBSUB_INI_FILE"
+fi	
+if [ "$CONDOR_EXEC" != "" ]; then
+	PARENT_DIR=`dirname $CONDOR_EXEC`  > /dev/null 2>&1
+	if [ ! -e $PARENT_DIR ]; then
+    		mkdir -p $PARENT_DIR
+    		chgrp ${STORAGE_GROUP} $PARENT_DIR
+    		chmod g+w $PARENT_DIR
+	fi
+	if [ ! -e $CONDOR_EXEC ]; then
+    		mkdir -p $CONDOR_EXEC
+    		chgrp ${STORAGE_GROUP} $CONDOR_EXEC
+    		chmod g+w $CONDOR_EXEC
+	fi
+else
+	echo "ERROR, \$CONDOR_EXEC not set!"
+	echo "probable reason: \$GROUP=$GROUP or \$SUBMIT_HOST=$SUBMIT_HOST "
+	echo "not in \$JOBSUB_INI_FILE=$JOBSUB_INI_FILE"
 fi
 	
-PARENT_DIR=`dirname $CONDOR_EXEC`  > /dev/null 2>&1
-if [ ! -e $PARENT_DIR ]
-then
-    mkdir -p $PARENT_DIR
-    chgrp ${STORAGE_GROUP} $PARENT_DIR
-    chmod g+w $PARENT_DIR
-fi
-if [ ! -e $CONDOR_EXEC ]
-then
-    mkdir -p $CONDOR_EXEC
-    chgrp ${STORAGE_GROUP} $CONDOR_EXEC
-    chmod g+w $CONDOR_EXEC
-fi
 if [ "$JOBSUB_UNSUPPORTED_EXPERIMENT" == "TRUE" ]
 then
 	if [ "$GROUP" == "" ] 

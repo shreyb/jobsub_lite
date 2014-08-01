@@ -52,7 +52,7 @@ class JobSettings(object):
 			usage +="submit your_script to local batch or to the OSG grid "
 			
 			
-			self.cmdParser = MyCmdParser(usage=usage, version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"))
+			self.cmdParser = MyCmdParser(usage=usage, version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),conflict_handler="resolve")
 			self.cmdParser.disable_interspersed_args()
 			self.generic_group = OptionGroup(self.cmdParser, "Generic Options")
 			self.cmdParser.add_option_group(self.generic_group)
@@ -476,6 +476,7 @@ class JobSettings(object):
 
 
 	def makeParrotFile(self):
+		raise Exception("parrot file generation has been turned off.  Please report this error to fife-jobsub-support@fnal.gov")
 		# print "makeParrotFile"
 		settings = self.settings
 		commands = JobUtils()
@@ -487,10 +488,14 @@ class JobSettings(object):
 		f.close()
 
 	def makeWrapFilePreamble(self):
-		#print "jobsettings makeWrapFilePreamble"
+		""" Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env 
+		variables so that default behavior is for condor generated files NOT to come back to 
+		submit host, handle ifdh transfer of input files """
+
 		settings=self.settings
 		f = open(settings['wrapfile'], 'a')
-		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILEPREAMBLE#############\n")
+		if settings['verbose']:
+			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
 		f.write("#!/bin/sh\n")
 		f.write("#\n")
                 f.write("umask 002\n")
@@ -502,7 +507,6 @@ class JobSettings(object):
 
 		f.write("\n")
 		
-		#f.write(settings['gftp_funcs'])
 		f.write("# Hold and clear arg list\n")
 		f.write("args=\"$@\"\n")
 		f.write("set - \"\"\n")
@@ -523,20 +527,29 @@ class JobSettings(object):
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("\n")
-		self.wrapFileCopyInput(f)
-		f.write("########END JOBSETTINGS MAKEWRAPFILEPREAMBLE#############\n")
-		f.close
+		f.close()
+		self.wrapFileCopyInput()
+		if settings['verbose']:
+			f = open(settings['wrapfile'], 'a')
+			f.write("########END JOBSETTINGS makeWrapFilePreamble#############\n")
+			f.close()
 
 
 
-	def wrapFileExecuteJob(self,f):
+	def makeWrapFile(self):
+		""" Make middle part of wrapfile ($CONDOR_TMP/user_job_(numbers)_wrap.sh . Execute
+		user job, capture exit status, report this info back via ifdh log
+		"""
+ 
 		settings=self.settings
+		f = open(settings['wrapfile'], 'a')
 		ifdh_cmd=settings['ifdh_cmd']
                 exe_script=settings['exe_script']
                 if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
-		f.write("########BEGIN JOBSETTINGS wrapFileExecuteJob #############\n")
+		if settings['verbose']:
+			f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
 		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
@@ -556,11 +569,16 @@ class JobSettings(object):
 
 		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script))
 		f.write(log_cmd)
-		f.write("########END JOBSETTINGS wrapFileExecuteJob #############\n")
+		if settings['verbose']:
+			f.write("########END JOBSETTINGS makeWrapFile #############\n")
+		f.close()
 		
 
 	def makeWrapFilePostamble(self):
-		#print "makeWrapFilePostamble"
+		""" Make end part of wrapfile ($CONDOR_TMP/user_job_(numbers)_wrap.sh . 
+		Handle transfer out of user_job generated files via ifdh. Exit with
+		exit status of user_job
+		"""
 		settings=self.settings
 		ifdh_cmd=settings['ifdh_cmd']
                 exe_script=settings['exe_script']
@@ -568,8 +586,8 @@ class JobSettings(object):
                     exe_script=os.path.basename(settings['exe_script'])
 		script_args=''
 		f = open(settings['wrapfile'], 'a')
-		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
-	 	#self.wrapFileExecuteJob(f)	
+		if settings['verbose']:
+			f.write("########BEGIN JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
 		copy_cmd=log_cmd1=log_cmd2=cnt=append_cmd=''
 		if len(settings['output_dir_array'])>0:
 			my_tag="%s:%s"%(settings['user'],os.path.basename(exe_script))
@@ -605,7 +623,8 @@ class JobSettings(object):
                 f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
-		f.write("########END JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
+		if settings['verbose']:
+			f.write("########END JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
 		f.close
 		cmd = "chmod +x %s" % settings['wrapfile'] 
 		commands=JobUtils()
@@ -613,11 +632,15 @@ class JobSettings(object):
 
 		
 		
-	def wrapFileCopyInput(self,f):
+	def wrapFileCopyInput(self):
+		""" handle ifdh transfer of input files """
+		
 		#print "makeWrapFile"
 		settings=self.settings
+		f = open(settings['wrapfile'], 'a')
 		ifdh_cmd=settings['ifdh_cmd']
-		f.write("########BEGIN JOBSETTINGS wrapFileCopyInput#############\n")
+		if settings['verbose']:
+			f.write("########BEGIN JOBSETTINGS wrapFileCopyInput#############\n")
 
 
 		f.write("export PATH=\"${PATH}:.\"\n")
@@ -662,21 +685,10 @@ class JobSettings(object):
 		    f.write("  echo Cannot change to submission directory %s\n" % rslt )
 		    f.write("  echo ...Working dir is thus `/bin/pwd`\n")
 		    f.write("fi\n")
-		
-		f.write("########END JOBSETTINGS wrapFileCopyInput#############\n")
-
-	def makeWrapFile(self):
-		#print "makeWrapFile"
-		settings=self.settings
-		ifdh_cmd=settings['ifdh_cmd']
-		f = open(settings['wrapfile'], 'a')
-		f.write("########BEGIN JOBSETTINGS MAKEWRAPFILE#############\n")
-
-		#self.wrapFileCopyInput(f)
-		self.wrapFileExecuteJob(f)
-		f.write("\n")	
-		f.write("########END JOBSETTINGS MAKEWRAPFILE#############\n")
+		if settings['verbose']:
+			f.write("########END JOBSETTINGS wrapFileCopyInput#############\n")
 		f.close()
+
 
 
 	def makeTarDir(self):

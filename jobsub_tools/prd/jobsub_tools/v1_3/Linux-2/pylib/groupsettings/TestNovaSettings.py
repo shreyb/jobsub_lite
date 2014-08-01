@@ -10,7 +10,9 @@ from NovaSettings import NovaSettings
 class NovaTest(JobTest):
 
     def setUp(self):
+        super(NovaTest,self).ioSetUp() 
         self.ns = NovaSettings()
+        super(NovaTest,self).stdioON() 
         super(NovaTest,self).setUp() 
 
     def testNovaConstructor(self):
@@ -24,7 +26,7 @@ class NovaTest(JobTest):
         super(NovaTest,self).testConstructor()
 
     def testNovaGoodInput(self):
-        #print "TestNovaSettings testGoodInput"
+        """NovaSettings testGoodInput"""
         ns = self.ns
         #print "%s"%ns
         #ns.parseArgs('-v', 1)
@@ -39,9 +41,12 @@ class NovaTest(JobTest):
         
     def testNovaBadInput(self):
 
+        """NovaSettings testBadInput --should complain"""
         ns = self.ns
+	self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option','lalalala'])
+	self.stdioON()
         super(NovaTest,self).testBadInput()
                          
 

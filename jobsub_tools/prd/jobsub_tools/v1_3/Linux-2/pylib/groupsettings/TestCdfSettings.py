@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id$
 
-import unittest
+import unittest,sys
 from TestJobSettings import JobTest
 #from JobSettings import JobSettings
 from CdfSettings import CdfSettings
@@ -10,6 +10,7 @@ from CdfSettings import CdfSettings
 class CdfTest(JobTest):
 
     def setUp(self):
+        super(CdfTest,self).ioSetUp()
         self.ns = CdfSettings()
         super(CdfTest,self).setUp()
 
@@ -26,10 +27,10 @@ class CdfTest(JobTest):
         ns=self.ns
         ns.runCmdParser(['--outLocation=outLocationValue','some_script'])
         self.assertEqual(ns.settings['outLocation'],'outLocationValue','setting --outLocation Test FAILED')
-        #ns.runCmdParser(['--procType','procTypeValue'])
-        #self.assertEqual(ns.settings['procType'],'procTypeValue','setting --procType test FAILED')
-        #ns.runCmdParser(['--start','startValue'])
-        #self.assertEqual(ns.settings['start'],'startValue','setting --start FAILED')
+        ns.runCmdParser(['--procType=procTypeValue','procTypeValue'])
+        self.assertEqual(ns.settings['procType'],'procTypeValue','setting --procType test FAILED')
+        ns.runCmdParser(['--start=startValue','startValue'])
+        self.assertEqual(ns.settings['start'],'startValue','setting --start FAILED')
         super(CdfTest,self).testGoodInput()
 
         

@@ -8,19 +8,6 @@ from optparse import OptionGroup
 class CdfSettings(JobSettings):
     def __init__(self):
         super(CdfSettings,self).__init__()
-	self.preWrapCommands = [ 
-		"export USER=$GRID_USER",
-		"export OUTPUT_TAR_FILE=${USER}.${CLUSTER}.${PROCESS}.tgz",
-	]
-	self.wrapCommands = [ 
-		"tar xvzf $INPUT_TAR_FILE",
-		"$@",
-		"export EXIT_STATUS=$?",
-	]
-	self.postWrapCommands = [ 
-		"tar cvzf ${OUTPUT_TAR_FILE} * ",
-		"scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}:${OUTPUT_TAR_FILE} ",
-	]
 
 
     def initCmdParser(self):
@@ -95,48 +82,62 @@ class CdfSettings(JobSettings):
                                  help="")
 
 
+    def writeToWrapFile(self,list,fh):
+        for cmd in list:
+	    fh.write("""CMD="%s"\n """%cmd)
+            if self.settings['verbose']:
+	        fh.write("echo executing: $CMD\n")
+	    fh.write("$CMD\n")
+
     def makeWrapFilePreamble(self):
         super(CdfSettings,self).makeWrapFilePreamble()
         settings=self.settings
+	preWrapCommands = [ 
+		"export USER=$GRID_USER",
+		"export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/${INPUT_TAR_FILE}",
+		"export OUTPUT_TAR_FILE=${USER}.${CLUSTER}.${PROCESS}.tgz",
+		"export OUTPUT_DESTINATION=%s"%settings['outLocation'],
+                "cd ${TMPDIR}",
+	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
 		f.write("###### BEGIN CDFSettings.makeWrapFilePreamble\n")
-	for cmd in self.preWrapCommands:
-		f.write("""CMD="%s"\n """%cmd)
-		f.write("echo executing: $CMD\n")
-		f.write("$CMD\n")
+	self.writeToWrapFile(preWrapCommands,f)
 	if settings['verbose']:
         	f.write("###### END CDFSettings.makeWrapFilePreamble\n")
         f.close()
 
-    def makeWrapFilePostamble(self):
-        settings=self.settings
-        f = open(settings['wrapfile'], 'a')
-	if settings['verbose']:
-        	f.write("###### BEGIN CDFSettings.makeWrapFilePostamble\n")
-	for cmd in self.postWrapCommands:
-		f.write("""CMD="%s"\n """%cmd)
-		f.write("echo executing: $CMD\n")
-		f.write("$CMD\n")
-	if settings['verbose']:
-        	f.write("###### END CDFSettings.makeWrapFilePostmble\n")
-        f.close()
-        super(CdfSettings,self).makeWrapFilePostamble()
-
     def makeWrapFile(self):
-        super(CdfSettings,self).makeWrapFile()
+        #super(CdfSettings,self).makeWrapFile()
         settings=self.settings
+	wrapCommands = [ 
+		"tar xvzf $INPUT_TAR_FILE",
+		"%s $@"%os.path.basename(settings['exe_script']),
+		"export EXIT_STATUS=$?",
+	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
         	f.write("###### BEGIN CDFSettings.makeWrapFile\n")
-	for cmd in self.wrapCommands:
-		f.write("""CMD="%s"\n """%cmd)
-		f.write("echo executing: $CMD\n")
-		f.write("$CMD\n")
+	self.writeToWrapFile(wrapCommands,f)
 	if settings['verbose']:
         	f.write("###### END CDFSettings.makeWrapFile\n")
         f.close()
 
+
+    def makeWrapFilePostamble(self):
+        settings=self.settings
+	postWrapCommands = [ 
+		"tar cvzf ${OUTPUT_TAR_FILE} * ",
+		"scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}:${OUTPUT_TAR_FILE} ",
+	]
+        f = open(settings['wrapfile'], 'a')
+	if settings['verbose']:
+        	f.write("###### BEGIN CDFSettings.makeWrapFilePostamble\n")
+	self.writeToWrapFile(postWrapCommands,f)
+	if settings['verbose']:
+        	f.write("###### END CDFSettings.makeWrapFilePostmble\n")
+        f.close()
+        super(CdfSettings,self).makeWrapFilePostamble()
 
 
     def checkSanity(self):

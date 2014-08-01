@@ -2,6 +2,7 @@
 # $Id$
 import os
 import sys
+import re
 from JobSettings import JobSettings
 from optparse import OptionGroup
 
@@ -84,20 +85,25 @@ class CdfSettings(JobSettings):
 
     def writeToWrapFile(self,list,fh):
         for cmd in list:
-	    fh.write("""CMD="%s"\n """%cmd)
             if self.settings['verbose']:
+	        fh.write("""CMD="%s"\n """%cmd)
 	        fh.write("echo executing: $CMD\n")
-	    fh.write("$CMD\n")
+	        fh.write("$CMD\n")
+            else:
+                fh.write("%s\n"%cmd)
 
     def makeWrapFilePreamble(self):
         super(CdfSettings,self).makeWrapFilePreamble()
         settings=self.settings
 	preWrapCommands = [ 
 		"export USER=$GRID_USER",
+		"export CAF_JID=${DAGMANJOBID}",
 		"export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/${INPUT_TAR_FILE}",
-		"export OUTPUT_TAR_FILE=${USER}.${CLUSTER}.${PROCESS}.tgz",
+		"export OUTPUT_TAR_FILE=%s_${CAF_SECTION}-${DAGMANJOBID}.tgz"%settings['local_host'].split('.')[0],
 		"export OUTPUT_DESTINATION=%s"%settings['outLocation'],
-                "cd ${TMPDIR}",
+		"export HOME=${TMPDIR}/work",
+		"mkdir -p ${HOME}",
+                "cd ${TMPDIR}/work",
 	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
@@ -111,9 +117,16 @@ class CdfSettings(JobSettings):
         #super(CdfSettings,self).makeWrapFile()
         settings=self.settings
 	wrapCommands = [ 
+                "echo executing in directory",
+                "pwd",
+                "echo its contents:",
+                "ls -la ",
+                "echo untarring $INPUT_TAR_FILE",
 		"tar xvzf $INPUT_TAR_FILE",
-		"%s $@"%os.path.basename(settings['exe_script']),
-		"export EXIT_STATUS=$?",
+                "echo contents after untar:",
+                "ls -la ",
+		"""./%s "$@"   """%os.path.basename(settings['exe_script']),
+		"export JOB_RET_STATUS=$?",
 	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
@@ -127,6 +140,8 @@ class CdfSettings(JobSettings):
     def makeWrapFilePostamble(self):
         settings=self.settings
 	postWrapCommands = [ 
+                "cp ${TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
+                "cp ${TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
 		"tar cvzf ${OUTPUT_TAR_FILE} * ",
 		"scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}:${OUTPUT_TAR_FILE} ",
 	]
@@ -139,6 +154,15 @@ class CdfSettings(JobSettings):
         f.close()
         super(CdfSettings,self).makeWrapFilePostamble()
 
+    def makeCommandFile(self,job_iter=0):
+        settings=self.settings
+        if job_iter>0:
+            tag='DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=(\d*);CAF_SECTION=(\d*);CAF_JOB_END_SECTION=(\d*);'
+            x=settings['environment']
+            y=re.sub(tag,"",x)
+            sect="DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=1;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(job_iter,settings['job_count'])
+            settings['environment'] = y+";"+sect
+        super(CdfSettings,self).makeCommandFile(job_iter)
 
     def checkSanity(self):
 	settings=self.settings

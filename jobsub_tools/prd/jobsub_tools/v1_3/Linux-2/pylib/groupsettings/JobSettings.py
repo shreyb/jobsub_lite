@@ -744,7 +744,8 @@ class JobSettings(object):
 		else:
 			if settings['project_name']=="":
 				settings['project_name']="%s-%s"%(settings['user'],settings['filetag'])
-			job_count=settings['queuecount']
+			settings['job_count']=settings['queuecount']
+                        job_count=settings['queuecount']
 			settings['queuecount']=1
 			job_iter=1
 			while (job_iter <= job_count):

@@ -522,3 +522,24 @@ v1_3_1_4_rc1
   and scp'ed out, --outLocation value used  when present,
   sent to fcdficaf2 if not used.
 
+
+v1_3_1_4_rc2
+=========================================================
+- further implementation of ticket 6697
+
+  --maxParallelSec generates the same -maxidle and -maxjobs settings for 
+  condor_submit_dag as CafSubmit does 
+
+  --start --end, and --sections generate the same section numbers as happens
+  when used with CafSubmit
+
+  --outLocation works the same as it does for CafSubmit, except the only
+  copyback option is scp.  If no --outLocation is specified the job tries
+  to go back to fcdficaf2.
+
+  -- the $ variable as an input parameter gets changed to $CAF_SECTION 
+  every place it gets used in the CDF wrapper script . If $ appears in 
+  the --outLocation, it gets substituted as ${CAF_SECTION}-${CAF_JID}, 
+  which appears to be the same behavior as CafSubmit
+
+ 

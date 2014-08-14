@@ -896,20 +896,25 @@ class JobSettings(object):
 		f = open(settings['dagfile'], 'w')
 		f.write("DOT %s.dot UPDATE\n"%settings['dagfile'])
 		f.write("JOB SAM_START %s\n"%settings['sambeginfile'])
-		n=1
-		exe=os.path.basename(settings['exe_script'])
+                if settings.has_key('firstSection'):
+                    n=settings['firstSection']
+                    exe='Section'
+                else:
+		    n=1
+		    exe=os.path.basename(settings['exe_script'])
+                nOrig=n
 		for x in settings['cmd_file_list']:
 			f.write("JOB %s_%d %s\n"%(exe,n,x))
 			n+=1
 		f.write("JOB SAM_END %s\n"%settings['samendfile'])
 		f.write("Parent SAM_START child ")
-		n1=1
+		n1=nOrig
 		while (n1 <n):
 			f.write("%s_%d "%(exe,n1))
 			n1+=1
 		f.write("\n")
 		f.write("Parent ")
-		n1=1
+		n1=nOrig
 		while (n1 <n):
 			f.write("%s_%d "%(exe,n1))
 			n1+=1

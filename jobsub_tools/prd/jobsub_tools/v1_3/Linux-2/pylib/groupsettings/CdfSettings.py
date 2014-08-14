@@ -3,7 +3,8 @@
 import os
 import sys
 import re
-from JobSettings import JobSettings
+from JobSettings import JobSettings, UnknownInputError, IllegalInputError, InitializationError
+
 from optparse import OptionGroup
 
 class CdfSettings(JobSettings):
@@ -28,15 +29,15 @@ class CdfSettings(JobSettings):
                                  action="store",type="string",
                                  help="desired process type (e.g. short)")
 
-        self.cdf_group.add_option("--start", dest="start",
-                                 action="store",type="string",
+        self.cdf_group.add_option("--start", dest="firstSection",
+                                 action="store",type="int",
                                  help="beginning segment number (e.g. 1)")
               
-        self.cdf_group.add_option("--end", dest="end",
-                                 action="store",type="string",
+        self.cdf_group.add_option("--end", dest="lastSection",
+                                 action="store",type="int",
                                  help="ending segment number (e.g. 100))")
 
-        self.cdf_group.add_option("--sections", dest="sections",
+        self.cdf_group.add_option("--sections", dest="sectionList",
                                  action="store",type="string",
                                  help="segment range (e.g. 1-100)) start-end, use instead of --start --end")
 
@@ -179,7 +180,8 @@ class CdfSettings(JobSettings):
             tag='DAGMANJOBID=\$\(DAGManJobId\)\;CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)\;'
             x=settings['environment']
             y=re.sub(tag,"",x)
-            sect="DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=1;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(job_iter,settings['job_count'])
+            this_section=job_iter+settings['firstSection']-1
+            sect="DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=%s;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(settings['firstSection'],this_section,settings['lastSection'])
             settings['environment'] = y+";"+sect
         super(CdfSettings,self).makeCommandFile(job_iter)
 
@@ -187,7 +189,54 @@ class CdfSettings(JobSettings):
 	settings=self.settings
 	if not settings.has_key('outLocation'):
             settings['outLocation']="%s@fcdficaf2.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
-	if not settings['tar_file_name']:
+	if not settings.has_key('tar_file_name'):
 		raise Exception ('you must supply an input tar ball using --tarFile')
+        if settings.has_key('sectionList'):
+            try:
+                #print 'sectionList %s'%settings['sectionList']
+                firstSection,lastSection=settings['sectionList'].split('-')
+                #print 'first: %s last:%s'%(firstSection,lastSection)
+                firstSection=int(firstSection)
+                lastSection=int(lastSection)
+                settings['firstSection']=firstSection
+                settings['lastSection']=lastSection
+                settings['queuecount']=lastSection-firstSection+1
+                settings['job_count']=lastSection-firstSection+1
+            except:
+                err="error, --sections='%s' must be of the form 'i-j' "%settings['sectionList']
+                err=err+"where both i and j are positive integers"
+                raise InitializationError(err)
+
+        if settings.has_key('lastSection'):
+
+            if settings['lastSection'] <= 1:
+                err = "--end value must be greater than 1"
+                raise InitializationError(err)
+
+            if not setttings.has_key('firstSection'):
+                settings['firstSection']=1
+
+            numJobs=settings['lastSection']-settings['firstSection']+1
+            settings['queuecount']=numJobs
+            settings['job_count']=numJobs
+
+        if settings.has_key('firstSection') and not settings.has_key('lastSection'):
+            err='you must specify a --end value if you specify a --start one'
+            raise InitializationError(err)
+
+        if settings.has_key('firstSection') and settings.has_key('lastSection'):
+            if settings['lastSection'] < settings['firstSection']:
+                err = " --end value must be greater than or equal to  --start value"
+                raise InitializationError(err)
+            elif settings['firstSection']<1:
+                err = " --start value must be greater than or equal to 1"
+                raise InitializationError(err)
+            else:
+                numJobs=settings['lastSection']-settings['firstSection']+1
+                settings['queuecount']=numJobs
+                settings['job_count']=numJobs
+
+
+                     
         return super(CdfSettings,self).checkSanity()
         

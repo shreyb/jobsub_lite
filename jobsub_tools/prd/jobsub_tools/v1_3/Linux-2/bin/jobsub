@@ -77,7 +77,11 @@ def doSubmit(settings):
     if settings['dataset_definition']=="":
         cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
     else:
-        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxjobs 2000 %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['dagfile'])
+        if settings.has_key('maxConcurrent'):
+            maxjobs=settings['maxConcurrent']
+        else:
+            maxjobs=2000
+        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxidle %s -maxjobs %s %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['job_count'],maxjobs,settings['dagfile'])
       
 
     

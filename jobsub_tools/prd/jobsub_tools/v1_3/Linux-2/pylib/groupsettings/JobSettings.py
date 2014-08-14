@@ -494,7 +494,10 @@ class JobSettings(object):
 
 		settings=self.settings
 		f = open(settings['wrapfile'], 'a')
-		f.write("#!/bin/sh\n")
+                if settings['verbose']:
+		    f.write("#!/bin/sh -x \n")
+                else:
+		    f.write("#!/bin/sh\n")
 		f.write("#\n")
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
@@ -552,13 +555,16 @@ class JobSettings(object):
 			f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
-		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
+		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%\
+                        (ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
 		f.write(log_cmd)
 		if settings['joblogfile'] != "":
 			if settings['nologbuffer']==False:
-				f.write("%s %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % (exe_script,script_args))
+				f.write("%s %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
+                                        (exe_script,script_args))
 			else:
-				f.write("%s %s > %s  2>&1\n" % (exe_script,script_args,settings['joblogfile']))
+				f.write("%s %s > %s  2>&1\n" % \
+                                        (exe_script,script_args,settings['joblogfile']))
 
 		else:
 			f.write("%s %s  \n" % \
@@ -567,7 +573,8 @@ class JobSettings(object):
 
 		f.write("JOB_RET_STATUS=$?\n")
 
-		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""%(ifdh_cmd,settings['user'],os.path.basename(exe_script))
+		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""% \
+                    (ifdh_cmd,settings['user'],os.path.basename(exe_script))
 		f.write(log_cmd)
 		if settings['verbose']:
 			f.write("########END JOBSETTINGS makeWrapFile #############\n")

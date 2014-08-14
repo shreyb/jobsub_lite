@@ -47,9 +47,10 @@ class CdfSettings(JobSettings):
                                  action="store",type="string",
                                  help="=qualifier:version:station. To use a sam station different from the default,to specify only if dhaccess=SAM  is used (default is SAM) ")
                 
-        self.cdf_group.add_option("--maxParallelSec", dest="maxParallelSec",
+        self.cdf_group.add_option("--maxParallelSec", dest="maxConcurrent",
                                  action="store",type="string",
                                  help="max parallel running section number (e.g. 30) ")
+
         self.cdf_group.add_option("--email", dest="email",
                                  action="store",type="string",
                                  help="optional email address for summary output")
@@ -85,7 +86,8 @@ class CdfSettings(JobSettings):
 
     def writeToWrapFile(self,list,fh):
         for cmd in list:
-            if self.settings['verbose']:
+            #if self.settings['verbose']:
+            if False:
 	        fh.write("""CMD="%s"\n """%cmd)
 	        fh.write("echo executing: $CMD\n")
 	        fh.write("$CMD\n")
@@ -99,11 +101,25 @@ class CdfSettings(JobSettings):
 		"export USER=$GRID_USER",
 		"export CAF_JID=${DAGMANJOBID}",
 		"export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/${INPUT_TAR_FILE}",
-		"export OUTPUT_TAR_FILE=%s_${CAF_SECTION}-${DAGMANJOBID}.tgz"%settings['local_host'].split('.')[0],
-		"export OUTPUT_DESTINATION=%s"%settings['outLocation'],
+		"export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
+                "#replace '$' in OUTPUT_DESTINATION with literal ${CAF_SECTION}-${CAF_JID} value", 
+		"OUTPUT_DESTINATION=%s"%settings['outLocation'],
+                "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
+                "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
+                "export OUTPUT_DESTINATION",
 		"export HOME=${TMPDIR}/work",
 		"mkdir -p ${HOME}",
                 "cd ${TMPDIR}/work",
+                "#change any '$' in input to ${CAF_SECTION}",
+                'ARGS=( $args ) ',
+                "j=0",
+                "for i in ${ARGS[@]}; do",
+                '      if [ "$i" = "$" ]; then',
+                "            ARGS[$j]=${CAF_SECTION}",
+                "      fi",
+                "      j=`expr $j + 1`",
+                "done",
+                "set -- ${ARGS[@]}",
 	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
@@ -125,6 +141,7 @@ class CdfSettings(JobSettings):
 		"tar xvzf $INPUT_TAR_FILE",
                 "echo contents after untar:",
                 "ls -la ",
+                """echo executing: ./%s "$@"   """%os.path.basename(settings['exe_script']),
 		"""./%s "$@"   """%os.path.basename(settings['exe_script']),
 		"export JOB_RET_STATUS=$?",
 	]
@@ -143,7 +160,9 @@ class CdfSettings(JobSettings):
                 "cp ${TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
                 "cp ${TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
 		"tar cvzf ${OUTPUT_TAR_FILE} * ",
-		"scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}:${OUTPUT_TAR_FILE} ",
+                """CPY_OUT="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
+                "echo executing:$CPY_OUT",
+                "$CPY_OUT",
 	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:
@@ -157,7 +176,7 @@ class CdfSettings(JobSettings):
     def makeCommandFile(self,job_iter=0):
         settings=self.settings
         if job_iter>0:
-            tag='DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=(\d*);CAF_SECTION=(\d*);CAF_JOB_END_SECTION=(\d*);'
+            tag='DAGMANJOBID=\$\(DAGManJobId\)\;CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)\;'
             x=settings['environment']
             y=re.sub(tag,"",x)
             sect="DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=1;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(job_iter,settings['job_count'])
@@ -167,7 +186,7 @@ class CdfSettings(JobSettings):
     def checkSanity(self):
 	settings=self.settings
 	if not settings.has_key('outLocation'):
-		settings['outLocation']="%s@fcdficaf2.fnal.gov"%settings['user']
+            settings['outLocation']="%s@fcdficaf2.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
 	if not settings['tar_file_name']:
 		raise Exception ('you must supply an input tar ball using --tarFile')
         return super(CdfSettings,self).checkSanity()

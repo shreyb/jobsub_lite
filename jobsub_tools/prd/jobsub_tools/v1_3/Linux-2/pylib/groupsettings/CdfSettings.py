@@ -213,7 +213,7 @@ class CdfSettings(JobSettings):
                 err = "--end value must be greater than 1"
                 raise InitializationError(err)
 
-            if not setttings.has_key('firstSection'):
+            if not settings.has_key('firstSection'):
                 settings['firstSection']=1
 
             numJobs=settings['lastSection']-settings['firstSection']+1

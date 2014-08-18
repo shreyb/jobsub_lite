@@ -542,4 +542,7 @@ v1_3_1_4_rc2
   the --outLocation, it gets substituted as ${CAF_SECTION}-${CAF_JID}, 
   which appears to be the same behavior as CafSubmit
 
- 
+v1_3_1_4_rc3
+============================================================
+  --fixed typo which prevents --start --end --sections from working
+  obviously should be part of test suite 

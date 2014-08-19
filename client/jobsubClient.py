@@ -213,6 +213,9 @@ class JobSubClient:
             errno, errstr = error
             err="PyCurl Error %s: %s" % (errno, errstr)
             logSupport.dprint(traceback.format_exc())
+            if errno == 60:
+                err=err+"\nDid you remember to include the port number to "
+                err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
             raise JobSubClientSubmissionError(err)
 
         self.printResponse(curl, response)

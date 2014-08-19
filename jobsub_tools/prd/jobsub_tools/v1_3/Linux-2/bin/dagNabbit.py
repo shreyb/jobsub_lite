@@ -11,6 +11,7 @@ import re
 import datetime
 import time
 import subprocess
+from JobsubConfigParser import JobsubConfigParser
 
 docString = """
  $Id$
@@ -554,20 +555,23 @@ class DagParser(object):
 		self.generateDependencies(outputFile,self.jobList)
 
 class ArgParser(object):
-	def __init__(self):
+	def __init__(self,cfp):
+                cfp.findConfigFile()
 		self.inputFile = ""
 		self.outputFile = ""
 		self.runDag = False
 		self.viewDag = False
 		self.maxJobs = 0
-		self.submitHost = "gpsn01.fnal.gov"
-		#commands=JobUtils()		
-		(retVal,val)=commands.getstatusoutput("id -gn")
-		#print "val='%s'"%val
-                allowed = ["e938","e875","mars","lbnemars","marsmu2e","marsgm2","larrand","nova","t-962","mu2e","microboone","lbne","seaquest","coupp","gm2"]
-		if val not in allowed:
-			print "ERROR do not run this script as member of group %s" % val
-			print "newgrp to one of %s and try again"% allowed
+		self.submitHost = os.environ.get("SUBMIT_HOST")
+                self.condorSetup = cfp.get(self.submitHost,"condor_setup_cmd")
+                self.group = os.environ.get("GROUP")
+                allowed = cfp.supportedGroups()
+                if len(self.condorSetup)>0 and self.condorSetup.find(';')<0:
+                    self.condorSetup=self.condorSetup+";"
+
+		if self.group not in allowed:
+			print "ERROR do not run this script as member of group %s" % self.group
+			print "export GROUP=one of %s and try again"% allowed
 			sys.exit(-1)
 			
 
@@ -638,11 +642,13 @@ class JobRunner(object):
 		ups_shell = os.environ.get("UPS_SHELL")
 		if ups_shell is None:
 			ups_shell="sh"
+                if ups_shell == "csh" and args.condorSetup.find( '/opt/condor/condor.sh')>=0 :
+                    args.condorSetup = 'source /opt/condor/condor.csh ;'
 
 		if host == args.submitHost:
-			cmd = """ source /opt/condor/condor.%s ; condor_submit_dag """ % ups_shell
+			cmd = """ %s  condor_submit_dag """ % args.condorSetup
 		else:
-			cmd = """ssh %s "source /opt/condor/condor.%s ; condor_submit_dag """ % (args.submitHost,ups_shell)
+			cmd = """ssh %s " %s  condor_submit_dag """ % (args.submitHost,args.condorSetup)
 		cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
 		if args.maxJobs > 0:
 			cmd = cmd + " -maxjobs %d " % args.maxJobs
@@ -662,7 +668,8 @@ class JobRunner(object):
 	
 
 if __name__ == '__main__':
-	args=ArgParser()
+        c=JobsubConfigParser()
+	args=ArgParser(c)
 	d=DagParser()
 	d.digestInputFile(args.inputFile)
 	d.generateDag(args.outputFile)

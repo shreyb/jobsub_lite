@@ -1097,6 +1097,7 @@ class JobSettings(object):
                     'SAM_GROUP':'group',
                     'EXPERIMENT':'group',
                     'SAM_STATION':'group',
+                    'SAM_DATASET':'dataset_definition',
                     'IFDH_BASE_URI':'ifdh_base_uri',
                     'SAM_PROJECT':'project_name',
                     'SAM_PROJECT_NAME':'project_name',

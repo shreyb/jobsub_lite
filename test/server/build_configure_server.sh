@@ -21,7 +21,7 @@ echo condor:x:3302:grid >> /etc/group
 /usr/sbin/useradd -u 4287 -g 3302 grid
 
 yum -y install upsupdbootstrap-fnal
-su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools v1_3_1_1 -f Linux+2; ups declare -c jobsub_tools v1_3_1_1 -f Linux+2; upd install ifdhc v1_4_3; ups declare -c ifdhc v_1_4_3"
+su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools v1_3_1_1 -f Linux+2; ups declare -c jobsub_tools v1_3_1_1 -f Linux+2; upd install ifdhc v1_4_3; ups declare -c ifdhc v_1_4_3; upd install ups v5_1_2; ups declare -c ups v5_1_2; ups undeclare ups v4_8_0 -f Linux+2"
 
 yum -y install $RPM_LOCATION
 

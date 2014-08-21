@@ -64,9 +64,9 @@ class CdfSettings(JobSettings):
                                  action="store",type="string",
                                  help="")
 
-        self.cdf_group.add_option("--group", dest="group",
-                                 action="store",type="string",
-                                 help="")
+        #self.cdf_group.add_option("--group", dest="group",
+        #                         action="store",type="string",
+        #                         help="")
 
         self.cdf_group.add_option("--os", dest="os",
                                  action="store",type="string",

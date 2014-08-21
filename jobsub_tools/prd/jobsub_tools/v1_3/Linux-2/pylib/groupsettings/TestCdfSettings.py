@@ -5,6 +5,7 @@ import unittest,sys
 from TestJobSettings import JobTest
 #from JobSettings import JobSettings
 from CdfSettings import CdfSettings
+from JobSettings import InitializationError
 
 
 class CdfTest(JobTest):
@@ -27,20 +28,28 @@ class CdfTest(JobTest):
         ns=self.ns
         ns.runCmdParser(['--outLocation=outLocationValue','some_script'])
         self.assertEqual(ns.settings['outLocation'],'outLocationValue','setting --outLocation Test FAILED')
-        ns.runCmdParser(['--procType=procTypeValue','procTypeValue'])
-        self.assertEqual(ns.settings['procType'],'procTypeValue','setting --procType test FAILED')
-        ns.runCmdParser(['--start=startValue','startValue'])
-        self.assertEqual(ns.settings['start'],'startValue','setting --start FAILED')
+        ns.runCmdParser(['--sections=1-3','some_script'])
+        self.assertEqual(ns.settings['sectionList'],'1-3',' --sections test FAILED')
+        ns.checkSanity()
+        self.assertEqual(ns.settings['firstSection'],1,'start FAILED after checkSanity')
+        self.assertEqual(ns.settings['lastSection'],3,'end FAILED after checkSanity')
+
         super(CdfTest,self).testGoodInput()
 
         
-    def testCdfBadInput(self):
-
-	""" Test Cdf Bad Input"""
-        ns = self.ns
-        super(CdfTest,self).testBadInput()
                          
 
+        
+    def testCdfBadInput(self):
+        """give CdfSettings some bad input -- should complain"""
+        ns = self.ns
+        ns.runCmdParser(['--start=-3','some_script'])
+        self.assertRaises(InitializationError,ns.checkSanity)
+        ns.runCmdParser(['--start=3','some_script'])
+        ns.runCmdParser(['--end=1','some_script'])
+        self.assertRaises(InitializationError,ns.checkSanity)
+    
+        
 
 if __name__ == "__main__":
     #unittest.main()

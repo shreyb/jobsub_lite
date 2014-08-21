@@ -10,7 +10,9 @@ from LbneSettings import LbneSettings
 class LbneTest(JobTest):
 
     def setUp(self):
+        super(LbneTest,self).ioSetUp()
         self.ns = LbneSettings()
+        super(LbneTest,self).stdioON()
         super(LbneTest,self).setUp()
 
     def testLbneConstructor(self):
@@ -39,8 +41,10 @@ class LbneTest(JobTest):
     def testLbneBadInput(self):
 
         ns = self.ns
+	self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
-                          ['--deliberately_bogus_option','lalalala'],2)
+                          ['--deliberately_bogus_option=dumb_stuff','lalalala'],2)
+	self.stdioON()
         super(LbneTest,self).testBadInput()
                          
 

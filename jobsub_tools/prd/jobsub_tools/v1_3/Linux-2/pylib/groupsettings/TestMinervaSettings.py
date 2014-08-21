@@ -11,7 +11,9 @@ class MinervaTest(JobTest):
 
 
     def setUp(self):
+        super(MinervaTest,self).ioSetUp()
         self.ns = MinervaSettings()
+        super(MinervaTest,self).stdioON()
         super(MinervaTest,self).setUp()
 
 
@@ -56,8 +58,10 @@ class MinervaTest(JobTest):
 
         """excercise MinervaSettings against bad input -- should complain"""
         ns = self.ns
+	self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
-                          ['--deliberately_bogus_option','lalalala'],2)
+                          ['--deliberately_bogus_option=lalalala','some_stupid_script'],2)
+	self.stdioON()
                          
 
 

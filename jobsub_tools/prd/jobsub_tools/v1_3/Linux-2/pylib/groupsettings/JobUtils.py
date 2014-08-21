@@ -16,7 +16,7 @@ class JobUtils(object):
 		val=""
 		for op in proc.stdout:
 			val=val+op.rstrip()
-		if yakFlag:
+                if yakFlag:
 			print "\n\nJobUtils output is %s\n---DONE---\n" %(val)
 		return(retVal,val)
         def ifdhString(self):
@@ -55,6 +55,7 @@ if [ "${KRB5CCNAME}" != "" ]; then
       export KRB5CCNAME="${_CONDOR_JOB_IWD}/${BK}"
       chmod 400 ${KRB5CCNAME}
    fi
+   (while [ 0 ]; do kinit -R; sleep 3600 ; done ) &
 fi
             """
             return ks

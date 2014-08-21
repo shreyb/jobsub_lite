@@ -4,6 +4,7 @@ source $UPS_DIR/test/unittest.bash
 
 test_setup() {
    testdir=/tmp/t$$
+   testout=/tmp/test_case_out_$$
    mkdir -p $testdir/tmp
    mkdir -p $testdir/exec
    export CONDOR_TMP=$testdir/tmp
@@ -11,8 +12,10 @@ test_setup() {
 }
 
 test_teardown() {
-   return 0
-   rm -rf $testdir
+   if [ "$SAVE_TEST_OUTPUT" = "" ]; then
+       rm -rf $testdir
+       rm -rf $testout
+   fi
 }
 
 print_cmd_file() {
@@ -38,6 +41,7 @@ test_lines() {
 
 test_append_requirements1() {
    SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -e SUBMIT_HOST  --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -47,6 +51,7 @@ test_append_requirements1() {
 
 test_append_requirements2() {
    SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -e SUBMIT_HOST  -g --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -75,6 +80,7 @@ test_append_requirements4() {
 
 test_append_accounting_group() {
    SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g -l '+AccountingGroup = "group_highprio.minervapro"' /usr/bin/printenv`
    print_cmd_file
 
@@ -86,12 +92,14 @@ test_append_accounting_group() {
 
 test_OS() {
    SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g --OS=foo,bar /usr/bin/printenv`
    print_cmd_file
 
    # succeeds if foo and bar are in the DesiredOS line
    grep 'DesiredOS *= *"foo,bar"' $file /dev/null && grep 'requirements.*DesiredOS' $file /dev/null
 }  
+
 
 
 testsuite setups_suite	\

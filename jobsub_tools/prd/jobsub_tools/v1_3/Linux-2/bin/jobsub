@@ -34,8 +34,12 @@ def iterArgs():
         job_settings = LbneSettings()
     elif experiment_env == "e875" or experiment_env == "minos":
         job_settings = MinosSettings()
+    elif experiment_env == "cdf" or experiment_env == "cdf":
+        job_settings = CdfSettings()
     else:
         job_settings = JobSettings()
+
+    #print "job_settings class is %s"%job_settings.__class__.__name__
         
     job_settings.runCmdParser()
 
@@ -73,7 +77,11 @@ def doSubmit(settings):
     if settings['dataset_definition']=="":
         cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
     else:
-        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxjobs 2000 %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['dagfile'])
+        if settings.has_key('maxConcurrent'):
+            maxjobs=settings['maxConcurrent']
+        else:
+            maxjobs=2000
+        cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit_dag -maxidle %s -maxjobs %s %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['job_count'],maxjobs,settings['dagfile'])
       
 
     

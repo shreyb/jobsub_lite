@@ -499,6 +499,7 @@ class JobSettings(object):
                 else:
 		    f.write("#!/bin/sh\n")
 		f.write("#\n")
+		f.write("touch .empty_file\n")
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
                 f.write("umask 002\n")
@@ -516,6 +517,7 @@ class JobSettings(object):
 		f.write("\n")
 		f.write("# To prevent output files from being transferred back\n")
 		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
+		f.write("mkdir -p $JSB_TMP\n")
 		f.write("export _CONDOR_SCRATCH_DIR=$_CONDOR_SCRATCH_DIR/no_xfer\n")
 		f.write("export TMP=$_CONDOR_SCRATCH_DIR\n")
 		f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
@@ -1180,6 +1182,7 @@ class JobSettings(object):
 			f.write("notification  = Always\n")
 		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 		f.write("transfer_output		 = True\n")
+		f.write("transfer_output_files = .empty_file\n")
 		f.write("transfer_error		  = True\n")
                 tval=self.shouldTransferInput()
                 f.write(tval)
@@ -1267,6 +1270,7 @@ class JobSettings(object):
 		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 		f.write("transfer_output		 = True\n")
 		f.write("transfer_error		  = True\n")
+		f.write("transfer_output_files = \n")
                 #tval=self.shouldTransferInput()
                 tval="transfer_executable     = False\n"
 

@@ -28,7 +28,7 @@ import logger
 import subprocessSupport
 from util import needs_refresh
 from tempfile import NamedTemporaryFile
-from jobsub import get_voms
+from jobsub import get_voms,AcctGroupNotConfiguredError
 
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
@@ -65,9 +65,12 @@ class Krb5Ticket:
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
         logger.log(cmd)
-        kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
-        if kinit_err:
-            raise Exception("createKrbCache error: %s" % kinit_err)
+        try:
+            kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
+        except:
+            logger.log('removing file %s'%self.krb5cc)
+            os.remove(self.krb5cc)
+            raise 
 
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
@@ -85,7 +88,13 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
     # Any excpetion raised will result in Authorization Error by the caller
-    voms_attrs = get_voms(acctgroup)
+    try:
+        voms_attrs = get_voms(acctgroup)
+    except AcctGroupNotConfiguredError, e: 
+        os.remove(new_proxy_fname)
+        logger.log("%s"%e) 
+        raise
+
 
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
@@ -105,11 +114,13 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         else:
             # Anything else we should just raise
             raise
-    cmd = "%s -exists -file %s"%(voms_proxy_info_exe,new_proxy_fname)
+    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,new_proxy_fname)
     logger.log(cmd)
     ret_code = os.system(cmd)
     if ret_code == 0:
 	os.rename(new_proxy_fname,proxy_fname)
+    else:
+        os.remove(new_proxy_fname)
 
 
 

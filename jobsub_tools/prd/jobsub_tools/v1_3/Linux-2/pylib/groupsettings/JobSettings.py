@@ -135,8 +135,8 @@ class JobSettings(object):
 		self.settings['parrotfile']=''
 		self.settings['cmdfile']=''
 		self.settings['dagfile']=''
-		self.settings['sambeginfile']=''
-		self.settings['samendfile']=''
+		self.settings['dagbeginfile']=''
+		self.settings['dagendfile']=''
 		self.settings['processtag']=''
 		self.settings['logfile']=''
 		self.settings['opportunistic']=False
@@ -470,6 +470,8 @@ class JobSettings(object):
 			if settings['use_gftp']:
 				err = "--use_gftp file transfers are done in the wrapfile, using with --nowrapfile does not make sense"
 				raise InitializationError(err)
+                if settings['dataset_definition']!="":
+                    settings['usedagman']=True
 			
 		return True
 
@@ -525,7 +527,7 @@ class JobSettings(object):
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 		f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
-                f.write("""exec 7>&1; exec >${TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${TMP}/JOBSUB_ERR_FILE\n""")
+                f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
 
 		f.write("\n")
                 f.write(JobUtils().krb5ccNameString())
@@ -630,7 +632,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
-                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
 		if settings['verbose']:
@@ -749,7 +751,7 @@ class JobSettings(object):
 							    ow.month,ow.day,ow.hour,
 							    ow.minute,ow.second,pid)
 		settings['filetag']=filebase
-		if settings['dataset_definition']=="":
+		if settings['usedagman']==False:
 			self.makeCondorFiles2()
 		else:
 			if settings['project_name']=="":
@@ -766,17 +768,67 @@ class JobSettings(object):
 
 				
 			self.makeDAGFile()
-			self.makeSAMBeginFiles()
-			self.makeSAMEndFiles()
+			self.makeDAGStart()
+			self.makeDAGEnd()
+
+        def makeDAGStart(self):
+            if self.settings['dataset_definition']!="":
+                self.makeSAMBeginFiles()
+            else:
+                self.makeDAGBeginFiles()
+
+        def makeDAGEnd(self):
+            if self.settings['dataset_definition']!="":
+                self.makeSAMEndFiles()
+            else:
+                self.makeDAGEndFiles()
+        
 
 
+	def makeDAGBeginFiles(self):
+		settings = self.settings
+		dagbeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
+		f = open(dagbeginexe,'wx')
+		f.write("#!/bin/sh -x\n")
+                f.write("exit 0\n")
+
+		f.close()
+		cmd = "chmod +x %s" % dagbeginexe
+		commands=JobUtils()
+		(retVal,rslt)=commands.getstatusoutput(cmd)
+		
+		f = open(settings['dagbeginfile'], 'w')
+		f.write("universe	  = vanilla\n")
+		f.write("executable	= %s\n"%dagbeginexe)
+		f.write("arguments	 = %s %s %s %s\n"%(settings['group'],
+							   settings['dataset_definition'],
+							   settings['project_name'],settings['user']))
+		
+		f.write("output		= %s/dagbegin-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
+		f.write("error		 = %s/dagbegin-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
+		f.write("log		   = %s/dagbegin-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
+
+		f.write("environment = %s\n"%settings['environment'])
+		f.write("rank		  = Mips / 2 + Memory\n")
+		f.write("notification  = Error\n")
+		f.write("+RUN_ON_HEADNODE= True\n")
+                f.write("transfer_executable     = True\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
+                self.handleResourceProvides(f)
+
+                f.write("requirements  = %s\n"%self.condorRequirements())
+
+		f.write("queue 1\n")	 
+		f.close()
+				
+	
 	def makeSAMBeginFiles(self):
 		settings = self.settings
 		sambeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
 		f = open(sambeginexe,'wx')
 		f.write("#!/bin/sh -x\n")
 		f.write("#EXPERIMENT=$1\n")
-		f.write("#DEFN=$2\n")
+                f.write("#DEFN=$2\n")
 		f.write("#PRJ_NAME=$3\n")
 		f.write("#GRID_USER=$4\n")
 		f.write("\n")
@@ -814,7 +866,7 @@ class JobSettings(object):
 		commands=JobUtils()
 		(retVal,rslt)=commands.getstatusoutput(cmd)
 		
-		f = open(settings['sambeginfile'], 'w')
+		f = open(settings['dagbeginfile'], 'w')
 		f.write("universe	  = vanilla\n")
 		f.write("executable	= %s\n"%sambeginexe)
 		f.write("arguments	 = %s %s %s %s\n"%(settings['group'],
@@ -824,27 +876,54 @@ class JobSettings(object):
 		f.write("output		= %s/sambegin-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("error		 = %s/sambegin-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
 		f.write("log		   = %s/sambegin-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-		#f.write("environment   = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s;IFDH_BASE_URI=%s;\n"%\
 
-		#		(settings['condor_tmp'],settings['condor_exec'],settings['ifdh_base_uri']))
 		f.write("environment = %s\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
-		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
 		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
                 self.handleResourceProvides(f)
 
-		#f.write("requirements  = ((Arch==\"X86_64\") || (Arch==\"INTEL\"))  \n")
                 f.write("requirements  = %s\n"%self.condorRequirements())
 
-		#f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 		f.close()
 				
-		#print "makeSamBeginFiles created %s\n%s\n"%(sambeginexe,settings['sambeginfile'])
 	
+	def makeDAGEndFiles(self):
+		settings = self.settings
+		dagendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
+		f = open(dagendexe,'wx')
+		f.write("#!/bin/sh -x\n")
+                f.write("exit 0\n")
+		f.close()
+		f = open(settings['dagendfile'], 'w')
+		f.write("universe	  = vanilla\n")
+		f.write("executable	= %s\n"%dagendexe)
+		f.write("arguments	 = %s \n"%(settings['project_name']))
+		f.write("output		= %s/dagend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
+		f.write("error		 = %s/dagend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
+		f.write("log		   = %s/dagend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
+		f.write("environment = %si\n"%settings['environment'])
+		f.write("rank		  = Mips / 2 + Memory\n")
+		f.write("notification  = Error\n")
+		f.write("+RUN_ON_HEADNODE= True\n")
+                f.write("transfer_executable     = True\n")
+		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
+                self.handleResourceProvides(f)
+                f.write("requirements  = %s\n"%self.condorRequirements())
+		f.write("queue 1\n")	 
+
+		f.close()
+		cmd = "chmod +x %s" % dagendexe
+		commands=JobUtils()
+		(retVal,rslt)=commands.getstatusoutput(cmd)
+
+
+		
+		
+
 	def makeSAMEndFiles(self):
 		settings = self.settings
 		samendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
@@ -866,7 +945,7 @@ class JobSettings(object):
                 f.write("echo ifdh endProject $CPURL exited with status $EXITSTATUS\n")
                 f.write("exit $EXITSTATUS\n")
 		f.close()
-		f = open(settings['samendfile'], 'w')
+		f = open(settings['dagendfile'], 'w')
 		f.write("universe	  = vanilla\n")
 		f.write("executable	= %s\n"%samendexe)
 		f.write("arguments	 = %s \n"%(settings['project_name']))
@@ -876,13 +955,11 @@ class JobSettings(object):
 		f.write("environment = %si\n"%settings['environment'])
 		f.write("rank		  = Mips / 2 + Memory\n")
 		f.write("notification  = Error\n")
-		#f.write("x509userproxy = %s\n" % settings['x509_user_proxy'])
 		f.write("+RUN_ON_HEADNODE= True\n")
                 f.write("transfer_executable     = True\n")
 		f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
                 self.handleResourceProvides(f)
                 f.write("requirements  = %s\n"%self.condorRequirements())
-		#f.write("+GeneratedBy =\"%s\"\n"%settings['version'])
 		f.write("queue 1\n")	 
 
 		f.close()
@@ -892,7 +969,6 @@ class JobSettings(object):
 
 
 		
-		#print "makeSamEndFiles created %s\n%s\n"%(samendexe,settings['samendfile'])
 		
 
 	def makeDAGFile(self):
@@ -902,7 +978,7 @@ class JobSettings(object):
 
 		f = open(settings['dagfile'], 'w')
 		f.write("DOT %s.dot UPDATE\n"%settings['dagfile'])
-		f.write("JOB SAM_START %s\n"%settings['sambeginfile'])
+		f.write("JOB SAM_START %s\n"%settings['dagbeginfile'])
                 if settings.has_key('firstSection'):
                     n=settings['firstSection']
                     exe='Section'
@@ -913,7 +989,7 @@ class JobSettings(object):
 		for x in settings['cmd_file_list']:
 			f.write("JOB %s_%d %s\n"%(exe,n,x))
 			n+=1
-		f.write("JOB SAM_END %s\n"%settings['samendfile'])
+		f.write("JOB SAM_END %s\n"%settings['dagendfile'])
 		f.write("Parent SAM_START child ")
 		n1=nOrig
 		while (n1 <n):
@@ -931,13 +1007,12 @@ class JobSettings(object):
 	
 	 
 	def makeCondorFiles2(self,job_iter=0):
-		#makeCondorFiles2(%s)"%job_iter
 		settings=self.settings
 		filebase="%s_%s"%(settings['filetag'],job_iter)
 		if settings['dagfile']=='':
 			settings['dagfile']="%s/%s.dag" % (settings['condor_tmp'],filebase)
-			settings['sambeginfile']="%s/%s.sambegin.cmd" % (settings['condor_tmp'],filebase)
-			settings['samendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
+			settings['dagbeginfile']="%s/%s.sambegin.cmd" % (settings['condor_tmp'],filebase)
+			settings['dagendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
 		uniquer=0
 		retVal = 0
 		while (retVal == 0):
@@ -966,13 +1041,10 @@ class JobSettings(object):
 			if settings['queuecount']>1:
 				settings['processtag'] = "_$(Process)"
 
-			#settings['logfile']=settings['filebase']+settings['processtag']+".log"
 			settings['logfile']=settings['filebase']+".log"
 			settings['errfile']=settings['filebase']+settings['processtag']+".err"
 			settings['outfile']=settings['filebase']+settings['processtag']+".out"
 
-			##if (settings['joblogfile']=="" and settings['grid']==0):
-				##settings['joblogfile']=settings['filebase']+settings['processtag']+".joblog"
 
 			if settings['verbose']:
 				print "settings['logfile'] =",settings['logfile']
@@ -994,11 +1066,8 @@ class JobSettings(object):
 				settings['wrapper_cmd_array'].append(cmd3)
 				if settings['verbose']:
 					print cmd3
-            #pid=os.getpid()
-			#print"pid=%s \n"%(pid)
 			if settings['dataset_definition']=="":
 				print"%s"%(settings['cmdfile'])
-			#print "uniquer=%s calling self.makeCommandFile(%s)"%(uniquer,job_iter)
 			if uniquer==1:
 				self.makeCommandFile(job_iter)
 				if settings['nowrapfile']==False:

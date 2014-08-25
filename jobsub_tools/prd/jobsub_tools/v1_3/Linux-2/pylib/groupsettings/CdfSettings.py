@@ -10,6 +10,7 @@ from optparse import OptionGroup
 class CdfSettings(JobSettings):
     def __init__(self):
         super(CdfSettings,self).__init__()
+        self.settings['usedagman']=True
 
 
     def initCmdParser(self):

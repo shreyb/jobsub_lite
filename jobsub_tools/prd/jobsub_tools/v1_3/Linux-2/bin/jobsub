@@ -74,7 +74,7 @@ def doSubmit(settings):
         if len(condor_setup_cmd)>0 and condor_setup_cmd.find(';')<0:
             condor_setup_cmd=condor_setup_cmd+";"
 
-    if settings['dataset_definition']=="":
+    if settings['usedagman']==False:
         cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
     else:
         if settings.has_key('maxConcurrent'):

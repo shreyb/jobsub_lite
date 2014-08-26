@@ -112,12 +112,12 @@ class CdfSettings(JobSettings):
 		"export HOME=${TMPDIR}/work",
 		"mkdir -p ${HOME}",
                 "cd ${TMPDIR}/work",
-                "#change any '$' in input to ${CAF_SECTION}",
+                "#change any '$' in input to ${CAF_SECTION}-1",
                 'ARGS=( $args ) ',
                 "j=0",
                 "for i in ${ARGS[@]}; do",
                 '      if [ "$i" = "$" ]; then',
-                "            ARGS[$j]=${CAF_SECTION}",
+                "            ARGS[$j]=`expr ${CAF_SECTION} - 1`",
                 "      fi",
                 "      j=`expr $j + 1`",
                 "done",
@@ -159,8 +159,8 @@ class CdfSettings(JobSettings):
     def makeWrapFilePostamble(self):
         settings=self.settings
 	postWrapCommands = [ 
-                "cp ${TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
-                "cp ${TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
+                "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
+                "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
 		"tar cvzf ${OUTPUT_TAR_FILE} * ",
                 """CPY_OUT="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
                 "echo executing:$CPY_OUT",

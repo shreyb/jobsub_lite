@@ -1147,13 +1147,17 @@ class JobSettings(object):
                         raise InitializationError(err)
                     else: 
                         allowed_vals=fp.get(submit_host,has_opt)
+			allowed_vals=allowed_vals.replace(', ',',')
+			allowed_vals=allowed_vals.replace(' ,',',')
+ 			allowed_vals=allowed_vals.upper()
+			allowed_list=allowed_vals.split(',')
                         vals_ok=False
                         val_list=val.split(',')
                         for check_val in val_list:
-                            if allowed_vals.upper().find(check_val.upper())>=0:
+                            if check_val.strip().upper() in allowed_list:
                                 vals_ok=True
                         if not vals_ok: 
-                            err="illegal --resource-provides value: %s for option: %s is not supported on %s according to your config file %s.  Legal values are:%s"%(val,opt,submit_host,self.findConfigFile(),allowed_vals)
+                            err="illegal --resource-provides value: %s for option: %s is not supported on %s according to your config file %s.  Legal values are:%s"%(val,opt,submit_host,self.findConfigFile(),allowed_vals.upper())
                             raise InitializationError(err)
                         else:
                             f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))

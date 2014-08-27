@@ -483,3 +483,29 @@ v1_3_1_1 6/6/14
   /seaquest/app and /seaquest/data to /e906/app and /e906/data
   on 5/15/14. Gcso had to  manually edit jobsub.ini files to
   reflect this, changed here so they don't have to any more. 
+
+v1_3_1_1_2 8/27/14
+==============================================================
+  Emergency patch of v1_3_1_1
+- INC000000435312 and related - if users clean up the $TMP directory
+  before exiting, log and err files do not come back 
+
+  NOTE THAT IFDH IS NOT SET UP IN USER ENVIRONMENT BY DEFAULT ANY MORE
+
+  many experiments encountered environment problems from collision
+  of the ifdh version their software required, and the ifdh version
+  set up by jobsub at execution time.
+ 
+  Some experiments like mu2e and marsmu2e depend on ifdh being set up
+  prior to user jobs.  If you need this behavior put 
+  
+  set_up_ifdh = True  
+  
+  in the 'experiment' section of your jobsub.ini file.  For example:
+
+[mu2e]
+set_up_ifdh = True
+GROUP = mu2e
+STORAGE_GROUP = mu2e
+CONDOR_TMP = /mu2e/data/users/condor-tmp/${LOGNAME}
+ 

@@ -170,7 +170,7 @@ class JobSettings(object):
                 self.settings['transfer_executable']=False
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
                 self.settings['needs_appending']=True
-                self.settings['ifdh_cmd']='${TMP}/ifdh.sh'
+                self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_log_size']=5000000
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -502,6 +502,8 @@ class JobSettings(object):
 		f.write("set - \"\"\n")
 		f.write("\n")
 		f.write("# To prevent output files from being transferred back\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsp_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
 		f.write("export _CONDOR_SCRATCH_DIR=$_CONDOR_SCRATCH_DIR/no_xfer\n")
 		f.write("export TMP=$_CONDOR_SCRATCH_DIR\n")
 		f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
@@ -509,7 +511,7 @@ class JobSettings(object):
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 		f.write("""if [ "${JOBSUB_MAX_LOG_SIZE}" = "" ] ; then JOBSUB_MAX_LOG_SIZE=%s ; fi \n"""%settings['jobsub_max_log_size'])
-                f.write("""exec 7>&1; exec >${TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${TMP}/JOBSUB_ERR_FILE\n""")
+                f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
 
 
 		f.write("\n")
@@ -517,6 +519,9 @@ class JobSettings(object):
                 #f.write(ifdh_setup)
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
+                if settings.has_key('set_up_ifdh') and settings['set_up_ifdh']:
+                    f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
+                
 
 
 	def makeWrapFilePostamble(self):
@@ -580,8 +585,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
-                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
-
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 		f.write("exit $JOB_RET_STATUS\n")
 		f.close
 		cmd = "chmod +x %s" % settings['wrapfile'] 
@@ -722,6 +726,8 @@ class JobSettings(object):
 		f.write("DEFN=$2\n")
 		f.write("PRJ_NAME=$3\n")
 		f.write("SAM_USER=$4\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsp_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
@@ -772,6 +778,8 @@ class JobSettings(object):
 		f.write("#!/bin/sh -x\n")
 		f.write("EXPERIMENT=$1\n")
 		f.write("PRJ_NAME=$2\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsp_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])

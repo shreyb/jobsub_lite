@@ -38,10 +38,12 @@ def condor_format():
     return fmt
 
 def munge_jobid( theInput=None):
+    header=['ID',' ',' ',' ','OWNER','SUBMITTED','RUN_TIME','ST','PRI','SIZE','CMD']
     if theInput==None:
 	return None
     linput=theInput.split('\n')
     loutput=[]
+    loutput.append("\t".join(header))
     for line in linput:
 	if line=='':
             continue

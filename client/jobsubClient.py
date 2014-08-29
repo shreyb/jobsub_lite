@@ -30,6 +30,8 @@ import logSupport
 from distutils import spawn
 import subprocess 
 import hashlib
+import tempfile
+import tarfile
 
 def version_string():
     ver = constants.__rpmversion__
@@ -62,13 +64,14 @@ class JobSubClientSubmissionError(Exception):
 class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
-                 dropboxServer=None, server_version='current'):
+                 dropboxServer=None, useDag=False, server_version='current'):
         self.server = server
         actual_server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
+        self.useDag=useDag
 
         self.credentials = get_client_credentials()
         self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
@@ -134,6 +137,8 @@ class JobSubClient:
         # Submit URL: Depends on the VOMS Role
         if self.acctRole:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+        elif self.useDag:
+            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
         else:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
@@ -177,6 +182,87 @@ class JobSubClient:
         response.close()
 
         return result
+
+
+    def submit_dag(self):
+        post_data = [
+            ('jobsub_args_base64', self.serverArgs_b64en),
+            ('jobsub_client_version', version_string()),
+        ]
+
+        logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
+        logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
+        logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
+        #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(self.submitURL, self.credentials)
+
+        # Set additional curl options for submit
+        curl.setopt(curl.POST, True)
+        #if we uploaded a dropbox file we saved the actual hostname to self.server and sel.submitURL
+        #so we need to disable SSL_VERIFYHOST
+        if self.jobDropboxURIMap and self.dropboxServer is None:
+            curl.setopt(curl.SSL_VERIFYHOST, 0)
+
+
+        # If it is a local file upload the file
+        if self.requiresFileUpload(self.jobExeURI):
+            post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
+            payloadFileName=self.makeDagPayload(uri2path(self.jobExeURI))
+            post_data.append(('jobsub_payload', (pycurl.FORM_FILE, payloadFileName)))
+        #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+        curl.setopt(curl.HTTPPOST, post_data)
+        try:
+            curl.perform()
+        except pycurl.error, error:
+            errno, errstr = error
+            err="PyCurl Error %s: %s" % (errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            if errno == 60:
+                err=err+"\nDid you remember to include the port number to "
+                err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
+            raise JobSubClientSubmissionError(err)
+
+        self.printResponse(curl, response)
+        curl.close()
+        response.close()
+        
+
+
+    def makeDagPayload(self,infile):
+        fin=open(infile,'r')
+        dirpath=tempfile.mkdtemp()
+        os.chdir(dirpath)
+        fnameout="%s"%(os.path.basename(infile))
+        fout=open(fnameout,'w')
+        tar = tarfile.open('payload.tgz','w:gz')
+        
+        z=fin.read()
+        lines=z.split('\n')
+        for l in lines:
+            wrds=re.split('\s+',l)
+            la=[]
+            for w in wrds:
+                w2=re.sub('^[a-z]+://','',w)
+                if w != w2:
+                    b=os.path.basename(w2)
+                    w3=" ${JOBSUB_EXPORTS} ./%s"%b
+                    la.append(w3)
+                    tar.add(w2,b)
+                else:
+                    la.append(w)
+            la.append('\n')
+            l2=' '.join(la)
+            fout.write(l2)
+    
+    
+        fin.close()
+        fout.close()
+        tar.add(fnameout,fnameout)
+        tar.close()
+        return "%s/payload.tgz" % dirpath
 
 
     def submit(self):

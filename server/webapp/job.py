@@ -22,6 +22,7 @@ from condor_commands import condor, api_condor_q,ui_condor_q
 from condor_commands import classad_to_dict,constructFilter
 from sandbox import SandboxResource
 from history import HistoryResource
+from dag import DagResource
 
 
 
@@ -31,6 +32,7 @@ class AccountJobsResource(object):
 	self.role=None
         self.sandbox = SandboxResource()
 	self.history = HistoryResource()
+        self.dag = DagResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,

@@ -2,7 +2,7 @@
 umask 002
 DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   cmd="jobsub $@"
+   cmd="dagNabbit.py $@"
    date=`date`
    echo `whoami` >> /tmp/jobsub_env_runner.log
    echo "CWD: `pwd`" >> /tmp/jobsub_env_runner.log
@@ -40,10 +40,10 @@ if [ $RSLT == 0 ] ; then
           rm $file
         fi
 fi
-echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
-if [ "$?" != "0" ]; then
-   export TRANSFER_INPUT_FILES=${JOBSUB_COMMAND_FILE_PATH}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
-fi
+#echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
+#if [ "$?" != "0" ]; then
+#   export TRANSFER_INPUT_FILES=${JOBSUB_COMMAND_FILE_PATH}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
+#fi
       
 if [ "$ENCRYPT_INPUT_FILES" = "" ]; then
    TEC=""
@@ -63,7 +63,9 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
 fi
 
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV $@"
+export JOBSUB_EXPORTS=" -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV "
+
+export JOBSUB_CMD="dagNabbit.py -i $@ -s"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log

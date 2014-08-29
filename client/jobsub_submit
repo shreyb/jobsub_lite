@@ -114,6 +114,7 @@ def parse_opts(argv):
                          type='string',
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
+                         default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args

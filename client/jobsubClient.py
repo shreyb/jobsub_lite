@@ -80,7 +80,7 @@ class JobSubClient:
 
         # TODO: Following is specific to the job submission and dropbox
         #       This should be pulled out of the constructor
-        
+
         if self.serverArgv:
             self.jobExeURI = get_jobexe_uri(self.serverArgv)
             self.jobExe = uri2path(self.jobExeURI)
@@ -90,7 +90,7 @@ class JobSubClient:
             if not os.path.exists(self.jobExe):
                 err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
                 raise JobSubClientError(err)
-                
+
 
             if self.jobDropboxURIMap:
 		tfiles=[]
@@ -215,7 +215,7 @@ class JobSubClient:
             logSupport.dprint(traceback.format_exc())
             if errno == 60:
                 err=err+"\nDid you remember to include the port number to "
-                err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
+                err=err+"your server specification \n( --jobsub-server %s )?"%self.server
             raise JobSubClientSubmissionError(err)
 
         self.printResponse(curl, response)
@@ -249,9 +249,9 @@ class JobSubClient:
                 err = "HTTP response:%s PyCurl Error %s: %s" % (x,errno, errstr)
                 if errno == 60:
                     err=err+"\nDid you remember to include the port number to "
-                    err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
-            	logSupport.dprint(traceback.format_exc())
-            	raise JobSubClientError(err)
+                    err=err+"your server specification \n( --jobsub-server %s )?"%self.server
+                logSupport.dprint(traceback.format_exc())
+                raise JobSubClientError(err)
 
         self.printResponse(curl, response)
         curl.close()
@@ -326,7 +326,7 @@ class JobSubClient:
             self.changeJobState(self.listURL, 'GET')
 
 
-    def list(self, jobid=None):
+    def listQ(self, jobid=None):
             #jobid=self.checkID(jobid)
             if jobid is None and self.acctGroup is None:
                 self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
@@ -504,11 +504,10 @@ def get_capath():
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
-          
 
-###################################################################################
+################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
-###################################################################################
+################################################################################
 
 def get_acct_role(acct_role, proxy):
     role = acct_role
@@ -516,7 +515,7 @@ def get_acct_role(acct_role, proxy):
         # If no role is specified, try to extract it from VOMS proxy
         voms_proxy = jobsubClientCredentials.VOMSProxy(proxy)
         if voms_proxy.fqan:
-            match = re.search('/Role=(.*)/', voms_proxy.fqan[0]) 
+            match = re.search('/Role=(.*)/', voms_proxy.fqan[0])
             if match.group(1) != 'NULL':
                 role = match.group(1)
     return role

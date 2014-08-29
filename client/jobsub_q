@@ -55,6 +55,7 @@ def parse_opts(argv):
                          type='string',
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
+                         default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     opt_group.add_option('--jobsub-server',
@@ -131,7 +132,7 @@ def main(argv):
             if options.summary:
                 js_client.summary()
             else:
-                js_client.list(options.jobId)
+                js_client.listQ(options.jobId)
             etime = time.time()
             print 'Remote Listing Processing Time: %s sec' % (etime - stime)
     except JobSubClientError, e:

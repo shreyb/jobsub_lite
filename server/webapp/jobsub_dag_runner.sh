@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-DEBUG_JOBSUB=TRUE
+#DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="dagNabbit.py $@"
    date=`date`

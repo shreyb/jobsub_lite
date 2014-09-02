@@ -85,6 +85,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/job.py
 /opt/jobsub/server/webapp/job.pyc
 /opt/jobsub/server/webapp/job.pyo
+/opt/jobsub/server/webapp/dropbox.py
+/opt/jobsub/server/webapp/dropbox.pyc
+/opt/jobsub/server/webapp/dropbox.pyo
 /opt/jobsub/server/webapp/dag.py
 /opt/jobsub/server/webapp/dag.pyc
 /opt/jobsub/server/webapp/dag.pyo

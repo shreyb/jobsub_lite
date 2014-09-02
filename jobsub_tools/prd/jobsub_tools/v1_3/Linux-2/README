@@ -546,3 +546,27 @@ v1_3_1_4_rc3
 ============================================================
   --fixed typo which prevents --start --end --sections from working
   obviously should be part of test suite 
+
+
+v1_3_2_0               9/2/14
+=====================================================
+
+--maxConcurrent (x) runs x number of jobs concurrently of -N submitted.
+  This is implemented in a DAG.
+
+--INC000000435202 and related fixed. Since v1_3_1_1, jobsub has been
+  redirecting stdout and stderr into the $TMP directory and then tailing
+  it back out to limit the size of log files that came back from a job.
+  Some users scripts thoughtfully clean up the $TMP directory, resulting
+  in no stdout or stderr returing from job.  Also since v1_3_1_1, ifdh 
+  is not set up in users jobs by default . Changing the default to set up
+  ifdh at run time on a per-experiment basis can be done with the 
+  'set_up_ifdh' setting in the jobsub_ini file like so:
+
+  [mu2e]
+  set_up_ifdh = True
+ 
+--https://cdcvs.fnal.gov/redmine/issues/6789  when --dataset_definition
+  is used to submit a SAM job,  SAM_DATASET, SAM_GROUP, SAM_PROJECT, SAM_USER
+  and SAM_STATION are now defined in user environment of grid job
+

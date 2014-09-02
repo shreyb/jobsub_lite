@@ -412,10 +412,12 @@ class JobSubClient:
             self.changeJobState(self.listURL, 'GET')
 
 
-    def list(self, jobid=None):
+    def list(self, jobid=None, userid=None):
             #jobid=self.checkID(jobid)
-            if jobid is None and self.acctGroup is None:
+            if jobid is None and self.acctGroup is None and userid is None:
                 self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
+            elif userid is not None:
+                self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
             elif jobid is None:
                 self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
             else:

@@ -210,7 +210,7 @@ def main(argv):
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-                             options.acctRole, srv_argv, options.dropboxServer, True)
+                             options.acctRole, srv_argv, options.dropboxServer, useDag=True)
     try:
         stime = time.time()
         js_client.submit_dag()

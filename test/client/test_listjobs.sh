@@ -6,6 +6,7 @@ if [ "$1" = "" ]; then
 fi
 source ./setup_env.sh
 
+
 JOB=$1
 
 $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --debug
@@ -14,9 +15,11 @@ $EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --jobid $JOB
 T2=$?
 $EXEPATH/jobsub_q.py $SERVER_SPEC --summary 
 T3=$?
-
-! (( $T1 || $T2 || $T3 ))
+$EXEPATH/jobsub_q.py $SERVER_SPEC --user $USER 
 T4=$?
-echo $0 exiting with status $T4
-exit $T4
+
+! (( $T1 || $T2 || $T3 || $T4 ))
+T5=$?
+echo $0 exiting with status $T5
+exit $T5
 

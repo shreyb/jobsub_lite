@@ -237,6 +237,12 @@ class CdfSettings(JobSettings):
                 settings['queuecount']=numJobs
                 settings['job_count']=numJobs
 
+        if not settings.has_key('firstSection'):
+            settings['firstSection']=1
+        if not settings.has_key('lastSection'):
+            settings['lastSection']=settings['queuecount']
+        if not settings.has_key('job_count'):
+            settings['job_count']=settings['queuecount']
 
                      
         return super(CdfSettings,self).checkSanity()

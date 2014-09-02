@@ -62,5 +62,8 @@ pass_or_fail
 echo testing removing job
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$GROUP.log  2>&1
 pass_or_fail
+echo testing dag submission 
+sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$GROUP.log  2>&1
+pass_or_fail
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
 for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

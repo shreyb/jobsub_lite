@@ -1,0 +1,12 @@
+<serial>
+jobsub  -n file:///cloud/login/dbox/jobsubDagTest/jobA.sh 1
+jobsub  -n file:///cloud/login/dbox/jobsubDagTest/jobB.sh 1
+</serial>
+<parallel>
+jobsub  -n file:///cloud/login/dbox/jobsubDagTest/jobC.sh 1
+jobsub  -n file:///cloud/login/dbox/jobsubDagTest/jobD.sh 1
+</parallel>
+<serial>
+jobsub  -n file:///cloud/login/dbox/jobsubDagTest/jobE.sh 1
+</serial>
+

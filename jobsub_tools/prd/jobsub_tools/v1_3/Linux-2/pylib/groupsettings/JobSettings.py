@@ -295,7 +295,10 @@ class JobSettings(object):
 		#file_group.add_option("--tar_directory", dest="tar_directory",action="store",
 		#					  help="put contents of TAR_DIRECTORY into self extracting tarfile.  On worker node, untar and then run your_script with your_script_arguments")
 
-		
+	        generic_group.add_option("--maxConcurrent", 
+                        dest="maxConcurrent", action="store",type="string", 
+                        help="max number of jobs running concurrently at given time. Use in conjunction with -N option to protect a shared resource.  Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed.  This is implemented by running the jobs in a DAG ")
+
 		sam_group.add_option("--dataset_definition", dest="dataset_definition",
 								action="store",type="string",
 								help="SAM dataset definition used in a Directed Acyclic Graph (DAG)")
@@ -472,6 +475,8 @@ class JobSettings(object):
 				raise InitializationError(err)
                 if settings['dataset_definition']!="":
                     settings['usedagman']=True
+                if settings.has_key('maxConcurrent') and settings['maxConcurrent']!="":
+                    settings['usedagman']=True
 			
 		return True
 
@@ -535,6 +540,9 @@ class JobSettings(object):
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("\n")
+                if settings.has_key('set_up_ifdh') and settings['set_up_ifdh']:
+                    f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
+
 		f.close()
 		self.wrapFileCopyInput()
 		if settings['verbose']:
@@ -787,7 +795,7 @@ class JobSettings(object):
 
 	def makeDAGBeginFiles(self):
 		settings = self.settings
-		dagbeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
+		dagbeginexe = "%s/%s.dagbegin.sh"%(settings['condor_exec'],settings['filetag'])
 		f = open(dagbeginexe,'wx')
 		f.write("#!/bin/sh -x\n")
                 f.write("exit 0\n")
@@ -893,7 +901,7 @@ class JobSettings(object):
 	
 	def makeDAGEndFiles(self):
 		settings = self.settings
-		dagendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
+		dagendexe = "%s/%s.dagend.sh"%(settings['condor_exec'],settings['filetag'])
 		f = open(dagendexe,'wx')
 		f.write("#!/bin/sh -x\n")
                 f.write("exit 0\n")
@@ -974,11 +982,15 @@ class JobSettings(object):
 	def makeDAGFile(self):
 		#print "JobSettings.makeDAGFile()"
 		settings=self.settings
+                jobname="DAG" 
+                if settings['dataset_definition']!="":
+                    jobname="SAM"
+
 		print settings['dagfile']
 
 		f = open(settings['dagfile'], 'w')
 		f.write("DOT %s.dot UPDATE\n"%settings['dagfile'])
-		f.write("JOB SAM_START %s\n"%settings['dagbeginfile'])
+		f.write("JOB %s_START %s\n"%(jobname,settings['dagbeginfile']))
                 if settings.has_key('firstSection'):
                     n=settings['firstSection']
                     exe='Section'
@@ -989,8 +1001,8 @@ class JobSettings(object):
 		for x in settings['cmd_file_list']:
 			f.write("JOB %s_%d %s\n"%(exe,n,x))
 			n+=1
-		f.write("JOB SAM_END %s\n"%settings['dagendfile'])
-		f.write("Parent SAM_START child ")
+		f.write("JOB %s_END %s\n"%(jobname,settings['dagendfile']))
+		f.write("Parent %s_START child "%jobname)
 		n1=nOrig
 		while (n1 <n):
 			f.write("%s_%d "%(exe,n1))
@@ -1001,7 +1013,7 @@ class JobSettings(object):
 		while (n1 <n):
 			f.write("%s_%d "%(exe,n1))
 			n1+=1
-		f.write("child SAM_END\n")
+		f.write("child %s_END\n"%jobname)
 		
 		f.close()
 	
@@ -1066,7 +1078,7 @@ class JobSettings(object):
 				settings['wrapper_cmd_array'].append(cmd3)
 				if settings['verbose']:
 					print cmd3
-			if settings['dataset_definition']=="":
+			if settings['usedagman']==False:
 				print"%s"%(settings['cmdfile'])
 			if uniquer==1:
 				self.makeCommandFile(job_iter)

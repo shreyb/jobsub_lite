@@ -50,10 +50,19 @@ class X509Credentials(Credentials):
         self.cert = cert
         self.key = key
 
+        try:
+            lt = x509_lifetime(self.cert)
+            self.validFrom = lt['stime']
+            self.validTo = lt['etime']
+        except:
+            self.validFrom = None
+            self.validTo = None
+            raise
+
 
     def exists(self):
         if (self.cert and self.key and
-            os.path.exists(cert) and os.path.exists(key)):
+            os.path.exists(self.cert) and os.path.exists(self.key)):
             return True
         return False
 
@@ -78,15 +87,6 @@ class X509Proxy(X509Credentials):
             self.proxy_file = self.getDefaultProxyFile()
 
         X509Credentials.__init__(self, cert=self.proxyFile, key=self.proxyFile)
-
-        try:
-            lt = x509_lifetime(self.proxyFile)
-            self.validFrom = lt['stime']
-            self.validTo = lt['etime']
-        except:
-            self.validFrom = None
-            self.validTo = None
-            raise
 
 
     def getDefaultProxyFile(self):

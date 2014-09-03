@@ -16,34 +16,28 @@ from util import mkdir_p
 from util import digest_for_file
 from users import UsersResource
 from dropbox import DropboxResource
-from jobsub_help import JobsubHelpResource
 
 from cherrypy.lib.static import serve_file
 
 from shutil import copyfileobj, rmtree
 
 
-@cherrypy.popargs('acctgroup')
-class AccountingGroupsResource(object):
-    def __init__(self):
-        self.jobs = AccountJobsResource()
-        self.users = UsersResource()
-        self.help = JobsubHelpResource()
-        self.dropbox = DropboxResource()
-
+class JobsubHelpResource(object):
     def doGET(self, acctgroup):
-        """ Query list of accounting groups. Returns a JSON list object.
-            API is /jobsub/acctgroups/
+        """ Executes the jobsub tools command with the help argument and returns the output.
+            API call is /jobsub/acctgroups/<group_id>/help
         """
-        if acctgroup is None:
-            return {'out': get_supported_accountinggroups()}
-        else:
-            # No action at this time
-            pass
+        jobsub_args = ['--help']
+        subject_dn = cherrypy.request.headers.get('Auth-User')
+        uid = get_uid(subject_dn)
+        rc = execute_jobsub_command(acctgroup, uid, jobsub_args)
+
+        return rc
+
 
     @cherrypy.expose
     @format_response
-    def index(self, acctgroup=None, **kwargs):
+    def index(self, acctgroup, **kwargs):
         try:
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
@@ -59,9 +53,12 @@ class AccountingGroupsResource(object):
                 err = 'User has not supplied subject dn'
                 logger.log(err)
                 rc = {'err': err}
-        except:
-            err = 'Exception on AccountingGroupsResource.index: %s'% sys.exc_info()[1]
+        except :
+            err = 'Exception on JobsubHelpResource.index %s'% sys.exc_info()[1]
             logger.log(err, traceback=True)
             rc = {'err': err}
 
         return rc
+
+
+

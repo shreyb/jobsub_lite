@@ -29,11 +29,13 @@ JOBSUB_SERVER = 'https://fifebatch.fnal.gov:8443'
 # Default JobSub job submission url pattern
 # https://server.com:8443/jobsub/api/<api-version>/acctgroups/<exp-name>/jobs/
 
-#JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/api/%s/acctgroups/%s/jobs/'
 JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
+JOBSUB_DAG_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/dag/'
+#JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/'
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
+JOBSUB_Q_USERID_URL_PATTERN = '%s/jobsub/users/%s/jobs/'
 JOBSUB_Q_SUMMARY_URL_PATTERN = '%s/jobsub/jobs/summary/'
 JOBSUB_Q_WITH_GROUP_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_Q_GROUP_JOBID_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'

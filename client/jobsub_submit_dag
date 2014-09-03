@@ -114,7 +114,6 @@ def parse_opts(argv):
                          type='string',
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
-                         default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
@@ -126,11 +125,6 @@ def parse_opts(argv):
                          default=None,
                          help='VOMS Role for priorities and accounting')
 
-    opt_group.add_option('--dag',
-                         dest='dag',
-                         action='store_true',
-                         default=False,
-                         help='submit and run a dagNabbit input file')
 
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
@@ -216,10 +210,10 @@ def main(argv):
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-                             options.acctRole, srv_argv, options.dropboxServer, options.dag)
+                             options.acctRole, srv_argv, options.dropboxServer, useDag=True)
     try:
         stime = time.time()
-        js_client.submit()
+        js_client.submit_dag()
         etime = time.time()
         print 'Remote Submission Processing Time: %s sec' % (etime - stime)
     except JobSubClientSubmissionError, e:

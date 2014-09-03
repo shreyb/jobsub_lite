@@ -91,8 +91,6 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['usepwd'],True)
         self.assertEqual(ns.settings['forceparrot'],False)
         self.assertEqual(ns.settings['forcenoparrot'],True)
-        self.assertEqual(ns.settings['usedagman'],False)
-        self.assertNotEqual(ns.settings['requirements'],None)
         self.assertNotEqual(ns.settings['environment'],None)
         self.assertEqual(ns.settings['lines'],[])
         self.assertNotEqual(ns.settings['group'],None)
@@ -185,17 +183,17 @@ class JobTest(unittest.TestCase):
 	self.stdioON()
 
         self.assertEqual(os.path.isfile(ns.settings['dagfile']),True,ns.settings['dagfile'])
-        self.assertEqual(os.path.isfile(ns.settings['sambeginfile']),True,ns.settings['sambeginfile'])
-        self.assertEqual(os.path.isfile(ns.settings['samendfile']),True,ns.settings['samendfile'])
+        self.assertEqual(os.path.isfile(ns.settings['dagbeginfile']),True,ns.settings['dagbeginfile'])
+        self.assertEqual(os.path.isfile(ns.settings['dagendfile']),True,ns.settings['dagendfile'])
         
         (retVal,output)=commands.getstatusoutput("grep RunOnGrid  %s"%ns.settings['cmdfile'])
         self.assertEqual(retVal,0,"file %s did not contain 'RunOnGrid' "%ns.settings['cmdfile'])
 
 
-        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['sambeginfile'])
+        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['dagbeginfile'])
         #self.assertEqual(retVal,0)
         
-        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['samendfile'])
+        #(retVal,output)=commands.getstatusoutput("grep RUN_ON_HEADNODE %s"%ns.settings['dagendfile'])
         #self.assertEqual(retVal,0)
 
 	cmd="wc -l %s"%ns.settings['dagfile']
@@ -226,7 +224,7 @@ class JobTest(unittest.TestCase):
         self.assertEqual(retVal,0,"%s exited with status %s"%(cmd,retVal))
         
         self.assertEqual(output.find('+AccountingGroup = "group_group_w'),0)
-        (retVal,output)=commands.getstatusoutput("grep 'queue 11' %s"%ns.settings['cmdfile'])
+        (retVal,output)=commands.getstatusoutput("grep 'queue 1' %s"%ns.settings['cmdfile'])
         self.assertEqual(retVal,0)
         
         (retVal,output)=commands.getstatusoutput("grep RunOnGrid  %s"%ns.settings['cmdfile'])

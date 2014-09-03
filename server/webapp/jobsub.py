@@ -127,5 +127,42 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
             newlist.append(m)
     result['err']=newlist
     logger.log('jobsub command result: %s' % str(result))
+    return result
+
+def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
+
+    envrunner = os.environ.get('DAGMAN_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_dag_runner.sh')
+    command = [envrunner] + jobsub_args
+    logger.log('jobsub command: %s' % command)
+    child_env = os.environ.copy()
+    child_env['SCHEDD']=schedd_name()
+    child_env['ROLE']=str(role)
+    child_env['WORKDIR_ID']=str(workdir_id)
+    child_env['GROUP']=str(acctgroup)
+    child_env['USER']=str(uid)
+    child_env['JOBSUB_CLIENT_VERSION']=str(jobsub_client_version)
+    if should_transfer_krb5cc(acctgroup):
+        creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+        cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
+        logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))
+        child_env['ENCRYPT_INPUT_FILES']=cache_fname
+        child_env['KRB5CCNAME']=cache_fname
+
+    
+    pp = Popen(command, stdout=PIPE, stderr=PIPE, env=child_env)
+
+
+    result = {
+        'out': pp.stdout.readlines(),
+        'err': pp.stderr.readlines()
+    }
+    errlist=result['err']
+    newlist=[]
+    ignore_msg='jobsub.ini for jobsub config'
+    for m in errlist:
+        if ignore_msg not in m:
+            newlist.append(m)
+    result['err']=newlist
+    logger.log('jobsub command result: %s' % str(result))
 
     return result

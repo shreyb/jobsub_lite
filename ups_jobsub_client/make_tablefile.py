@@ -21,44 +21,56 @@ QUALIFIERS = ""
 """
 
 table_template="""
-FILE=TABLE
-PRODUCT=jobsub_client
+FILE=table
+Product=jobsub_client
 
-GROUP:
+Flavor=ANY
+QUalifiers=
 
-  FLAVOR=ANY
-  QUALIFIERS=""
+Action=setup
 
+   setupenv()
+   proddir()
+   envPrepend(PYTHONPATH, ${UPS_PROD_DIR},':' )
+   envPrepend(PATH, ${UPS_PROD_DIR},':' )
+   envSet(JOBSUB_CLIENT_DIR, ${UPS_PROD_DIR})
 
-COMMON:
+   Execute(python -V 2>&1 , NO_UPS_ENV, PYVER)
+   #Execute(echo "before: $PYVER", NO_UPS_ENV)
+   If ( expr "$PYVER" : "Python 2.7" > /dev/null )
+      Execute(:,NO_UPS_ENV)
+   Else()
+      #Execute(echo "setting up python", NO_UPS_ENV)
+      SourceRequired(`ups setup python v2_7_3`, NO_UPS_ENV)
+      EnvSet(JOBSUB_CLIENT_SET_PYTHON,'True')
+   EndIf ( expr "$PYVER" : "Python 2.7" > /dev/null )
+   If ( expr "$PYTHONPATH" : ".*pycurl" > /dev/null )
+      Execute(:,NO_UPS_ENV)
+   Else()
+      #Execute(echo "setting up pycurl", NO_UPS_ENV)
+      SourceRequired(`ups setup pycurl`, NO_UPS_ENV)
+      EnvSet(JOBSUB_CLIENT_SET_PYCURL,'True')
+   EndIf ( expr "$PYTHONPATH" : ".*pycurl" > /dev/null )
+   Execute(python -V 2>&1 , NO_UPS_ENV, PYVER)
+   #Execute(echo "after: $PYVER", NO_UPS_ENV)
+   EnvUnSet(PYVER)
 
-  ACTION=SETUP
-    setupenv()
-    proddir()
-    envPrepend(PYTHONPATH, ${UPS_PROD_DIR} )
-    envPrepend(PATH, ${UPS_PROD_DIR})
-    execute("grep ' 5\.' /etc/redhat-release ",NO_UPS_ENV, IS_SL5 )
-    if( test -n "$IS_SL5" )
-      setupOptional(python v2_7_3)
-      setupOptional(pycurl )
-    endif( test -n "$IS_SL5" )
+Action=unsetup
+     if( test -n "$JOBSUB_CLIENT_SET_PYTHON" )
+       #Execute(echo "unsetting up python", NO_UPS_ENV)
+       sourceRequired(`ups unsetup python `, NO_UPS_ENV)
+       envUnset(JOBSUB_CLIENT_SET_PYTHON)
+     endif( test -n "$JOBSUB_CLIENT_SET_PYTHON" )
+     if( test -n "$JOBSUB_CLIENT_SET_PYCURL" )
+       #Execute(echo "unsetting up pycurl", NO_UPS_ENV)
+       sourceRequired(`ups unsetup pycurl `, NO_UPS_ENV)
+       envUnset(JOBSUB_CLIENT_SET_PYCURL)
+     endif( test -n "$JOBSUB_CLIENT_SET_PYCURL" )
+     pathRemove(PYTHONPATH, ${UPS_PROD_DIR} )
+     pathRemove(PATH, ${UPS_PROD_DIR})
+     unproddir()
+     unsetupenv()
 
-
-END:
-
-GROUP:
-  FLAVOR=ANY
-  QUALIFIERS="build"
-
-COMMON:
-
-  ACTION=SETUP
-    envSet(JOBSUB_TOOLS_DIR, ${UPS_PROD_DIR})
-    envPrepend(LD_LIBRARY_PATH, ${UPS_PROD_DIR}/lib/, ':' )
-    envPrepend(PYTHONPATH, ${UPS_PROD_DIR}, ':' )
-    envPrepend(PATH, ${UPS_PROD_DIR})
-
-END:
 
 """
 

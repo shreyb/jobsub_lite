@@ -24,7 +24,8 @@ __rpmrelease__='__RELEASE__'
 
 
 # Default JobSub Server
-JOBSUB_SERVER = 'https://fifebatch.fnal.gov:8443'
+JOBSUB_SERVER = os.environ.get('JOBSUB_SERVER',
+                               'https://fifebatch.fnal.gov:8443')
 #JOBSUB_SERVER_LIST = ['https://fermicloud136.fnal.gov:8443','https://fermicloud137.fnal.gov:8443']
 # Default JobSub job submission url pattern
 # https://server.com:8443/jobsub/api/<api-version>/acctgroups/<exp-name>/jobs/

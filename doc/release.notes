@@ -1,4 +1,25 @@
 ================================================================================
+v1.0
+================================================================================
+
+CLIENT
+------
+* Client commands default to JOBSUB_GROUP and JOBSUB_SERVER environment
+  variables if --group and --jobsub-server are not provided
+* Add support for dagnabbit. #6019
+* jobsub_q now prints a header column. #6791
+* jobsub_q now support --user option. #6517
+* Improved error reporting in case of failures. #6817
+
+SERVER
+------
+* Add support for dagnabbit. #6019
+* Bug Fix: Server now correctly compares information passed through
+  custom attributes like USAGE_MODELS. #6806
+* Bug Fix: Server properly cleans up proxy files if there are authentication
+  errors. #6660
+
+================================================================================
 v0.4
 ================================================================================
 

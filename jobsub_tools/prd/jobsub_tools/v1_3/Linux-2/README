@@ -570,3 +570,6 @@ v1_3_2_0               9/2/14
   is used to submit a SAM job,  SAM_DATASET, SAM_GROUP, SAM_PROJECT, SAM_USER
   and SAM_STATION are now defined in user environment of grid job
 
+v1_3_3     tbd
+============================================
+- #6670  --drain flag

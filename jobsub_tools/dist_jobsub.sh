@@ -15,6 +15,7 @@ fi
 if [ "$3" != "" ] ; then
     REV=$3
 fi
+mkdir -p ups_db/jobsub_tools
 ./make_tablefile.py $VERS$REV
 cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
 cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin

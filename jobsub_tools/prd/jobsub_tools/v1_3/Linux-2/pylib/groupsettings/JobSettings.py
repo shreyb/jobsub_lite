@@ -313,8 +313,8 @@ class JobSettings(object):
 		
 		
 		generic_group.add_option("--OS", dest="os",
-								 action="store",type="string",default="SL5",
-								 help="specify OS version of worker node. Default is SL5,  and SL6 is supported.  Comma seperated list '--OS=SL4,SL5,SL6' works as well ")
+								 action="store",type="string",
+								 help="specify OS version of worker node. Example --OS=SL5  Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
 
 		generic_group.add_option("-G","--group", dest="accountinggroup",
 								 action="store",type="string",

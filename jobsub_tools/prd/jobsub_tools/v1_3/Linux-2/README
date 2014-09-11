@@ -573,3 +573,6 @@ v1_3_2_0               9/2/14
 v1_3_3     tbd
 ============================================
 - #6670  --drain flag
+- #6886  removed default OS = SL5.  There is no default OS.  NB on gpsn01
+         this will require that the desired_os setting and the os setting
+         in jobsub.ini must agree or jobs will not start

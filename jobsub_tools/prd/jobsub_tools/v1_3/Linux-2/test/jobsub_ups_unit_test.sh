@@ -97,7 +97,17 @@ test_OS() {
    print_cmd_file
 
    # succeeds if foo and bar are in the DesiredOS line
-   grep 'DesiredOS *= *"foo,bar"' $file /dev/null && grep 'requirements.*DesiredOS' $file /dev/null
+   grep '+DesiredOS *= *"foo,bar"' $file /dev/null && grep 'requirements.*DesiredOS' $file /dev/null
+}  
+
+test_drain() {
+   SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   file=`jobsub -n -g --drain  /usr/bin/printenv`
+   print_cmd_file
+
+   # succeeds if Drain = True in jdf
+   grep '+Drain = True' $file /dev/null 
 }  
 
 
@@ -112,6 +122,7 @@ testsuite setups_suite	\
     test_append_requirements4 \
     test_append_accounting_group \
     test_OS \
+    test_drain \
    
 
 setups_suite "$@"

@@ -1,13 +1,21 @@
 #!/bin/sh 
 VERS=v1_3
 REV=_2_0
-./make_tablefile.py $VERS$REV
 
 if [ "$1" ==  "" ]; then
-	echo "usage $0 target_machine"
+	echo "usage $0 target_machine [VER] [REV]"
 	echo "tars up jobsub_tools and distributes it to /fnal/ups/prd"
 	exit -1
 fi
+
+if [ "$2" != "" ] ; then
+    VERS=$2
+fi
+
+if [ "$3" != "" ] ; then
+    REV=$3
+fi
+./make_tablefile.py $VERS$REV
 cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
 cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
 cd ups_db

@@ -173,6 +173,7 @@ class JobSettings(object):
                 self.settings['needs_appending']=True
                 self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_joblog_size']=5000000
+		self.settings['drain']=False
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -306,6 +307,9 @@ class JobSettings(object):
 		sam_group.add_option("--project_name", dest="project_name",
 								action="store",type="string",
 								help="optional project name for SAM DAG ")
+		generic_group.add_option("--drain", dest="drain",
+								action="store_true",
+								help="mark this job to be allowed to be drained or killed during downtimes ")
 		
 		
 		generic_group.add_option("--OS", dest="os",
@@ -1142,7 +1146,9 @@ class JobSettings(object):
                     f.write("%s\n" % thingy)
 	    if 'os' in settings:
 		f.write("+DesiredOS =\"%s\"\n"%settings['os'])
-	    if settings['site']:
+            if 'drain' in settings:
+                f.write("+Drain = %s\n"%settings['drain'])
+	    if 'site' in settings and settings['site']:
 		if settings['site']!='LOCAL':
                     f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
             f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])

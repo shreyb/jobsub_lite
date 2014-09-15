@@ -576,3 +576,5 @@ v1_3_3     tbd
 - #6886  removed default OS = SL5.  There is no default OS.  NB on gpsn01
          this will require that the desired_os setting and the os setting
          in jobsub.ini must agree or jobs will not start
+- #6763  feeding -N negative number has unpredictable results, now raises
+         an exception and exits

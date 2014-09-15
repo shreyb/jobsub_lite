@@ -440,6 +440,10 @@ class JobSettings(object):
 				err = "you used -e %s , but $%s must be set first for this to work!"%(arg,arg)
                                 raise InitializationError(err)
                                                     
+                if settings['queuecount'] < 1:
+                        err = "-N  must be a positive number"
+                        raise InitializationError(err)
+
                 if settings['istestjob'] and settings['queuecount'] > 1:
 			err = "you may only send one test job at a time, -N=%d not allowed" % settings['queuecount']
 			raise InitializationError(err)

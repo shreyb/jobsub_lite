@@ -9,11 +9,21 @@ from optparse import OptionGroup
 from JobsubConfigParser import JobsubConfigParser
 
 
-class UnknownInputError(Exception):pass
+class UnknownInputError(Exception):
+    def __init__(self,errMsg="Unknown Input"):
+         sys.exit(errMsg)
+         Exception.__init__(self, errMsg)
 
-class IllegalInputError(Exception):pass
 
-class InitializationError(Exception):pass
+class IllegalInputError(Exception):
+    def __init__(self,errMsg="Illegal Input"):
+         sys.exit(errMsg)
+         Exception.__init__(self, errMsg)
+
+class InitializationError(Exception):
+    def __init__(self,errMsg="Initialization Error"):
+         sys.exit(errMsg)
+         Exception.__init__(self, errMsg)
 
 class MyCmdParser(OptionParser):
 		
@@ -381,14 +391,14 @@ class JobSettings(object):
 		generic_group.add_option("--site", dest="site",action="store",
 							  help="submit jobs to this site ")
 
-		file_group.add_option("--input_tar_dir", dest="input_tar_dir",action="store",
-							  help="create self extracting tarball from contents of INPUT_TAR_DIR.  This tarball will be run on the worker node with arguments you give to your_script")
+		#file_group.add_option("--input_tar_dir", dest="input_tar_dir",action="store",
+		#					  help="create self extracting tarball from contents of INPUT_TAR_DIR.  This tarball will be run on the worker node with arguments you give to your_script")
 
 		file_group.add_option("--tar_file_name", dest="tar_file_name",action="store",
-							  help="name of tarball to submit, created from --input_tar_dir if specified")
+							  help="name of tarball to transfer to worker node. Will be added to the transfer_input_files list, and visible to the user job as $INPUT_TAR_FILE.  Does not work on submit host gpsn01, use the -f option to transfer a tar file to gpsn01")
 
-		file_group.add_option("--overwrite_tar_file", dest="overwrite_tar_file",action="store_true",
-							  help="overwrite TAR_FILE_NAME when creating tarfile using --input_tar_dir")
+		#file_group.add_option("--overwrite_tar_file", dest="overwrite_tar_file",action="store_true",
+		#					  help="overwrite TAR_FILE_NAME when creating tarfile using --input_tar_dir")
 		
 		#generic_group.add_option("-p", dest="forceparrot",
 		#						 action="store_true",default=False,
@@ -455,7 +465,10 @@ class JobSettings(object):
 		if settings['nologbuffer'] and settings['use_gftp']:
 			err = " --use_gftp and --no_log_buffer together make no sense"
 			raise InitializationError(err)
-	
+
+                if settings['submit_host']=="gpsn01.fnal.gov" and settings['tar_file_name'] !='':
+                        err = "tarball submission has been disabled for gpsn01, use the -f option instead"
+                        raise InitializationError(err) 
 	
 		if settings['nologbuffer'] and settings['joblogfile'] == "":
 			err = "you must specify an input value for the log file with -L if you use --no_log_buffer"
@@ -515,6 +528,9 @@ class JobSettings(object):
 		    f.write("#!/bin/sh\n")
 		f.write("#\n")
 		f.write("touch .empty_file\n")
+                if 'tar_file_basename' in settings:
+                    f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s}\n"%settings['tar_file_basename'])
+
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
                 f.write("umask 002\n")

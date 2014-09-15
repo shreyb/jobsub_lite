@@ -81,8 +81,8 @@ class CdfSettings(JobSettings):
                                  action="store",type="string",
                                  help="")
 
-        self.cdf_group.add_option("--donotdrain", dest="donotdrain",
-                                 action="store",type="string",
+        self.cdf_group.add_option("--donotdrain", dest="drain",
+                                 action="store_false",
                                  help="")
 
 
@@ -102,7 +102,6 @@ class CdfSettings(JobSettings):
 	preWrapCommands = [ 
 		"export USER=$GRID_USER",
 		"export CAF_JID=${DAGMANJOBID}",
-		"export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/${INPUT_TAR_FILE}",
 		"export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
                 "#replace '$' in OUTPUT_DESTINATION with literal ${CAF_SECTION}-${CAF_JID} value", 
 		"OUTPUT_DESTINATION=%s"%settings['outLocation'],
@@ -210,16 +209,18 @@ class CdfSettings(JobSettings):
 
         if settings.has_key('lastSection'):
 
-            if settings['lastSection'] <= 1:
+            if settings['lastSection'] < 1:
                 err = "--end value must be greater than 1"
                 raise InitializationError(err)
+        else:
+            settings['lastSection']=settings['queuecount']
 
-            if not settings.has_key('firstSection'):
-                settings['firstSection']=1
+        if not settings.has_key('firstSection'):
+            settings['firstSection']=1
 
-            numJobs=settings['lastSection']-settings['firstSection']+1
-            settings['queuecount']=numJobs
-            settings['job_count']=numJobs
+        numJobs=settings['lastSection']-settings['firstSection']+1
+        settings['queuecount']=numJobs
+        settings['job_count']=numJobs
 
         if settings.has_key('firstSection') and not settings.has_key('lastSection'):
             err='you must specify a --end value if you specify a --start one'

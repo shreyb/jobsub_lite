@@ -44,10 +44,10 @@ class CdfTest(JobTest):
         """give CdfSettings some bad input -- should complain"""
         ns = self.ns
         ns.runCmdParser(['--start=-3','some_script'])
-        self.assertRaises(InitializationError,ns.checkSanity)
+        self.assertRaises(SystemExit,ns.checkSanity)
         ns.runCmdParser(['--start=3','some_script'])
         ns.runCmdParser(['--end=1','some_script'])
-        self.assertRaises(InitializationError,ns.checkSanity)
+        self.assertRaises(SystemExit,ns.checkSanity)
     
         
 

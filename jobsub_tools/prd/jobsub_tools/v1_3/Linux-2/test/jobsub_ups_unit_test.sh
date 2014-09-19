@@ -110,6 +110,26 @@ test_drain() {
    grep '+Drain = True' $file /dev/null 
 }  
 
+test_mem_disk_cpu_1() {
+   SUBMIT_HOST=gpsn01.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   file=`jobsub -n -g --cpu 3 --disk 40980000 --memory 9999  /usr/bin/printenv`
+   print_cmd_file
+
+   # succeeds if foo and bar are in the DesiredOS line
+   grep 'request_cpu = 3' $file /dev/null && grep 'request_disk = 40980000' $file /dev/null && grep 'request_memory = 9999' $file /dev/null 
+}  
+
+test_mem_disk_cpu_2() {
+   SUBMIT_HOST=fifebatch1.fnal.gov
+   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   file=`jobsub -n -g --cpu 3 --disk 40980000 --memory 9999  /usr/bin/printenv`
+   print_cmd_file
+
+   # succeeds if foo and bar are in the DesiredOS line
+   grep 'request_cpu = 3' $file /dev/null && grep 'request_disk = 40980000' $file /dev/null && grep 'request_memory = 9999' $file /dev/null 
+}  
+
 
 
 testsuite setups_suite	\
@@ -123,6 +143,8 @@ testsuite setups_suite	\
     test_append_accounting_group \
     test_OS \
     test_drain \
+    test_mem_disk_cpu_1 \
+    test_mem_disk_cpu_2 \
    
 
 setups_suite "$@"

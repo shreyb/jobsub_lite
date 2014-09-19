@@ -310,57 +310,71 @@ class JobSettings(object):
                         dest="maxConcurrent", action="store",type="string", 
                         help="max number of jobs running concurrently at given time. Use in conjunction with -N option to protect a shared resource.  Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed.  This is implemented by running the jobs in a DAG ")
 
+		generic_group.add_option("--disk", dest="disk",
+			action="store",type="int",
+		        help="request worker nodes have at least this many MB of disk space ")
+
+		generic_group.add_option("--memory", dest="memory",
+			action="store",type="int",
+		        help="request worker nodes have at least this many MB of memory ")
+
+		generic_group.add_option("--cpu", dest="cpu",
+			action="store",type="int",
+		        help="request worker nodes have at least this many cpus ")
+
 		sam_group.add_option("--dataset_definition", dest="dataset_definition",
-								action="store",type="string",
-								help="SAM dataset definition used in a Directed Acyclic Graph (DAG)")
+			action="store",type="string",
+		        help="SAM dataset definition used in a Directed Acyclic Graph (DAG)")
 		
 		sam_group.add_option("--project_name", dest="project_name",
-								action="store",type="string",
-								help="optional project name for SAM DAG ")
+			action="store",type="string",
+			help="optional project name for SAM DAG ")
+
 		generic_group.add_option("--drain", dest="drain",
-								action="store_true",
-								help="mark this job to be allowed to be drained or killed during downtimes ")
+			action="store_true",
+			help="mark this job to be allowed to be drained or killed during downtimes ")
 		
 		
 		generic_group.add_option("--OS", dest="os",
-								 action="store",type="string",
-								 help="specify OS version of worker node. Example --OS=SL5  Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
+			 action="store",type="string",
+			 help="specify OS version of worker node. Example --OS=SL5  Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
 
 		generic_group.add_option("-G","--group", dest="accountinggroup",
-								 action="store",type="string",
-								 help="Group/Experiment/Subgroup for priorities and accounting")
+			 action="store",type="string",
+			 help="Group/Experiment/Subgroup for priorities and accounting")
 
 		generic_group.add_option("-v", "--verbose", dest="verbose",action="store_true",default=False,
-							  help="dump internal state of program (useful for debugging)")
-		generic_group.add_option("--resource-provides", type="string", action="callback",callback=self.resource_callback,
+		        help="dump internal state of program (useful for debugging)")
+		generic_group.add_option("--resource-provides", type="string", action="callback",
+                        callback=self.resource_callback,
                         help="request specific resources by changing condor jdf file.  For example: --resource-provides=CVMFS=OSG will add +CVMFS=\"OSG\" to the job classad attributes and '&&(CVMFS==\"OSG\")' to the job requirements")
 
 		generic_group.add_option("-M","--mail_always", dest="notify",
-								 action="store_const",const=2,
-								 help="send mail when job completes or fails")
+			 action="store_const",const=2,
+			 help="send mail when job completes or fails")
 		
 		generic_group.add_option("-q","--mail_on_error", dest="notify",
-								 action="store_const",const=1,
-								 help="send mail only when job fails due to error (default)")
+			 action="store_const",const=1,
+			 help="send mail only when job fails due to error (default)")
 		
 		generic_group.add_option("-Q","--mail_never", dest="notify",
-								 action="store_const",const=0,
-								 help="never send mail (default is to send mail on error)")
+			 action="store_const",const=0,
+			 help="never send mail (default is to send mail on error)")
 
 		generic_group.add_option("-T","--test_queue", dest="istestjob",
-								 action="store_true",default=False,
-								 help="Submit as a test job.  Job will run with highest\
-								 possible priority, but you can only have one such\
-								 job in the queue at a time.")
+			 action="store_true",default=False,
+			 help="Submit as a test job.  Job will run with highest\
+			 possible priority, but you can only have one such\
+			 job in the queue at a time.")
 
 		file_group.add_option("-L","--log_file", dest="joblogfile",action="store",
 							  help="Log file to hold log output from job.")
 		
 		file_group.add_option("--no_log_buffer", dest="nologbuffer",action="store_true",
-							  help="write log file directly to disk. Default is to copy it back after job is completed.  This option is useful for debugging but can be VERY DANGEROUS as joblogfile typically is sent to bluearc.  Using this option incorrectly can cause all grid submission systems at FNAL to become overwhelmed resulting in angry admins hunting you down, so USE SPARINGLY. ")
+			  help="write log file directly to disk. Default is to copy it back after job is completed.  This option is useful for debugging but can be VERY DANGEROUS as joblogfile typically is sent to bluearc.  Using this option incorrectly can cause all grid submission systems at FNAL to become overwhelmed resulting in angry admins hunting you down, so USE SPARINGLY. ")
 
 		generic_group.add_option("-g","--grid", dest="grid",action="store_true",
-							  help="run job on the FNAL GP  grid. Other flags can modify target sites to include other areas of the Open Science Grid")
+			  help="run job on the FNAL GP  grid. Other flags can modify target sites to include other areas of the Open Science Grid")
 		
 		generic_group.add_option("--nowrapfile", dest="nowrapfilex",action="store_true",
                         help="DISABLED: formerly was 'do not generate shell wrapper for fermigrid operations. (default is to generate a wrapfile)' This flag now does nothing. The wrapfiles work off site and protect file systems from user error")
@@ -1318,6 +1332,14 @@ class JobSettings(object):
 			self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%(settings['accountinggroup'],settings['user']))
 
                 self.handleResourceProvides(f,job_iter)
+
+                if 'disk' in settings:
+                    f.write("request_disk = %s\n"%settings['disk'])
+                if 'memory' in settings:
+                    f.write("request_memory = %s\n"%settings['memory'])
+                if 'cpu' in settings:
+                    f.write("request_cpu = %s\n"%settings['cpu'])
+
 		f.write("requirements  = %s\n"%self.condorRequirements())
 
 		f.write("\n")
@@ -1432,6 +1454,12 @@ class JobSettings(object):
 		self.addToLineSetting("+Agroup = \"group_%s\""%settings['group'])
 
                 self.handleResourceProvides(f,job_iter)
+                if 'disk' in settings:
+                    f.write("request_disk = %s\n"%settings['disk'])
+                if 'memory' in settings:
+                    f.write("request_memory = %s\n"%settings['memory'])
+                if 'cpu' in settings:
+                    f.write("request_cpu = %s\n"%settings['cpu'])
 
                 if 'overwriterequirements' in settings:
 

@@ -578,3 +578,4 @@ v1_3_3     tbd
          in jobsub.ini must agree or jobs will not start
 - #6763  feeding -N negative number has unpredictable results, now raises
          an exception and exits
+- #6956  make --help documentation for --tar_file_name  agree with what actually happens

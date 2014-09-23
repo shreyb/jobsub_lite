@@ -183,13 +183,13 @@ class JobSettings(object):
 	def runCmdParser(self,a=None,b=None):
 		(options, args) = self.cmdParser.parse_args(a,b)
 		
+		self.runFileParser()
 		new_settings=vars(options)
 		if new_settings.has_key('verbose') and new_settings['verbose']:
 			print "new_settings = ",new_settings
 		for x in new_settings.keys():
 			if new_settings[x] is not None:
 				self.settings[x]=new_settings[x]
-		self.runFileParser()
                 settings=self.settings
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])

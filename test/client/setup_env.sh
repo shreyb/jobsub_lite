@@ -34,6 +34,11 @@ if [ "$MACH" = "default" ]; then
 else
     export SERVER_SPEC=" --jobsub-server $SERVER "
 fi
+if [ "$OTHER_FLAGS" = "" ]; then
+    echo -n
+else
+    export SERVER_SPEC="$SERVER_SPEC $OTHER_FLAGS"
+fi
 if [ "$POOL" = "" ]; then
     export POOL=$MACH
 fi

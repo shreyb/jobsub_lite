@@ -10,12 +10,12 @@ source ./setup_env.sh
 export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py --group $GROUP --debug \
-       $SERVER_SPEC \
+       $SERVER_SPEC  $SUBMIT_FLAGS \
             -e SERVER   file://"$@"
 T1=$?
 
 $EXEPATH/jobsub_submit.py --group $GROUP \
-       $SERVER_SPEC \
+       $SERVER_SPEC $SUBMIT_FLAGS \
            -g -e SERVER   file://"$@"
 T2=$?
 

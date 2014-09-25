@@ -184,6 +184,7 @@ class JobSettings(object):
                 self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_joblog_size']=5000000
 		self.settings['drain']=False
+                self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -510,9 +511,14 @@ class JobSettings(object):
 				raise InitializationError(err)
                 if settings['dataset_definition']!="":
                     settings['usedagman']=True
+                
                 if settings.has_key('maxConcurrent') and settings['maxConcurrent']!="":
                     settings['usedagman']=True
-			
+
+                if settings['usedagman']:
+                    settings['jobsubparentjobid']="$(DAGManJobId).0@%s"%settings['submit_host']
+                    self.addToLineSetting("+JobsubParentJobId = %s" % settings['jobsubparentjobid'])
+
 		return True
 
 
@@ -543,7 +549,7 @@ class JobSettings(object):
 		f.write("#\n")
 		f.write("touch .empty_file\n")
                 if 'tar_file_basename' in settings:
-                    f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s}\n"%settings['tar_file_basename'])
+                    f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
 
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
@@ -1233,6 +1239,8 @@ class JobSettings(object):
                     'SAM_PROJECT':'project_name',
                     'SAM_PROJECT_NAME':'project_name',
                     'INPUT_TAR_FILE':'tar_file_basename',
+                    'JOBSUBJOBID':'jobsubjobid',
+                    'JOBSUBPARENTJOBID':'jobsubparentjobid',
                     }
             envStr=self.settings['environment']
             l1=len(envStr)

@@ -585,3 +585,5 @@ v1_3_3     tbd
 - #6934  now have --memory --disk and --cpu flags which take integers and
          request worker nodes with this much memory or disk in MB or
          this number of cpus 
+- #6790  JobsubJobId and JobsubParentJobId are now both in classad and
+         jobs execution environment

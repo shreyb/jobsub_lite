@@ -274,16 +274,20 @@ def refresh_proxies(agelimit=3600):
             already_processed.append(line)
             check=line.split("^")
             if len(check)==3:
-                ac_grp=check[0]
-                dn=check[1]
-                grp,user=ac_grp.split(".")
-                if user not in queued_users:
-                    queued_users.append(user)
-                grp=grp.replace("group_","")
-		proxy_name=os.path.basename(check[2])
-		x,uid,role=proxy_name.split('_')	
-                print "checking proxy %s %s %s %s"%(dn,user,grp,role)
-                authorize(dn,user,grp,role,agelimit)
+                try:
+                    ac_grp=check[0]
+                    dn=check[1]
+                    grp,user=ac_grp.split(".")
+                    if user not in queued_users:
+                        queued_users.append(user)
+                    grp=grp.replace("group_","")
+		    proxy_name=os.path.basename(check[2])
+		    x,uid,role=proxy_name.split('_')	
+                    print "checking proxy %s %s %s %s"%(dn,user,grp,role)
+                    authorize(dn,user,grp,role,agelimit)
+                except:
+                    logger.log("Error processing %s"%line)
+                    logger.log("%s"%sys.exc_info()[1])
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \

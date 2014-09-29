@@ -18,6 +18,9 @@ fi
 if [ "$GROUP" = "" ]; then
     export GROUP=nova
 fi
+if [ "$GROUP" = "cdf" ]; then
+    export SUBMIT_FLAGS=" $SUBMIT_FLAGS --tar_file_name dropbox://junk.tgz -N 2 "
+fi
 echo test simple submission
 RSLT=`sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1`
 echo "$RSLT" >$1.submit.$GROUP.log 2>1&
@@ -65,5 +68,10 @@ pass_or_fail
 echo testing dag submission 
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$GROUP.log  2>&1
 pass_or_fail
+echo testing cdf sam job
+cd cdf_dag_test
+sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >../$1.test_cdf_sam_job.log 2>&1
+pass_or_fail
+cd -
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
 for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

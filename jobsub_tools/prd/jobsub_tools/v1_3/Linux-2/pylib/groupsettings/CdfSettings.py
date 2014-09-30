@@ -171,7 +171,7 @@ class CdfSettings(JobSettings):
                   $CPY_OUT
                   LSTAT=$?
                   if [ $LSTAT -eq 0 ]; then break; fi
-                  sleep 10
+                  sleep 600
                 done
                 """,
 	]

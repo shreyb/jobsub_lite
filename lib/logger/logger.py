@@ -24,7 +24,7 @@ def log(msg='', context='', severity=logging.INFO, traceback=False):
 
 def setup_admin_logger():
     log_dir = os.environ.get("JOBSUB_LOG_DIR")
-    log_file = "%s/admin.log"%log_dir
+    log_file = "%s/krbrefresh.log"%log_dir
     logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
 
 

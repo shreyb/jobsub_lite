@@ -139,7 +139,7 @@ class CdfSettings(JobSettings):
                 "echo its contents:",
                 "ls -la ",
                 "echo untarring $INPUT_TAR_FILE",
-		"tar xvzf $INPUT_TAR_FILE",
+		""" if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi""",
                 "echo contents after untar:",
                 "ls -la ",
                 """echo executing: ./%s "$@"   """%os.path.basename(settings['exe_script']),
@@ -163,7 +163,17 @@ class CdfSettings(JobSettings):
 		"tar cvzf ${OUTPUT_TAR_FILE} * ",
                 """CPY_OUT="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
                 "echo executing:$CPY_OUT",
-                "$CPY_OUT",
+                """
+                NTRIES=3
+                LSTAT=1
+                for ITRY in `seq $NTRIES`
+                do
+                  $CPY_OUT
+                  LSTAT=$?
+                  if [ $LSTAT -eq 0 ]; then break; fi
+                  sleep 600
+                done
+                """,
 	]
         f = open(settings['wrapfile'], 'a')
 	if settings['verbose']:

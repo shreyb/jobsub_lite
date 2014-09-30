@@ -550,6 +550,7 @@ class JobSettings(object):
 		f.write("touch .empty_file\n")
                 if 'tar_file_basename' in settings:
                     f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
+                    f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")

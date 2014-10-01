@@ -147,7 +147,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 
-* Tue Sep 30 2014 Parag Mhashilkar <parag@fnal.gov> - 1.0.1-1
+* Wed Oct 1 2014 Parag Mhashilkar <parag@fnal.gov> - 1.0.1-1
 - Jobsub version v1.0.1
 
 * Wed Sep 10 2014 Parag Mhashilkar <parag@fnal.gov> - 1.0-1

@@ -187,12 +187,14 @@ class CdfSettings(JobSettings):
     def makeCommandFile(self,job_iter=0):
         settings=self.settings
         if job_iter>0:
-            tag='DAGMANJOBID=\$\(DAGManJobId\)\;CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)\;'
+            tag='CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)'
             x=settings['environment']
             y=re.sub(tag,"",x)
             this_section=job_iter+settings['firstSection']-1
-            sect="DAGMANJOBID=$(DAGManJobId);CAF_JOB_START_SECTION=%s;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(settings['firstSection'],this_section,settings['lastSection'])
-            settings['environment'] = y+";"+sect
+            sect="CAF_JOB_START_SECTION=%s;CAF_SECTION=%s;CAF_JOB_END_SECTION=%s"%(settings['firstSection'],this_section,settings['lastSection'])
+            y2=y+";"+sect
+            y=re.sub(";;",";",y2)
+            settings['environment'] = y
         super(CdfSettings,self).makeCommandFile(job_iter)
 
     def checkSanity(self):

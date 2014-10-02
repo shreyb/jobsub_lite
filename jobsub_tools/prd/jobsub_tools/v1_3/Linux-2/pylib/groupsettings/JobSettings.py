@@ -126,7 +126,7 @@ class JobSettings(object):
 		self.settings['requirements']='((Arch==\"X86_64\") || (Arch==\"INTEL\"))'
 		self.settings['environment']='CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP='+\
 						  self.settings['condor_tmp']+';CONDOR_EXEC='+\
-						  self.settings['condor_exec']
+						  self.settings['condor_exec']+';DAGMANJOBID=$(DAGManJobId)'
 		self.settings['lines']=[]
 		self.settings['group']=os.environ.get("GROUP","common")
 		self.settings['storage_group']=os.environ.get("STORAGE_GROUP")

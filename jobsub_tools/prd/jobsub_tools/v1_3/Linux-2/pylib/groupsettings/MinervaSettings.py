@@ -67,8 +67,8 @@ class MinervaSettings(JobSettings):
         return super(MinervaSettings,self).initCmdParser()
 
 
-    def makeWrapFile(self):
-        super(MinervaSettings,self).makeWrapFile()
+    def makeWrapFilePreamble(self):
+        super(MinervaSettings,self).makeWrapFilePreamble()
         
         f = open(self.settings['wrapfile'], 'a')
         

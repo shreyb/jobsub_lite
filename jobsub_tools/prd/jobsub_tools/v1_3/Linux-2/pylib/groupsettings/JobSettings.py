@@ -517,7 +517,7 @@ class JobSettings(object):
 
                 if settings['usedagman']:
                     settings['jobsubparentjobid']="$(DAGManJobId).0@%s"%settings['submit_host']
-                    self.addToLineSetting("+JobsubParentJobId = %s" % settings['jobsubparentjobid'])
+                    self.addToLineSetting("""+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
 
 		return True
 

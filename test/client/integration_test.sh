@@ -22,9 +22,9 @@ if [ "$GROUP" = "cdf" ]; then
     export SUBMIT_FLAGS=" $SUBMIT_FLAGS --tar_file_name dropbox://junk.tgz -N 2 "
 fi
 echo test simple submission
-RSLT=`sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1`
-echo "$RSLT" >$1.submit.$GROUP.log 2>1&
-JID=`echo "$RSLT" | grep 'se job id' | awk '{print $4}'`
+OUTFILE=$1.submit.$GROUP.log
+sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 GOTJID=`echo $JID| grep '[0-9].0@'`
 SUBMIT_WORKED=$?
 if [ "$SUBMIT_WORKED" = "0" ]; then
@@ -34,9 +34,9 @@ else
 fi 
 
 echo test submission with role
-RSLT2=`sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1` 
-echo "$RSLT2" >$1.submit_role.$GROUP.log 2>1&
-JID2=`echo "$RSLT2" | grep 'se job id' | awk '{print $4}'`
+OUTFILE=$1.submit_role.$GROUP.log
+sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+JID2=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 GOTJID2=`echo $JID2| grep '[0-9].0@'`
 SUBMIT_WORKED2=$?
 if [ "$SUBMIT_WORKED2" = "0" ]; then

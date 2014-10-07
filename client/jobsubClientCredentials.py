@@ -11,13 +11,14 @@ import subprocessSupport
 import jobsubUtils
 
 class CredentialsNotFoundError(Exception):
-    def __init__(self):
-       Exception.__init__(self, "Credentials not found")
+    def __init__(self,errMsg="Credentials not found. Try running kinit first."):
+       sys.exit(errMsg)
+       Exception.__init__(self, errMsg)
 
 
 class CredentialsError(Exception):
-    def __init__(self):
-       Exception.__init__(self, "Credentials erorr")
+    def __init__(self, errMsg="Credentials eror"):
+       Exception.__init__(self, errMsg)
 
 
 class Credentials():

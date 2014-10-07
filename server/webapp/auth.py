@@ -30,6 +30,7 @@ from util import needs_refresh
 from tempfile import NamedTemporaryFile
 from jobsub import get_voms,AcctGroupNotConfiguredError
 
+
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
         cherrypy.response.status = 401
@@ -174,16 +175,16 @@ def kadmin_command(command):
 
 
 def authenticate(dn):
-    # For now assume kerberos DN only
-    KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$)'
-    #for testing, using robot certs etc
-    #KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU.*/CN.*/CN=UID:(.*$)'
+    KCA_DN_PATTERN_LIST=os.environ.get('KCA_DN_PATTERN_LIST')
+    logger.log("dns patterns supported:%s "% KCA_DN_PATTERN_LIST )
 
-    username = re.findall(KCA_DN_PATTERN, dn)
-    if not (len(username) == 1 and username[0] != ''):
-        raise AuthenticationError(dn)
+    for pattern in KCA_DN_PATTERN_LIST.split(','):
+    	username = re.findall(pattern, dn)
+    	if len(username) >= 1 and username[0] != '':
+		return username[0]
 
-    return username[0]
+    raise AuthenticationError(dn)
+
 
 def x509_proxy_fname(username,acctgroup,acctrole=None):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')

@@ -81,6 +81,9 @@ class JobSubClient:
                              self.server, self.acctGroup
                        )
 
+        self.dagHelpURL = constants.JOBSUB_DAG_HELP_URL_PATTERN % (
+                             self.server, self.acctGroup
+                       )
         # TODO: Following is specific to the job submission and dropbox
         #       This should be pulled out of the constructor
 
@@ -435,8 +438,13 @@ class JobSubClient:
         return False
 
 
-    def help(self):
-        curl, response = curl_secure_context(self.helpURL, self.credentials)
+    def help(self,helpType='jobsubHelp'):
+
+        helpURL=self.helpURL
+        if helpType=='dag':
+            helpURL=self.dagHelpURL
+
+        curl, response = curl_secure_context(helpURL, self.credentials)
         return_value = None
 
         try:

@@ -189,7 +189,7 @@ def print_acctgroup_help(options):
     """
 
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
-    response = js_client.help()
+    response = js_client.help('dag')
 
     out = response.get('out')
 

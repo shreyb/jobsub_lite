@@ -22,11 +22,15 @@ from format import format_response
 from condor_commands import condor, api_condor_q,ui_condor_q
 from condor_commands import classad_to_dict,constructFilter
 from sandbox import SandboxResource
+from dag_help import DAGHelpResource
 
 
 
 @cherrypy.popargs('job_id')
 class DagResource(object):
+    
+    def __init__(self):
+       self.help = DAGHelpResource()
 
 
     def doPOST(self, acctgroup, job_id, kwargs):

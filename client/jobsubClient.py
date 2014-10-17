@@ -27,11 +27,14 @@ import pprint
 import constants
 import jobsubClientCredentials
 import logSupport
-from distutils import spawn
 import subprocess 
 import hashlib
 import tempfile
 import tarfile
+import socket
+import time
+from distutils import spawn
+
 
 def version_string():
     ver = constants.__rpmversion__
@@ -146,9 +149,6 @@ class JobSubClient:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
 
-
-
-
     def dropbox_upload(self):
         result = dict()
         post_data = list()
@@ -173,15 +173,17 @@ class JobSubClient:
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        serving_server = servicing_jobsub_server(curl)
         curl.close()
 
-        print "Server response code: %s" % response_code
+        print "SERVER RESPONSE CODE: %s" % response_code
         if response_code == 200:
             value = response.getvalue()
             if response_content_type == 'application/json':
                 result = json.loads(value)
             else:
-                print_formatted_response(value)
+                print_formatted_response(value, response_code,
+                                         self.server, serving_server)
         response.close()
 
         return result
@@ -208,7 +210,6 @@ class JobSubClient:
         #so we need to disable SSL_VERIFYHOST
         if self.jobDropboxURIMap and self.dropboxServer is None:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
-
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
@@ -346,6 +347,7 @@ class JobSubClient:
         curl.close()
         response.close()
 
+
     def checkID(self,jobid):
         if jobid is None:
             return jobid
@@ -355,6 +357,7 @@ class JobSubClient:
         if jobid=='':
             jobid = None
         return jobid
+
 
     def release(self, jobid):
         #jobid=self.checkID(jobid)
@@ -397,6 +400,7 @@ class JobSubClient:
 
         self.changeJobState(self.removeURL, 'DELETE')
 
+
     def history(self, userid=None, jobid=None):
             jobid=self.checkID(jobid)
             if jobid is None and userid is None:
@@ -409,6 +413,7 @@ class JobSubClient:
                 self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
 
             self.changeJobState(self.histURL, 'GET', ssl_verifyhost=False)
+
 
     def summary(self):
             self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % ( self.server)
@@ -477,20 +482,26 @@ class JobSubClient:
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-        print "Server response code: %s" % response_code
         value = response.getvalue()
-        if response_content_type == 'application/json':
-            try:
-                response_dict = json.loads(value)
-                response_err = response_dict.get('err')
-                response_out = response_dict.get('out')
-                print_formatted_response(response_out)
-                print_formatted_response(response_err, msg_type='ERROR')
-            except:
-                print_formatted_response(value)
-        else:
-            print_formatted_response(value)
+        serving_server = servicing_jobsub_server(curl)
 
+        if response_content_type == 'application/json':
+            print_json_response(value, response_code,
+                                self.server, serving_server)
+        else:
+            print_formatted_response(value, response_code,
+                                     self.server, serving_server)
+
+
+def servicing_jobsub_server(curl):
+    server = 'UNKNOWN'
+    try:
+        ip = curl.getinfo(pycurl.PRIMARY_IP)
+        server = constants.JOBSUB_SERVER_URL_PATTERN % socket.gethostbyaddr(ip)[0]
+    except:
+        # Ignore errors. This is not critical
+        pass
+    return server
 
 def curl_secure_context(url, credentials):
     """
@@ -536,10 +547,7 @@ def curl_context(url):
     return (curl, response)
 
 
-def print_formatted_response(msg, msg_type='OUTPUT', ignore_empty_msg=True):
-    if ignore_empty_msg and not msg:
-        return
-    print 'Response %s:' % msg_type
+def print_msg(msg):
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):
@@ -547,6 +555,39 @@ def print_formatted_response(msg, msg_type='OUTPUT', ignore_empty_msg=True):
     elif isinstance(msg, (dict)):
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(msg)
+  
+
+def print_server_details(response_code, server, serving_server):
+    print
+    print 'JOBSUB SERVER CONTACTED     : %s' % server
+    print 'JOBSUB SERVER RESPONDED     : %s' % serving_server
+    print 'JOBSUB SERVER RESPONSE CODE : %s' % response_code
+    print 'JOBSUB CLIENT FQDN          : %s' % socket.gethostname()
+    print 'JOBSUB CLIENT SERVICED TIME : %s' % time.strftime('%d/%b/%Y %X')
+
+
+def print_json_response(response, response_code, server, serving_server,
+                         ignore_empty_msg=True):
+    response_dict = json.loads(response)
+    output = response_dict.get('out')
+    error = response_dict.get('err')
+    # Print output and error
+    if output:
+        print_msg(output)
+    if error or not ignore_empty_msg:
+        print 'RESPONSE ERROR:'
+        print_msg(error)
+    print_server_details(response_code, server, serving_server)
+
+   
+
+def print_formatted_response(msg, response_code, server, serving_server,
+                             msg_type='OUTPUT', ignore_empty_msg=True):
+    if ignore_empty_msg and not msg:
+        return
+    print 'Response %s:' % msg_type
+    print_msg(msg)
+    print_server_details(response_code, server, serving_server)
 
 
 def get_client_credentials():

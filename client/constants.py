@@ -24,6 +24,7 @@ __rpmrelease__='__RELEASE__'
 
 
 # Default JobSub Server
+JOBSUB_SERVER_URL_PATTERN = 'https://%s:8443'
 JOBSUB_SERVER = os.environ.get('JOBSUB_SERVER',
                                'https://fifebatch.fnal.gov:8443')
 #JOBSUB_SERVER_LIST = ['https://fermicloud136.fnal.gov:8443','https://fermicloud137.fnal.gov:8443']

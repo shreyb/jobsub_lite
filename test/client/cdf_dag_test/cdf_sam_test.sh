@@ -24,7 +24,7 @@ if [ "$IS_FIFEBATCH" = "0" ]; then
     RESOURCE_PROVIDES="-g --OS=SL6 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC"
 fi
 
-gCMD="$EXEPATH/jobsub_submit \
+gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e SAM_STATION \
     -e SAM_GROUP \
     -e SAM_USER \
@@ -34,7 +34,6 @@ gCMD="$EXEPATH/jobsub_submit \
     -G cdf $RESOURCE_PROVIDES \
     -N 15 \
     --maxParallelSec 5 \
-    --mail_always   \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT \
     $SERVER_SPEC \

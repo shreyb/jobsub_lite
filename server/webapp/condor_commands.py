@@ -62,6 +62,12 @@ def munge_jobid( theInput=None):
 
 
 def constructFilter( acctgroup=None, uid=None, jobid=None):
+    if acctgroup=='None':
+	acctgroup=None
+    if uid=='None':
+	uid=None
+    if jobid=='None':
+	jobid=None
     lorw = ' '
     if acctgroup is None:
         ac_cnst = 'True'

@@ -28,6 +28,10 @@ def ui_condor_userprio():
 
 def ui_condor_queued_jobs_summary():
         all_queued1, cmd_err = subprocessSupport.iexe_cmd('condor_status -submitter -wide')
+	tmp=all_queued1.split('\n')
+        idx = [i for i, item in enumerate(tmp) if re.search('^.\s+RunningJobs', item)]
+        del tmp[idx[0]:]
+	all_queued1='\n'.join(tmp)
         all_queued2, cmd_err = subprocessSupport.iexe_cmd('/opt/jobsub/server/webapp/ifront_q.sh')
         all_queued="%s\n%s"%(all_queued1,all_queued2)
         return all_queued

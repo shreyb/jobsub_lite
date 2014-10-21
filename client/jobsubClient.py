@@ -236,14 +236,15 @@ class JobSubClient:
 
 
     def makeDagPayload(self,infile):
-        fin=open(infile,'r')
+        orig=os.getcwd()
         dirpath=tempfile.mkdtemp()
+        fin=open(infile,'r')
+        z=fin.read()
         os.chdir(dirpath)
         fnameout="%s"%(os.path.basename(infile))
         fout=open(fnameout,'w')
         tar = tarfile.open('payload.tgz','w:gz')
         
-        z=fin.read()
         lines=z.split('\n')
         for l in lines:
             wrds=re.split('\s+',l)
@@ -254,7 +255,9 @@ class JobSubClient:
                     b=os.path.basename(w2)
                     w3=" ${JOBSUB_EXPORTS} ./%s"%b
                     la.append(w3)
-                    tar.add(w2,b)
+                    os.chdir(orig)
+                    tar.add(uri2path(w),b)
+                    os.chdir(dirpath)
                 else:
                     la.append(w)
             la.append('\n')

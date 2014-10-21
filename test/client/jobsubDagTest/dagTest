@@ -1,12 +1,12 @@
 <serial>
-jobsub  --mail_always $SUBMIT_FLAGS file:///cloud/login/dbox/jobsubDagTest/jobA.sh 1
-jobsub  --mail_always $SUBMIT_FLAGS file:///cloud/login/dbox/jobsubDagTest/jobB.sh 1
+jobsub  --mail_always $SUBMIT_FLAGS file://jobA.sh 1
+jobsub  --mail_always $SUBMIT_FLAGS file://jobB.sh 1
 </serial>
 <parallel>
-jobsub  --mail_always $SUBMIT_FLAGS file:///cloud/login/dbox/jobsubDagTest/jobC.sh 1
-jobsub  --mail_always $SUBMIT_FLAGS file:///cloud/login/dbox/jobsubDagTest/jobD.sh 1
+jobsub  --mail_always $SUBMIT_FLAGS file://jobC.sh 1
+jobsub  --mail_always $SUBMIT_FLAGS file://jobD.sh 1
 </parallel>
 <serial>
-jobsub  --mail_always $SUBMIT_FLAGS file:///cloud/login/dbox/jobsubDagTest/jobE.sh 1
+jobsub  --mail_always $SUBMIT_FLAGS file://jobE.sh 1
 </serial>
 

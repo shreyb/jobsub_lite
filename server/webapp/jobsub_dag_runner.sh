@@ -63,12 +63,14 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
 fi
 
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_EXPORTS=" -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV "
+export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
+export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\"$JOBSUBPARENTJOBID\" -l +JobsubJobId=\"$JOBSUB_JOBID\" -l +Owner=\"$USER\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV "
 
 export JOBSUB_CMD="dagNabbit.py -i $@ -s"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
+   echo "JOBSUB_EXPORTS: $JOBSUB_EXPORTS "  >> /tmp/jobsub_env_runner.log
 fi
 chmod +x ${JOBSUB_COMMAND_FILE_PATH}
 RSLT=`$JOBSUB_CMD`

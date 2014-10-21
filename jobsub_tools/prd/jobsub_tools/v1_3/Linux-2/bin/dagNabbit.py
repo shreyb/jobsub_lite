@@ -646,9 +646,9 @@ class JobRunner(object):
                     args.condorSetup = 'source /opt/condor/condor.csh ;'
 
 		if host == args.submitHost:
-			cmd = """ %s  condor_submit_dag """ % args.condorSetup
+			cmd = """ %s  condor_submit_dag -dont_suppress_notification  """ % args.condorSetup
 		else:
-			cmd = """ssh %s " %s  condor_submit_dag """ % (args.submitHost,args.condorSetup)
+			cmd = """ssh %s " %s  condor_submit_dag -dont_suppress_notification """ % (args.submitHost,args.condorSetup)
 		cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
 		if args.maxJobs > 0:
 			cmd = cmd + " -maxjobs %d " % args.maxJobs

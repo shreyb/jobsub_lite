@@ -184,6 +184,7 @@ class JobSettings(object):
                 self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_joblog_size']=5000000
 		self.settings['drain']=False
+		self.settings['mail_domain']='fnal.gov'
                 self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -1321,6 +1322,10 @@ class JobSettings(object):
                 tval=self.shouldTransferInput()
                 f.write(tval)
 
+                if 'notify_user' not in settings:
+                    settings['notify_user']="%s@%s"%(settings['user'],settings['mail_domain'])
+
+                self.addToLineSetting("notify_user = %s"%settings['notify_user'])
 		if settings['grid']:
 			self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
 			self.addToLineSetting("+RunOnGrid			  = True")

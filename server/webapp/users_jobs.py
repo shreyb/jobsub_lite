@@ -38,14 +38,16 @@ class UsersJobsResource(object):
     @cherrypy.expose
     @cherrypy.popargs('param1')
     @cherrypy.popargs('param2')
+    @cherrypy.popargs('param3')
     @format_response
     def default(self,param1,param2=None,param3=None,  **kwargs):
         cherrypy.response.status = 501
+	logger.log("param1 %s param2 %s param3 %s"%(param1, param2, param3))
         try:
             if cherrypy.request.method == 'GET':
                 if param2=="jobs":
         		cherrypy.response.status = 200 
-        		filter = constructFilter(None,param1,None)
+        		filter = constructFilter(None,param1,param3)
         		logger.log("filter=%s"%filter)
         		user_jobs = ui_condor_q( filter  )
         		return {'out': user_jobs.split('\n')}

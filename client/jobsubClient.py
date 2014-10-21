@@ -428,15 +428,21 @@ class JobSubClient:
             if jobid is None and self.acctGroup is None and userid is None:
                 self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
             elif userid is not None:
-                self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
-            elif jobid is None:
+                if jobid is None:
+                    self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+                else:
+                    tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+                    self.listURL = "%s%s/"%(tmpURL,jobid)
+            elif jobid is not None:
+                self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
+            elif jobid is None and self.acctGroup is not None:
                 self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
-            else:
-                self.listURL = constants.JOBSUB_Q_GROUP_JOBID_URL_PATTERN % (
-                                 self.server, self.acctGroup, jobid
-                             )
+            else :
+                self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
 
             self.changeJobState(self.listURL, 'GET')
+                                                                                                                                                                                                                                                 
+
 
     def requiresFileUpload(self, uri):
         if uri:

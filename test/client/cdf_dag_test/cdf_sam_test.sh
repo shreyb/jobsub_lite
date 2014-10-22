@@ -33,8 +33,8 @@ gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e SAM_PROJECT \
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
-    -N 15 \
-    --maxParallelSec 5 \
+    -N 3 --generate-email-sumary \
+    --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT \
     $SERVER_SPEC \

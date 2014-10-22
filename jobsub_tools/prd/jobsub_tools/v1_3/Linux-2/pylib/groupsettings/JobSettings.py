@@ -186,6 +186,11 @@ class JobSettings(object):
 		self.settings['drain']=False
 		self.settings['mail_domain']='fnal.gov'
                 self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
+                (stat,jobsub)=commands.getstatusoutput("which jobsub")
+                self.settings['mail_summary']=False
+                self.settings['this_script']=jobsub
+                self.settings['summary_script']="%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
+                self.settings['dummy_script']="%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
 		#	print "%s : %s"%(w,self.settings[w])
@@ -340,6 +345,14 @@ class JobSettings(object):
 		generic_group.add_option("--OS", dest="os",
 			 action="store",type="string",
 			 help="specify OS version of worker node. Example --OS=SL5  Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
+
+		generic_group.add_option("--generate-email-summary", dest="mail_summary",
+			 action="store_true",default=False,
+			 help="generate and mail a summary report of completed/failed/removed jobs in a DAG")
+
+		generic_group.add_option("--email-to", dest="notify_user",
+			 action="store",type="string",
+			 help="email address to send job reports/summaries to (default is $USER@fnal.gov)")
 
 		generic_group.add_option("-G","--group", dest="accountinggroup",
 			 action="store",type="string",
@@ -972,8 +985,7 @@ class JobSettings(object):
 		f.close()
 		cmd = "chmod +x %s" % dagendexe
 		commands=JobUtils()
-		(retVal,rslt)=commands.getstatusoutput(cmd)
-
+                (retVal,rslt)=commands.getstatusoutput(cmd)
 
 		
 		
@@ -1046,8 +1058,12 @@ class JobSettings(object):
                 nOrig=n
 		for x in settings['cmd_file_list']:
 			f.write("JOB %s_%d %s\n"%(exe,n,x))
+                        if settings['mail_summary']:
+                            f.write("SCRIPT POST %s_%d %s  \n"%(exe,n,settings['dummy_script']))
 			n+=1
 		f.write("JOB %s_END %s\n"%(jobname,settings['dagendfile']))
+                if settings['mail_summary']:
+                    f.write("SCRIPT POST %s_END %s %s \n"%(jobname,settings['summary_script'],settings['dagendfile']))
 		f.write("Parent %s_START child "%jobname)
 		n1=nOrig
 		while (n1 <n):

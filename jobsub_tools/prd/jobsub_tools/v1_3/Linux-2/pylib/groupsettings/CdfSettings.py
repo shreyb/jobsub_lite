@@ -53,7 +53,7 @@ class CdfSettings(JobSettings):
                                  action="store",type="string",
                                  help="max parallel running section number (e.g. 30) ")
 
-        self.cdf_group.add_option("--email", dest="email",
+        self.cdf_group.add_option("--email", dest="notify_user",
                                  action="store",type="string",
                                  help="optional email address for summary output")
 

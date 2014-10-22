@@ -25,6 +25,7 @@ if [ "$IS_FIFEBATCH" = "0" ]; then
 fi
 
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    --debug
     -e SAM_STATION \
     -e SAM_GROUP \
     -e SAM_USER \

@@ -11,16 +11,18 @@ import errno
 import zipfile
 import tarfile
 import shutil
+import subprocessSupport
+import re
 
 from defaultServer import defaultServer
 
 import constants
-from jobsubClient import get_capath, get_client_credentials, print_formatted_response, version_string, print_json_response, servicing_jobsub_server
+from jobsubClient import get_capath, get_client_credentials, print_formatted_response, version_string, print_json_response, servicing_jobsub_server,JobSubClient
 
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer and options.jobId:
+        if options.acctGroup and options.jobsubServer and (options.jobId or options.list):
             return True
     except AttributeError:
         return False
@@ -81,6 +83,13 @@ def parse_opts(argv):
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
+    parser.add_option('--list-sandboxes',
+                      dest='list',
+                      action='store_true',
+                      metavar='<List Sandboxes and creation dates>',
+                      default=False,
+                      help='list all available sandboxes and creation date for given user/group ')
+
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
@@ -108,6 +117,23 @@ def checkDestDir(destDir):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
+def list_sandboxes(options):
+    print "stub for list_sandboxes"
+    creds=get_client_credentials()
+    cert=creds['cert']
+    cmd = "openssl x509 -in %s -noout -subject"%cert
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    userlist=re.findall('^.*/CN=UID:(.*$)',cmd_out)
+    if len(userlist)>0 and len(userlist[0])>0:
+        user=userlist[0]
+    else:
+        err="cannot extract user information from %s"%cert 
+        sys.exit(err)
+    submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (options.jobsubServer, options.acctGroup, user)
+    client=JobSubClient(options.jobsubServer, options.acctGroup,None,[])
+    client.changeJobState(submitURL, 'GET')
+
 
 def get_sandbox(options):
     creds = get_client_credentials()
@@ -193,7 +219,10 @@ def get_sandbox(options):
 def main(argv):
     options = parse_opts(argv)
     stime = time.time()
-    get_sandbox(options)
+    if options.list:
+        list_sandboxes(options)
+    else:
+        get_sandbox(options)
     etime = time.time()
     print 'Remote Submission Processing Time: %s sec' % (etime - stime)
 

@@ -67,7 +67,6 @@ class AccountJobsResource(object):
         return rc
 
 
-    @check_auth
     def doDELETE(self, acctgroup, job_id):
         rc = {'out': None, 'err': None}
 
@@ -84,7 +83,6 @@ class AccountJobsResource(object):
         return rc
 
 
-    @check_auth
     def doPUT(self, acctgroup, job_id, kwargs):
         rc = {'out': None, 'err': None}
 
@@ -110,7 +108,6 @@ class AccountJobsResource(object):
         return rc
 
 
-    @check_auth
     def doPOST(self, acctgroup, job_id, kwargs):
         """ Create/Submit a new job. Returns the output from the jobsub tools.
             API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
@@ -175,14 +172,15 @@ class AccountJobsResource(object):
 
     @cherrypy.expose
     @format_response
+    @check_auth
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
             self.role = kwargs.get('role')
-            if cherrypy.request.method == 'GET':
-                rc = self.doGET(acctgroup,job_id, kwargs)
-            elif is_supported_accountinggroup(acctgroup):
+            if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
+                elif cherrypy.request.method == 'GET':
+                    rc = self.doGET(acctgroup,job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     rc = self.doDELETE(acctgroup, job_id)
                 elif cherrypy.request.method == 'PUT':

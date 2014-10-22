@@ -75,6 +75,7 @@ class JobSubClient:
         self.acctGroup = acct_group
         self.serverArgv = server_argv
         self.useDag=useDag
+        self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
 
         self.credentials = get_client_credentials()
         self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
@@ -405,12 +406,15 @@ class JobSubClient:
 
 
     def history(self, userid=None, jobid=None):
-            jobid=self.checkID(jobid)
+        servers = get_jobsub_server_aliases(self.server)
+        jobid = self.checkID(jobid)
+
+        for server in servers:
             if jobid is None and userid is None:
-                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (self.server, self.acctGroup)
+                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (server, self.acctGroup)
             else:
                 self.histURL = constants.JOBSUB_HISTORY_WITH_USER_PATTERN % (
-                                 self.server, self.acctGroup, userid
+                                 server, self.acctGroup, userid
                              )
             if jobid is not None:
                 self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
@@ -478,29 +482,64 @@ class JobSubClient:
         return return_value
 
 
+    def extractResponseDetails(self, curl, response):
+        content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+        code = curl.getinfo(pycurl.RESPONSE_CODE)
+        value = response.getvalue()
+        serving_server = servicing_jobsub_server(curl)
+        return (content_type, code, value, serving_server)
+
+
+
     def printResponse(self, curl, response):
         """
         Given the curl and response objects print the response on screen
         """
 
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-        value = response.getvalue()
-        serving_server = servicing_jobsub_server(curl)
+        content_type, code, value, serving_server = self.extractResponseDetails(
+                                                        curl, response)
 
-        if response_content_type == 'application/json':
-            print_json_response(value, response_code,
-                                self.server, serving_server)
+        if content_type == 'application/json':
+            print_json_response(value, code, self.server, serving_server)
         else:
-            print_formatted_response(value, response_code,
-                                     self.server, serving_server)
+            print_formatted_response(value, code, self.server, serving_server)
 
+
+def get_jobsub_server_aliases(server):
+    # Set of hosts in the HA mode
+    aliases = set()
+
+    host_port = server.replace('https://', '')
+    host_port = host_port.replace('/', '')
+    tokens = host_port.split(':')
+    if tokens and (len(tokens) <= 2):
+        host = tokens[0] 
+        if len(tokens) == 2:
+            port = tokens[1] 
+        else:
+            port = constants.JOBSUB_SERVER_DEFAULT_PORT
+        # Filter bu TCP ports (5th arg = 6 below)
+        addr_info = socket.getaddrinfo(host, port, 0, 0, 6)
+        for info in addr_info:
+            # Each info is of the form (2, 1, 6, '', ('131.225.67.139', 8443))
+            ip, p = info[4]
+            js_s = constants.JOBSUB_SERVER_URL_PATTERN % (socket.gethostbyaddr(ip)[0], p)
+            aliases.add(js_s)
+
+    if not aliases:
+        # Just return the default one
+        aliases.add(server)
+
+    return aliases
+    
 
 def servicing_jobsub_server(curl):
     server = 'UNKNOWN'
     try:
         ip = curl.getinfo(pycurl.PRIMARY_IP)
-        server = constants.JOBSUB_SERVER_URL_PATTERN % socket.gethostbyaddr(ip)[0]
+        server = constants.JOBSUB_SERVER_URL_PATTERN % (
+                     socket.gethostbyaddr(ip)[0],
+                     constants.JOBSUB_SERVER_DEFAULT_PORT)
     except:
         # Ignore errors. This is not critical
         pass
@@ -561,12 +600,12 @@ def print_msg(msg):
   
 
 def print_server_details(response_code, server, serving_server):
-    print
-    print 'JOBSUB SERVER CONTACTED     : %s' % server
-    print 'JOBSUB SERVER RESPONDED     : %s' % serving_server
-    print 'JOBSUB SERVER RESPONSE CODE : %s' % response_code
-    print 'JOBSUB CLIENT FQDN          : %s' % socket.gethostname()
-    print 'JOBSUB CLIENT SERVICED TIME : %s' % time.strftime('%d/%b/%Y %X')
+    print >> sys.stderr, ''
+    print >> sys.stderr, 'JOBSUB SERVER CONTACTED     : %s' % server
+    print >> sys.stderr, 'JOBSUB SERVER RESPONDED     : %s' % serving_server
+    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s' % response_code
+    print >> sys.stderr, 'JOBSUB CLIENT FQDN          : %s' % socket.gethostname()
+    print >> sys.stderr, 'JOBSUB CLIENT SERVICED TIME : %s' % time.strftime('%d/%b/%Y %X')
 
 
 def print_json_response(response, response_code, server, serving_server,

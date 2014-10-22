@@ -70,7 +70,10 @@ sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$GROUP.log  2>&1
 pass_or_fail
 echo testing cdf sam job
 cd cdf_dag_test
-sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >../$1.test_cdf_sam_job.log 2>&1
+OUTFILE="../$1.test_cdf_sam_job.log"
+sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
+JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+GOTJID3=`echo $JID2| grep '[0-9].0@'`
 pass_or_fail
 cd -
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP

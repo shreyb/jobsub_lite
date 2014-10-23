@@ -209,7 +209,7 @@ def get_sandbox(options):
             value = fp.read()
             if response_content_type == 'application/json':
                 print_json_response(value, response_code,
-                                    self.server, serving_server)
+                                    options.jobsubServer, serving_server)
             else:
                 print_formatted_response(value, response_code,
                                          options.jobsubServer, serving_server)

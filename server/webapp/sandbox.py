@@ -90,7 +90,7 @@ class SandboxResource(object):
 		logger.log('walking %s'%jobs_file_path)
                 dirs=os.listdir(jobs_file_path)
                 for dir in dirs:
-                    if os.path.islink(os.path.join(jobs_file_path, dir)):
+                    if os.path.islink(os.path.join(jobs_file_path, dir)) and dir.find('@')>0:
 			frag="""<a href="../../%s/sandbox/">%s</a>"""%(dir,dir)
                         sandbox_cluster_ids.append(frag)
                 sandbox_cluster_ids.sort()

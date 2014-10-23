@@ -21,6 +21,19 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+v1_3_5 10/23/14
+=====================================================
+- #7088 mail summary of DAG node execution to users
+  when --generate-email-summary flag set.  
+  --email-to (email address) sends email to that address
+  rather than default $USER@fnal.gov 
+
+- #7020 --mail_always doesnt work from within DAGS, fixed
+
+- #7113 put $JOBSUBPARENTJOBID in environment for DAGS generated
+  by dagNabbit.py and jobsub_tools.jobusb
+
+
 v1_3_4 10/2/14
 ======================================================
 - #7104  error in jdf for DAG jobs

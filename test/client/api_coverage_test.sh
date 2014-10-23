@@ -55,10 +55,11 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/?jo
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/summary/ "
-
-#some URLS that need to be implemented and put in the API doc
-
 GET_URLS=${GET_URLS}" /jobsub/version/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/job_doesnt_exist/sandbox/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/sandboxes/${USER}/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/help/ "
+
 
 
 for URL in ${GET_URLS}; do

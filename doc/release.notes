@@ -1,10 +1,32 @@
 ================================================================================
+v1.0.2
+================================================================================
+
+CLIENT
+------
+* jobsub_q supports option --summary to display summary of queued jobs. #7030
+* jobsub_fetchlog supports option --list-sandboxes. #7112
+* Bug Fix: jobsub_q now works when only --jobid option is provided. #6836
+* Bug Fix: Jobsub client is more graceful when no client kerberoes credentials
+  are present. #7035
+* Bug Fix: Jobsub client commands print additional server information to stderr
+  to help with debugging issues. #7097
+* Bug Fix: jobsub_submit_dag --help now displays correct help message. #6949 #7113
+* Bug Fix: jobsub_history now contants all the jobsub servers in HA to get the
+  the history info. #7169
+
+SERVER
+------
+* Added an API to query jobsub server and tools version. #6955
+* Bug Fix: Jobsub server now correctly authenticates client with kcron
+  credentials. #7101
+
+================================================================================
 v1.0.1
 ================================================================================
 
 SERVER
 ------
-
 * Bug Fix: Fixed an issue where the krbrefresh.sh would fail for some
   use cases. #7084
 

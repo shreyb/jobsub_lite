@@ -30,7 +30,7 @@ class QueuedJobsResource(object):
         #job_id=kwargs.get('job_id')
         if user_id is None and kwargs is not None:
             user_id=kwargs.get('user_id')
-        filter = constructFilter(acctgroup,user_id,job_id)
+        filter = constructFilter(None,user_id,job_id)
         logger.log("filter=%s"%filter)
 	history = ui_condor_q( filter  )
         return {'out': history.split('\n')}

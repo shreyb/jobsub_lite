@@ -1,8 +1,15 @@
 #!/bin/sh 
 
 function pass_or_fail {
+
 if [ "$?" == "0" ]; then
-    echo "PASSED"
+    #echo $OUTFILE
+    grep -i exception $OUTFILE 
+    if [ "$?" == "0" ]; then
+    	echo "FAILED"
+    else
+	echo "PASSED"
+    fi
 else
     echo "FAILED"
 fi
@@ -45,27 +52,35 @@ else
     echo "FAILED submission problem, please see file $1.submit_role.$GROUP.log"
 fi 
 echo testing holding and releasing
+OUTFILE=$1.holdrelease.$GROUP.log
 sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$1.holdrelease.$GROUP.log 2>&1
 pass_or_fail
 echo testing dropbox functionality
+OUTFILE=$1.dropbox.$GROUP.log
 sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$1.dropbox.$GROUP.log 2>&1
 pass_or_fail
 echo test helpfile
+OUTFILE=$1.help.$GROUP.log 
 sh ${TEST_FLAG} ./test_help.sh $SERVER >$1.help.$GROUP.log 2>&1
 pass_or_fail
 echo test listing jobs
+OUTFILE=$1.list.$GROUP.log
 sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$1.list.$GROUP.log 2>&1
 pass_or_fail
 echo test condor_history
+OUTFILE=$1.history.$GROUP.log
 sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 >$1.history.$GROUP.log 2>&1
 pass_or_fail
 echo test retrieving zip_file from sandbox
+OUTFILE=$1.sandbox.$GROUP.log
 sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$GROUP.log 2>&1
 pass_or_fail
 echo testing removing job
+OUTFILE=$1.testrm.$GROUP.log
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$GROUP.log  2>&1
 pass_or_fail
 echo testing dag submission 
+OUTFILE=$1.testdag.$GROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$GROUP.log  2>&1
 pass_or_fail
 echo testing cdf sam job

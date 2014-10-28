@@ -2,6 +2,8 @@ import cherrypy
 import logger
 import os
 import time
+import socket
+import sys
 
 from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
 from format import format_response
@@ -24,18 +26,24 @@ class SandboxesResource(object):
 		filedict={}
 		command_path_root = get_command_path_root()
 		p=os.path.join(command_path_root, acctgroup, user_id)
-		l=["acctgroup: %s"%acctgroup, "user_id:%s"%user_id,p ]
-		for f in os.listdir(p):
-		    if f.find('@') > 0:
-			fp=os.path.join(p,f)
-			t=os.path.getctime(fp)
-			filedict[t]=f
-		keylist=filedict.keys()
 		l=["JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup)]
-		for key in sorted(keylist,key=float):
-		    itm="%s \t\t %s"% (filedict[key], time.ctime(key))
-		    l.append(itm)
-        	return {'out': l}
+		try:
+		    for f in os.listdir(p):
+		    	if f.find('@') > 0:
+				fp=os.path.join(p,f)
+				t=os.path.getctime(fp)
+				filedict[t]=f
+			keylist=filedict.keys()
+			for key in sorted(keylist,key=float):
+		    		itm="%s \t\t %s"% (filedict[key], time.ctime(key))
+		    		l.append(itm)
+		except:
+			logger.log("%s"%sys.exc_info()[1])
+		if len(filedict)==0:
+			host = socket.gethostname()
+			return {'out':'no sandbox information found on %s for user %s accounting_group %s'%(host,user_id,acctgroup)}
+		else:
+        		return {'out': l}
 	else:
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err)

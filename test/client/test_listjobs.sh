@@ -19,9 +19,9 @@ $EXEPATH/jobsub_q.py $SERVER_SPEC --user $USER
 T4=$?
 $EXEPATH/jobsub_q.py $SERVER_SPEC 
 T5=$?
-$EXEPATH/jobsub_q.py $SERVER_SPEC --jobid $JOBID
+$EXEPATH/jobsub_q.py $SERVER_SPEC --jobid $JOB
 T6=$?
-$EXEPATH/jobsub_q.py $SERVER_SPEC --user $USER --jobid $JOBID
+$EXEPATH/jobsub_q.py $SERVER_SPEC --user $USER --jobid $JOB
 T7=$?
 
 ! (( $T1 || $T2 || $T3 || $T4 || $T5 || $T6 || $T7 ))

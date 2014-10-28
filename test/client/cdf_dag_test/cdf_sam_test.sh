@@ -46,4 +46,31 @@ echo $gCMD
 $gCMD
 
 T0=$?
-exit $T0
+
+
+gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    --debug
+    -e SAM_STATION \
+    -e SAM_GROUP \
+    -e SAM_USER \
+    -e SAM_DATASET \
+    -e SAM_PROJECT \
+    -e IFDH_BASE_URI \
+    -G cdf $RESOURCE_PROVIDES \
+    -N 3 --generate-email-summary \
+    --mail_on_error --maxParallelSec 5 \
+    --dataset_definition=$SAM_DATASET \
+    --project_name=$SAM_PROJECT \
+    $SERVER_SPEC \
+    --tarFile=dropbox://input.tgz \
+     file://testSAM.sh $ foo bar baz"
+
+echo $gCMD2
+
+$gCMD2
+
+T1=$?
+! (( $T0 || $T1 ))
+
+T2=$?
+exit $T2

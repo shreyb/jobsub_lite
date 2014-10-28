@@ -109,7 +109,7 @@ class JobSubClient:
                 # replace uri with path on server
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
-                    if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
+                    if arg.find(constants.DROPBOX_SUPPORTED_URI)>=0:
                         key = self.jobDropboxURIMap.get(arg)
                         if key is not None:
                             values = result.get(key)
@@ -251,8 +251,8 @@ class JobSubClient:
             wrds=re.split('\s+',l)
             la=[]
             for w in wrds:
-                w2=re.sub('^[a-z]+://','',w)
-                if w != w2:
+                w2=uri2path(w)
+                if w != w2 :
                     b=os.path.basename(w2)
                     w3=" ${JOBSUB_EXPORTS} ./%s"%b
                     la.append(w3)
@@ -762,7 +762,7 @@ def get_jobexe_uri(argv):
 
 
 def uri2path(uri):
-    return re.sub('^[a-z]+://', '', uri)
+    return re.sub('^.\S+://', '', uri)
 
 
 def get_dropbox_uri_map(argv):
@@ -770,7 +770,7 @@ def get_dropbox_uri_map(argv):
     map = dict()
     idx = 0
     for arg in argv:
-        if arg.startswith(constants.DROPBOX_SUPPORTED_URI):
+        if arg.find(constants.DROPBOX_SUPPORTED_URI)>=0:
             map[arg] = digest_for_file(uri2path(arg))
             idx += 1
     return map

@@ -1,4 +1,19 @@
 ================================================================================
+v1.0.3
+================================================================================
+
+CLIENT
+------
+* Bug Fix: jobsub_submit --tarfile=dropbox:// and --tarfile dropbox:// now
+  correctly exhibit same behavior. #7227
+* Bug Fix: jobsub_fetchlog --list-sandboxes now queries all the servers in HA
+
+SERVER
+------
+* Bug Fix: Server does not fail with QueuedJobsResouce.index when jobsub_q
+  command is run without any options. #7226
+
+================================================================================
 v1.0.2
 ================================================================================
 

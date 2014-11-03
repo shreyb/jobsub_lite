@@ -77,7 +77,6 @@ class JobSubClient:
         self.useDag=useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
         serverParts=re.split(':',self.server)
-        print serverParts
         if len(serverParts) !=3:
             if len(serverParts)==1:
                 self.server="https://%s:%s"%(serverParts[0],self.serverPort)
@@ -89,7 +88,6 @@ class JobSubClient:
         else:
             if serverParts[2]!=self.serverPort:
                 self.serverPort=serverParts[2]
-        print self.server
         self.credentials = get_client_credentials()
         self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
 

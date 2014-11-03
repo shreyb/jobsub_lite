@@ -206,7 +206,8 @@ class AccountJobsResource(object):
     def doJobAction(self, acctgroup, job_id, job_action):
         dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(dn)
-        constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+        #constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+        constraint = '(Owner =?= "%s")' % (uid)
         # Split the jobid to get cluster_id and proc_id
 	stuff=job_id.split('@')
 	schedd_name='@'.join(stuff[1:])

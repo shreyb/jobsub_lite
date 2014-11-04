@@ -30,19 +30,23 @@ class SandboxesResource(object):
 		try:
 		    for f in os.listdir(p):
 		    	if f.find('@') > 0:
-				fp=os.path.join(p,f)
-				t=os.path.getctime(fp)
-				filedict[t]=f
-			keylist=filedict.keys()
-			for key in sorted(keylist,key=float):
-		    		itm="%s \t\t %s"% (filedict[key], time.ctime(key))
-		    		l.append(itm)
+				try:
+					fp=os.path.join(p,f)
+					t=os.path.getctime(fp)
+					filedict[t]=f
+				except:
+					logger.log("%s"%sys.exc_info()[1])
+		    keylist=filedict.keys()
+		    for key in sorted(keylist,key=float):
+		    	itm="%s \t\t %s"% (filedict[key], time.ctime(key))
+		    	l.append(itm)
 		except:
 			logger.log("%s"%sys.exc_info()[1])
 		if len(filedict)==0:
 			host = socket.gethostname()
 			return {'out':'no sandbox information found on %s for user %s accounting_group %s'%(host,user_id,acctgroup)}
 		else:
+			logger.log("%s"%l)
         		return {'out': l}
 	else:
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup

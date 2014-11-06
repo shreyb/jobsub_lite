@@ -14,7 +14,7 @@ def log(msg='', context='', severity=logging.INFO, traceback=False):
     here = whereAmI()
     msg = '%s %s' % (here, msg)
     if cherrypy.request.app is None:
-        setup_admin_logger()
+        setup_admin_logger(here)
         log_to_admin(msg,context,severity,traceback)
     else:
         try:
@@ -22,9 +22,16 @@ def log(msg='', context='', severity=logging.INFO, traceback=False):
         except:
             logging.log(severity, msg)
 
-def setup_admin_logger():
+def log_file_name(whereFrom):
+    logFileName="krbrefresh.log"
+    if whereFrom is not None:
+	if whereFrom.find('jobsub_preen')>=0:
+		logFileName="jobsub_preen.log"
+    return logFileName
+
+def setup_admin_logger(wherefrom=None):
     log_dir = os.environ.get("JOBSUB_LOG_DIR")
-    log_file = "%s/krbrefresh.log"%log_dir
+    log_file = "%s/%s"%(log_dir,log_file_name(wherefrom))
     logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
 
 

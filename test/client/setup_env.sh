@@ -28,7 +28,8 @@ else
 fi
 export MACH=$1
 shift
-export SERVER=https://${MACH}:8443
+#export SERVER=https://${MACH}:8443
+export SERVER=$MACH 
 if [ "$MACH" = "default" ]; then
     export SERVER_SPEC=""
 else

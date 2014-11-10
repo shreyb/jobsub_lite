@@ -54,86 +54,71 @@ if [ "${KRB5CCNAME}" != "" ]; then
    if [ -e "${_CONDOR_JOB_IWD}/${BK}" ]; then
       export KRB5CCNAME="${_CONDOR_JOB_IWD}/${BK}"
       chmod 400 ${KRB5CCNAME}
+      (while [ 0 ]; do kinit -R; sleep 3600 ; done ) &
    fi
-   (while [ 0 ]; do kinit -R; sleep 3600 ; done ) &
 fi
             """
             return ks
 
-	def parrotString(self):
-		ps="""
-#!/bin/sh
+        def logTruncateString(self):
+            lts = """
+function is_set {
+  [ "$1" != "" ]
+}
+    
+function get_log_sizes {
+    total=$JOBSUB_MAX_JOBLOG_SIZE
+    head=$JOBSUB_MAX_JOBLOG_HEAD_SIZE
+    tail=$JOBSUB_MAX_JOBLOG_TAIL_SIZE
+    if (( is_set $head) && ( is_set $tail )); then
+	 total=$(($head + $tail))   
+    elif ( is_set $total ); then
+	    if ((  is_set $head ) && ($total > $head)); then
+		tail=$(($total - $head))
+		total=$((head + tail))
+	    elif ((  is_set $tail ) && ($total > $tail)); then
+		head=$(($total - $tail))
+		total=$((head + tail))
+	    else
+                head=$(( $total / 5 ))
+                tail=$(( 4 * $total / 5))
+	    fi
+    else
+	total=5000000
+        head=1000000	
+	tail=4000000
+    fi
+    JOBSUB_MAX_JOBLOG_SIZE=$total
+    JOBSUB_MAX_JOBLOG_HEAD_SIZE=$head
+    JOBSUB_MAX_JOBLOG_TAIL_SIZE=$tail
 
-# Hold and clear arg list
-args="$@"
-set - ""
-
-# set up for 32 or 64 bit mode
-MACH=`uname -m`
-if   [ "${MACH}" == "x86_64" ] ; then
-  REL="current-x86_64"
-elif [  "${MACH}" == "i386" ] ; then
-  REL="current-i686"
-else
-  echo "In parrot init, machine is neither x86_64 nor i386"
-  date
-  hostname
-  uname -a
-  uname -m
-  printf "Unexpected and fatal!\n"
-  exit 1
-fi
-
-export PRO=/grid/fermiapp/minos/parrot
-export PARROT_DIR=${PRO}/${REL}
-export PATH=${PARROT_DIR}/bin:${PATH}
-export HTTP_PROXY="http://squid.fnal.gov:3128"
-
-# set u pParrot Temp Directory
-
-[ -d "/local/stage1" ] && mkdir -p /local/stage1/${LOGNAME}
-
-if [ -r "/local/stage1/${LOGNAME}" ] ; then
-  PTD=/local/stage1/${LOGNAME}/parrot # Fermigrid
-else
-  PTD=/var/tmp/${LOGNAME}/parrot
-fi
-
-parrot -m ${PRO}/mountfile.grow -H -t ${PTD} WRAPFILETAG ${args}
-
-		"""
-		return ps
+    export JOBSUB_MAX_JOBLOG_SIZE
+    export JOBSUB_MAX_JOBLOG_HEAD_SIZE
+    export JOBSUB_MAX_JOBLOG_TAIL_SIZE
+}
 	
-	def gftpString(self):
-		gfst="""
-function lock {
-return
-LCK="/grid/fermiapp/common/tools/lock"
-if [ -e "${LCK}" ]   
-then 
-	 ${LCK} 
-else 
-	 sleep $[($RANDOM % 600)] 
-fi 
-
+function jobsub_truncate {
+    get_log_sizes 
+    JOBSUB_LOG_SIZE=`wc -c $1 | awk '{print $1}'`
+    if ( ! is_set $JSB_TMP );then
+    	export JSB_TMP=/tmp/$$
+	mkdir -p $JSB_TMP
+    fi
+    JSB_OUT=$JSB_TMP/truncated
+    if [ $JOBSUB_LOG_SIZE -gt $JOBSUB_MAX_JOBLOG_SIZE ]; then
+	head -c $JOBSUB_MAX_JOBLOG_HEAD_SIZE $1 > $JSB_OUT
+	echo "\njobsub:---- truncated after $JOBSUB_MAX_JOBLOG_HEAD_SIZE bytes--\n" >>$JSB_OUT
+	echo "\njobsub:---- resumed for last $JOBSUB_MAX_JOBLOG_TAIL_SIZE bytes--\n" >>$JSB_OUT
+	tail -c $JOBSUB_MAX_JOBLOG_TAIL_SIZE $1 >> $JSB_OUT
+    else
+	cp $1 $JSB_OUT
+    fi
+    cat $JSB_OUT
+    rm $JSB_OUT
 }
+        """
+            return lts
 
-function lockfree {
-return 
-LCK="/grid/fermiapp/common/tools/lock"
-if [ -e "${LCK}" ] 
-then 
-	 ${LCK} free 
-fi
-}
-
-function gftp {
-${GLOBUS_LOCATION}/bin/globus-url-copy -dbg -vb $@ 
-}
-
-
-		"""
-		return gfst
 
 
 

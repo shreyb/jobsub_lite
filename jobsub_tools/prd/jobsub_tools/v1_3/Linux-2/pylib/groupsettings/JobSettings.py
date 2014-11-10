@@ -170,7 +170,6 @@ class JobSettings(object):
 		self.settings['cmd_file_list']=[]
 		self.settings['jobsub_tools_dir']=os.environ.get("JOBSUB_TOOLS_DIR","/tmp")
 		self.settings['ups_shell']=os.environ.get("UPS_SHELL")
-		self.settings['gftp_funcs']=commands.gftpString()
 		#self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
 		self.settings['downtime_file']='/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
 		self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
@@ -183,6 +182,8 @@ class JobSettings(object):
                 self.settings['needs_appending']=True
                 self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_joblog_size']=5000000
+		self.settings['jobsub_max_joblog_head_size']=1000000
+		self.settings['jobsub_max_joblog_tail_size']=4000000
 		self.settings['drain']=False
 		self.settings['mail_domain']='fnal.gov'
                 self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
@@ -541,8 +542,8 @@ class JobSettings(object):
 		raise Exception("parrot file generation has been turned off.  Please report this error to fife-jobsub-support@fnal.gov")
 		# print "makeParrotFile"
 		settings = self.settings
-		commands = JobUtils()
-		glob = commands.parrotString()
+                commands = JobUtils()
+                #glob = commands.parrotString()
 
 		glob = glob.replace('WRAPFILETAG', settings['wrapfile'])
 		f = open(settings['parrotfile'], 'w')
@@ -561,11 +562,6 @@ class JobSettings(object):
                 else:
 		    f.write("#!/bin/sh\n")
 		f.write("#\n")
-		f.write("touch .empty_file\n")
-                if 'tar_file_basename' in settings:
-                    f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
-                    f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
-
 		if settings['verbose']:
 			f.write("\n########BEGIN JOBSETTINGS makeWrapFilePreamble#############\n")
                 f.write("umask 002\n")
@@ -576,12 +572,20 @@ class JobSettings(object):
 				( os.path.basename(sys.argv[0]) ," ".join( sys.argv[1:]) ) )
 
 		f.write("\n")
+                f.write("%s\n"%JobUtils().logTruncateString())
+                f.write("\n#########################################################################\n")
+                f.write("# main ()                                                               #\n")
+                f.write("#########################################################################\n")
+		f.write("touch .empty_file\n")
+                if 'tar_file_basename' in settings:
+                    f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
+                    f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
+
 		
 		f.write("# Hold and clear arg list\n")
 		f.write("args=\"$@\"\n")
 		f.write("set - \"\"\n")
 		f.write("\n")
-		f.write("# To prevent output files from being transferred back\n")
 		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
 		f.write("mkdir -p $JSB_TMP\n")
 		f.write("export _CONDOR_SCRATCH_DIR=$_CONDOR_SCRATCH_DIR/no_xfer\n")
@@ -699,7 +703,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
-                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_JOBLOG_SIZE} ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
 		if settings['verbose']:

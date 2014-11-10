@@ -182,8 +182,8 @@ class JobSettings(object):
                 self.settings['needs_appending']=True
                 self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_joblog_size']=5000000
-		self.settings['jobsub_max_joblog_head_size']=1000000
-		self.settings['jobsub_max_joblog_tail_size']=4000000
+		#self.settings['jobsub_max_joblog_head_size']=1000000
+		#self.settings['jobsub_max_joblog_tail_size']=4000000
 		self.settings['drain']=False
 		self.settings['mail_domain']='fnal.gov'
                 self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
@@ -595,6 +595,10 @@ class JobSettings(object):
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 		f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
+                if settings.has_key('jobsub_max_joblog_tail_size'):
+		    f.write("""JOBSUB_MAX_JOBLOG_TAIL_SIZE=%s\n"""%settings['jobsub_max_joblog_tail_size'])
+                if settings.has_key('jobsub_max_joblog_head_size'):
+		    f.write("""JOBSUB_MAX_JOBLOG_HEAD_SIZE=%s\n"""%settings['jobsub_max_joblog_head_size'])
                 f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
 
 		f.write("\n")

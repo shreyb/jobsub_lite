@@ -64,19 +64,22 @@ fi
             lts = """
 function is_set {
   [ "$1" != "" ]
+  RSLT=$?
+  return $RSLT
 }
     
 function get_log_sizes {
     total=$JOBSUB_MAX_JOBLOG_SIZE
     head=$JOBSUB_MAX_JOBLOG_HEAD_SIZE
     tail=$JOBSUB_MAX_JOBLOG_TAIL_SIZE
+
     if (( is_set $head) && ( is_set $tail )); then
 	 total=$(($head + $tail))   
     elif ( is_set $total ); then
-	    if ((  is_set $head ) && ($total > $head)); then
+	    if ((  is_set $head ) && (($total > $head))); then
 		tail=$(($total - $head))
 		total=$((head + tail))
-	    elif ((  is_set $tail ) && ($total > $tail)); then
+	    elif ((  is_set $tail ) && (($total > $tail))); then
 		head=$(($total - $tail))
 		total=$((head + tail))
 	    else
@@ -88,13 +91,10 @@ function get_log_sizes {
         head=1000000	
 	tail=4000000
     fi
-    JOBSUB_MAX_JOBLOG_SIZE=$total
-    JOBSUB_MAX_JOBLOG_HEAD_SIZE=$head
-    JOBSUB_MAX_JOBLOG_TAIL_SIZE=$tail
+    export JOBSUB_MAX_JOBLOG_SIZE=$total
+    export JOBSUB_MAX_JOBLOG_HEAD_SIZE=$head
+    export JOBSUB_MAX_JOBLOG_TAIL_SIZE=$tail
 
-    export JOBSUB_MAX_JOBLOG_SIZE
-    export JOBSUB_MAX_JOBLOG_HEAD_SIZE
-    export JOBSUB_MAX_JOBLOG_TAIL_SIZE
 }
 	
 function jobsub_truncate {

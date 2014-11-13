@@ -24,6 +24,7 @@ import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
+from jobsubClient import http_code_to_rc
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -119,20 +120,23 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, None)
+    rc = 1
     try:
+        tmp_rc = 0
         for jid in options.jobId.split(','):
-            stime = time.time()
-            js_client.hold(jid)
-            etime = time.time()
-            print 'Remote Hold Processing Time: %s sec' % (etime - stime)
+            print 'Putting job with jobid=%s on hold' % jid
+            http_code = js_client.hold(jid)
+            tmp_rc += http_code_to_rc(http_code)
+        rc = tmp_rc
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())
-        return 1
     except Exception, e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
-        return 1
+
+    return rc
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

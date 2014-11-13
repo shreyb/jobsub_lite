@@ -175,8 +175,12 @@ class JobSubClient:
         for file, key in self.jobDropboxURIMap.items():
             post_data.append((key, (pycurl.FORM_FILE, uri2path(file))))
         curl.setopt(curl.HTTPPOST, post_data)
+        response_time = 0
         try:
+            stime = time.time()
             curl.perform()
+            etime = time.time()
+            response_time = etime - stime
         except pycurl.error, error:
             errno, errstr = error
             err= "PyCurl Error %s: %s" % (errno, errstr)
@@ -194,8 +198,8 @@ class JobSubClient:
             if response_content_type == 'application/json':
                 result = json.loads(value)
             else:
-                print_formatted_response(value, response_code,
-                                         self.server, serving_server)
+                print_formatted_response(value, response_code, self.server,
+                                         serving_server, response_time)
         response.close()
 
         return result
@@ -218,8 +222,8 @@ class JobSubClient:
 
         # Set additional curl options for submit
         curl.setopt(curl.POST, True)
-        #if we uploaded a dropbox file we saved the actual hostname to self.server and sel.submitURL
-        #so we need to disable SSL_VERIFYHOST
+        # If we uploaded a dropbox file we saved the actual hostname to
+        # self.server and self.submitURL so disable SSL_VERIFYHOST
         if self.jobDropboxURIMap and self.dropboxServer is None:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
 
@@ -230,21 +234,30 @@ class JobSubClient:
             post_data.append(('jobsub_payload', (pycurl.FORM_FILE, payloadFileName)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
+        http_code = 200
+        response_time = 0
         try:
+            stime = time.time()
             curl.perform()
+            etime = time.time()
+            response_time = etime - stime
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error, error:
             errno, errstr = error
-            err="PyCurl Error %s: %s" % (errno, errstr)
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
+                                                            errstr)
             logSupport.dprint(traceback.format_exc())
             if errno == 60:
-                err=err+"\nDid you remember to include the port number to "
-                err=err+"your server specification \n( --jobsub-server %s )?"%self.server 
+                err += "\nDid you remember to include the port number to "
+                err += "your server specification \n( --jobsub-server %s )?"%self.server 
+            logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
-        self.printResponse(curl, response)
+        self.printResponse(curl, response, response_time)
         curl.close()
         response.close()
-        
+        return http_code
 
 
     def makeDagPayload(self,infile):
@@ -301,31 +314,40 @@ class JobSubClient:
 
         # Set additional curl options for submit
         curl.setopt(curl.POST, True)
-        #if we uploaded a dropbox file we saved the actual hostname to self.server and sel.submitURL
-        #so we need to disable SSL_VERIFYHOST
+        # If we uploaded a dropbox file we saved the actual hostname to
+        # self.server and self.submitURL so disable SSL_VERIFYHOST
         if self.jobDropboxURIMap and self.dropboxServer is None:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
-
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
             post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
+
+        http_code = 200
+        response_time = 0
         try:
+            stime = time.time()
             curl.perform()
+            etime = time.time()
+            response_time = etime - stime
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error, error:
             errno, errstr = error
-            err="PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err="HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
+                                                          errstr)
             if errno == 60:
-                err=err+"\nDid you remember to include the port number to "
-                err=err+"your server specification \n( --jobsub-server %s )?"%self.server
+                err += "\nDid you remember to include the port number to "
+                err += "your server specification \n( --jobsub-server %s )?"%self.server
+            logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
-        self.printResponse(curl, response)
+        self.printResponse(curl, response, response_time)
         curl.close()
         response.close()
+        return http_code
 
 
     def changeJobState(self, url, http_custom_request, post_data=None,
@@ -345,22 +367,28 @@ class JobSubClient:
         if not ssl_verifyhost:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
 
+        http_code = 200
+        response_time = 0
         try:
+            stime = time.time()
             curl.perform()
+            etime = time.time()
+            response_time = etime - stime
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error, error:
             errno, errstr = error
-            x=curl.getinfo(pycurl.RESPONSE_CODE)
-            if True:
-                err = "HTTP response:%s PyCurl Error %s: %s" % (x,errno, errstr)
-                if errno == 60:
-                    err=err+"\nDid you remember to include the port number to "
-                    err=err+"your server specification \n( --jobsub-server %s )?"%self.server
-                logSupport.dprint(traceback.format_exc())
-                raise JobSubClientError(err)
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
+            if errno == 60:
+                err=err+"\nDid you remember to include the port number to "
+                err=err+"your server specification \n( --jobsub-server %s )?"%self.server
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError(err)
 
-        self.printResponse(curl, response)
+        self.printResponse(curl, response, response_time)
         curl.close()
         response.close()
+        return http_code
 
 
     def checkID(self,jobid):
@@ -386,7 +414,7 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        self.changeJobState(self.releaseURL, 'PUT', post_data)
+        return self.changeJobState(self.releaseURL, 'PUT', post_data)
 
 
     def hold(self, jobid):
@@ -401,7 +429,7 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        self.changeJobState(self.holdURL, 'PUT', post_data)
+        return self.changeJobState(self.holdURL, 'PUT', post_data)
 
 
     def remove(self, jobid):
@@ -413,50 +441,58 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        self.changeJobState(self.removeURL, 'DELETE')
+        return self.changeJobState(self.removeURL, 'DELETE')
 
 
     def history(self, userid=None, jobid=None):
         servers = get_jobsub_server_aliases(self.server)
         jobid = self.checkID(jobid)
 
+        rc = 0
         for server in servers:
             if jobid is None and userid is None:
-                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (server, self.acctGroup)
+                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (
+                                   server, self.acctGroup)
             else:
                 self.histURL = constants.JOBSUB_HISTORY_WITH_USER_PATTERN % (
-                                 server, self.acctGroup, userid
-                             )
+                                   server, self.acctGroup, userid)
             if jobid is not None:
                 self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
 
-            self.changeJobState(self.histURL, 'GET', ssl_verifyhost=False)
+            try:
+                http_code = self.changeJobState(self.histURL, 'GET',
+                                                ssl_verifyhost=False)
+                rc += http_code_to_rc(http_code)
+            except:
+                print 'Error retrieving history from the server %s' % server
+                rc += 1
+                logSupport.dprint(traceback.format_exc())
+        return rc
 
 
     def summary(self):
-            self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % ( self.server)
-            self.changeJobState(self.listURL, 'GET')
+        self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
+        return self.changeJobState(self.listURL, 'GET')
 
 
-    def list(self, jobid=None, userid=None):
-            #jobid=self.checkID(jobid)
-            if jobid is None and self.acctGroup is None and userid is None:
-                self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
-            elif userid is not None:
-                if jobid is None:
-                    self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
-                else:
-                    tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
-                    self.listURL = "%s%s/"%(tmpURL,jobid)
-            elif jobid is not None:
-                self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
-            elif jobid is None and self.acctGroup is not None:
-                self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
-            else :
-                self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
+    def listJobs(self, jobid=None, userid=None):
+        #jobid=self.checkID(jobid)
+        if jobid is None and self.acctGroup is None and userid is None:
+            self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
+        elif userid is not None:
+            if jobid is None:
+                self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+            else:
+                tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+                self.listURL = "%s%s/"%(tmpURL,jobid)
+        elif jobid is not None:
+            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
+        elif jobid is None and self.acctGroup is not None:
+            self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
+        else :
+            self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
 
-            self.changeJobState(self.listURL, 'GET')
-                                                                                                                                                                                                                                                 
+        return self.changeJobState(self.listURL, 'GET')
 
 
     def requiresFileUpload(self, uri):
@@ -508,7 +544,7 @@ class JobSubClient:
 
 
 
-    def printResponse(self, curl, response):
+    def printResponse(self, curl, response, response_time):
         """
         Given the curl and response objects print the response on screen
         """
@@ -517,9 +553,11 @@ class JobSubClient:
                                                         curl, response)
 
         if content_type == 'application/json':
-            print_json_response(value, code, self.server, serving_server)
+            print_json_response(value, code, self.server,
+                                serving_server, response_time)
         else:
-            print_formatted_response(value, code, self.server, serving_server)
+            print_formatted_response(value, code, self.server,
+                                     serving_server, response_time)
 
 
 def get_jobsub_server_aliases(server):
@@ -616,17 +654,22 @@ def print_msg(msg):
         pp.pprint(msg)
   
 
-def print_server_details(response_code, server, serving_server):
+def print_server_details(response_code, server, serving_server, response_time):
     print >> sys.stderr, ''
     print >> sys.stderr, 'JOBSUB SERVER CONTACTED     : %s' % server
     print >> sys.stderr, 'JOBSUB SERVER RESPONDED     : %s' % serving_server
-    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s' % response_code
+    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s (%s)' % (
+                             response_code,
+                             constants.HTTP_RESPONSE_CODE_STATUS.get(
+                                 response_code,
+                                 'Failed'))
+    print >> sys.stderr, 'JOBSUB SERVER SERVICED IN   : %s sec' % response_time
     print >> sys.stderr, 'JOBSUB CLIENT FQDN          : %s' % socket.gethostname()
     print >> sys.stderr, 'JOBSUB CLIENT SERVICED TIME : %s' % time.strftime('%d/%b/%Y %X')
 
 
 def print_json_response(response, response_code, server, serving_server,
-                         ignore_empty_msg=True):
+                        response_time, ignore_empty_msg=True):
     response_dict = json.loads(response)
     output = response_dict.get('out')
     error = response_dict.get('err')
@@ -636,17 +679,19 @@ def print_json_response(response, response_code, server, serving_server,
     if error or not ignore_empty_msg:
         print 'RESPONSE ERROR:'
         print_msg(error)
-    print_server_details(response_code, server, serving_server)
+    print_server_details(response_code, server, serving_server, response_time)
 
    
 
 def print_formatted_response(msg, response_code, server, serving_server,
-                             msg_type='OUTPUT', ignore_empty_msg=True):
+                             response_time, msg_type='OUTPUT',
+                             ignore_empty_msg=True, print_msg_type=True):
     if ignore_empty_msg and not msg:
         return
-    print 'Response %s:' % msg_type
+    if print_msg_type:
+        print 'Response %s:' % msg_type
     print_msg(msg)
-    print_server_details(response_code, server, serving_server)
+    print_server_details(response_code, server, serving_server, response_time)
 
 
 def get_client_credentials():
@@ -798,3 +843,9 @@ def digest_for_file(fileName, block_size=2**20):
     f.close()
     x=dig.hexdigest()
     return x
+
+
+def http_code_to_rc(http_code):
+    if http_code >= 200 and http_code < 300:
+        return 0
+    return 1

@@ -76,6 +76,20 @@ JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jo
 HTTP_GET = 'GET'
 HTTP_POST = 'POST'
 
+# Only conside success or failure. Do not translate to actual strings
+# 1XX: Informational
+# 2XX: Successful
+# 3XX: Redirection
+# 4XX: Client Error
+# 5XX: Server Error
+ 
+HTTP_RESPONSE_CODE_STATUS = {
+    200: 'Success',
+    201: 'Success',
+    203: 'Success',
+    204: 'Success',
+}
+
 ################################################################################
 # PyCurl Constants
 ################################################################################

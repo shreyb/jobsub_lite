@@ -4,20 +4,28 @@ import sys
 import optparse
 import pycurl
 import time
-import platform
-import json
 import os
 import errno
 import zipfile
 import tarfile
 import shutil
+import traceback
 import subprocessSupport
 import re
 
-from defaultServer import defaultServer
-
+import logSupport
 import constants
-from jobsubClient import get_capath, get_client_credentials, print_formatted_response, version_string, print_json_response, servicing_jobsub_server,JobSubClient,get_jobsub_server_aliases
+from defaultServer import defaultServer
+from jobsubClient import JobSubClient
+from jobsubClient import get_client_credentials
+from jobsubClient import print_formatted_response
+from jobsubClient import version_string
+from jobsubClient import print_json_response
+from jobsubClient import servicing_jobsub_server
+from jobsubClient import curl_secure_context
+from jobsubClient import JobSubClientError
+from jobsubClient import http_code_to_rc
+from jobsubClient import get_jobsub_server_aliases
 
 
 def required_args_present(options):
@@ -44,7 +52,7 @@ def parse_opts(argv):
                       default=os.environ.get('JOBSUB_GROUP'),
                       help='Group/Experiment/Subgroup for priorities and accounting')
 
-    parser.add_option('-J', '--job','--jobid',
+    parser.add_option('-J', '--job', '--jobid',
                       dest='jobId',
                       type='string',
                       action='store',
@@ -67,7 +75,7 @@ def parse_opts(argv):
                       default=None,
                       help='Timeout for the operation in sec')
 
-    parser.add_option('--dest-dir','--unzipdir','--destdir',
+    parser.add_option('--dest-dir', '--unzipdir', '--destdir',
                       dest='destdir',
                       type='string',
                       action='store',
@@ -119,37 +127,50 @@ def checkDestDir(destDir):
             raise
 
 def list_sandboxes(options):
-    creds=get_client_credentials()
-    cert=creds['cert']
+    creds = get_client_credentials()
+    cert = creds['cert']
     cmd = "openssl x509 -in %s -noout -subject"%cert
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    userlist=re.findall('^.*/CN=UID:(.*$)',cmd_out)
+    userlist = re.findall('^.*/CN=UID:(.*$)',cmd_out)
     if len(userlist)>0 and len(userlist[0])>0:
         user=userlist[0]
     else:
-        err="cannot extract user information from %s"%cert 
+        err = "cannot extract user information from %s"%cert 
         sys.exit(err)
-    client=JobSubClient(options.jobsubServer, options.acctGroup,None,[])
+
+    client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
+
+    rc = 0
     for server in get_jobsub_server_aliases(options.jobsubServer):
         submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (server, options.acctGroup, user)
-        client.changeJobState(submitURL, 'GET',ssl_verifyhost=False)
+        http_code = client.changeJobState(submitURL, 'GET',
+                                          ssl_verifyhost=False)
+        rc += http_code_to_rc(http_code)
+    return rc
 
 
 def get_sandbox(options):
     creds = get_client_credentials()
     if options.jobId.find('@')>0:
-        job,mach=options.jobId.split('@')
+        tokens = options.jobId.split('@')
+        job = tokens[0]
+        mach = tokens[-1]
         options.jobsubServer="https://%s:8443"%mach
-        #options.jobId=job
-    submitURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (options.jobsubServer, options.acctGroup, options.jobId)
+
+    sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (
+                     options.jobsubServer, options.acctGroup, options.jobId)
     if options.format=='zip':
-        submitURL="%s?archive_format=zip"%(submitURL)
+        sandboxURL="%s?archive_format=zip"%(sandboxURL)
 
-    checkDestDir( options.destdir )
+    logSupport.dprint('CREDENTIALS    : %s\n' % creds)
+    logSupport.dprint('SANDBOX_URL    : %s\n' % sandboxURL)
 
-    print
-    print 'CREDENTIALS    : %s\n' % creds
-    print 'SUBMIT_URL     : %s\n' % submitURL
+    try:
+        checkDestDir(options.destdir)
+    except:
+        print 'Error creating output directory'
+        print traceback.format_exc()
+        return 1
 
     if options.format=='zip':
         fn = '%s.zip' % options.jobId
@@ -158,74 +179,93 @@ def get_sandbox(options):
 
     fp = open(fn, 'w')
     # Create curl object and set curl options to use
-    curl = pycurl.Curl()
-    curl.setopt(curl.URL, submitURL)
+    curl, response = curl_secure_context(sandboxURL, creds)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
     curl.setopt(curl.SSL_VERIFYHOST, 0)
-    curl.setopt(curl.FAILONERROR, False)
     timeout = constants.JOBSUB_PYCURL_TIMEOUT
     if options.timeout:
         timeout = options.timeout
     curl.setopt(curl.TIMEOUT, timeout)
-    curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.SSLCERT, creds.get('cert'))
-    curl.setopt(curl.SSLKEY, creds.get('key'))
-    if platform.system() == 'Darwin':
-        curl.setopt(curl.CAINFO, './ca-bundle.crt')
-    else:
-        curl.setopt(curl.CAPATH, get_capath())
-    curl.setopt(curl.HTTPHEADER, ['Accept: application/x-download,application/json'])
+    curl.setopt(curl.HTTPHEADER,
+                ['Accept: application/x-download,application/json'])
 
-    curl.perform()
-    response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-    response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+    response_code = 200
+    response_time = 0
+    try:
+        stime = time.time()
+        curl.perform()
+        etime = time.time()
+        response_time = etime - stime
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
+    except pycurl.error, error:
+        errno, errstr = error
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        err = "HTTP response:%s PyCurl Error %s: %s" % (response_code, 
+                                                        errno, errstr)
+        if errno == 60:
+            err += "\nDid you remember to include the port number to "
+            err += "your server specification \n( --jobsub-server %s )?"%options.jobsubServer
+        logSupport.dprint(traceback.format_exc())
+        raise JobSubClientError(err)
+
     serving_server = servicing_jobsub_server(curl)
     curl.close()
+    response.close()
     fp.close()
 
-    if response_code == 200:
-        print 'Downloaded to %s' % fn
-        if options.destdir is not None:
-            print "Moved files to %s"%options.destdir
-            if options.format=='zip':
-                z=zipfile.ZipFile(fn)
-                z.extractall(options.destdir)
-                d=''
-                for f in z.namelist():
-                    b=os.path.basename(f)
-                    s=os.path.join(options.destdir,f)
-                    d=os.path.dirname(s)
-                    t=os.path.join(options.destdir,b)
-                    shutil.move(s,t)
-                os.rmdir(d)
-            else:
-                t=tarfile.open(fn)
-                t.extractall(options.destdir)
-                t.close()
+    sandbox_extract_rc = 0
+    try:
+        value = None
+        if response_code == 200:
+            print 'Downloaded to %s' % fn
+            if options.destdir is not None:
+                print "Moved files to %s"%options.destdir
+                if options.format=='zip':
+                    z=zipfile.ZipFile(fn)
+                    z.extractall(options.destdir)
+                    d=''
+                    for f in z.namelist():
+                        b=os.path.basename(f)
+                        s=os.path.join(options.destdir,f)
+                        d=os.path.dirname(s)
+                        t=os.path.join(options.destdir,b)
+                        shutil.move(s,t)
+                    os.rmdir(d)
+                else:
+                    t=tarfile.open(fn)
+                    t.extractall(options.destdir)
+                    t.close()
+                os.remove(fn)
+        else:
+            with open(fn, 'r') as fp:
+                value = fp.read()
             os.remove(fn)
 
-    else:
-        with open(fn, 'r') as fp:
-            value = fp.read()
-            if response_content_type == 'application/json':
-                print_json_response(value, response_code,
-                                    options.jobsubServer, serving_server)
-            else:
-                print_formatted_response(value, response_code,
-                                         options.jobsubServer, serving_server)
-        os.remove(fn)
+        if response_content_type == 'application/json':
+            print_json_response(value, response_code, options.jobsubServer,
+                                serving_server, response_time,
+                                ignore_empty_msg=False)
+        else:
+            print_formatted_response(value, response_code, options.jobsubServer,
+                                     serving_server, response_time,
+                                     ignore_empty_msg=False,
+                                     print_msg_type=False)
+    except:
+        print 'Error extracting the fetched files'
+        sandbox_extract_rc = 1
+        print traceback.format_exc()
+
+    return http_code_to_rc(response_code) + sandbox_extract_rc
 
 
 def main(argv):
     options = parse_opts(argv)
-    stime = time.time()
     if options.list:
-        list_sandboxes(options)
+        return list_sandboxes(options)
     else:
-        get_sandbox(options)
-    etime = time.time()
-    print 'Remote Submission Processing Time: %s sec' % (etime - stime)
+        return get_sandbox(options)
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    sys.exit(main(sys.argv))

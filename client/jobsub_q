@@ -24,6 +24,7 @@ import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
+from jobsubClient import http_code_to_rc
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -132,25 +133,23 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    #js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-    #                         options.acctRole)
+    rc = 1
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
     try:
-            stime = time.time()
-            if options.summary:
-                js_client.summary()
-            else:
-                js_client.list(options.jobId,options.uid)
-            etime = time.time()
-            print 'Remote Listing Processing Time: %s sec' % (etime - stime)
+        if options.summary:
+            http_code = js_client.summary()
+        else:
+            http_code = js_client.listJobs(options.jobId,options.uid)
+        rc = http_code_to_rc(http_code)
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())
-        return 1
     except Exception, e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
-        return 1
+
+    return rc
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

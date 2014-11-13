@@ -119,19 +119,18 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
+    rc = 1
     try:
-            stime = time.time()
-            js_client.history(options.histUser,options.jobId)
-            etime = time.time()
-            print 'Remote Listing Processing Time: %s sec' % (etime - stime)
+        rc = js_client.history(options.histUser,options.jobId)
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())
-        return 1
     except Exception, e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
-        return 1
+
+    return rc
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

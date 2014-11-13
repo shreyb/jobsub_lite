@@ -24,6 +24,8 @@ import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
 from jobsubClient import version_string
+from jobsubClient import version_string
+from jobsubClient import http_code_to_rc
 from defaultServer import defaultServer
 
 
@@ -210,20 +212,21 @@ def main(argv):
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-                             options.acctRole, srv_argv, options.dropboxServer, useDag=True)
+                             options.acctRole, srv_argv,
+                             options.dropboxServer, useDag=True)
+    rc = 1
     try:
-        stime = time.time()
-        js_client.submit_dag()
-        etime = time.time()
-        print 'Remote Submission Processing Time: %s sec' % (etime - stime)
+        http_code = js_client.submit_dag()
+        rc = http_code_to_rc(http_code)
     except JobSubClientSubmissionError, e:
         print e
         logSupport.dprint(traceback.format_exc())
-        return 1
     except Exception, e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
-        return 1
+
+    return rc
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

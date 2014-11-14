@@ -654,6 +654,10 @@ class JobRunner(object):
 		if retVal:
 			print "ERROR executing ",cmd
 			print val
+                        retVal=retVal%256
+                        if retVal==0:
+                            retVal=1
+                        sys.exit(retVal)
 		else:
 			cmd2 = cmd2 + args.outputFile + ".dot &"
 			print "to monitor your dags progress try this command:\n ", cmd2

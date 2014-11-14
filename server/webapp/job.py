@@ -222,8 +222,12 @@ class AccountJobsResource(object):
 	if schedd_name == '':
 		schedd=condor.Schedd()
 	else:
-		schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
-        	schedd = condor.Schedd(schedd_addr)
+		try:
+			schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
+                        schedd = condor.Schedd(schedd_addr)
+		except:
+			schedd=condor.Schedd()
+
 	#os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup)
 	os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,self.role)
         out = schedd.act(job_action, constraint)

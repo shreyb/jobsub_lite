@@ -3,6 +3,7 @@ import cherrypy
 import logger
 import math
 from util import encode_multipart_formdata
+import subprocessSupport
 
 from cherrypy.lib.static import serve_file
 
@@ -48,20 +49,43 @@ class SandboxResource(object):
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
     """
 
+    def find_sandbox(self,path,uid):
+	if os.path.exists(path):
+	    return path
+	jobid=os.path.basename(path)
+	logger.log('jobid:%s'%jobid)
+	uid='/%s/'%uid
+        cmd1=""" -format '%s' iwd -constraint """ 
+        cmd2="""'jobsubjobid=="%s"' """%(jobid)
+	for cmd0 in ['condor_history ','condor_q ']:
+		cmd=cmd0+cmd1+cmd2
+		logger.log(cmd)
+		newpath, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        	logger.log('result:%s status:%s'%(newpath,cmd_err))
+        	if newpath and\
+                   len(newpath)>0 and\
+                   os.path.exists(newpath) and\
+                    uid in newpath:
+	    		return newpath
+	return False
+
+
 
     #@format_response
     def doGET(self, acctgroup, job_id, kwargs):
 	logger.log(kwargs)
+	logger.log(job_id)
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
         if job_id is None:
-            job_tokens = ['0']
-        else:
-            job_tokens = job_id.split('.')
-        job_id = '%s.0' % job_tokens[0]
+             job_id='I_am_planning_on_failing'
+        #else:
+        #    job_tokens = job_id.split('.')
+        #job_id = '%s.0' % job_tokens[0]
         zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
-        if os.path.exists(zip_path):
+	zip_path = self.find_sandbox(zip_path,uid)
+        if zip_path:
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             format=kwargs.get('archive_format')
             logger.log('archive_format:%s'%format)
@@ -69,7 +93,7 @@ class SandboxResource(object):
                 zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.zip'%(job_tokens[0],ts))
                 create_zipfile(zip_file, zip_path, job_id)
             else:           
-                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.tgz'%(job_tokens[0],ts))
+                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.tgz'%(job_id,ts))
                 create_tarfile(zip_file, zip_path, job_id)
 
             rc = {'out': zip_file}
@@ -104,6 +128,7 @@ class SandboxResource(object):
     @format_response
     @check_auth
     def index(self, acctgroup, job_id, **kwargs):
+        logger.log('job_id:%s'%job_id)
         try:
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':

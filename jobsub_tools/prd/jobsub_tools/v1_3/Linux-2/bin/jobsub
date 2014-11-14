@@ -20,7 +20,7 @@ def motd():
 	dt=open(downtime_file)
 	print dt.read()
 	dt.close()
-	sys.exit(0)
+	sys.exit(1)
     
 def iterArgs():
     output = None
@@ -84,11 +84,15 @@ def doSubmit(settings):
         
     (retVal,output)=commands.getstatusoutput(cmd)
     print output
+    retVal=int(retVal)
     if retVal != 0:
-        print "%s returned status %s " % (cmd,retVal)
+        retVal = retVal %256
+        if retVal==0:
+            retVal=1
+        print "%s returned status %d " % (cmd,retVal)
         print "if you need help with the above errors "
         print "please open a service desk ticket"
-
+    sys.exit(retVal)
  
     
 if __name__ == "__main__":

@@ -509,3 +509,7 @@ GROUP = mu2e
 STORAGE_GROUP = mu2e
 CONDOR_TMP = /mu2e/data/users/condor-tmp/${LOGNAME}
  
+v1_3_1_1_3 11/14/14
+==============================================================
+Emergency patch of v1_3_1_1_2
+- INC000000470101 jobsub does not pass through exit status of 'condor_submit' command

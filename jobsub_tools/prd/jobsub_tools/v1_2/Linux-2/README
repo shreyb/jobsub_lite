@@ -345,3 +345,7 @@ v1_2p 1/14/14
     to it in command line
 - fix for INC000000402330 use umask instead of chmod to control mode
    of output files delivered by ifdhc/CPN
+
+v1_2p 11/14/14
+=================================
+patch of v1_2p for INC000000470101 error codes not being passed through

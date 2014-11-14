@@ -76,10 +76,13 @@ def doSubmit(settings):
     (retVal,output)=commands.getstatusoutput(cmd)
     print output
     if retVal != 0:
+        retVal=retVal%256
+        if retVal==0:
+            retVal=1
         print "%s returned status %s " % (cmd,retVal)
         print "if you need help with the above errors "
         print "please open a service desk ticket"
-
+    sys.exit(retVal)
  
     
 if __name__ == "__main__":

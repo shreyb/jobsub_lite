@@ -1,6 +1,6 @@
 #!/bin/sh 
 VERS=v1_2
-REV=x
+REV=x_p1
 ./make_tablefile.py $VERS$REV
 
 if [ "$1" ==  "" ]; then

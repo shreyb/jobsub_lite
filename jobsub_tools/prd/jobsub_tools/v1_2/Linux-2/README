@@ -455,3 +455,8 @@ v1_2x 3/20/14
     + default_grid_site - if present for submit_host is the glidein entry 
     point that submission is sent to if no --site parameter specified.  
     Disabled if not present or set to False
+
+v1_2x_p1 11/14/14
+===========================================================
+emergency patch of v1_2x for INC000000470101 jobsub not passing
+through error codes

@@ -92,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/condor_commands.py
 /opt/jobsub/server/webapp/condor_commands.pyc
 /opt/jobsub/server/webapp/condor_commands.pyo
+/opt/jobsub/server/webapp/configured_sites.py
+/opt/jobsub/server/webapp/configured_sites.pyc
+/opt/jobsub/server/webapp/configured_sites.pyo
 /opt/jobsub/server/webapp/dag.py
 /opt/jobsub/server/webapp/dag.pyc
 /opt/jobsub/server/webapp/dag.pyo

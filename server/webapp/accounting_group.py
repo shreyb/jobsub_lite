@@ -18,6 +18,7 @@ from users import UsersResource
 from dropbox import DropboxResource
 from jobsub_help import JobsubHelpResource
 from sandboxes import SandboxesResource
+from configured_sites import ConfiguredSitesResource
 
 from cherrypy.lib.static import serve_file
 
@@ -32,6 +33,7 @@ class AccountingGroupsResource(object):
         self.help = JobsubHelpResource()
         self.dropbox = DropboxResource()
         self.sandboxes = SandboxesResource()
+	self.configuredsites=ConfiguredSitesResource()
 
     def doGET(self, acctgroup):
         """ Query list of accounting groups. Returns a JSON list object.

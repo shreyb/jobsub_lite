@@ -18,7 +18,6 @@ import getopt
 import optparse
 import time
 import traceback
-
 import constants
 import logSupport
 from jobsubClient import JobSubClient
@@ -103,6 +102,14 @@ def parse_opts(argv):
                          default=False,
                          help='Print debug messages to stdout')
 
+    opt_group.add_option('--list',
+                         dest='listType',
+                         action='store',
+                         default=None,
+                         metavar='<list Value>',
+                         help="""'<list Value>'->'action taken': 'configured-remote-sites'->query the server for sites that  'jobsub_submit --SITE=' is configured to submit to   : 'long'->list all condor classad attributes (like condor_q -l)""")
+
+
     opt_group.add_option('-h', '--help',
                          dest='help',
                          action='store_true',
@@ -122,6 +129,12 @@ def parse_opts(argv):
         parser.print_help()
         sys.exit(0)
 
+    if options.listType:
+        allowed=['configured-remote-sites','long']
+        if options.listType not in allowed:
+            print "ERROR: --list=%s not allowed"%options.listType
+            parser.print_help()
+            sys.exit(1)
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
         parser.print_help()
@@ -138,6 +151,11 @@ def main(argv):
     try:
         if options.summary:
             http_code = js_client.summary()
+        elif options.listType=='configured-remote-sites':
+            http_code=js_client.listConfiguredSites()
+        elif options.listType=='long':
+            print 'sorry not implemented, but will be soon'
+            sys.exit(0)
         else:
             http_code = js_client.listJobs(options.jobId,options.uid)
         rc = http_code_to_rc(http_code)

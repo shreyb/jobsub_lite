@@ -10,6 +10,7 @@ class JobsubConfigParser(object):
 
 	def __init__(self,group=None,submit_host=None):
 	    self.cnf=self.findConfigFile()
+	    logger.log('config file %s'%self.cnf)
 	    self.parser=SafeConfigParser()
             self.group=group
             if self.group is None:
@@ -17,7 +18,12 @@ class JobsubConfigParser(object):
             self.submit_host=submit_host
             if self.submit_host is None:
                 self.submit_host=os.environ.get("SUBMIT_HOST",None)
+            if self.submit_host is None:
+                self.submit_host=socket.gethostname()
 	    self.parser.read(self.cnf)
+
+	def get_submit_host(self):
+		return self.submit_host
 
 	def sections(self):
 	    return self.parser.sections()

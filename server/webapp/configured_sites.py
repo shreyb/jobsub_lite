@@ -5,7 +5,8 @@ import time
 import socket
 import sys
 import subprocessSupport
-from jobsub import is_supported_accountinggroup,  get_command_path_root
+from JobsubConfigParser import JobsubConfigParser
+from jobsub import is_supported_accountinggroup,  get_command_path_root, site_ignore_list
 from format import format_response
 
 
@@ -23,8 +24,14 @@ class ConfiguredSitesResource(object):
 	if kwargs.has_key('acctgroup'):
 		acctgroup=kwargs.get('acctgroup')
 	if is_supported_accountinggroup(acctgroup):
+		site_list=[]
 		try:
-			pool="-pool fifebatchgpvmhead1.fnal.gov"
+			p=JobsubConfigParser()
+			#pool="-pool fifebatchgpvmhead1.fnal.gov"
+			pool=p.get('default','pool_string')
+			
+			if pool is None:
+				pool=''
 			cmd="""condor_status %s  -any """ % pool
 			cmd=cmd+"""-constraint 'MyType=="glideresource"&&"""
 			cmd=cmd+"""regexp(".*%s.*",GlideGroupName)&&""" % acctgroup
@@ -32,10 +39,9 @@ class ConfiguredSitesResource(object):
 			cmd=cmd+""" -format '%s\n'  glidein_site """
 			logger.log(cmd)
 			site_list=[]
-			exclude_list=['','fcdfosgt2','fcdfosgt3','Fermigrid']
+			exclude_list=site_ignore_list(acctgroup)
+			logger.log('exclude_list:%s'%exclude_list)
 			site_data, cmd_err = subprocessSupport.iexe_cmd(cmd)
-			#if cmd_err !=0:
-			#	raise Exception(site_data)
         		site_data=site_data.split('\n')
         		for dat in site_data:
                 		if dat not in site_list and dat not in exclude_list:

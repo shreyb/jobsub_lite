@@ -396,7 +396,7 @@ class JobSubClient:
             return jobid
         if jobid.find('@')>=0:
             jobidparts = jobid.split('@')
-            server=jobidparts[-1:][0]
+            server=jobidparts[-1]
             jobid='@'.join(jobidparts[:-1])
             self.server="https://%s:8443"%server
         if jobid=='':
@@ -476,6 +476,9 @@ class JobSubClient:
         self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(self.listURL, 'GET')
 
+    def listConfiguredSites(self):
+        self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%(self.server,self.acctGroup)
+        return self.changeJobState(self.listURL,'GET')
 
     def listJobs(self, jobid=None, userid=None):
         #jobid=self.checkID(jobid)

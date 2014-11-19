@@ -395,7 +395,9 @@ class JobSubClient:
         if jobid is None:
             return jobid
         if jobid.find('@')>=0:
-            jobid,server = jobid.split('@')
+            jobidparts = jobid.split('@')
+            server=jobidparts[-1:][0]
+            jobid='@'.join(jobidparts[:-1])
             self.server="https://%s:8443"%server
         if jobid=='':
             jobid = None

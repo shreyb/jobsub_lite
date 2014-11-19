@@ -154,7 +154,7 @@ def get_sandbox(options):
     if options.jobId.find('@')>0:
         tokens = options.jobId.split('@')
         job = tokens[0]
-        mach = tokens[-1]
+        mach = tokens[-1:][0]
         options.jobsubServer="https://%s:8443"%mach
 
     sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (

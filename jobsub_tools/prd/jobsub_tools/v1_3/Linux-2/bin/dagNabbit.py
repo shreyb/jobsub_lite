@@ -659,6 +659,11 @@ class JobRunner(object):
 		(retVal,val)=commands.getstatusoutput(cmd)
 		if retVal:
 			print "ERROR executing ",cmd
+                        print val
+                        retVal=retVal%256
+                        if retVal==0:
+                            retVal=1
+                        sys.exit(retVal)
 		print val
 
 

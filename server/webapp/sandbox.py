@@ -146,6 +146,7 @@ class SandboxResource(object):
                 cherrypy.response.status = 500
         except:
             err = 'Exception on SandboxResource.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
             cherrypy.response.status = 500

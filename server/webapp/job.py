@@ -195,6 +195,7 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
+            cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
@@ -204,6 +205,7 @@ class AccountJobsResource(object):
 
 
     def doJobAction(self, acctgroup, job_id, job_action):
+        warning=''
         dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(dn)
         #constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
@@ -226,11 +228,16 @@ class AccountJobsResource(object):
 			schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
                         schedd = condor.Schedd(schedd_addr)
 		except:
+                        warning='Failed to locate schedd %s,  will try with local schedd.  '%schedd_name
+                        logger.log(warning)
 			schedd=condor.Schedd()
 
 	#os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup)
 	os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,self.role)
         out = schedd.act(job_action, constraint)
         logger.log(('%s' % (out)).replace('\n', ' '))
-
-        return "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])
+        retStr=''
+        if len(warning)>0:
+            retStr=warning
+        retStr=retStr+ "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])
+        return retStr

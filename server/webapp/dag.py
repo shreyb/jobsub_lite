@@ -128,6 +128,7 @@ class DagResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on DagResource.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

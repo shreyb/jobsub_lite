@@ -9,9 +9,9 @@ source ./setup_env.sh
 
 JOB=$1
 
-$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --debug
+$EXEPATH/jobsub_q.py $GROUP_SPEC $SERVER_SPEC --debug
 T1=$?
-$EXEPATH/jobsub_q.py --group $GROUP $SERVER_SPEC --jobid $JOB
+$EXEPATH/jobsub_q.py $GROUP_SPEC $SERVER_SPEC --jobid $JOB
 T2=$?
 $EXEPATH/jobsub_q.py $SERVER_SPEC --summary 
 T3=$?

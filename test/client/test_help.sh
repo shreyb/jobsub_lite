@@ -12,7 +12,7 @@ $EXEPATH/jobsub_submit.py $SERVER_SPEC --help
 T1=$?
 $EXEPATH/jobsub_submit.py \
   $SERVER_SPEC \
-  --group $GROUP --help
+  $GROUP_SPEC  --help
 T2=$?
 
 ! (( $T1 || $T2 ))

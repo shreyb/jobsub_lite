@@ -167,7 +167,6 @@ logit
 #log_timing_data 
 capture_condor_logs
 cleanup_files 
-
 job_end=$(date '+%s')
 total_elapsed=$(($job_end -$job_start))
 logit "Wall time: $(($total_elapsed/60)) minutes ($total_elapsed seconds)"

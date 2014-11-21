@@ -1,9 +1,17 @@
 #!/bin/sh
 
-if [ "$GROUP" == "" ]; then
+if [[ "$GROUP" == ""  && "$JOBSUB_GROUP" = "" ]] ; then
         export GROUP=nova
+        export OUTGROUP=nova
+fi
+export GROUP_SPEC=""
+if [ "$GROUP" != "" ]; then
+    export GROUP_SPEC=" --group $GROUP"
 fi
 
+if [ "$JOBSUB_GROUP" != "" ]; then
+    export OUTGROUP=$GROUP
+fi
 
 if [ -e "$JOBSUB_CLIENT_DIR" ];  then
     export EXEPATH=$JOBSUB_CLIENT_DIR

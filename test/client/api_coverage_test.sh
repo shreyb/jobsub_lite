@@ -15,8 +15,11 @@ if [ "$MACH" = "" ]; then
     MACH=fifebatch
 fi
 
-if [ "$GROUP" = "" ]; then
+if [[ "$GROUP" = "" && "$JOBSUB_GROUP" = "" ]]; then
     GROUP=nova
+fi
+if [ "$JOBSUB_GROUP" != "" ]; then
+    GROUP=$JOBSUB_GROUP
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
@@ -68,7 +71,7 @@ for URL in ${GET_URLS}; do
    cmd="curl $GET_FLAGS https://${MACH}.fnal.gov:8443${URL} "
 
    echo "https://${MACH}.fnal.gov:8443${URL}"
-   echo $cmd > $outfile
+   echo $cmd >> $outfile
    echo '--------------------------------------------------' >> $outfile
    bash -c "$cmd" >> $outfile
 done
@@ -78,3 +81,4 @@ echo
 echo quick and dirty report of which pages are implemented or not
 echo
 grep 'HTTP/1.1' ${MACH}.*out
+grep 'HTTP/1.1' ${MACH}.*out >> $TESTLOGFILE

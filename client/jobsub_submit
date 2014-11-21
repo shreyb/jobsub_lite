@@ -173,11 +173,13 @@ def parse_opts(argv):
     if len(remainder) > 1:
         parser.print_help(file)
 
+    if not srv_argv:
+        # No server side args or exe provided. Just print help.
+        options.help = True
+
     if options.help:
-        if not required_args_present(options):
-            parser.print_help()
-        else:
-            parser.print_help()
+        parser.print_help()
+        if required_args_present(options):
             header = "  Server Options:"
             print '\n%s' % header
             print_acctgroup_help(options)

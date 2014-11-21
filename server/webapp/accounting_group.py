@@ -33,7 +33,7 @@ class AccountingGroupsResource(object):
         self.help = JobsubHelpResource()
         self.dropbox = DropboxResource()
         self.sandboxes = SandboxesResource()
-	self.configuredsites=ConfiguredSitesResource()
+	self.sites=ConfiguredSitesResource()
 
     def doGET(self, acctgroup):
         """ Query list of accounting groups. Returns a JSON list object.

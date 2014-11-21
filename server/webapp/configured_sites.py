@@ -6,7 +6,7 @@ import socket
 import sys
 import subprocessSupport
 from JobsubConfigParser import JobsubConfigParser
-from jobsub import is_supported_accountinggroup,  get_command_path_root, site_ignore_list
+from jobsub import is_supported_accountinggroup,  get_command_path_root
 from format import format_response
 
 
@@ -29,17 +29,22 @@ class ConfiguredSitesResource(object):
 			p=JobsubConfigParser()
 			#pool="-pool fifebatchgpvmhead1.fnal.gov"
 			pool=p.get('default','pool_string')
-			
 			if pool is None:
 				pool=''
+			
+			try:
+				exclude_list=p.get(acctgroup,'site_ignore_list')
+			except:
+				exclude_list=p.get(p.submit_host(),'site_ignore_list')
+			
 			cmd="""condor_status %s  -any """ % pool
-			cmd=cmd+"""-constraint 'MyType=="glideresource"&&"""
+			cmd=cmd+"""-constraint 'glideinmytype=="glideresource"&&"""
 			cmd=cmd+"""regexp(".*%s.*",GlideGroupName)&&""" % acctgroup
 			cmd=cmd+"""glidein_site=!=UNDEFINED'"""
 			cmd=cmd+""" -format '%s\n'  glidein_site """
 			logger.log(cmd)
 			site_list=[]
-			exclude_list=site_ignore_list(acctgroup)
+			#exclude_list=site_ignore_list(acctgroup)
 			logger.log('exclude_list:%s'%exclude_list)
 			site_data, cmd_err = subprocessSupport.iexe_cmd(cmd)
         		site_data=site_data.split('\n')

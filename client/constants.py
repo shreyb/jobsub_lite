@@ -53,7 +53,7 @@ JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/users/%s/jobs/histor
 
 JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
 
-JOBSUB_CONFIGURED_SITES_URL_PATTERN = '%s/jobsub/acctgroups/%s/configuredsites/'
+JOBSUB_CONFIGURED_SITES_URL_PATTERN = '%s/jobsub/acctgroups/%s/sites/'
 JOBSUB_JOB_SANDBOX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/sandbox/'
 JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN = '%s/jobsub/acctgroups/%s/sandboxes/%s/'
 JOBSUB_JOB_SANDBOX_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/sandbox/'

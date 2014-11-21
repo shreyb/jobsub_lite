@@ -79,6 +79,7 @@ class SandboxesResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on SandboxesResource.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

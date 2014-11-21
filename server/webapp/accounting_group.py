@@ -63,6 +63,7 @@ class AccountingGroupsResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on AccountingGroupsResource.index: %s'% sys.exc_info()[1]
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

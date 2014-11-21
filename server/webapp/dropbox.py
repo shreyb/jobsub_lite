@@ -137,6 +137,7 @@ class DropboxResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on DropboxResource.index:%s' % sys.exc_info()[1]
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

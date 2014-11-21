@@ -47,6 +47,7 @@ class HistoryResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on HistoryResouce.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

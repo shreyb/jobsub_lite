@@ -43,6 +43,7 @@ class QueuedJobsByJobIDResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on QueuedJobsByJobIDResource.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

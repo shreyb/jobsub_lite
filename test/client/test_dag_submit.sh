@@ -5,7 +5,7 @@ source ./setup_env.sh
 export SERVER=https://${MACH}:8443
 
 cd jobsubDagTest
-$EXEPATH/jobsub_submit_dag  --group $GROUP \
+$EXEPATH/jobsub_submit_dag  $GROUP_SPEC \
 --debug $SERVER_SPEC  file://dagTest 
 T1=$?
 cd -

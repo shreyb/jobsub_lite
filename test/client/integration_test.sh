@@ -1,89 +1,104 @@
 #!/bin/sh 
 
+function lg_echo {
+  echo "$@"
+  echo "$@" >> $TESTLOGFILE
+}
+
+
+
 function pass_or_fail {
 
 if [ "$?" == "0" ]; then
-    #echo $OUTFILE
     grep -i exception $OUTFILE 
-    if [ "$?" == "0" ]; then
-    	echo "FAILED"
+    if [ "$?" = "0" ]; then
+    	lg_echo "FAILED"
     else
-	echo "PASSED"
+	lg_echo "PASSED"
     fi
 else
-    echo "FAILED"
+    lg_echo "FAILED"
 fi
 }
 
 
 SERVER=$1
+export TESTLOGFILE=$SERVER.testlog
+
 if [ "$SERVER" = "" ]; then
-    echo "usage: $0 servername"
-    echo "run integration tests on servername"
+    lg_echo "usage: $0 servername"
+    lg_echo "run integration tests on servername"
     exit 0
 fi
-if [ "$GROUP" = "" ]; then
+if [[ "$GROUP" = "" && "$JOBSUB_GROUP" = "" ]]; then
     export GROUP=nova
 fi
 if [ "$GROUP" = "cdf" ]; then
     export SUBMIT_FLAGS=" $SUBMIT_FLAGS --tar_file_name dropbox://junk.tgz -N 2 "
 fi
-echo test simple submission
-OUTFILE=$1.submit.$GROUP.log
+if [ "$GROUP" != "" ]; then
+    export OUTGROUP=$GROUP
+fi
+if [ "$JOBSUB_GROUP" != "" ]; then
+    export OUTGROUP=$JOBSUB_GROUP
+fi
+
+lg_echo test simple submission
+OUTFILE=$1.submit.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
 JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 GOTJID=`echo $JID| grep '[0-9].0@'`
 SUBMIT_WORKED=$?
 if [ "$SUBMIT_WORKED" = "0" ]; then
-     echo "successfully submitted job $GOTJID"
+     lg_echo "successfully submitted job $GOTJID"
 else
-    echo "submission problem, please see file $1.submit.$GROUP.log"
+    lg_echo "submission problem, please see file $1.submit.$OUTGROUP.log"
 fi 
 
-echo test submission with role
-OUTFILE=$1.submit_role.$GROUP.log
+lg_echo test submission with role
+OUTFILE=$1.submit_role.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
 JID2=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 GOTJID2=`echo $JID2| grep '[0-9].0@'`
 SUBMIT_WORKED2=$?
 if [ "$SUBMIT_WORKED2" = "0" ]; then
-     echo "PASSED successfully submitted job $GOTJID2"
+     lg_echo "PASSED successfully submitted job $GOTJID2"
 else
-    echo "FAILED submission problem, please see file $1.submit_role.$GROUP.log"
+    lg_echo "FAILED submission problem, please see file $1.submit_role.$OUTGROUP.log"
 fi 
-echo testing holding and releasing
-OUTFILE=$1.holdrelease.$GROUP.log
-sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$1.holdrelease.$GROUP.log 2>&1
+lg_echo testing holding and releasing
+OUTFILE=$1.holdrelease.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$1.holdrelease.$OUTGROUP.log 2>&1
 pass_or_fail
-echo testing dropbox functionality
-OUTFILE=$1.dropbox.$GROUP.log
-sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$1.dropbox.$GROUP.log 2>&1
+lg_echo testing dropbox functionality
+OUTFILE=$1.dropbox.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$1.dropbox.$OUTGROUP.log 2>&1
 pass_or_fail
-echo test helpfile
-OUTFILE=$1.help.$GROUP.log 
-sh ${TEST_FLAG} ./test_help.sh $SERVER >$1.help.$GROUP.log 2>&1
+lg_echo test helpfile
+OUTFILE=$1.help.$OUTGROUP.log 
+sh ${TEST_FLAG} ./test_help.sh $SERVER >$1.help.$OUTGROUP.log 2>&1
 pass_or_fail
-echo test listing jobs
-OUTFILE=$1.list.$GROUP.log
-sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$1.list.$GROUP.log 2>&1
+lg_echo test listing jobs
+OUTFILE=$1.list.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$1.list.$OUTGROUP.log 2>&1
 pass_or_fail
-echo test condor_history
-OUTFILE=$1.history.$GROUP.log
-sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 >$1.history.$GROUP.log 2>&1
+lg_echo test condor_history
+OUTFILE=$1.history.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 >$1.history.$OUTGROUP.log 2>&1
 pass_or_fail
-echo test retrieving zip_file from sandbox
-OUTFILE=$1.sandbox.$GROUP.log
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$GROUP.log 2>&1
+lg_echo test retrieving zip_file from sandbox
+OUTFILE=$1.sandbox.$OUTGROUP.log
+sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$OUTGROUP.log 2>&1
 pass_or_fail
-echo testing removing job
-OUTFILE=$1.testrm.$GROUP.log
-sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$GROUP.log  2>&1
+lg_echo testing removing job
+OUTFILE=$1.testrm.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$OUTGROUP.log  2>&1
 pass_or_fail
-echo testing dag submission 
-OUTFILE=$1.testdag.$GROUP.log
-sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$GROUP.log  2>&1
+lg_echo testing dag submission 
+OUTFILE=$1.testdag.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$OUTGROUP.log  2>&1
 pass_or_fail
-echo testing cdf sam job
+lg_echo testing cdf sam job
 cd cdf_dag_test
 OUTFILE="../$1.test_cdf_sam_job.log"
 sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1

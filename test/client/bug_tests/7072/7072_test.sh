@@ -11,7 +11,7 @@ cd -
 
 export SERVER=https://${MACH}:8443
 
-$EXEPATH/jobsub_submit.py --group $GROUP --debug \
+$EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC $SUBMIT_FLAGS \
             -e SERVER --nowrapfile   file://7072.sh 7000000
 

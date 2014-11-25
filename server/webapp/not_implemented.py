@@ -4,8 +4,6 @@ import sys
 
 from auth import check_auth
 from format import format_response
-from condor_commands import ui_condor_history,constructFilter
-from queued_jobs import QueuedJobsResource
 
 
 
@@ -15,7 +13,7 @@ class NotImplementedResource(object):
         cherrypy.response.status = 501
 
     def doGET(self, kwargs):
-        return {'out': 'this url is not yet implemented'}
+        return {'out': 'this url is not yet implemented %s %s'%(self.__class__.__name__,kwargs)}
 
     @cherrypy.expose
     @format_response
@@ -39,12 +37,15 @@ class NotImplementedResource(object):
     @cherrypy.expose
     @cherrypy.popargs('param1')
     @cherrypy.popargs('param2')
+    @cherrypy.popargs('param3')
+    @cherrypy.popargs('param4')
+    @cherrypy.popargs('param5')
     @format_response
-    def default(self,param1,param2=None,param3=None,  **kwargs):
+    def default(self,param1,param2=None,param3=None,param4=None,param5=None,  **kwargs):
         cherrypy.response.status = 501
         try:
             if cherrypy.request.method == 'GET':
-                rc = {'out':'informational page for %s/%s/%s not implemented' % (param1,param2,param3)}
+                rc = {'out':'informational page for %s/%s/%s/%s/%s not implemented %s %s' % (param1,param2,param3,param4,param5,self.__class__.__name__,kwargs)}
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err)

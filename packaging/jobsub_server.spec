@@ -134,6 +134,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/queued_jobs.py
 /opt/jobsub/server/webapp/queued_jobs.pyc
 /opt/jobsub/server/webapp/queued_jobs.pyo
+/opt/jobsub/server/webapp/queued_long.py
+/opt/jobsub/server/webapp/queued_long.pyc
+/opt/jobsub/server/webapp/queued_long.pyo
 /opt/jobsub/server/webapp/sandbox.py
 /opt/jobsub/server/webapp/sandbox.pyc
 /opt/jobsub/server/webapp/sandbox.pyo

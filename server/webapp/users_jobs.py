@@ -40,21 +40,31 @@ class UsersJobsResource(object):
     @cherrypy.popargs('param1')
     @cherrypy.popargs('param2')
     @cherrypy.popargs('param3')
+    @cherrypy.popargs('param4')
+    @cherrypy.popargs('param5')
     @format_response
-    def default(self,param1,param2=None,param3=None,  **kwargs):
+    def default(self,param1,param2=None,param3=None, param4=None, param5=None,  **kwargs):
         cherrypy.response.status = 501
-	logger.log("param1 %s param2 %s param3 %s"%(param1, param2, param3))
+	logger.log("param1 %s param2 %s param3 %s param4 %s param5 %s"%(param1, param2, param3, param4, param5))
         try:
             if cherrypy.request.method == 'GET':
                 if param2=="jobs":
+			if param3=='long':
+				param3=None
+				outFormat='long'
+			elif param4=='long':
+				outFormat='long'
+			else:
+				outFormat=None
+
         		cherrypy.response.status = 200 
         		filter = constructFilter(None,param1,param3)
         		logger.log("filter=%s"%filter)
-        		user_jobs = ui_condor_q( filter  )
+        		user_jobs = ui_condor_q( filter, outFormat )
         		return {'out': user_jobs.split('\n')}
 
 		else:
-                	rc = {'out':'informational page for %s/%s/%s not implemented' % (param1,param2,param3)}
+                	rc = {'out':'informational page for %s/%s/%s/%s/%s not implemented' % (param1,param2,param3,param4,param5)}
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err)

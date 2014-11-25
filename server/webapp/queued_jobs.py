@@ -7,6 +7,7 @@ from condor_commands import ui_condor_q,constructFilter
 from history import HistoryResource
 from summary import JobSummaryResource
 from jobid import QueuedJobsByJobIDResource
+from queued_long import QueuedLongResource
 
 
 
@@ -21,6 +22,7 @@ class QueuedJobsResource(object):
         self.history=HistoryResource()
 	self.summary=JobSummaryResource()
         self.jobid=QueuedJobsByJobIDResource()
+	self.long=QueuedLongResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.

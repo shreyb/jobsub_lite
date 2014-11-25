@@ -33,6 +33,9 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
+        if options.summary and options.long:
+            print 'ERROR: --summary and --long options conflict. Choose one, not both.'
+            return False
         if options.jobsubServer :
             return True
     except AttributeError:
@@ -89,6 +92,13 @@ def parse_opts(argv):
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
+    opt_group.add_option('--long',
+                         dest='long',
+                         action='store_true',
+                         metavar='<list Long>',
+                         default=False,
+                         help='show long listing (like condor_q -l)')
+
     opt_group.add_option('--summary',
                          dest='summary',
                          action='store_true',
@@ -139,7 +149,7 @@ def main(argv):
         if options.summary:
             http_code = js_client.summary()
         else:
-            http_code = js_client.listJobs(options.jobId,options.uid)
+            http_code = js_client.listJobs(options.jobId,options.uid,options.long)
         rc = http_code_to_rc(http_code)
     except JobSubClientError, e:
         print e

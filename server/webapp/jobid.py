@@ -3,6 +3,8 @@ import logger
 
 from format import format_response
 from condor_commands import ui_condor_q,constructFilter
+#from not_implemented import NotImplementedResource
+from queued_long import QueuedLongResource
 
 
 
@@ -10,6 +12,8 @@ from condor_commands import ui_condor_q,constructFilter
 @cherrypy.popargs('job_id')
 class QueuedJobsByJobIDResource(object):
 
+    def __init__(self):
+	self.long=QueuedLongResource()
 
     def doGET(self, job_id,kwargs):
         """ Query list of job_ids. Returns a JSON list object.

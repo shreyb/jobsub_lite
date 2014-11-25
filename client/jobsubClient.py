@@ -480,7 +480,7 @@ class JobSubClient:
         self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%(self.server,self.acctGroup)
         return self.changeJobState(self.listURL,'GET')
 
-    def listJobs(self, jobid=None, userid=None):
+    def listJobs(self, jobid=None, userid=None,longFormat=False):
         #jobid=self.checkID(jobid)
         if jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
@@ -497,6 +497,8 @@ class JobSubClient:
         else :
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
 
+        if longFormat:
+            self.listURL="%slong/"%self.listURL
         return self.changeJobState(self.listURL, 'GET')
 
 

@@ -103,15 +103,22 @@ def ui_condor_history(filter=None):
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
     return munge_jobid(all_jobs)
 
-def ui_condor_q(filter=None):
+def ui_condor_q(filter=None,format=None):
+
+    fmt=condor_format()
+    if format=='long':
+	fmt = ' -l '
     if filter is None:
-        cmd = 'condor_q -g %s ' % condor_format()
+        cmd = 'condor_q -g %s ' % fmt
     else:
-        cmd = 'condor_q -g %s %s' % (condor_format(),filter)
+        cmd = 'condor_q -g %s %s' % (fmt,filter)
 
     try:
         all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        return munge_jobid(all_jobs)
+	if format=='long':
+		return all_jobs
+	else:
+        	return munge_jobid(all_jobs)
     except:
 	tb = traceback.format_exc()
         logger.log(tb)

@@ -3,7 +3,6 @@ import os
 
 from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
-from not_implemented import NotImplementedResource
 from users_jobs import UsersJobsResource
 from version import VersionResource
 from util import mkdir_p

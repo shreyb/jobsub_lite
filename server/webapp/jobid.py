@@ -5,6 +5,7 @@ from format import format_response
 from condor_commands import ui_condor_q,constructFilter
 #from not_implemented import NotImplementedResource
 from queued_long import QueuedLongResource
+from queued_dag import QueuedDagResource
 
 
 
@@ -14,6 +15,7 @@ class QueuedJobsByJobIDResource(object):
 
     def __init__(self):
 	self.long=QueuedLongResource()
+	self.dags=QueuedDagResource()
 
     def doGET(self, job_id,kwargs):
         """ Query list of job_ids. Returns a JSON list object.
@@ -22,6 +24,7 @@ class QueuedJobsByJobIDResource(object):
         filter = constructFilter(None,None,job_id)
         logger.log("filter=%s"%filter)
 	history = ui_condor_q( filter  )
+	logger.log('ui_condor_q result: %s'%history)
         return {'out': history.split('\n')}
 
     @cherrypy.expose

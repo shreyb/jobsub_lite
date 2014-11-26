@@ -133,7 +133,7 @@ flag will ensure that only (pos_integer) number of your jobs will run at the sam
 is intended to prevent overwhelming shared resources such as databases.
 """
 usage = """
-usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [-submit_host some_machine.fnal.gov ][-m(ax_running) max_concurrent_jobs ]
+usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [-submit_host some_machine.fnal.gov ][--maxConcurrent  max_concurrent_jobs ]
 
 for detailed instructions on how to use:
 %s -manual | less
@@ -588,7 +588,7 @@ class ArgParser(object):
 				self.inputFile = sys.argv[i]
 			if arg in ["--outputFile", "-output_file", "-o" ]:
 				self.outputFile = sys.argv[i]
-			if arg in ["--maxRunning", "-max_running", "-m" ]:
+			if arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
 				self.maxJobs = int(sys.argv[i])
 			if arg in ["--submit", "-submit", "-s" ]:
 				self.runDag = True
@@ -652,6 +652,7 @@ class JobRunner(object):
 		cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
 		if args.maxJobs > 0:
 			cmd = cmd + " -maxjobs %d " % args.maxJobs
+                cmd = cmd + """ -append "+Owner=\\"%s\\"" """%os.environ.get("USER")
 		cmd = cmd + args.outputFile
 		if host != args.submitHost:
 		        cmd = cmd + ' "'

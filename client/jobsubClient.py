@@ -446,7 +446,7 @@ class JobSubClient:
         return self.changeJobState(self.removeURL, 'DELETE')
 
 
-    def history(self, userid=None, jobid=None):
+    def history(self, userid=None, jobid=None,outFormat=None):
         servers = get_jobsub_server_aliases(self.server)
         jobid = self.checkID(jobid)
 
@@ -461,6 +461,8 @@ class JobSubClient:
             if jobid is not None:
                 self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
 
+            if outFormat is not None:
+                self.histURL="%s%s/"%(self.histURL,outFormat)
             try:
                 http_code = self.changeJobState(self.histURL, 'GET',
                                                 ssl_verifyhost=False)
@@ -480,7 +482,7 @@ class JobSubClient:
         self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%(self.server,self.acctGroup)
         return self.changeJobState(self.listURL,'GET')
 
-    def listJobs(self, jobid=None, userid=None,longFormat=False):
+    def listJobs(self, jobid=None, userid=None,outFormat=None):
         #jobid=self.checkID(jobid)
         if jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
@@ -497,8 +499,8 @@ class JobSubClient:
         else :
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
 
-        if longFormat:
-            self.listURL="%slong/"%self.listURL
+        if outFormat is not None:
+            self.listURL="%s%s/"%(self.listURL,outFormat)
         return self.changeJobState(self.listURL, 'GET')
 
 

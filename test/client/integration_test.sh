@@ -68,35 +68,43 @@ else
 fi 
 lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$1.holdrelease.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
 pass_or_fail
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$1.dropbox.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
 pass_or_fail
 lg_echo test helpfile
 OUTFILE=$1.help.$OUTGROUP.log 
-sh ${TEST_FLAG} ./test_help.sh $SERVER >$1.help.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1
 pass_or_fail
 lg_echo test listing jobs
 OUTFILE=$1.list.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$1.list.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+pass_or_fail
+lg_echo 'test listing --long jobs'
+OUTFILE=$1.listlong.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_listjobs_long.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+pass_or_fail
+lg_echo 'test listing --dag jobs'
+OUTFILE=$1.listdag.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_listjobs_dag.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
 pass_or_fail
 lg_echo test condor_history
 OUTFILE=$1.history.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 >$1.history.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 > $OUTFILE 2>&1
 pass_or_fail
 lg_echo test retrieving zip_file from sandbox
 OUTFILE=$1.sandbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$1.sandbox.$OUTGROUP.log 2>&1
+sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
 pass_or_fail
 lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$1.testrm.$OUTGROUP.log  2>&1
+sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$OUTFILE  2>&1
 pass_or_fail
 lg_echo testing dag submission 
 OUTFILE=$1.testdag.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$1.testdag.$OUTGROUP.log  2>&1
+sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
 pass_or_fail
 lg_echo testing cdf sam job
 cd cdf_dag_test

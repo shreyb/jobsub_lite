@@ -24,6 +24,7 @@ from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
 from queued_long import QueuedLongResource
+from queued_dag import QueuedDagResource
 
 
 
@@ -35,6 +36,7 @@ class AccountJobsResource(object):
 	self.history = HistoryResource()
         self.dag = DagResource()
 	self.long=QueuedLongResource()
+	self.dags=QueuedDagResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,

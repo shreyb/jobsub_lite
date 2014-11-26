@@ -8,6 +8,7 @@ from history import HistoryResource
 from summary import JobSummaryResource
 from jobid import QueuedJobsByJobIDResource
 from queued_long import QueuedLongResource
+from queued_dag import QueuedDagResource
 
 
 
@@ -23,6 +24,7 @@ class QueuedJobsResource(object):
 	self.summary=JobSummaryResource()
         self.jobid=QueuedJobsByJobIDResource()
 	self.long=QueuedLongResource()
+	self.dags=QueuedDagResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.

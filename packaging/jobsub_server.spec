@@ -131,6 +131,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/not_implemented.py
 /opt/jobsub/server/webapp/not_implemented.pyc
 /opt/jobsub/server/webapp/not_implemented.pyo
+/opt/jobsub/server/webapp/queued_dag.py
+/opt/jobsub/server/webapp/queued_dag.pyc
+/opt/jobsub/server/webapp/queued_dag.pyo
 /opt/jobsub/server/webapp/queued_jobs.py
 /opt/jobsub/server/webapp/queued_jobs.pyc
 /opt/jobsub/server/webapp/queued_jobs.pyo

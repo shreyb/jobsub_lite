@@ -49,11 +49,11 @@ class UsersJobsResource(object):
         try:
             if cherrypy.request.method == 'GET':
                 if param2=="jobs":
-			if param3=='long':
+			if param3=='long' or param3=='dags':
+				outFormat=param3
 				param3=None
-				outFormat='long'
-			elif param4=='long':
-				outFormat='long'
+			elif param4=='long' or param4=='dags':
+				outFormat=param4
 			else:
 				outFormat=None
 

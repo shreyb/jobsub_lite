@@ -1,9 +1,17 @@
 #!/bin/sh
 
-if [ "$GROUP" == "" ]; then
+if [[ "$GROUP" == ""  && "$JOBSUB_GROUP" = "" ]] ; then
         export GROUP=nova
+        export OUTGROUP=nova
+fi
+export GROUP_SPEC=""
+if [ "$GROUP" != "" ]; then
+    export GROUP_SPEC=" --group $GROUP"
 fi
 
+if [ "$JOBSUB_GROUP" != "" ]; then
+    export OUTGROUP=$GROUP
+fi
 
 if [ -e "$JOBSUB_CLIENT_DIR" ];  then
     export EXEPATH=$JOBSUB_CLIENT_DIR
@@ -29,10 +37,17 @@ fi
 export MACH=$1
 shift
 export SERVER=https://${MACH}:8443
+#to test 7258 uncomment next line
+#export SERVER=$MACH 
 if [ "$MACH" = "default" ]; then
     export SERVER_SPEC=""
 else
     export SERVER_SPEC=" --jobsub-server $SERVER "
+fi
+if [ "$OTHER_FLAGS" = "" ]; then
+    echo -n
+else
+    export SERVER_SPEC="$SERVER_SPEC $OTHER_FLAGS"
 fi
 if [ "$POOL" = "" ]; then
     export POOL=$MACH

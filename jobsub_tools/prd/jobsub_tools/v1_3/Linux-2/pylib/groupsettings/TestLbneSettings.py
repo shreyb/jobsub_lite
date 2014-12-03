@@ -3,19 +3,22 @@
 
 import unittest
 from TestJobSettings import JobTest
-from JobSettings import JobSettings
+#from JobSettings import JobSettings
 from LbneSettings import LbneSettings
 
 
 class LbneTest(JobTest):
 
     def setUp(self):
+        super(LbneTest,self).ioSetUp()
         self.ns = LbneSettings()
-
+        super(LbneTest,self).stdioON()
+        super(LbneTest,self).setUp()
 
     def testLbneConstructor(self):
 
         ns = self.ns    
+        self.assertEqual(ns.settings['condor_tmp'], self.tmpdir)
         self.assertEqual(ns.settings['lbne_condor'],
                          ns.settings['group_condor'])
         self.assertEqual(ns.settings['defaultrelarea'],
@@ -38,8 +41,10 @@ class LbneTest(JobTest):
     def testLbneBadInput(self):
 
         ns = self.ns
+	self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
-                          ['--deliberately_bogus_option','lalalala'],2)
+                          ['--deliberately_bogus_option=dumb_stuff','lalalala'],2)
+	self.stdioON()
         super(LbneTest,self).testBadInput()
                          
 

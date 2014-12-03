@@ -6,11 +6,12 @@ if [ "$SPECIAL_PRINCIPAL_LOCATION" = "" ]; then
     echo "installs a jobsub server on a fermicloud machine"
     echo "must be run as root"
     exit 1
+    #SPECIAL_PRINCIPAL_LOCATION=rexbatch@some_machine
 fi
 
 RPM_LOCATION=$2
 if [ "$RPM_LOCATION" = "" ]; then
-    RPM_LOCATION=https://cdcvs.fnal.gov/redmine/attachments/download/14608/jobsub-0.1.1-1.noarch.rpm
+    RPM_LOCATION=http://web1.fnal.gov/files/jobsub/dev/6/x86_64/jobsub-0.4-0.3.rc3.noarch.rpm
 fi
 
 rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
@@ -20,14 +21,13 @@ echo condor:x:3302:grid >> /etc/group
 /usr/sbin/useradd -u 4287 -g 3302 grid
 
 yum -y install upsupdbootstrap-fnal
-su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools v1_3_1_1 -f Linux+2; ups declare -c jobsub_tools v1_3_1_1 -f Linux+2"
+su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools v1_3_1_1 -f Linux+2; ups declare -c jobsub_tools v1_3_1_1 -f Linux+2; upd install ifdhc v1_4_3; ups declare -c ifdhc v_1_4_3; upd install ups v5_1_2; ups declare -c ups v5_1_2; ups undeclare ups v4_8_0 -f Linux+2"
 
 yum -y install $RPM_LOCATION
 
 
 mkdir ~grid/.security
-scp ${SPECIAL_PRINCIPAL_LOCATION}:/home/grid/.security/fifegrid.keytab  ~grid/.security 
-scp fermicloud326:/home/grid/.security/kadmin_passwd  ~grid/.security 
+scp ${SPECIAL_PRINCIPAL_LOCATION}:.security/*.keytab  ~grid/.security 
 chmod -R 700 ~grid/.security
 chown -R grid:condor ~grid/.security
 mkdir -p /opt/jobsub/server/log

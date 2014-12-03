@@ -1,19 +1,28 @@
 #!/bin/sh 
 VERS=v1_3
-REV=_1
-./make_tablefile.py $VERS$REV
+REV=_2_0
 
 if [ "$1" ==  "" ]; then
-	echo "usage $0 target_machine"
+	echo "usage $0 target_machine [VER] [REV]"
 	echo "tars up jobsub_tools and distributes it to /fnal/ups/prd"
 	exit -1
 fi
+
+if [ "$2" != "" ] ; then
+    VERS=$2
+fi
+
+if [ "$3" != "" ] ; then
+    REV=$3
+fi
+mkdir -p ups_db/jobsub_tools
+./make_tablefile.py $VERS$REV
 cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
 cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"
 scp db.jobsub_tools.tar products@$1.fnal.gov:/fnal/ups/db
-ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_tools.tar; rm db.jobsub_tools.tar; rm jobsub_tools/${VERS}c.fifebatch.version"
+ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_tools.tar; rm db.jobsub_tools.tar; "
 rm  db.jobsub_tools.tar
 cd ../prd
 cd jobsub_tools/${VERS}/Linux-2

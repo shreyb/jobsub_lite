@@ -51,6 +51,7 @@ class UsersResource(object):
                 rc = {'err': err}
         except:
             err = 'Exception on UsersResource.index'
+            cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}
 

@@ -67,8 +67,8 @@ class MinervaSettings(JobSettings):
         return super(MinervaSettings,self).initCmdParser()
 
 
-    def makeWrapFile(self):
-        super(MinervaSettings,self).makeWrapFile()
+    def makeWrapFilePreamble(self):
+        super(MinervaSettings,self).makeWrapFilePreamble()
         
         f = open(self.settings['wrapfile'], 'a')
         
@@ -95,9 +95,10 @@ class MinervaSettings(JobSettings):
             f.write("\n")
             if self.settings['testreldir'] != "":
 
-                f.write("cd %s/cmt/\n" % settings['testreldir'])    # users working package
+                f.write("pushd %s/cmt/\n" % settings['testreldir'])    # users working package
                 f.write("cmt config\n")
                 f.write("source setup.sh\n")
+                f.write("popd\n")
 
             f.write("\n")
         f.close()

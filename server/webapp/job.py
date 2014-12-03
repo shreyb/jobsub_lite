@@ -22,6 +22,9 @@ from condor_commands import condor, api_condor_q,ui_condor_q
 from condor_commands import classad_to_dict,constructFilter
 from sandbox import SandboxResource
 from history import HistoryResource
+from dag import DagResource
+from queued_long import QueuedLongResource
+from queued_dag import QueuedDagResource
 
 
 
@@ -31,6 +34,9 @@ class AccountJobsResource(object):
 	self.role=None
         self.sandbox = SandboxResource()
 	self.history = HistoryResource()
+        self.dag = DagResource()
+	self.long=QueuedLongResource()
+	self.dags=QueuedDagResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
@@ -114,6 +120,7 @@ class AccountJobsResource(object):
         if job_id is None:
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
+            jobsub_client_version = kwargs.get('jobsub_client_version')
             if jobsub_args is not None:
 
                 jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()
@@ -134,6 +141,7 @@ class AccountJobsResource(object):
                 mkdir_p(command_path)
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path, jobsub_command.filename)
+                    os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     with open(command_file_path, 'wb') as dst_file:
@@ -146,7 +154,7 @@ class AccountJobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
 
-                rc = execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id, role)
+                rc = execute_jobsub_command(acctgroup=acctgroup, uid=uid, jobsub_args=jobsub_args, workdir_id=workdir_id, role=role, jobsub_client_version=jobsub_client_version)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
@@ -191,6 +199,7 @@ class AccountJobsResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
+            cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
@@ -200,9 +209,11 @@ class AccountJobsResource(object):
 
 
     def doJobAction(self, acctgroup, job_id, job_action):
+        warning=''
         dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(dn)
-        constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+        #constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
+        constraint = '(Owner =?= "%s")' % (uid)
         # Split the jobid to get cluster_id and proc_id
 	stuff=job_id.split('@')
 	schedd_name='@'.join(stuff[1:])
@@ -217,11 +228,20 @@ class AccountJobsResource(object):
 	if schedd_name == '':
 		schedd=condor.Schedd()
 	else:
-		schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
-        	schedd = condor.Schedd(schedd_addr)
+		try:
+			schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
+                        schedd = condor.Schedd(schedd_addr)
+		except:
+                        warning='Failed to locate schedd %s,  will try with local schedd.  '%schedd_name
+                        logger.log(warning)
+			schedd=condor.Schedd()
+
 	#os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup)
 	os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,self.role)
         out = schedd.act(job_action, constraint)
         logger.log(('%s' % (out)).replace('\n', ' '))
-
-        return "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])
+        retStr=''
+        if len(warning)>0:
+            retStr=warning
+        retStr=retStr+ "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])
+        return retStr

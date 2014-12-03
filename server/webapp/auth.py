@@ -28,7 +28,8 @@ import logger
 import subprocessSupport
 from util import needs_refresh
 from tempfile import NamedTemporaryFile
-from jobsub import get_voms
+from jobsub import get_voms,AcctGroupNotConfiguredError
+
 
 class AuthenticationError(Exception):
     def __init__(self, dn, acctgroup=''):
@@ -65,9 +66,12 @@ class Krb5Ticket:
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
         logger.log(cmd)
-        kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
-        if kinit_err:
-            raise Exception("createKrbCache error: %s" % kinit_err)
+        try:
+            kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
+        except:
+            logger.log('removing file %s'%self.krb5cc)
+            os.remove(self.krb5cc)
+            raise 
 
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
@@ -85,11 +89,17 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
     # Any excpetion raised will result in Authorization Error by the caller
-    voms_attrs = get_voms(acctgroup)
+    try:
+        voms_attrs = get_voms(acctgroup)
+    except AcctGroupNotConfiguredError, e: 
+        os.remove(new_proxy_fname)
+        logger.log("%s"%e) 
+        raise
+
 
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
-    cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
+    cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
     try:
@@ -105,11 +115,13 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         else:
             # Anything else we should just raise
             raise
-    cmd = "%s -exists -file %s"%(voms_proxy_info_exe,new_proxy_fname)
+    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,new_proxy_fname)
     logger.log(cmd)
     ret_code = os.system(cmd)
     if ret_code == 0:
 	os.rename(new_proxy_fname,proxy_fname)
+    else:
+        os.remove(new_proxy_fname)
 
 
 
@@ -163,16 +175,16 @@ def kadmin_command(command):
 
 
 def authenticate(dn):
-    # For now assume kerberos DN only
-    KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$)'
-    #for testing, using robot certs etc
-    #KCA_DN_PATTERN = '^/DC=gov/DC=fnal/O=Fermilab/OU.*/CN.*/CN=UID:(.*$)'
+    KCA_DN_PATTERN_LIST=os.environ.get('KCA_DN_PATTERN_LIST')
+    logger.log("dns patterns supported:%s "% KCA_DN_PATTERN_LIST )
 
-    username = re.findall(KCA_DN_PATTERN, dn)
-    if not (len(username) == 1 and username[0] != ''):
-        raise AuthenticationError(dn)
+    for pattern in KCA_DN_PATTERN_LIST.split(','):
+    	username = re.findall(pattern, dn)
+    	if len(username) >= 1 and username[0] != '':
+		return username[0]
 
-    return username[0]
+    raise AuthenticationError(dn)
+
 
 def x509_proxy_fname(username,acctgroup,acctrole=None):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
@@ -263,16 +275,20 @@ def refresh_proxies(agelimit=3600):
             already_processed.append(line)
             check=line.split("^")
             if len(check)==3:
-                ac_grp=check[0]
-                dn=check[1]
-                grp,user=ac_grp.split(".")
-                if user not in queued_users:
-                    queued_users.append(user)
-                grp=grp.replace("group_","")
-		proxy_name=os.path.basename(check[2])
-		x,uid,role=proxy_name.split('_')	
-                print "checking proxy %s %s %s %s"%(dn,user,grp,role)
-                authorize(dn,user,grp,role,agelimit)
+                try:
+                    ac_grp=check[0]
+                    dn=check[1]
+                    grp,user=ac_grp.split(".")
+                    if user not in queued_users:
+                        queued_users.append(user)
+                    grp=grp.replace("group_","")
+		    proxy_name=os.path.basename(check[2])
+		    x,uid,role=proxy_name.split('_')	
+                    print "checking proxy %s %s %s %s"%(dn,user,grp,role)
+                    authorize(dn,user,grp,role,agelimit)
+                except:
+                    logger.log("Error processing %s"%line)
+                    logger.log("%s"%sys.exc_info()[1])
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \

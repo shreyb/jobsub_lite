@@ -18,23 +18,12 @@ else
 	exit -1
 fi
 
-export USER=$1
-shift
-export GROUP=$1
-shift
-export WORKDIR_ID=$1
-shift
-export ROLE=$1
-shift
-export SCHEDD=$1
-shift
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
+
 setup jobsub_tools
 
-#if [ "$ROLE" != "None" ]; then
-#	export X509_USER_PROXY=${X509_USER_PROXY}_${ROLE}
-#fi
+
 
 mkdir -p ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
@@ -47,12 +36,39 @@ if [ $RSLT == 0 ] ; then
 	echo $cmds > $file
 	source $file
 	shift
+        if [ "$DEBUG_JOBSUB" = "" ]; then
+          rm $file
+        fi
 fi
+echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
+if [ "$?" != "0" ]; then
+   export TRANSFER_INPUT_FILES=${JOBSUB_COMMAND_FILE_PATH}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
+fi
+      
+if [ "$ENCRYPT_INPUT_FILES" = "" ]; then
+   TEC=""
+else
+   export TRANSFER_INPUT_FILES=${ENCRYPT_INPUT_FILES}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
+   TEC=" -l encrypt_input_files=$ENCRYPT_INPUT_FILES  -e KRB5CCNAME"
+fi
+
+JSV=""
+if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
+    JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
+fi
+
+JCV=""
+if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
+    JCV=" -l +JobsubClientVersion=\"$JOBSUB_CLIENT_VERSION\" "
+fi
+
 JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $@"
+export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV $@"
+
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
 fi
+chmod +x ${JOBSUB_COMMAND_FILE_PATH}
 RSLT=`$JOBSUB_CMD`
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "$RSLT "  >> /tmp/jobsub_env_runner.log

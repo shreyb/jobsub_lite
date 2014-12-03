@@ -11,6 +11,7 @@ import re
 import datetime
 import time
 import subprocess
+from JobsubConfigParser import JobsubConfigParser
 
 docString = """
  $Id$
@@ -132,7 +133,7 @@ flag will ensure that only (pos_integer) number of your jobs will run at the sam
 is intended to prevent overwhelming shared resources such as databases.
 """
 usage = """
-usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [-submit_host some_machine.fnal.gov ][-m(ax_running) max_concurrent_jobs ]
+usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [-submit_host some_machine.fnal.gov ][--maxConcurrent  max_concurrent_jobs ]
 
 for detailed instructions on how to use:
 %s -manual | less
@@ -554,20 +555,23 @@ class DagParser(object):
 		self.generateDependencies(outputFile,self.jobList)
 
 class ArgParser(object):
-	def __init__(self):
+	def __init__(self,cfp):
+                cfp.findConfigFile()
 		self.inputFile = ""
 		self.outputFile = ""
 		self.runDag = False
 		self.viewDag = False
 		self.maxJobs = 0
-		self.submitHost = "gpsn01.fnal.gov"
-		#commands=JobUtils()		
-		(retVal,val)=commands.getstatusoutput("id -gn")
-		#print "val='%s'"%val
-                allowed = ["e938","e875","mars","lbnemars","marsmu2e","marsgm2","larrand","nova","t-962","mu2e","microboone","lbne","seaquest","coupp","gm2"]
-		if val not in allowed:
-			print "ERROR do not run this script as member of group %s" % val
-			print "newgrp to one of %s and try again"% allowed
+		self.submitHost = os.environ.get("SUBMIT_HOST")
+                self.condorSetup = cfp.get(self.submitHost,"condor_setup_cmd")
+                self.group = os.environ.get("GROUP")
+                allowed = cfp.supportedGroups()
+                if len(self.condorSetup)>0 and self.condorSetup.find(';')<0:
+                    self.condorSetup=self.condorSetup+";"
+
+		if self.group not in allowed:
+			print "ERROR do not run this script as member of group %s" % self.group
+			print "export GROUP=one of %s and try again"% allowed
 			sys.exit(-1)
 			
 
@@ -584,7 +588,7 @@ class ArgParser(object):
 				self.inputFile = sys.argv[i]
 			if arg in ["--outputFile", "-output_file", "-o" ]:
 				self.outputFile = sys.argv[i]
-			if arg in ["--maxRunning", "-max_running", "-m" ]:
+			if arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
 				self.maxJobs = int(sys.argv[i])
 			if arg in ["--submit", "-submit", "-s" ]:
 				self.runDag = True
@@ -638,14 +642,17 @@ class JobRunner(object):
 		ups_shell = os.environ.get("UPS_SHELL")
 		if ups_shell is None:
 			ups_shell="sh"
+                if ups_shell == "csh" and args.condorSetup.find( '/opt/condor/condor.sh')>=0 :
+                    args.condorSetup = 'source /opt/condor/condor.csh ;'
 
 		if host == args.submitHost:
-			cmd = """ source /opt/condor/condor.%s ; condor_submit_dag """ % ups_shell
+			cmd = """ %s  condor_submit_dag -dont_suppress_notification  """ % args.condorSetup
 		else:
-			cmd = """ssh %s "source /opt/condor/condor.%s ; condor_submit_dag """ % (args.submitHost,ups_shell)
+			cmd = """ssh %s " %s  condor_submit_dag -dont_suppress_notification """ % (args.submitHost,args.condorSetup)
 		cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
 		if args.maxJobs > 0:
 			cmd = cmd + " -maxjobs %d " % args.maxJobs
+                cmd = cmd + """ -append "+Owner=\\"%s\\"" """%os.environ.get("USER")
 		cmd = cmd + args.outputFile
 		if host != args.submitHost:
 		        cmd = cmd + ' "'
@@ -653,16 +660,19 @@ class JobRunner(object):
 		(retVal,val)=commands.getstatusoutput(cmd)
 		if retVal:
 			print "ERROR executing ",cmd
-			print val
-		else:
-			cmd2 = cmd2 + args.outputFile + ".dot &"
-			print "to monitor your dags progress try this command:\n ", cmd2
+                        print val
+                        retVal=retVal%256
+                        if retVal==0:
+                            retVal=1
+                        sys.exit(retVal)
+		print val
 
 
 	
 
 if __name__ == '__main__':
-	args=ArgParser()
+        c=JobsubConfigParser()
+	args=ArgParser(c)
 	d=DagParser()
 	d.digestInputFile(args.inputFile)
 	d.generateDag(args.outputFile)

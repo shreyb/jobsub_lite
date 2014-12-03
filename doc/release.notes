@@ -1,4 +1,115 @@
 ================================================================================
+v1.0.3
+================================================================================
+
+CLIENT
+------
+* Bug Fix: jobsub_submit --tarfile=dropbox:// and --tarfile dropbox:// now
+  correctly exhibit same behavior. #7227
+* Bug Fix: jobsub_fetchlog --list-sandboxes now queries all the servers in HA
+
+SERVER
+------
+* Bug Fix: Server does not fail with QueuedJobsResouce.index when jobsub_q
+  command is run without any options. #7226
+
+================================================================================
+v1.0.2
+================================================================================
+
+CLIENT
+------
+* jobsub_q supports option --summary to display summary of queued jobs. #7030
+* jobsub_fetchlog supports option --list-sandboxes. #7112
+* Bug Fix: jobsub_q now works when only --jobid option is provided. #6836
+* Bug Fix: Jobsub client is more graceful when no client kerberoes credentials
+  are present. #7035
+* Bug Fix: Jobsub client commands print additional server information to stderr
+  to help with debugging issues. #7097
+* Bug Fix: jobsub_submit_dag --help now displays correct help message. #6949 #7113
+* Bug Fix: jobsub_history now contants all the jobsub servers in HA to get the
+  the history info. #7169
+
+SERVER
+------
+* Added an API to query jobsub server and tools version. #6955
+* Bug Fix: Jobsub server now correctly authenticates client with kcron
+  credentials. #7101
+
+================================================================================
+v1.0.1
+================================================================================
+
+SERVER
+------
+* Bug Fix: Fixed an issue where the krbrefresh.sh would fail for some
+  use cases. #7084
+
+================================================================================
+v1.0
+================================================================================
+
+CLIENT
+------
+* Client commands default to JOBSUB_GROUP and JOBSUB_SERVER environment
+  variables if --group and --jobsub-server are not provided
+* Add support for dagnabbit. #6019
+* jobsub_q now prints a header column. #6791
+* jobsub_q now support --user option. #6517
+* Improved error reporting in case of failures. #6817
+
+SERVER
+------
+* Add support for dagnabbit. #6019
+* Bug Fix: Server now correctly compares information passed through
+  custom attributes like USAGE_MODELS. #6806
+* Bug Fix: Server properly cleans up proxy files if there are authentication
+  errors. #6660
+
+================================================================================
+v0.4
+================================================================================
+
+CLIENT
+------
+* Dropped he '.py' extension from the client executables. For example, users
+  should be using jobsub_fetchlog, jobsub_history, jobsub_hold, jobsub_q,
+  jobsub_release, jobsub_remote.sh, jobsub_rm, jobsub_submit. Executables
+  with .py extension are deprecated
+* jobsub-support@fnal.gov is advertised with --help option. #6359
+* jobsub_q now supports --summary is now equivalent of ifront_q. #5535
+* Jobsub client tools now support --version option. #5576 #6429
+* Improved client error message reporting in certain cases. #6364 #6366 #6367
+  #6375 #6507
+* Bug Fix: Jobsub client does not insist on a particular python version if it
+  is recent enough. #6571
+* Bug Fix: Fixed an issue where client would crash when no X509_CA_DIR is not
+  set. #6489
+* Bug Fix: Fixed several issues with jobsub_submit. #6523 #6561 #6562 #6563
+* Bug Fix: Fixed a bug where client would sometimes not find user
+  credentials correctly. #6436
+* Bug Fix: Tweaked the curl timeout to reduce timeout while executing long
+  running tasks like job submission and fetching output. #6513
+
+SERVER
+------
+* Relevant KRB credentials are made available to user job to be used with the
+  CDF infrastructure. #6541
+* Server now advertises the jobsub client and server versions in the
+  job's classad. #5576 #6589
+* Only recent MB of job's stdout/stderr is brought back to the server. The
+  size is configurable using jobsub_max_log_size and is limited to 5MB max per
+  HTCondor job. #5907
+* Bug Fix: Server now correctly sets the job executables permissions after
+  transfer from the client. #6664
+* Bug Fix: Server now generates RFC proxies to be used with the jobs. #6659
+* Bug Fix: Fixed duplicate file issues in the dropbox. #6563
+* Bug Fix: Server now correctly returns error code 501 for unimplemented
+  APIs. #6647
+* Bug Fix: Files transferred to the dropbox are now correctly made available
+  to the job using HTCondor's internal transfer mechanism. #6562
+
+================================================================================
 v0.3.1
 ================================================================================
 

@@ -19,7 +19,8 @@ This script refreshes the kerberos proxies of any user in the queue
 that has a kerberos principal older than [age_in_seconds].  If no
 [age_in_seconds] argument is given, the default of 3600 seconds is used.
 
-This script logs its actions to file /opt/jobsub/server/log/admin.log
+This script logs its actions to file $JOBSUB_LOG_DIR/krbrefresh.log
+JOBSUB_LOG_DIR is set in the webservers jobsub_api.conf file
 ##################################################################
 USER_DOCUMENTATION
 exit 0

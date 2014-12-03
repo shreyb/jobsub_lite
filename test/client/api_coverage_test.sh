@@ -15,8 +15,11 @@ if [ "$MACH" = "" ]; then
     MACH=fifebatch
 fi
 
-if [ "$GROUP" = "" ]; then
+if [[ "$GROUP" = "" && "$JOBSUB_GROUP" = "" ]]; then
     GROUP=nova
+fi
+if [ "$JOBSUB_GROUP" != "" ]; then
+    GROUP=$JOBSUB_GROUP
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
@@ -54,10 +57,12 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/?job_id=1.0@${MACH}.fnal.gov "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/ "
-
-#some URLS that need to be implemented and put in the API doc
-
+GET_URLS=${GET_URLS}" /jobsub/jobs/summary/ "
 GET_URLS=${GET_URLS}" /jobsub/version/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/job_doesnt_exist/sandbox/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/sandboxes/${USER}/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/help/ "
+
 
 
 for URL in ${GET_URLS}; do
@@ -66,7 +71,7 @@ for URL in ${GET_URLS}; do
    cmd="curl $GET_FLAGS https://${MACH}.fnal.gov:8443${URL} "
 
    echo "https://${MACH}.fnal.gov:8443${URL}"
-   echo $cmd > $outfile
+   echo $cmd >> $outfile
    echo '--------------------------------------------------' >> $outfile
    bash -c "$cmd" >> $outfile
 done
@@ -76,3 +81,4 @@ echo
 echo quick and dirty report of which pages are implemented or not
 echo
 grep 'HTTP/1.1' ${MACH}.*out
+grep 'HTTP/1.1' ${MACH}.*out >> $TESTLOGFILE

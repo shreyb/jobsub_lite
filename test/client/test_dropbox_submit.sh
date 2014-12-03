@@ -10,9 +10,11 @@ tar cfv stuff.tar * > /dev/null
 
 export SERVER=https://${MACH}:8443
 
-$EXEPATH/jobsub_submit.py --group $GROUP --debug \
-       $SERVER_SPEC \
-              dropbox://stuff.tar \
+$EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
+       $SERVER_SPEC $SUBMIT_FLAGS \
+              --tar_file_name dropbox://stuff.tar \
             -e SERVER --nowrapfile  file://"$@"
+SUBMIT_WORKED=$?
 rm stuff.tar
-
+echo $0 exiting with status $SUBMIT_WORKED
+exit $SUBMIT_WORKED

@@ -15,7 +15,7 @@ if [ "$rpmfile" = "" ]; then
     exit 1
 fi
 
-repologin="$USER@web1.fnal.gov"
+repologin="jobsub@web1.fnal.gov"
 repodir='/var/www/html/files/jobsub'
 #For now only SL6 support
 versionlist='6'
@@ -32,6 +32,7 @@ for flavor in $flavors; do
             remote_cmd "mkdir -p $workdir"
             scp $rpmfile "$repologin:$workdir"
             remote_cmd "createrepo $workdir"
+            #remote_cmd "chmod -R g+w $workdir"
          done
     done
 done

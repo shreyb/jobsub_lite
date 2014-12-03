@@ -40,6 +40,7 @@ COMMON:
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR}/pylib/, ':' )
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR}/pylib/groupsettings, ':' )
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR}/pylib/JobsubConfigParser, ':' )
+    envPrepend(PYTHONPATH, ${UPS_PROD_DIR}/pylib/DAGParser, ':' )
     envPrepend(PATH, ${UPS_PROD_DIR}/bin)
     Execute("source ${JOBSUB_TOOLS_DIR}/bin/setup_condor",UPS_ENV)
 
@@ -50,6 +51,8 @@ COMMON:
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/, ':' )
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/groupsettings, ':' )
      pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/JobsubConfigParser, ':' )
+     pathRemove(PYTHONPATH, ${UPS_PROD_DIR}/pylib/DAGParser, ':' )
+     pathRemove(PATH, ${UPS_PROD_DIR}/bin)
      envUnset(JOBSUB_TOOLS5LIB)
      unproddir()
      unsetupenv()

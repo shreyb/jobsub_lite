@@ -25,19 +25,39 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
 from jobsubClient import version_string
 from jobsubClient import http_code_to_rc
+from jobsubClient import get_jobexe_idx
 from defaultServer import defaultServer
 
 
 def split_client_server_args(parser, argv):
+    # NOTE: We need to correctly distinguish jobsub client's args from
+    #       from that of the user exe if they have same name.
+    #
+    # For example:
+    # jobsub_submit --group minerva file://test.sh --group nova one two --debug
+    # Client args: --group minerva
+    # Server/User args: file://test.sh --group nova one two --debug
+    #
+    # To make the distinction:
+    # STEP 1 : (a) Split client args and server args
+    #          (b) Identify the user exe in server args and its position
+    #          (c) Identify the user exe's position in original argv list
+    # STEP 2 : Any common args that appear after user exe are considered as
+    #          server args and removed from the client args list
+
     cli_argv = [argv[0]]
     srv_argv = []
 
+    # Loop through all the command line args
     i = 1
     while (i < len(sys.argv)):
 
+        # Check if this is defined as a client option in the parser
         opt = parser.get_option(argv[i])
 
         if opt:
+            # Option is defined as a client option in the parser
+            # This is a client option of form '--arg value' or '-a value'
             cli_argv.append(argv[i])
             if opt.action in optparse.Option.TYPED_ACTIONS:
                 try:
@@ -46,6 +66,7 @@ def split_client_server_args(parser, argv):
                 except IndexError:
                     parser.error('%s option requires an argument' % argv[i])
         elif '=' in argv[i]:
+            # This argument maybe of the form --arg=value
             # Check if the arg splitter is '=' example --foo=bar
             opt = parser.get_option(argv[i].split('=')[0])
             if opt:
@@ -53,9 +74,16 @@ def split_client_server_args(parser, argv):
             else:
                 srv_argv.append(argv[i])
         else:
+            # We know nothing of this item. Assume server side option.
             srv_argv.append(argv[i])
 
         i += 1
+        # Check if we have jobexe by now
+        if get_jobexe_idx(srv_argv) is not None:
+            # We found the jobexe. Copy rest of the items in sys.argv
+            # to srv_argv and return. There should be no client args now.
+            srv_argv += argv[i:]
+            break
 
     return (cli_argv, srv_argv)
 

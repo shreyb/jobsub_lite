@@ -66,7 +66,7 @@ JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
 export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\"$JOBSUBPARENTJOBID\" -l +JobsubJobId=\"$JOBSUB_JOBID\" -l +Owner=\"$USER\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV "
 
-export JOBSUB_CMD="dagNabbit.py -i $@ -s"
+export JOBSUB_CMD="dagNabbit.py -s -i $@ "
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log

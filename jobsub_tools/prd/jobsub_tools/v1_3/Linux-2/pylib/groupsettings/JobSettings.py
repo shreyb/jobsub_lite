@@ -579,6 +579,9 @@ class JobSettings(object):
 		f.write("touch .empty_file\n")
                 if 'tar_file_basename' in settings:
                     f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
+                    #this is not the right way to do this, should look at ini file to see where to 
+                    #untar it or whether to untar it at all
+                    #doing it this way now as we need to get this out the door
                     if settings['group']!='cdf':
                     	f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 

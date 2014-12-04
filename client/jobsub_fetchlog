@@ -91,7 +91,7 @@ def parse_opts(argv):
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
-    parser.add_option('--list-sandboxes',
+    parser.add_option('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
                       metavar='<List Sandboxes and creation dates>',

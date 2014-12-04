@@ -579,7 +579,8 @@ class JobSettings(object):
 		f.write("touch .empty_file\n")
                 if 'tar_file_basename' in settings:
                     f.write("export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n"%settings['tar_file_basename'])
-                    f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
+                    if settings['group']!='cdf':
+                    	f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
 		
 		f.write("# Hold and clear arg list\n")
@@ -630,28 +631,33 @@ class JobSettings(object):
                 exe_script=settings['exe_script']
                 if settings['transfer_executable']:
                     exe_script=os.path.basename(settings['exe_script'])
+		f.write("export JOBSUB_EXE_SCRIPT=`find . -name %s -print`\n"%os.path.basename(settings['exe_script']))
 		script_args=''
 		if settings['verbose']:
 			f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")
 		for x in settings['script_args']:
 			script_args = script_args+x+" "
-		log_cmd = """%s log "%s:BEGIN EXECUTION %s %s "\n"""%\
-                        (ifdh_cmd,settings['user'],os.path.basename(exe_script),script_args)
+		log_msg = """BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  %s \n"""%\
+                        (script_args)
+		log_cmd = """%s log "%s:%s "\n"""%\
+                        (ifdh_cmd,settings['user'],log_msg)
 		f.write(log_cmd)
+		f.write("echo %s"%log_msg)
 		if settings['joblogfile'] != "":
 			if settings['nologbuffer']==False:
-				f.write("%s %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
-                                        (exe_script,script_args))
+				f.write("$JOBSUB_EXE_SCRIPT %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
+                                        (script_args))
 			else:
-				f.write("%s %s > %s  2>&1\n" % \
-                                        (exe_script,script_args,settings['joblogfile']))
+				f.write("$JOBSUB_EXE_SCRIPT %s > %s  2>&1\n" % \
+                                        (script_args,settings['joblogfile']))
 
 		else:
-			f.write("%s %s  \n" % \
-						(exe_script,script_args))
+			f.write("$JOBSUB_EXE_SCRIPT %s  \n" % \
+						(script_args))
  
 
 		f.write("JOB_RET_STATUS=$?\n")
+		f.write("echo $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS\n")
 
 		log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""% \
                     (ifdh_cmd,settings['user'],os.path.basename(exe_script))

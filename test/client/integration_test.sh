@@ -70,6 +70,18 @@ lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
 pass_or_fail
+lg_echo testing dag submission 
+OUTFILE=$1.testdag.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
+pass_or_fail
+lg_echo testing cdf sam job
+cd cdf_dag_test
+OUTFILE="../$1.test_cdf_sam_job.log"
+sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
+JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+GOTJID3=`echo $JID2| grep '[0-9].0@'`
+pass_or_fail
+cd -
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
@@ -102,17 +114,5 @@ lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$OUTFILE  2>&1
 pass_or_fail
-lg_echo testing dag submission 
-OUTFILE=$1.testdag.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
-pass_or_fail
-lg_echo testing cdf sam job
-cd cdf_dag_test
-OUTFILE="../$1.test_cdf_sam_job.log"
-sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
-JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-GOTJID3=`echo $JID2| grep '[0-9].0@'`
-pass_or_fail
-cd -
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
 for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

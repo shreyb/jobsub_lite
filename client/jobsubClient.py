@@ -105,12 +105,34 @@ class JobSubClient:
         if self.serverArgv:
             self.jobExeURI = get_jobexe_uri(self.serverArgv)
             self.jobExe = uri2path(self.jobExeURI)
+            d_idx=get_dropbox_idx(self.serverArgv)
+            if d_idx is not None and d_idx<len(self.serverArgv):
+                self.serverArgv=self.serverArgv[:d_idx]+self.serverArgv[d_idx].split('=')+self.serverArgv[d_idx+1:]
             self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
             self.serverEnvExports = get_server_env_exports(server_argv)
             srv_argv = copy.copy(server_argv)
             if not os.path.exists(self.jobExe):
                 err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
-                raise JobSubClientError(err)
+                exeInTarball=False
+                try:
+                    dropbox_uri=get_dropbox_uri(self.serverArgv)
+                    #print "dropbox_uri is %s"%dropbox_uri
+                    tarball=uri2path(dropbox_uri)
+                    contents=tarfile.open(tarball,'r').getnames()
+                    if self.jobExe in contents:
+                        exeInTarball=True
+                    else:
+                        for arg in self.serverArgv:
+                            if arg in contents:
+                                exeInTarball=True    
+                    if exeInTarball:
+                        pass
+                    else:
+                        raise JobSubClientError(err)
+
+                except:
+                
+                    raise JobSubClientError(err)
 
 
             if self.jobDropboxURIMap:
@@ -508,7 +530,7 @@ class JobSubClient:
         if uri:
             protocol = '%s://' % (uri.split('://'))[0]
             if protocol in constants.JOB_EXE_SUPPORTED_URIs:
-                return True
+                return os.path.exists(uri2path(uri))
         return False
 
 
@@ -817,6 +839,29 @@ def get_jobexe_idx(argv):
 
     return None
 
+def get_dropbox_idx(argv):
+
+    i = 0
+    while(i < len(argv)):
+        if argv[i].find(constants.DROPBOX_SUPPORTED_URI)<0: 
+            i += 1
+        else:
+            return i
+
+    return None
+
+def get_dropbox_uri(argv):
+    dropbox_idx = get_dropbox_idx(argv)
+    dropbox_uri = None
+    if dropbox_idx is not None:
+       dropbox_uri = argv[dropbox_idx]
+       if dropbox_uri.find('=')>0:
+           parts=dropbox_uri.split('=')
+           for part in parts:
+               if part.find(constants.DROPBOX_SUPPORTED_URI)>=0:
+                   dropbox_uri=part.strip()
+                   return dropbox_uri
+    return dropbox_uri
 
 def get_jobexe_uri(argv):
     exe_idx = get_jobexe_idx(argv)

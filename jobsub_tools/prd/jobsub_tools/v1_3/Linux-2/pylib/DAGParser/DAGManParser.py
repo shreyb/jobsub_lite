@@ -312,14 +312,14 @@ class DAGManLogParser:
 		print "jid=%s el=%s el[keys]=%s"%(jid,el,el.keys())
             cur = status_strings[el["current"]]
             if cur=="Completed":
-                cur = cur + " " + el["end"]["status"]
+                cur = cur + " Exit Code:%s"% el["end"]["retcode"]
             print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid,socket.gethostname(),cur,el["section"])
             if long:
                 print "\tSubmitted: %s %s" % (el["submit"]["date"] ,el["submit"]["time"])
                 if el.has_key("exe"):
                     print "\tExe on %s: %s %s " % (socket.gethostbyaddr(el["exe"]["node"])[0],el["exe"]["date"],el["exe"]["time"])
                 if el.has_key("end"):
-                    print "\tDone %s: %s %s" % (el["end"]["status"],el["end"]["date"],el["end"]["time"])
+                    print "\tDone Exit Code %s: %s %s" % (el["end"]["retcode"],el["end"]["date"],el["end"]["time"])
                 if el.has_key("abort"):
                     print "\tAbort: %s %s" % (el["abort"]["date"],el["abort"]["time"])
 

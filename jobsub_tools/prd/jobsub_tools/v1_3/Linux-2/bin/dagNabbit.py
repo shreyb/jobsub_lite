@@ -652,7 +652,10 @@ class JobRunner(object):
 		cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
 		if args.maxJobs > 0:
 			cmd = cmd + " -maxjobs %d " % args.maxJobs
-                cmd = cmd + """ -append "+Owner=\\"%s\\"" """%os.environ.get("USER")
+                usr=os.environ.get("USER")
+                grp=os.environ.get("GROUP")
+
+                cmd = cmd + """ -append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """%(usr,grp,usr)
 		cmd = cmd + args.outputFile
 		if host != args.submitHost:
 		        cmd = cmd + ' "'

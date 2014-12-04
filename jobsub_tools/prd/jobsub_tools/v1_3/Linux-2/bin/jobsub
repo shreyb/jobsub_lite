@@ -77,7 +77,7 @@ def doSubmit(settings):
     if settings['usedagman']==False:
         cmd = "cd %s; /usr/bin/sg %s ' %s condor_submit %s'"%('$CONDOR_TMP',settings['storage_group'],condor_setup_cmd,settings['cmdfile'])
     else:
-        append="""-append "+Owner=\\"%s\\"" """%settings['user']
+        append="""-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """%(settings['user'],settings['group'],settings['user'])
         if settings.has_key('maxConcurrent'):
             maxjobs=settings['maxConcurrent']
         else:

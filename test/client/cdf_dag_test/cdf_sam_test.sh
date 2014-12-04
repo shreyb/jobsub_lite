@@ -62,10 +62,10 @@ gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT \
     $SERVER_SPEC \
-    --tarFile=dropbox://input.tgz \
-     file://testSAM.sh $ foo bar baz"
+    --tarFile dropbox://input2.tgz \
+    file://some_subdir/testSAM.sh $ foo bar baz"
 
-echo $gCMD2
+#echo $gCMD2
 
 $gCMD2
 

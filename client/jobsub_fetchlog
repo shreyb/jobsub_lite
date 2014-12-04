@@ -30,7 +30,7 @@ from jobsubClient import get_jobsub_server_aliases
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer and (options.jobId or options.list):
+        if (options.acctGroup and options.jobsubServer and options.jobId) or (options.jobsubServer and options.list):
             return True
     except AttributeError:
         return False
@@ -96,7 +96,7 @@ def parse_opts(argv):
                       action='store_true',
                       metavar='<List Sandboxes and creation dates>',
                       default=False,
-                      help='list all available sandboxes and creation date for given user/group ')
+                      help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
 
 
     if len(argv) < 1:

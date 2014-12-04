@@ -1,4 +1,33 @@
 ================================================================================
+v1.0.4
+================================================================================
+
+CLIENT
+------
+* New command jobsub_status list sites available to a group. #7151
+* jobsub_q now supports --dag option. #7337
+* jobsub_submit now supports exe that is part on input tarfile. #7309
+* jobsub_fetchlog now supports additional option --list-sandboxes. #7267
+* Bug Fix: jobsub_q -l now behaves correctly. #7336
+* Bug Fix: jobsub_hold/release/remove do not require --group to be specified.
+  #7336
+* Bug Fix: jobsub_submit now correctly distinguishes user args from client args
+  with same name. #6572
+* Bug Fix: Exit code of jobsub_client commands now reflect the status of HTTP
+  response code. #6572
+* Bug Fix: jobsub_submit with no args now correctly shows help instead of error
+  when $JOBSUB_GROUP is available in the environment. #7346
+* Bug Fix: jobsub_submit_dag now respects $JOBSUB_GROUP as default. #7354
+* Bug Fix: jobsub_submit_dag now supports --maxConcurrent option. #7317
+
+SERVER
+------
+* Head & tail size of job's stdout and stderr is now configurable. #7072
+* Added an API to query list of sites allowed for a VO. #7151
+* Fetchlog now returns job's output even with jobid of dag node. #5526
+* Added a sandbox cleanup tool for the server. #7033
+
+================================================================================
 v1.0.3
 ================================================================================
 

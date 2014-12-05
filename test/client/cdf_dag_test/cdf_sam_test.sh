@@ -33,12 +33,12 @@ gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e SAM_PROJECT \
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
-    -N 5 --generate-email-summary \
+    -N 1 --generate-email-summary \
     --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT \
     $SERVER_SPEC \
-    --tarFile dropbox://input.tgz \
+    --tarFile=dropbox://input.tgz \
      file://testSAM.sh $ foo bar baz"
 
 echo $gCMD
@@ -64,7 +64,7 @@ gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --tarFile dropbox://input2.tgz \
     file://some_subdir/testSAM.sh $ foo bar baz"
 
-#echo $gCMD2
+echo $gCMD2
 
 $gCMD2
 

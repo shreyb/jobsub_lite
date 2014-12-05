@@ -109,8 +109,8 @@ class JobSubClient:
             if d_idx is not None and d_idx<len(self.serverArgv):
                 self.serverArgv=self.serverArgv[:d_idx]+self.serverArgv[d_idx].split('=')+self.serverArgv[d_idx+1:]
             self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
-            self.serverEnvExports = get_server_env_exports(server_argv)
-            srv_argv = copy.copy(server_argv)
+            self.serverEnvExports = get_server_env_exports(self.serverArgv)
+            srv_argv = copy.copy(self.serverArgv)
             if not os.path.exists(self.jobExe):
                 err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
                 exeInTarball=False

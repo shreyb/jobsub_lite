@@ -114,5 +114,13 @@ lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$OUTFILE  2>&1
 pass_or_fail
+lg_echo testing list-sandboxes 
+OUTFILE=$1.testlistsandboxes.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_listsandboxes.sh  $SERVER >$OUTFILE  2>&1
+pass_or_fail
+lg_echo testing list-sites 
+OUTFILE=$1.testlist-sites.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
+pass_or_fail
 ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
 for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

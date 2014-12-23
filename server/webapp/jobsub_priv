@@ -1,0 +1,214 @@
+#!/usr/bin/python
+
+###############################################################################
+# Execute privileged actions only
+# For security reasons, code to execute privileged actions should be in this
+# file
+# Only valid output is printed to stdout, everything else including help
+# is printed to the stderar
+###############################################################################
+
+from __future__ import print_function
+import sys
+import re
+import os
+import shutil
+import pwd
+import tempfile
+
+import subprocessSupport
+
+###############################################################################
+
+class BadArgumentsError(Exception):
+    """
+    This exception is raised when a privileged action is called with
+    insufficient or unexpected arguments.
+    """
+
+    def __init__(self, action, argv):
+        self.action = action
+        self.argv = argv
+
+    def __str__(self):
+        return "Action '%s' called with insufficient/unexpected arguments. Arguments received %s" % (self.action, self.argv)
+
+
+class UnknownUserError(Exception):
+
+    def __init__(self, user):
+        self.user = user
+
+    def __str__(self):
+        return "User '%s' does not exist on the system" % self.user
+
+
+class ActionFailedError(Exception):
+
+    def __init__(self, action):
+        self.action = action
+
+    def __str__(self):
+        return "Action '%s' failed" % (self.action)
+
+###############################################################################
+
+def error(*obj):
+    print('ERROR:', *obj, file=sys.stderr)
+
+def get_gums_mapping(llrun_out):
+    """
+    Find out the mapped user from the llrun output and return it
+    If no user found return None
+    """
+
+    user = None
+    pattern = "\[llrun\]: uid=[0-9]*\((.*)\)"
+    #pattern = "\[llrun\]: LCMAPS succeeded"
+    p = re.compile(pattern)
+    m = p.search(llrun_out)
+    if m:
+        user = m.group(1)
+    return user
+
+
+def check_user_doesnot_exist_error(llrun_out):
+    """
+    Checks if llrun ran into issues because of missing user on the system
+    Returns (True, user) in case of error, else (False, None)
+    """
+
+    user = None
+    found = False
+    pattern = ".*Username_handler: Error: Couldn't find the username '(.*)' on the system.*"
+    p = re.compile(pattern)
+    m = p.search(llrun_out)
+    if m:
+        user = m.group(1)
+        found = True
+    return (found, user)
+
+
+###############################################################################
+
+class PrivActionManager:
+
+
+    def __init__(self):
+        # Registered actions
+        self.registeredActions = [
+            'help',
+            'getMappedUsername',
+            'copyFileAsUser',
+            'moveFileAsUser',
+        ]
+
+
+    def help(self, *obj):
+        print('jobsub_priv <action> [action args]', file=sys.stderr)
+        print('Registered actions: %s' % ', '.join(self.registeredActions),
+              file=sys.stderr)
+
+
+    def getMappedUsername(self, argv):
+        if len(argv) != 3:
+            raise BadArgumentsError(argv[0], argv[1:])
+        dn = argv[1]
+        fqan = argv[2]
+        try:
+            cmd = '/usr/sbin/llrun -s -l debug=2,mode=nogsi_ga,policy=authorize_only -d "%s" -f "%s"' % (dn, fqan)
+            out, err = subprocessSupport.iexe_cmd(cmd)
+        except subprocessSupport.CalledProcessError, e:
+            doesnot_exist, user = check_user_doesnot_exist_error(e.output)
+            if doesnot_exist:
+                raise UnknownUserError(user)
+            # We do not know exact error, just raise
+            raise e
+        except Exception, e:
+            raise e
+    
+        # Figure out the mapped user name from the llrun's output
+        user = get_gums_mapping(out)
+        return user
+
+
+    def copyFileAsUser(self, argv):
+        if len(argv) != 4:
+            raise BadArgumentsError(argv[0], argv[1:])
+        src = argv[1]
+        dst = argv[2]
+        user = argv[3]
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = pwd.getpwnam(user).pw_gid
+        except KeyError, e:
+            raise UnknownUserError(user)
+
+        dst_realpath = os.path.realpath(dst)
+        dst_dir = dst_realpath
+        if not os.path.isdir(dst_realpath):
+            dst_dir = os.path.dirname(dst_realpath)
+
+        try:
+            # Action should be atomic. Create a tmpfile, chown and move it.
+            dst_tmp_fd, dst_tmp = tempfile.mkstemp(dir=dst_dir)
+            os.close(dst_tmp_fd)
+            shutil.copy(src, dst_tmp)
+            os.chown(dst_tmp, uid, gid)
+            shutil.move(dst_tmp, dst)
+        except:
+            raise
+
+
+    def moveFileAsUser(self, argv):
+        if len(argv) != 4:
+            raise BadArgumentsError(argv[0], argv[1:])
+        src = argv[1]
+        dst = argv[2]
+        user = argv[3]
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = pwd.getpwnam(user).pw_gid
+        except KeyError, e:
+            raise UnknownUserError(user)
+
+        dst_realpath = os.path.realpath(dst)
+        if os.path.isdir(os.path.realpath(src)):
+            raise OSError(21, 'Is a directory', dst_realpath)
+        dst_dir = os.path.dirname(dst_realpath)
+
+        try:
+            # Action should be atomic. Create a tmpfile, chown and move it.
+            dst_tmp_fd, dst_tmp = tempfile.mkstemp(dir=dst_dir)
+            os.close(dst_tmp_fd)
+            shutil.move(src, dst_tmp)
+            os.chown(dst_tmp, uid, gid)
+            shutil.move(dst_tmp, dst)
+        except:
+            raise
+
+
+###############################################################################
+# Main starts here
+###############################################################################
+
+if __name__ == '__main__':
+
+    rc = 1
+    action = PrivActionManager()
+    if len(sys.argv) == 1:
+        action.help()
+    #elif sys.argv[1] == 'help':
+    #    help()
+    #    rc = 0
+    elif (len(sys.argv) > 1) and (sys.argv[1] in action.registeredActions):
+        try:
+            #print(globals()[sys.argv[1]](sys.argv[1:]))
+            print(getattr(action, sys.argv[1])(sys.argv[1:]))
+            rc = 0
+        except Exception, e:
+            error("'%s' failed with exception: %s" % (sys.argv[1], str(e)))
+    else:
+        error("'%s' not a registered privilege action" % sys.argv[1])
+
+    sys.exit(rc)

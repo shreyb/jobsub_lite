@@ -21,6 +21,15 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+v1_3_7 12/23/14
+====================================================
+- #7567  Suppress log messages to stderr
+
+
+v1_3_6  
+===================================================
+- #7072 Head & tail size of job's stdout and stderr is now configurable. 
+
 v1_3_5 10/23/14
 =====================================================
 - #7088 mail summary of DAG node execution to users

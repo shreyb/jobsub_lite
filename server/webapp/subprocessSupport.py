@@ -82,3 +82,9 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
         raise CalledProcessError(exitStatus, cmd, output="\nEXITCODE:%s\nSTDOUT:%s\nSTDERR:%s" % (exitStatus, stdoutdata, stderrdata))
         #raise CalledProcessError(exitStatus, cmd, output="STDOUT:%s\nSTDERR:%s" %.join(stderrdata))
     return (stdoutdata, stderrdata)
+
+
+def iexe_priv_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
+    out, err = iexe_cmd('sudo %s' % cmd, useShell=useShell,
+                        stdin_data=stdin_data, child_env=child_env)
+    return out, err

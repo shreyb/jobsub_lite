@@ -63,7 +63,8 @@ def should_transfer_krb5cc(acctgroup):
 
     return can_transfer
 
-
+"""
+# Moved this to auth.py where itbelongs
 def get_voms(acctgroup):
     rc = 'fermilab:/fermilab/%s' % acctgroup
     p = JobsubConfigParser()
@@ -74,6 +75,7 @@ def get_voms(acctgroup):
         raise AcctGroupNotConfiguredError(acctgroup)
 
     return rc
+"""
 
 
 def get_dropbox_path_root():

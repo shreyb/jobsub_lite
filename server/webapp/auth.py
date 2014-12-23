@@ -22,13 +22,14 @@ import os
 import sys
 import re
 import traceback
-from distutils import spawn
 import cherrypy
 import logger
 import subprocessSupport
+from distutils import spawn
 from util import needs_refresh
 from tempfile import NamedTemporaryFile
-from jobsub import get_voms,AcctGroupNotConfiguredError
+from jobsub import AcctGroupNotConfiguredError
+from JobsubConfigParser import JobsubConfigParser
 
 
 class AuthenticationError(Exception):
@@ -74,6 +75,29 @@ class Krb5Ticket:
             raise 
 
 
+def get_voms(acctgroup):
+    voms_group = 'fermilab:/fermilab/%s' % acctgroup
+    p = JobsubConfigParser()
+    if p.has_section(acctgroup):
+        if p.has_option(acctgroup, 'voms'):
+            voms_group = p.get(acctgroup, 'voms')
+    else:
+        raise AcctGroupNotConfiguredError(acctgroup)
+    return voms_group
+
+
+def get_voms_attrs(acctgroup, acctrole=None):
+    fqan = get_voms(acctgroup)
+    if acctrole:
+        fqan = '%s/Role=%s' % (fqan, acctrole)
+    return fqan
+
+
+def get_voms_fqan(acctgroup, acctrole=None):
+    attrs = get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
+    return attrs[-1]
+
+
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
@@ -88,17 +112,14 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
-    # Any excpetion raised will result in Authorization Error by the caller
+    # Any exception raised will result in Authorization Error by the caller
     try:
-        voms_attrs = get_voms(acctgroup)
+        voms_attrs = get_voms_attrs(acctgroup, acctrole)
     except AcctGroupNotConfiguredError, e: 
         os.remove(new_proxy_fname)
         logger.log("%s"%e) 
         raise
 
-
-    if acctrole:
-        voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
     cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
@@ -122,7 +143,6 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
 	os.rename(new_proxy_fname,proxy_fname)
     else:
         os.remove(new_proxy_fname)
-
 
 
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
@@ -174,7 +194,7 @@ def kadmin_command(command):
     return 0
 
 
-def authenticate(dn):
+def authenticate_old(dn):
     KCA_DN_PATTERN_LIST=os.environ.get('KCA_DN_PATTERN_LIST')
     logger.log("dns patterns supported:%s "% KCA_DN_PATTERN_LIST )
 
@@ -184,6 +204,30 @@ def authenticate(dn):
 		return username[0]
 
     raise AuthenticationError(dn)
+
+
+def authenticate(dn, acctgroup, acctrole):
+    username = get_gums_mapping(dn, get_voms_fqan(acctgroup, acctrole))
+    logger.log('===== GUMS_USERNAME: %s =====' % username)
+
+    raise AuthenticationError(dn, acctgroup)
+
+
+def get_gums_mapping(dn, fqan):
+    path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
+    llrun_exe = spawn.find_executable('jobsub_priv', path=path)
+    if not llrun_exe:
+        raise Exception("Unable to find command 'llrun' in the PATH.")
+
+    cmd = '%s getMappedUsername "%s" "%s"' % (llrun_exe, dn, fqan)
+    err = ''
+    logger.log(cmd)
+    try:
+        out, err = subprocessSupport.iexe_priv_cmd(cmd)
+    except:
+        logger.log('Error running command %s: %s' % (cmd, err))
+        raise 
+    return out
 
 
 def x509_proxy_fname(username,acctgroup,acctrole=None):
@@ -254,7 +298,7 @@ def is_valid_cache(cache_name):
 
 def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authenticating DN: %s' % dn)
-    username = authenticate(dn)
+    username = authenticate(dn, acctgroup, role)
     logger.log('create_voms_proxy: Authorizing user: %s' % username)
     voms_proxy = authorize(dn, username, acctgroup, role)
     logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
@@ -307,6 +351,7 @@ def check_auth(func):
     def check_auth_wrapper(self, acctgroup, *args, **kwargs):
         logger.log(traceback=True)
         dn = cherrypy.request.headers.get('Auth-User')
+        err = ''
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
             try:
@@ -329,6 +374,8 @@ def check_auth(func):
                 err = 'User authorization has failed:%s'% sys.exc_info()[1]
                 cherrypy.response.status = 401
                 logger.log(err)
+                import traceback
+                traceback.print_exc()
                 rc = {'err': err}
         else:
             # return error for no subject_dn and acct group

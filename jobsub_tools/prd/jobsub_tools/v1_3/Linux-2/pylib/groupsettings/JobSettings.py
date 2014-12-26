@@ -415,14 +415,10 @@ class JobSettings(object):
 							  help="""-e ADDED_ENVIRONMENT exports this variable and its local value to worker node environment. For example export FOO="BAR"; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is "BAR" .  Can use this option as many times as desired""")
 
 
-		generic_group.add_option("--submit_host", dest="submit_host",action="store",
-							  help="submit to different host")
 
 		generic_group.add_option("--site", dest="site",action="store",
 							  help="submit jobs to this site ")
 
-		#file_group.add_option("--input_tar_dir", dest="input_tar_dir",action="store",
-		#					  help="create self extracting tarball from contents of INPUT_TAR_DIR.  This tarball will be run on the worker node with arguments you give to your_script")
 
 		file_group.add_option("--tar_file_name", dest="tar_file_name",action="store",
 							  help="name of tarball to transfer to worker node. Will be added to the transfer_input_files list, and visible to the user job as $INPUT_TAR_FILE.  Does not work on submit host gpsn01, use the -f option to transfer a tar file to gpsn01")
@@ -443,8 +439,6 @@ class JobSettings(object):
 							  help="generate condor_command file but do not submit")
 
 
-		generic_group.add_option("--opportunistic", dest="opportunistic",action="store_true",default=False,
-							  help="submit opportunistically to Fermigrid GP Grid and CDF Grid.  This option will allow you to potentially get more slots than your Fermigrid quota, but these slots are subject to preemption")
 
 		generic_group.add_option("-N", dest="queuecount",action="store",default=1,type="int",
 							  help="""submit N copies of this job. Each job will

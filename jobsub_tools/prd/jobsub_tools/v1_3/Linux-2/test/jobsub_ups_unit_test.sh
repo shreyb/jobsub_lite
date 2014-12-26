@@ -40,8 +40,8 @@ test_lines() {
 
 
 test_append_requirements1() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -e SUBMIT_HOST  --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -50,8 +50,8 @@ test_append_requirements1() {
 }
 
 test_append_requirements2() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -e SUBMIT_HOST  -g --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -61,7 +61,7 @@ test_append_requirements2() {
 
 
 test_append_requirements3() {
-   SUBMIT_HOST=not.gpsn01.fnal.gov
+   #SUBMIT_HOST=not.gpsn01.fnal.gov
    file=`jobsub -e SUBMIT_HOST -n  --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -70,7 +70,7 @@ test_append_requirements3() {
 }
 
 test_append_requirements4() {
-   SUBMIT_HOST=not.gpsn01.fnal.gov
+   #SUBMIT_HOST=not.gpsn01.fnal.gov
    file=`jobsub -e SUBMIT_HOST -n -g  --append_condor_requirements=foo -c bar /usr/bin/printenv`
 
    print_cmd_file
@@ -91,18 +91,18 @@ test_append_accounting_group() {
 }
 
 test_OS() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g --OS=foo,bar /usr/bin/printenv`
    print_cmd_file
 
    # succeeds if foo and bar are in the DesiredOS line
-   grep '+DesiredOS *= *"foo,bar"' $file /dev/null && grep 'requirements.*DesiredOS' $file /dev/null
+   grep '+DesiredOS *= *"foo,bar"' $file /dev/null 
 }  
 
 test_drain() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g --drain  /usr/bin/printenv`
    print_cmd_file
 
@@ -111,8 +111,8 @@ test_drain() {
 }  
 
 test_mem_disk_cpu_1() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g --cpu 3 --disk 40980000 --memory 9999  /usr/bin/printenv`
    print_cmd_file
 
@@ -121,8 +121,8 @@ test_mem_disk_cpu_1() {
 }  
 
 test_mem_disk_cpu_2() {
-   SUBMIT_HOST=fifebatch1.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=fifebatch1.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g --cpu 3 --disk 40980000 --memory 9999  /usr/bin/printenv`
    print_cmd_file
 

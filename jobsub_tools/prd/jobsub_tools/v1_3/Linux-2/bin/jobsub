@@ -12,15 +12,15 @@ def motd():
     #downtime_file = "/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE"
     downtime_file = settings.settings["downtime_file"]
     if os.path.isfile(motd_file):
-	motd=open(motd_file)
-	print motd.read()
-	motd.close()
+        motd=open(motd_file)
+        print motd.read()
+        motd.close()
 
     if os.path.isfile(downtime_file):
-	dt=open(downtime_file)
-	print dt.read()
-	dt.close()
-	sys.exit(0)
+        dt=open(downtime_file)
+        print dt.read()
+        dt.close()
+        sys.exit(0)
     
 def iterArgs():
     output = None
@@ -53,16 +53,15 @@ def doSubmit(settings):
     #print "doSubmit: env vars=",settings['added_environment']
     exports = ""
     for x in settings['added_environment']:
-	#if x.find("$ENV(")>0:
+        #if x.find("$ENV(")>0:
         #(var,val) = x.split('=')
         var=x
         val = os.environ.get(var)
         if val is not None:
-	    if settings['ups_shell']=="csh":
-		exports = exports+"""setenv %s '%s'; """%(var,val)
-	    else:
-            	exports = exports+"""export %s="%s";""" %(var,val)
-		 
+            if settings['ups_shell']=="csh":
+                exports = exports+"""setenv %s '%s'; """%(var,val)
+            else:
+                exports = exports+"""export %s="%s";""" %(var,val)
     cmd = ""
 
     condor_setup_cmd=''
@@ -117,6 +116,6 @@ if __name__ == "__main__":
        pp.pprint(settings.settings)
 
     if settings.settings['submit']:
-	motd()
+        motd()
         doSubmit(settings.settings)
 

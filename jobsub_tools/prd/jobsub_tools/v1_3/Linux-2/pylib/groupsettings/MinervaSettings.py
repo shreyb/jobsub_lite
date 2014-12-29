@@ -137,7 +137,7 @@ class MinervaSettings(JobSettings):
             prefix=settings['prefix']
             
         ow = datetime.now()
-	pid=os.getpid()
+        pid=os.getpid()
     
         filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
                                                  ow.month,ow.day,ow.hour,

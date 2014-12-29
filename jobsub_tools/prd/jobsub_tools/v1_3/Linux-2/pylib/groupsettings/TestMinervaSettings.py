@@ -58,10 +58,10 @@ class MinervaTest(JobTest):
 
         """excercise MinervaSettings against bad input -- should complain"""
         ns = self.ns
-	self.stdioOFF()
+        self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option=lalalala','some_stupid_script'],2)
-	self.stdioON()
+        self.stdioON()
                          
 
 

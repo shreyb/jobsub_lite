@@ -17,14 +17,14 @@ class CdfTest(JobTest):
 
     def testCdfConstructor(self):
 
-	""" Test Cdf Constructor"""
+        """ Test Cdf Constructor"""
         ns = self.ns    
         #self.assertEqual('up','down','I create my own reality')
         super(CdfTest,self).testConstructor()
 
 
     def testCdfGoodInput(self):
-	""" Test Cdf Good Input"""
+        """ Test Cdf Good Input"""
         ns=self.ns
         ns.runCmdParser(['--outLocation=outLocationValue','some_script'])
         self.assertEqual(ns.settings['outLocation'],'outLocationValue','setting --outLocation Test FAILED')

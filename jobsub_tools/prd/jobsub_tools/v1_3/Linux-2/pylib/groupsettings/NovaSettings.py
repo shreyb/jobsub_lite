@@ -111,10 +111,10 @@ class NovaSettings(JobSettings):
         f.write("requirements  = %s\n"%settings['requirements'])
 
         if len(settings['lines']) >0:            
-	    for thingy in settings['lines']:
-            	f.write("%s\n" % thingy)
+            for thingy in settings['lines']:
+                    f.write("%s\n" % thingy)
 
-	f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
+        f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
         #f.write("%s"%settings['lines'])
         f.write("\n")

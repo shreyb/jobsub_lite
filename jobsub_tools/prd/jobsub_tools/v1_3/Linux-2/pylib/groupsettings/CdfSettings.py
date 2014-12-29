@@ -90,26 +90,26 @@ class CdfSettings(JobSettings):
         for cmd in list:
             #if self.settings['verbose']:
             if False:
-	        fh.write("""CMD="%s"\n """%cmd)
-	        fh.write("echo executing: $CMD\n")
-	        fh.write("$CMD\n")
+                fh.write("""CMD="%s"\n """%cmd)
+                fh.write("echo executing: $CMD\n")
+                fh.write("$CMD\n")
             else:
                 fh.write("%s\n"%cmd)
 
     def makeWrapFilePreamble(self):
         super(CdfSettings,self).makeWrapFilePreamble()
         settings=self.settings
-	preWrapCommands = [ 
-		"export USER=$GRID_USER",
-		"export CAF_JID=${DAGMANJOBID}",
-		"export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
+        preWrapCommands = [ 
+                "export USER=$GRID_USER",
+                "export CAF_JID=${DAGMANJOBID}",
+                "export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
                 "#replace '$' in OUTPUT_DESTINATION with literal ${CAF_SECTION}-${CAF_JID} value", 
-		"OUTPUT_DESTINATION=%s"%settings['outLocation'],
+                "OUTPUT_DESTINATION=%s"%settings['outLocation'],
                 "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
                 "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
                 "export OUTPUT_DESTINATION",
-		"export HOME=${TMPDIR}/work",
-		"mkdir -p ${HOME}",
+                "export HOME=${TMPDIR}/work",
+                "mkdir -p ${HOME}",
                 "cd ${TMPDIR}/work",
                 "#change any '$' in input to ${CAF_SECTION}-1",
                 'ARGS=( $args ) ',
@@ -121,19 +121,19 @@ class CdfSettings(JobSettings):
                 "      j=`expr $j + 1`",
                 "done",
                 "set -- ${ARGS[@]}",
-	]
+        ]
         f = open(settings['wrapfile'], 'a')
-	if settings['verbose']:
-		f.write("###### BEGIN CDFSettings.makeWrapFilePreamble\n")
-	self.writeToWrapFile(preWrapCommands,f)
-	if settings['verbose']:
-        	f.write("###### END CDFSettings.makeWrapFilePreamble\n")
+        if settings['verbose']:
+                f.write("###### BEGIN CDFSettings.makeWrapFilePreamble\n")
+        self.writeToWrapFile(preWrapCommands,f)
+        if settings['verbose']:
+                f.write("###### END CDFSettings.makeWrapFilePreamble\n")
         f.close()
 
     def makeWrapFile(self):
         #super(CdfSettings,self).makeWrapFile()
         settings=self.settings
-	wrapCommands = [ 
+        wrapCommands = [ 
                 "echo executing in directory",
                 "pwd",
                 "echo its contents:",
@@ -145,23 +145,23 @@ class CdfSettings(JobSettings):
                 """export JOBSUB_USER_SCRIPT=`find . -name %s -print`    """%os.path.basename(settings['exe_script']),
                 """echo executing: $JOBSUB_USER_SCRIPT "$@"   """,
                 """$JOBSUB_USER_SCRIPT "$@"   """,
-		"export JOB_RET_STATUS=$?",
-	]
+                "export JOB_RET_STATUS=$?",
+        ]
         f = open(settings['wrapfile'], 'a')
-	if settings['verbose']:
-        	f.write("###### BEGIN CDFSettings.makeWrapFile\n")
-	self.writeToWrapFile(wrapCommands,f)
-	if settings['verbose']:
-        	f.write("###### END CDFSettings.makeWrapFile\n")
+        if settings['verbose']:
+                f.write("###### BEGIN CDFSettings.makeWrapFile\n")
+        self.writeToWrapFile(wrapCommands,f)
+        if settings['verbose']:
+                f.write("###### END CDFSettings.makeWrapFile\n")
         f.close()
 
 
     def makeWrapFilePostamble(self):
         settings=self.settings
-	postWrapCommands = [ 
+        postWrapCommands = [ 
                 "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
                 "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
-		"tar cvzf ${OUTPUT_TAR_FILE} * ",
+                "tar cvzf ${OUTPUT_TAR_FILE} * ",
                 """CPY_OUT="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
                 "echo executing:$CPY_OUT",
                 """
@@ -175,13 +175,13 @@ class CdfSettings(JobSettings):
                   sleep 600
                 done
                 """,
-	]
+        ]
         f = open(settings['wrapfile'], 'a')
-	if settings['verbose']:
-        	f.write("###### BEGIN CDFSettings.makeWrapFilePostamble\n")
-	self.writeToWrapFile(postWrapCommands,f)
-	if settings['verbose']:
-        	f.write("###### END CDFSettings.makeWrapFilePostmble\n")
+        if settings['verbose']:
+                f.write("###### BEGIN CDFSettings.makeWrapFilePostamble\n")
+        self.writeToWrapFile(postWrapCommands,f)
+        if settings['verbose']:
+                f.write("###### END CDFSettings.makeWrapFilePostmble\n")
         f.close()
         super(CdfSettings,self).makeWrapFilePostamble()
 
@@ -199,11 +199,11 @@ class CdfSettings(JobSettings):
         super(CdfSettings,self).makeCommandFile(job_iter)
 
     def checkSanity(self):
-	settings=self.settings
-	if not settings.has_key('outLocation'):
+        settings=self.settings
+        if not settings.has_key('outLocation'):
             settings['outLocation']="%s@fcdficaf2.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
-	if not settings.has_key('tar_file_name'):
-		raise Exception ('you must supply an input tar ball using --tarFile')
+        if not settings.has_key('tar_file_name'):
+                raise Exception ('you must supply an input tar ball using --tarFile')
         if settings.has_key('sectionList'):
             try:
                 #print 'sectionList %s'%settings['sectionList']

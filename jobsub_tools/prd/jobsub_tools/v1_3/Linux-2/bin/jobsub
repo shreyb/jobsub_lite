@@ -105,15 +105,15 @@ def doSubmit(settings):
 if __name__ == "__main__":
 
     try:
-       settings = iterArgs()
+        settings = iterArgs()
     except Exception, e:
-       print str(e)
-       sys.exit(1)
+        print str(e)
+        sys.exit(1)
     settings.checkSanity()
     settings.makeCondorFiles()
     if settings.settings['verbose']==True:
-       pp = pprint.PrettyPrinter(indent=4)
-       pp.pprint(settings.settings)
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(settings.settings)
 
     if settings.settings['submit']:
         motd()

@@ -12,38 +12,6 @@ class MinosSettings(JobSettings):
         self.settings['defaultrelarea']="/grid/fermiapp/minerva/software_releases"
         self.settings['rp']=" /afs/fnal.gov/files/code/e875/general/condor/scripts/realpath/realpath.pl"
 
-##     def parseArgs(self,o,a):
-        
-##         if o == "-i":
-##             self.settings['reldir'] = a
-##             argshift = 2
-##             if self.settings['verbose']:
-##                 print "reldir = ", self.settings['reldir']
-
-##         elif o == "-t":
-##             self.settings['testreldir'] = a
-##             argshift = 2
-##             (retVal,rslt)=commands.getstatusoutput("cat %s/.base_release"% a)
-##             if(retVal):
-		
-## 		print "'%s' does not appear to be a base release" % a
-##                 raise Exception(rslt)
-## 	    self.settings['testrel'] = rslt
-## 	    self.settings['rel'] = rslt
-	    
-	    
-##             if self.settings['verbose']:
-##                 print "testreldir = ", self.settings['testreldir']
-                
-##         elif o == "-r":
-##             self.settings['rel'] = a
-##             argshift = 2
-##             if self.settings['verbose']:
-##                 print "rel = ", self.settings['rel']
-
-##         else:
-##             return super(MinosSettings,self).parseArgs(o,a)
-##         return argshift
 
     def initCmdParser(self):
         #print "MinosSettings initCmdParser"
@@ -51,30 +19,26 @@ class MinosSettings(JobSettings):
         self.minos_group = OptionGroup(self.cmdParser, "Minos Specific Options")
         self.cmdParser.add_option_group(self.minos_group)
 
-        #print "MinosSettings initCmdParser cmdParser=%s"%self.cmdParser
-        #print "MinosSettings initCmdParser file_group=%s"%self.file_group
-        #return
-    
         
         self.minos_group.add_option("-i", dest="reldir",
-                                 action="store",type="string",
-                                 help="release_directory for Minos Software ")
+            action="store",type="string",
+            help="release_directory for Minos Software ")
 
         self.minos_group.add_option("-t", dest="testreldir",
-                                 action="store",type="string",
-                                 help="release_directory for test Minos Software ")
+                action="store",type="string",
+                help="release_directory for test Minos Software ")
               
         self.minos_group.add_option("-r", dest="rel",
-                                 action="store",type="string",
-                                 help="release_version for  Minos Software ")
+                action="store",type="string",
+                help="release_version for  Minos Software ")
                 
         self.minos_group.add_option("-y", dest="enstorefiles",
-                                 action="append",
-                                 help="enstore files ")
+                action="append",
+                help="enstore files ")
             
         self.minos_group.add_option("-O", dest="msopt",
-                                 action="store",type="string",
-                                 help="optimize flag")
+                action="store",type="string",
+                help="optimize flag")
         return super(MinosSettings,self).initCmdParser()
 
     def makeWrapFilePreamble(self):

@@ -108,7 +108,7 @@ DROPBOX_SUPPORTED_URI = 'dropbox://'
 
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
 
-JOBSUB_SERVER_OPT_ENV = ('-e',)
+JOBSUB_SERVER_OPT_ENV = ('-e','--environment',)
 
 ################################################################################
 # KRB5 Constants

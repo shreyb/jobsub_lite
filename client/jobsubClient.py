@@ -802,14 +802,25 @@ def is_uri_supported(uri):
 
 def get_server_env_exports(argv):
     # Any option -e should be extracted from the client and exported to the
+    # also --environment and --environment=
     # server appropriately.
     env_vars = []
     exports = ''
     i = 0
     while(i < len(argv)):
-        if argv[i] in constants.JOBSUB_SERVER_OPT_ENV:
-            i += 1
-            env_vars.append(argv[i])
+        idx=argv[i].find('=')
+        if idx>=0:
+            arg=argv[i][:idx]
+            val=argv[i][idx+1:]
+        else:
+            arg=argv[i]
+            val=None
+        
+        if arg in constants.JOBSUB_SERVER_OPT_ENV:
+            if val is None: 
+                i += 1
+                val=argv[i]
+            env_vars.append(val)
         i += 1
 
     for var in env_vars:

@@ -808,8 +808,10 @@ def get_server_env_exports(argv):
     exports = ''
     i = 0
     while(i < len(argv)):
-        if argv[i].find('=')>0:
-            arg,val=argv[i].split('=')
+        idx=argv[i].find('=')
+        if idx>=0:
+            arg=argv[i][:idx]
+            val=argv[i][idx+1:]
         else:
             arg=argv[i]
             val=None

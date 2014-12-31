@@ -15,3 +15,10 @@ $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC $SUBMIT_FLAGS \
             -e SERVER --environment=FOO   file://7400.sh 
 
+
+
+export FOO='BAR=BAZ'
+$EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
+       $SERVER_SPEC $SUBMIT_FLAGS \
+                   -e SERVER --environment=FOO   file://7400.sh
+

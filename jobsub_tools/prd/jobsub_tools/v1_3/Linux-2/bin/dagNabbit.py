@@ -360,87 +360,87 @@ class DagParser(object):
             i=0
             j=0
             for line in f:
-                    line=line.strip()
-                    line=r.sub('',line)
-                    #print "input line " , line
-                    if self.startSerial(line):
-                        pass
-                    elif self.endSerial(line):
-                        pass
-                    elif self.startParallel(line):
-                        plist = []
-                        pass
-                    elif self.endParallel(line):
-                        self.jobList.append(plist)
-                        pass
-                    elif self.isInMacros(line):
-                        self.processMacro(line)
-                        pass
-                    elif self.isInBeginJob(line):
-                        self.processBeginJob(line)
-                        pass
-                    elif self.isInFinishJob(line):
-                        self.processFinishJob(line)
-                        pass
-                    
-                    elif len(line)>0:
-                        for mac in self.macroList:
-                            line = line.replace(mac,self.macroDict[mac])
-                        #line = line.replace('$CONDOR_TMP',self.condor_tmp)
-                        val=""
-                        (retVal,val)=commands.getstatusoutput(line)
-                        ##proc = subprocess.Popen(line,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                        ##retVal = proc.wait()
-                        ##for op in proc.stdout:
-                        ##     val=val+op
-                        if retVal:
-                            print "error processing command %s"%line
-                            print val
+                line=line.strip()
+                line=r.sub('',line)
+                #print "input line " , line
+                if self.startSerial(line):
+                    pass
+                elif self.endSerial(line):
+                    pass
+                elif self.startParallel(line):
+                    plist = []
+                    pass
+                elif self.endParallel(line):
+                    self.jobList.append(plist)
+                    pass
+                elif self.isInMacros(line):
+                    self.processMacro(line)
+                    pass
+                elif self.isInBeginJob(line):
+                    self.processBeginJob(line)
+                    pass
+                elif self.isInFinishJob(line):
+                    self.processFinishJob(line)
+                    pass
+                
+                elif len(line)>0:
+                    for mac in self.macroList:
+                        line = line.replace(mac,self.macroDict[mac])
+                    #line = line.replace('$CONDOR_TMP',self.condor_tmp)
+                    val=""
+                    (retVal,val)=commands.getstatusoutput(line)
+                    ##proc = subprocess.Popen(line,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                    ##retVal = proc.wait()
+                    ##for op in proc.stdout:
+                    ##     val=val+op
+                    if retVal:
+                        print "error processing command %s"%line
+                        print val
+                    else:
+                        j=j+1
+                        condor_cmd=''
+                        condor_cmd_list =[]
+                        biglist = val.split()
+                        ncmds=0
+                        i=0
+                        for word in biglist:
+                            if word.find(".cmd")>=0 and word not in condor_cmd_list:
+                                ncmds=ncmds+1
+                                condor_cmd = word     
+                                jobName="Jb_%d_%d"%(j,i)
+                                self.jobNameList.append(jobName)
+                                self.jobDict[condor_cmd]=jobName
+                                self.jobNameDict[jobName]=condor_cmd
+                                condor_cmd_list.append(condor_cmd)
+                                i=i+1
+                        if self.processingSerial:
+                            self.jobList.append(tuple(condor_cmd_list))
+                        if self.processingParallel:
+                            plist.append(tuple(condor_cmd_list))
+                        if (self.redundancy != 0 and self.redundancy != len(condor_cmd_list)):
+                            print "ERROR: different number of '.cmd' files detected"
+                            print "between jobs in input file! This will generate"
+                            print "an incorrect DAG!  aborting......"
+                            #sys.exit(-1)
+                            self.redundancy = len(condor_cmd_list)
                         else:
-                            j=j+1
-                            condor_cmd=''
-                            condor_cmd_list =[]
-                            biglist = val.split()
-                            ncmds=0
-                            i=0
-                            for word in biglist:
-                                if word.find(".cmd")>=0 and word not in condor_cmd_list:
-                                    ncmds=ncmds+1
-                                    condor_cmd = word     
-                                    jobName="Jb_%d_%d"%(j,i)
-                                    self.jobNameList.append(jobName)
-                                    self.jobDict[condor_cmd]=jobName
-                                    self.jobNameDict[jobName]=condor_cmd
-                                    condor_cmd_list.append(condor_cmd)
-                                    i=i+1
-                            if self.processingSerial:
-                                self.jobList.append(tuple(condor_cmd_list))
-                            if self.processingParallel:
-                                plist.append(tuple(condor_cmd_list))
-                            if (self.redundancy != 0 and self.redundancy != len(condor_cmd_list)):
-                                print "ERROR: different number of '.cmd' files detected"
-                                print "between jobs in input file! This will generate"
-                                print "an incorrect DAG!  aborting......"
-                                #sys.exit(-1)
-                                self.redundancy = len(condor_cmd_list)
-                            else:
-                                self.redundancy = len(condor_cmd_list)
-                              
-                            #reportState()
+                            self.redundancy = len(condor_cmd_list)
+                          
+                        #reportState()
             cntr=0
             for line in self.beginJobList:
-                    for mac in self.macroList:
-                        line = line.replace(mac,self.macroDict[mac])
-                        #print line
-                        self.beginJobList[cntr]=line
-                    cntr=cntr+1
+                for mac in self.macroList:
+                    line = line.replace(mac,self.macroDict[mac])
+                    #print line
+                    self.beginJobList[cntr]=line
+                cntr=cntr+1
             cntr=0
-             for line in self.finishJobList:
-                    for mac in self.macroList:
-                        line = line.replace(mac,self.macroDict[mac])
-                        #print line
-                        self.finishJobList[cntr]=line
-                    cntr=cntr+1
+            for line in self.finishJobList:
+                for mac in self.macroList:
+                    line = line.replace(mac,self.macroDict[mac])
+                    #print line
+                    self.finishJobList[cntr]=line
+                cntr=cntr+1
 
 
     def getJobName(self,jlist,i,j=0):
@@ -452,7 +452,7 @@ class DagParser(object):
         elif isinstance(jlist[i],list):
             retval=""
             for l in jlist[i]:
-                    retval=retval+" "+ self.getJobName(l,0,j)
+                retval=retval+" "+ self.getJobName(l,0,j)
             return retval
         else:
 
@@ -469,28 +469,28 @@ class DagParser(object):
         if len(self.beginJobList)>0:
             j=0
             while(j<self.redundancy):
-                    l = "parent JOB_BEGIN child %s\n"% self.getJobName(jlist,i,j)
-                    f.write(l)
-                    j=j+1
+                l = "parent JOB_BEGIN child %s\n"% self.getJobName(jlist,i,j)
+                f.write(l)
+                j=j+1
 
           
 
         while (i<jend-1):
             j=0
             while(j<self.redundancy):
-                    l = "parent %s child %s\n"%\
-                    (self.getJobName(jlist,i,j),self.getJobName(jlist,i+1,j))
-                    f.write(l)
-                    j=j+1
+                l = "parent %s child %s\n"%\
+                (self.getJobName(jlist,i,j),self.getJobName(jlist,i+1,j))
+                f.write(l)
+                j=j+1
             i=i+1
 
         if len(self.finishJobList)>0:
             j=0
                
             while(j<self.redundancy):
-                    l = "parent %s child JOB_FINISH\n"% self.getJobName(jlist,i,j)
-                    f.write(l)
-                    j=j+1
+                l = "parent %s child JOB_FINISH\n"% self.getJobName(jlist,i,j)
+                f.write(l)
+                j=j+1
 
                
         f.close()
@@ -512,7 +512,7 @@ class DagParser(object):
         cmd_file_name = "%s/dummy%s.cmd" %(condor_tmp,filebase)
         wrap_file_name = "%s/returnOK_%s.sh" %(condor_exec,filebase)
         cmd_file = cmd_file_dummy % (condor_exec,filebase,condor_tmp,filebase,condor_tmp,\
-                            filebase,condor_tmp,filebase,condor_tmp,condor_exec)
+            filebase,condor_tmp,filebase,condor_tmp,condor_exec)
 
         f=open(cmd_file_name,"w")
         f.write(cmd_file)
@@ -581,19 +581,19 @@ class ArgParser(object):
             i=i+1
                
             if arg in ["--h", "-h", "--help", "-help"]:
-                    self.printHelp()
+                self.printHelp()
             if arg in [ "-man", "-manual"]:
-                    self.printManual()
+                self.printManual()
             if arg in ["--inputFile", "-input_file","-i" ]:
-                    self.inputFile = sys.argv[i]
+                self.inputFile = sys.argv[i]
             if arg in ["--outputFile", "-output_file", "-o" ]:
-                    self.outputFile = sys.argv[i]
+                self.outputFile = sys.argv[i]
             if arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
-                    self.maxJobs = int(sys.argv[i])
+                self.maxJobs = int(sys.argv[i])
             if arg in ["--submit", "-submit", "-s" ]:
-                    self.runDag = True
+                self.runDag = True
             if arg in ["--submitHost", "-submit_host" ]:
-                    self.submitHost = sys.argv[i]
+                self.submitHost = sys.argv[i]
         if i==1:
             self.printHelp()
             sys.exit(0)
@@ -606,9 +606,9 @@ class ArgParser(object):
             condor_tmp=os.environ.get("CONDOR_TMP")               
             home=os.environ.get("HOME")
             if condor_tmp=="" or condor_tmp == None :
-                    self.outputFile = home+"/submit.%s.dag"%now
+                self.outputFile = home+"/submit.%s.dag"%now
             else:
-                    self.outputFile = condor_tmp+"/submit.%s.dag"%now
+                self.outputFile = condor_tmp+"/submit.%s.dag"%now
             print "generated DAG saved as ", self.outputFile
     def report(self):
         print "====================================="
@@ -633,10 +633,9 @@ class ArgParser(object):
 class JobRunner(object):
     def __init__(self): 
         pass
+
     def doSubmit(self,args=None):
-
         cmd=""
-
         #commands=JobUtils()
         (retVal,host)=commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")

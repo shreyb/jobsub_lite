@@ -176,7 +176,10 @@ class JobSubClient:
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
         # Submit URL: Depends on the VOMS Role
         if self.acctRole:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            if self.useDag:
+                self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            else:
+                self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         elif self.useDag:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
         else:

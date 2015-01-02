@@ -74,6 +74,10 @@ lg_echo testing dag submission
 OUTFILE=$1.testdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
 pass_or_fail
+lg_echo testing dag with role submission 
+OUTFILE=$1.testdag.role.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_dag_submit_with_role.sh  $SERVER  >$OUTFILE  2>&1
+pass_or_fail
 lg_echo testing cdf sam job
 cd cdf_dag_test
 OUTFILE="../$1.test_cdf_sam_job.log"

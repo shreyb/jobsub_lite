@@ -29,7 +29,7 @@ def htmlPrintItemList(src, dpth=0, key=''):
 
 
 def _format_response(content_type, data):
-    logger.log('%s %s'%(content_type,data))
+    #logger.log('%s %s'%(content_type,data))
     content_type_list = content_type.split(',')
     if 'application/json' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'application/json'

@@ -28,9 +28,9 @@ class InitializationError(Exception):
 class MyCmdParser(OptionParser):
                 
     def print_help(self):
-            OptionParser.print_help(self)
-            #OptionParser.epilog doesn't work in v python 2.4, here is my workaround
-            epilog="""
+        OptionParser.print_help(self)
+        #OptionParser.epilog doesn't work in v python 2.4, here is my workaround
+        epilog="""
         NOTES
         You can have as many instances of -c, -d, -e, -f, -l and -y as you need.
 
@@ -49,7 +49,7 @@ class MyCmdParser(OptionParser):
 
                 
                 """
-            print epilog
+        print epilog
          
 class JobSettings(object):
     def __init__(self):
@@ -62,7 +62,9 @@ class JobSettings(object):
             usage +="submit your_script to local batch or to the OSG grid "
                         
                         
-            self.cmdParser = MyCmdParser(usage=usage, version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),conflict_handler="resolve")
+            self.cmdParser = MyCmdParser(usage=usage, 
+                    version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
+                    conflict_handler="resolve")
             self.cmdParser.disable_interspersed_args()
             self.generic_group = OptionGroup(self.cmdParser, "Generic Options")
             self.cmdParser.add_option_group(self.generic_group)
@@ -77,7 +79,7 @@ class JobSettings(object):
         self.initCmdParser()
         self.initFileParser()
         self.settings = {}
-        self.settings['submit_host']=os.environ.get("SUBMIT_HOST")
+        self.settings['submit_host'] = os.environ.get("SUBMIT_HOST")
         if self.settings['submit_host'] == None:
             self.settings['submit_host'] = "gpsn01.fnal.gov"
         ##self.settings['local_host']=os.environ.get("HOSTNAME")
@@ -99,99 +101,102 @@ class JobSettings(object):
             user=os.environ.get("USER")
             group=os.environ.get("GROUP","common")
             if group=="common":
-                self.settings['x509_user_proxy'] = "/scratch/"+user+"/grid/"+user+".proxy"
+                self.settings['x509_user_proxy'] = "/scratch/%s/grid/%s.proxy"%(user,user)
             else:
-                self.settings['x509_user_proxy'] = "/scratch/"+user+"/grid/"+user+"."+group+".proxy"
+                self.settings['x509_user_proxy'] = "/scratch/%s/grid/%s.%s.proxy"%(user,user,group)
 
         self.settings['ifdh_base_uri'] = os.environ.get("IFDH_BASE_URI")
         if self.settings['ifdh_base_uri'] == None:
             group=os.environ.get("GROUP","common")
-            self.settings['ifdh_base_uri'] = "http://samweb.fnal.gov:8480/sam/"+group+"/api"
+            self.settings['ifdh_base_uri'] = "http://samweb.fnal.gov:8480/sam/%s/api"%(group)
 
-        self.settings['output_tag_array']={}
+        self.settings['output_tag_array'] = {}
         self.settings['input_dir_array'] = []
         self.settings['output_dir_array'] = []
                 
-        self.settings['istestjob']=False
-        self.settings['needafs']=False
-        self.settings['notify']=1
-        self.settings['submit']=True
-        self.settings['grid']=False
+        self.settings['istestjob'] = False
+        self.settings['needafs'] = False
+        self.settings['notify'] = 1
+        self.settings['submit'] = True
+        self.settings['grid'] = False
 
-        self.settings['usepwd']=True
-        self.settings['forceparrot']=False
-        self.settings['forcenoparrot']=True
-        self.settings['useparrot']=False
-        self.settings['usedagman']=False
-        self.settings['requirements']='((Arch==\"X86_64\") || (Arch==\"INTEL\"))'
-        self.settings['environment']='CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP='+\
-            self.settings['condor_tmp']+';CONDOR_EXEC='+\
-            self.settings['condor_exec']+';DAGMANJOBID=$(DAGManJobId)'
-        self.settings['lines']=[]
-        self.settings['group']=os.environ.get("GROUP","common")
-        self.settings['storage_group']=os.environ.get("STORAGE_GROUP")
-        self.settings['accountinggroup']=self.settings['group']
-        self.settings['user']=os.environ.get("USER")
-        self.settings['version']=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_VERSION")
-        self.settings['output_tag_counter']=0
-        self.settings['input_tag_counter']=0
-        self.settings['queuecount']=1
-        self.settings['joblogfile']=""
-        self.settings['override_x509']=False
-        self.settings['use_gftp']=False
-        self.settings['filebase']=''
-        self.settings['filetag']=''
-        self.settings['wrapfile']=''
-        self.settings['parrotfile']=''
-        self.settings['cmdfile']=''
-        self.settings['dagfile']=''
-        self.settings['dagbeginfile']=''
-        self.settings['dagendfile']=''
-        self.settings['processtag']=''
-        self.settings['logfile']=''
-        self.settings['opportunistic']=False
-        self.settings['nowrapfile']=False
-        self.settings['errfile']=''
-        self.settings['outfile']=''
-        self.settings['exe_script']=''
-        self.settings['script_args']=[]
+        self.settings['usepwd'] = True
+        self.settings['forceparrot'] = False
+        self.settings['forcenoparrot'] = True
+        self.settings['useparrot'] = False
+        self.settings['usedagman'] = False
+        self.settings['requirements'] = '((Arch==\"X86_64\") || (Arch==\"INTEL\"))'
+        fmt_str = 'CLUSTER=%s;PROCESS=%s;CONDOR_TMP=%s;CONDOR_EXEC=%s;DAGMANJOBID=%s'
+        self.settings['environment'] = fmt_str%('$(Cluseter)',
+                                                '$(Process)',
+                                                self.settings['condor_tmp'],
+                                                self.settings['condor_exec'], 
+                                                '$(DAGManJobId)')
+        self.settings['lines'] = []
+        self.settings['group'] = os.environ.get("GROUP","common")
+        self.settings['storage_group'] = os.environ.get("STORAGE_GROUP")
+        self.settings['accountinggroup'] = self.settings['group']
+        self.settings['user'] = os.environ.get("USER")
+        self.settings['version'] = os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_VERSION")
+        self.settings['output_tag_counter'] = 0
+        self.settings['input_tag_counter'] = 0
+        self.settings['queuecount'] = 1
+        self.settings['joblogfile'] = ""
+        self.settings['override_x509'] = False
+        self.settings['use_gftp'] = False
+        self.settings['filebase'] = ''
+        self.settings['filetag'] = ''
+        self.settings['wrapfile'] = ''
+        self.settings['parrotfile'] = ''
+        self.settings['cmdfile'] = ''
+        self.settings['dagfile'] = ''
+        self.settings['dagbeginfile'] = ''
+        self.settings['dagendfile'] = ''
+        self.settings['processtag'] = ''
+        self.settings['logfile'] = ''
+        self.settings['opportunistic'] = False
+        self.settings['nowrapfile'] = False
+        self.settings['errfile'] = ''
+        self.settings['outfile'] = ''
+        self.settings['exe_script'] = ''
+        self.settings['script_args'] = []
         self.settings['verbose'] = False
         self.settings['nologbuffer'] = False
-        self.settings['wrapper_cmd_array']=[]
-        self.settings['msopt']=""
-        self.settings['added_environment']=""
-        self.settings['generated_by']=self.settings['version']+" "+self.settings['local_host']
-        self.settings['input_tar_dir']=False
-        self.settings['tar_file_name']=""
-        self.settings['overwrite_tar_file']=False
-        self.settings['site']=False
-        self.settings['dataset_definition']=""
-        self.settings['project_name']=""
-        self.settings['cmd_file_list']=[]
-        self.settings['jobsub_tools_dir']=os.environ.get("JOBSUB_TOOLS_DIR","/tmp")
-        self.settings['ups_shell']=os.environ.get("UPS_SHELL")
+        self.settings['wrapper_cmd_array'] = []
+        self.settings['msopt'] = ""
+        self.settings['added_environment'] = ""
+        self.settings['generated_by'] = "%s %s"%(self.settings['version'],self.settings['local_host'])
+        self.settings['input_tar_dir'] = False
+        self.settings['tar_file_name'] = ""
+        self.settings['overwrite_tar_file'] = False
+        self.settings['site'] = False
+        self.settings['dataset_definition'] = ""
+        self.settings['project_name'] = ""
+        self.settings['cmd_file_list'] = []
+        self.settings['jobsub_tools_dir'] = os.environ.get("JOBSUB_TOOLS_DIR","/tmp")
+        self.settings['ups_shell'] = os.environ.get("UPS_SHELL")
         #self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
-        self.settings['downtime_file']='/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
-        self.settings['motd_file']='/grid/fermiapp/common/jobsub_MOTD/MOTD'
-        self.settings['wn_ifdh_location']=os.environ.get("WN_IFDH_LOCATION",'/grid/fermiapp/products/common/etc/setups.sh')
-        self.settings['desired_os']=''
-        self.settings['default_grid_site']=False
-        self.settings['resource_list']=[]
-        self.settings['transfer_executable']=False
-        self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
-        self.settings['needs_appending']=True
-        self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
-        self.settings['jobsub_max_joblog_size']=5000000
+        self.settings['downtime_file'] = '/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
+        self.settings['motd_file'] = '/grid/fermiapp/common/jobsub_MOTD/MOTD'
+        self.settings['wn_ifdh_location'] = os.environ.get("WN_IFDH_LOCATION",'/grid/fermiapp/products/common/etc/setups.sh')
+        self.settings['desired_os'] = ''
+        self.settings['default_grid_site'] = False
+        self.settings['resource_list'] = []
+        self.settings['transfer_executable'] = False
+        self.settings['transfer_input_files'] = os.environ.get("TRANSFER_INPUT_FILES","")
+        self.settings['needs_appending'] = True
+        self.settings['ifdh_cmd'] = '${JSB_TMP}/ifdh.sh'
+        self.settings['jobsub_max_joblog_size'] = 5000000
         #self.settings['jobsub_max_joblog_head_size']=1000000
         #self.settings['jobsub_max_joblog_tail_size']=4000000
-        self.settings['drain']=False
-        self.settings['mail_domain']='fnal.gov'
-        self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
-        (stat,jobsub)=commands.getstatusoutput("which jobsub")
-        self.settings['mail_summary']=False
-        self.settings['this_script']=jobsub
-        self.settings['summary_script']="%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
-        self.settings['dummy_script']="%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
+        self.settings['drain'] = False
+        self.settings['mail_domain'] = 'fnal.gov'
+        self.settings['jobsubjobid'] = "$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
+        (stat,jobsub) = commands.getstatusoutput("which jobsub")
+        self.settings['mail_summary'] = False
+        self.settings['this_script'] = jobsub
+        self.settings['summary_script'] = "%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
+        self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -1345,7 +1350,7 @@ class JobSettings(object):
 
             if not settings['site']: 
                 if settings['default_grid_site']:
-                        settings['site']=settings['default_grid_site']
+                    settings['site']=settings['default_grid_site']
 
 
         if settings['istestjob'] == True:

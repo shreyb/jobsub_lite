@@ -37,31 +37,31 @@ class MinervaSettings(JobSettings):
     
         
         self.minerva_group.add_option("-i", dest="reldir",
-                                 action="store",type="string",
-                                 help="release_directory for Minerva Software ")
+            action="store",type="string",
+            help="release_directory for Minerva Software ")
 
         self.minerva_group.add_option("-t", dest="testreldir",
-                                 action="store",type="string",
-                                 help="release_directory for test Minerva Software ")
+            action="store",type="string",
+            help="release_directory for test Minerva Software ")
               
         self.minerva_group.add_option("-r", dest="rel",
-                                 action="store",type="string",
-                                 help="release_version for  Minerva Software ")
+            action="store",type="string",
+            help="release_version for  Minerva Software ")
                 
         self.minerva_group.add_option("-y", dest="enstorefiles",
-                                 action="append",
-                                 help="enstore files ")
+            action="append",
+            help="enstore files ")
             
         self.minerva_group.add_option("-O", dest="msopt",
-                                 action="store_const",const="-O",
-                                 help="optimize flag")
+            action="store_const",const="-O",
+            help="optimize flag")
         self.minerva_group.add_option("--prefix", dest="prefix",
-                                 action="store",
-                                 help="The jobs and files created by this scrip will be PREFIX_<timestamp>.  Default is executable name.")
+            action="store",
+            help="The jobs and files created by this scrip will be PREFIX_<timestamp>.  Default is executable name.")
 
         self.minerva_group.add_option("--cmtconfig", dest="cmtconfig",
-                                 action="store",
-                                 help="Set up minervasoft release built with cmt configuration. default is $CMTCONFIG")
+            action="store",
+            help="Set up minervasoft release built with cmt configuration. default is $CMTCONFIG")
 
 
         return super(MinervaSettings,self).initCmdParser()
@@ -86,11 +86,11 @@ class MinervaSettings(JobSettings):
             f.write("\n")
             if rel_version < 10:
                 f.write("source %s/setup.sh %s %s %s\n"%\
-                        (settings['reldir'],settings['rel'],
-                         settings['reldir'],settings['cmtconfig']))
+                    (settings['reldir'],settings['rel'],
+                     settings['reldir'],settings['cmtconfig']))
             else:
                 f.write("source %s/setup.sh -c %s\n"%\
-                        (settings['reldir'],settings['cmtconfig']))
+                    (settings['reldir'],settings['cmtconfig']))
                 
             f.write("\n")
             if self.settings['testreldir'] != "":
@@ -103,31 +103,6 @@ class MinervaSettings(JobSettings):
             f.write("\n")
         f.close()
         
-    def print_usage(self):
-        usage = """      Minossoft and enstore:
-          -O             Set up optimized minossoft (requires -r or -t).
-
-          -r <rel>       Set up minervasoft release <rel> at the beginning
-                         of the job.
-
-          -i <dir>       Directory where base release <rel> is installed
-
-          -t <dir>       Set up a local test release in <dir> at the
-                         beginning of the job.  -r is needed.
-                         -t $PACKAGEROOT
-
-          -y <file>      Get <file> (usually of the form /pnfs/...) from
-                         Enstore, point $FROM_ENSTORE to it, and clean up
-                         when finished.  You can use multiple -y options
-                         if you want $FROM_ENSTORE to point to multiple
-                         files.  You can also specify non-Enstore files if
-                         you want.  (Perhaps you have a mixture of input.)
-                         Requires either -r or -t to get access to dccp.
-
-
-        """ 
-        super(MinervaSettings,self).print_usage()
-        print usage
 
     def makeCondorFiles(self):
         settings=self.settings
@@ -137,11 +112,11 @@ class MinervaSettings(JobSettings):
             prefix=settings['prefix']
             
         ow = datetime.now()
-	pid=os.getpid()
+        pid=os.getpid()
     
         filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
-                                                 ow.month,ow.day,ow.hour,
-                                                 ow.minute,ow.second,pid)
+                ow.month,ow.day,ow.hour,
+                ow.minute,ow.second,pid)
             
         settings['filetag']=filebase
         if settings['dataset_definition']=="":

@@ -24,27 +24,17 @@ class NovaSettings(JobSettings):
         self.nova_group = OptionGroup(self.cmdParser, "Nova Specific Options")
         self.cmdParser.add_option_group(self.nova_group)
         self.nova_group.add_option("--SMU", dest="use_smu",
-                                 action="store_true",default=False,
-                                 help="steer jobs to HPC.SMU grid site")
+            action="store_true",default=False,
+            help="steer jobs to HPC.SMU grid site")
         self.nova_group.add_option("-i", dest="reldir",
-                                 action="store",type="string",
-                                 help="release_directory for Nova Software ")
-
+            action="store",type="string",
+            help="release_directory for Nova Software ")
         self.nova_group.add_option("-t", dest="testreldir",
-                                 action="store",type="string",
-                                 help="release_directory for test Nova Software ")
-              
+            action="store",type="string",
+            help="release_directory for test Nova Software ")
         self.nova_group.add_option("-r", dest="rel",
-                                 action="store",type="string",
-                                 help="release_version for  Nova Software ")
-                
-##         self.nova_group.add_option("-y", dest="enstorefiles",
-##                                  action="append",
-##                                  help="enstore files ")
-            
-##         self.nova_group.add_option("-O", dest="msopt",
-##                                  action="store",type="string",
-##                                  help="optimize flag")
+            action="store",type="string",
+            help="release_version for  Nova Software ")
         return super(NovaSettings,self).initCmdParser()
 
     def makeCommandFile(self,job_iter=0):
@@ -111,10 +101,10 @@ class NovaSettings(JobSettings):
         f.write("requirements  = %s\n"%settings['requirements'])
 
         if len(settings['lines']) >0:            
-	    for thingy in settings['lines']:
-            	f.write("%s\n" % thingy)
+            for thingy in settings['lines']:
+                    f.write("%s\n" % thingy)
 
-	f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
+        f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
 
         #f.write("%s"%settings['lines'])
         f.write("\n")

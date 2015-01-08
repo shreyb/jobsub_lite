@@ -21,8 +21,6 @@ class MinervaTest(JobTest):
         """exercise MinervaSettings constructor"""
         ns = self.ns
     
-        #self.assertEqual(ns.settings['minerva_condor'],
-        #                 ns.settings['group_condor'])
         self.assertEqual(ns.settings['defaultrelarea'],
                          '/grid/fermiapp/minerva/software_releases')
         self.assertEqual(ns.settings['msopt'],'')
@@ -32,13 +30,10 @@ class MinervaTest(JobTest):
     def testMinervaGoodInput(self):
         """exercise Minervsettings against good input """
         ns = self.ns
-        #ns.parseArgs('-i','lalalala')
         ns.runCmdParser(['-ilalalala','a_script'])
         self.assertEqual(ns.settings['reldir'],'lalalala')
-        #ns.parseArgs('-t','lalalala')
         ns.runCmdParser(['-tlalalala','a_script'])
         self.assertEqual(ns.settings['testreldir'],'lalalala')
-        #ns.parseArgs('-r','lalalala')
         ns.runCmdParser(['-rlalalala','a_script'])
         self.assertEqual(ns.settings['rel'],'lalalala')
         
@@ -50,22 +45,19 @@ class MinervaTest(JobTest):
         ns.runCmdParser(['-O','a_script'])
         self.assertEqual(ns.settings['msopt'],'-O')
         
-        #ns.runCmdParser(["-ooutput_dir1","--output=output_dir2","my_script"],None)
-        #self.assertEqual(ns.settings['output'],['output_dir1','output_dir2'])
 
         
     def testMinervaBadInput(self):
 
         """excercise MinervaSettings against bad input -- should complain"""
         ns = self.ns
-	self.stdioOFF()
+        self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option=lalalala','some_stupid_script'],2)
-	self.stdioON()
+        self.stdioON()
                          
 
 
 if __name__ == "__main__":
-    #unittest.main()
     suite = unittest.makeSuite(MinervaTest)
     unittest.TextTestRunner(verbosity=10).run(suite)

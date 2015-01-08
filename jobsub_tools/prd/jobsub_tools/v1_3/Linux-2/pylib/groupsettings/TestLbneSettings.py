@@ -41,10 +41,10 @@ class LbneTest(JobTest):
     def testLbneBadInput(self):
 
         ns = self.ns
-	self.stdioOFF()
+        self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option=dumb_stuff','lalalala'],2)
-	self.stdioON()
+        self.stdioON()
         super(LbneTest,self).testBadInput()
                          
 

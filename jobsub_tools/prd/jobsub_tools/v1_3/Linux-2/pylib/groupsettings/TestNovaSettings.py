@@ -43,10 +43,10 @@ class NovaTest(JobTest):
 
         """NovaSettings testBadInput --should complain"""
         ns = self.ns
-	self.stdioOFF()
+        self.stdioOFF()
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option','lalalala'])
-	self.stdioON()
+        self.stdioON()
         super(NovaTest,self).testBadInput()
                          
 

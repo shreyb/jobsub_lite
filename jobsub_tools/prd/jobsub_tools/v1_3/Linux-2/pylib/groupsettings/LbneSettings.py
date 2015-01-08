@@ -24,22 +24,22 @@ class LbneSettings(JobSettings):
 
         
         self.lbne_group.add_option("-i", dest="reldir",
-                                 action="store",type="string",
-                                 help="release_directory for Lbne Software ")
+                action="store",type="string",
+                help="release_directory for Lbne Software ")
 
         self.lbne_group.add_option("-t", dest="testreldir",
-                                 action="store",type="string",
-                                 help="release_directory for test Lbne Software ")
+                action="store",type="string",
+                help="release_directory for test Lbne Software ")
               
         self.lbne_group.add_option("-r", dest="rel",
-                                 action="store",type="string",
-                                 help="release_version for  Lbne Software ")
+                action="store",type="string",
+                help="release_version for  Lbne Software ")
                 
         self.lbne_group.add_option("-y", dest="enstorefiles",
-                                 action="append",
-                                 help="enstore files ")
+                action="append",
+                help="enstore files ")
             
         self.lbne_group.add_option("-O", dest="msopt",
-                                 action="store",type="string",
-                                 help="optimize flag")
+                action="store",type="string",
+                help="optimize flag")
         return super(LbneSettings,self).initCmdParser()

@@ -510,17 +510,19 @@ class JobSubClient:
         if jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:
-            if jobid is None:
-                self.listURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
-            else:
-                tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
-                self.listURL = "%s%s/"%(tmpURL,jobid)
-        elif jobid is not None:
-            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
-        elif jobid is None and self.acctGroup is not None:
-            self.listURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
+            tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+            if self.acctGroup is not None:
+                tmpURL="%sacctgroup/%s/"%(tmpURL,self.acctGroup)
+            if jobid is not None:
+                tmpURL="%s%s/"%(tmpURL,jobid)
+            self.listURL = tmpURL
+        elif self.acctGroup is not None:
+            tmpURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
+            if jobid is not None:
+                tmpURL="%s%s/"% ( tmpURL, jobid)
+            self.listURL = tmpURL
         else :
-            self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
+            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
 
         if outFormat is not None:
             self.listURL="%s%s/"%(self.listURL,outFormat)

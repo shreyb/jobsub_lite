@@ -82,9 +82,9 @@ lg_echo testing cdf sam job
 cd cdf_dag_test
 OUTFILE="../$1.test_cdf_sam_job.log"
 sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
+pass_or_fail
 JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 GOTJID3=`echo $JID2| grep '[0-9].0@'`
-pass_or_fail
 cd -
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log

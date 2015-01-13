@@ -1,4 +1,15 @@
 ================================================================================
+v1.0.5
+================================================================================
+CLIENT
+------
+* Bug Fix: #7141 jobsub_submit_dag accepts --role but doesn't do 
+                  anything with it
+* Bug Fix: #7400 --environment not dealt with properly (but -e is)
+* Bug Fix: #7468 jobsub_submit (stuff) --tar_file_name 
+                  dropbox://my_tarball.tgz ./run.sh (stuff) fails to submit. 
+
+================================================================================
 v1.0.4
 ================================================================================
 

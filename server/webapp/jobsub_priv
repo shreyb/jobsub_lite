@@ -15,6 +15,7 @@ import os
 import shutil
 import pwd
 import tempfile
+import uuid
 
 import subprocessSupport
 
@@ -101,6 +102,7 @@ class PrivActionManager:
             'getMappedUsername',
             'copyFileAsUser',
             'moveFileAsUser',
+            'mkdirsAsUser',
         ]
 
 
@@ -187,6 +189,41 @@ class PrivActionManager:
         except:
             raise
 
+
+    def mkdirsAsUser(self, argv):
+        if (len(argv) < 4) or (len(argv) > 5):
+            raise BadArgumentsError(argv[0], argv[1:])
+        basedir = argv[1]
+        subdirs = argv[2].strip(os.path.sep)
+        user = argv[3]
+        mode = 448 # 0700
+        if len(argv) == 5:
+            mode = int(argv[4])
+
+        if not os.path.dir(basedir):
+            raise OSError(2, 'No such file or directory', basedir)
+        
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = pwd.getpwnam(user).pw_gid
+        except KeyError, e:
+            raise UnknownUserError(user)
+
+        try:
+            # Action should be atomic.
+            tmpdir = tempfile.mkdtemp(dir=basedir)
+            tmpdirs = os.path.join(basedir, tmpdir, subdirs)
+            os.makedirs(tmpdirs, mode)
+            currdir = tmpdir
+            os.chown(currdir, uid, gid)
+            for d in subdirs.split(os.path.sep):
+                if d:
+                    currdir = os.path.join(currdir, d)
+                    os.chown(currdir, uid, gid)
+            firstdir = subdirs.split(os.path.sep)[0]
+            shutil.move(os.path.join(tmpdir, firstdir), basedir)
+        except:
+            raise
 
 ###############################################################################
 # Main starts here

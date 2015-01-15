@@ -379,11 +379,11 @@ class JobSettings(object):
             action="store_const",const=0,
             help="never send mail (default is to send mail on error)")
 
-        generic_group.add_option("-T","--test_queue", dest="istestjob",
-            action="store_true",default=False,
-            help="""Submit as a test job.  Job will run with highest
-            possible priority, but you can only have one such
-            job in the queue at a time.""")
+        #generic_group.add_option("-T","--test_queue", dest="istestjob",
+        #    action="store_true",default=False,
+        #    help="""Submit as a test job.  Job will run with highest
+        #    possible priority, but you can only have one such
+        #    job in the queue at a time.""")
 
         file_group.add_option("-L","--log_file", dest="joblogfile",action="store",
             help="Log file to hold log output from job.")

@@ -206,20 +206,33 @@ def authenticate_old(dn):
     raise AuthenticationError(dn)
 
 
-def authenticate(dn, acctgroup, acctrole):
-    username = get_gums_mapping(dn, get_voms_fqan(acctgroup, acctrole))
-    logger.log('===== GUMS_USERNAME: %s =====' % username)
-
+def authenticate_gums(dn, acctgroup, acctrole):
+    try:
+        fqan = get_voms_fqan(acctgroup, acctrole)
+        username = get_gums_mapping(dn, fqan)
+        username = username.strip()
+        logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" % (dn, fqan, username))
+        return username
+    except:
+        logger.log("GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan))
     raise AuthenticationError(dn, acctgroup)
+
+
+def authenticate(dn, acctgroup, acctrole):
+    try:
+        return authenticate_gums(dn, acctgroup, acctrole)
+    except:
+        logger.log("Failed to authenticate using GUMS. Checking for KCA DN based authentication")
+        return authenticate_old(dn)
 
 
 def get_gums_mapping(dn, fqan):
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
-    llrun_exe = spawn.find_executable('jobsub_priv', path=path)
-    if not llrun_exe:
-        raise Exception("Unable to find command 'llrun' in the PATH.")
+    exe = spawn.find_executable('jobsub_priv', path=path)
+    if not exe:
+        raise Exception("Unable to find command '%s' in the PATH." % exe)
 
-    cmd = '%s getMappedUsername "%s" "%s"' % (llrun_exe, dn, fqan)
+    cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
     try:
@@ -365,17 +378,15 @@ def check_auth(func):
                     return func(self, acctgroup, *args, **kwargs)
                 else:
                     # return error for failed auth
-                    err = 'User authorization has failed:%s'%sys.exc_info()[1]
+                    err = 'User authorization has failed: %s'%sys.exc_info()[1]
                     cherrypy.response.status = 401
                     logger.log(err)
                     rc = {'err': err}
             except:
                 # return error for failed auth
-                err = 'User authorization has failed:%s'% sys.exc_info()[1]
+                err = 'User authorization has failed: %s'% sys.exc_info()[1]
                 cherrypy.response.status = 401
                 logger.log(err)
-                import traceback
-                traceback.print_exc()
                 rc = {'err': err}
         else:
             # return error for no subject_dn and acct group

@@ -165,3 +165,20 @@ def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,j
     if len(result['err'])>0:
         logger.log(str(result['err']))
     return result
+
+
+def get_jobsub_statedir():
+    return os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
+
+
+def get_jobsub_statedir_hierarchy():
+    state_dir = get_jobsub_statedir()
+    hierarchy = [
+        (state_dir, '0755'),
+        (os.path.join(state_dir, 'creds'), '0755'),
+        (os.path.join(state_dir, 'creds', 'keytabs'), '0755'),
+        (os.path.join(state_dir, 'creds', 'certs'), '0755'),
+        (os.path.join(state_dir, 'creds', 'proxies'), '0755'),
+        (os.path.join(state_dir, 'tmp'), '1777'),
+    ]
+    return hierarchy

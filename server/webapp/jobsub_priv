@@ -57,6 +57,7 @@ class ActionFailedError(Exception):
 def error(*obj):
     print('ERROR:', *obj, file=sys.stderr)
 
+
 def get_gums_mapping(llrun_out):
     """
     Find out the mapped user from the llrun output and return it
@@ -65,7 +66,6 @@ def get_gums_mapping(llrun_out):
 
     user = None
     pattern = "\[llrun\]: uid=[0-9]*\((.*)\)"
-    #pattern = "\[llrun\]: LCMAPS succeeded"
     p = re.compile(pattern)
     m = p.search(llrun_out)
     if m:
@@ -224,6 +224,7 @@ class PrivActionManager:
                     os.chown(currdir, uid, gid)
             firstdir = subdirs.split(os.path.sep)[0]
             shutil.move(os.path.join(tmpdir, firstdir), basedir)
+            os.rmdir(tmpdir)
         except:
             raise
 

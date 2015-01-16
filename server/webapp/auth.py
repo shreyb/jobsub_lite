@@ -214,7 +214,7 @@ def authenticate_gums(dn, acctgroup, acctrole):
         logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" % (dn, fqan, username))
         return username
     except:
-        logger.log("GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan))
+        logger.log("GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan), traceback=True)
     raise AuthenticationError(dn, acctgroup)
 
 
@@ -224,12 +224,13 @@ def authenticate(dn, acctgroup, acctrole):
     except:
         logger.log("Failed to authenticate using GUMS. Checking for KCA DN based authentication")
 
+    raise AuthenticationError(dn, acctgroup)
     try:
         return authenticate_kca_dn(dn)
     except:
         logger.log("Failed to authenticate using KCA DN Pattern.")
 
-    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods." % (dn, acctgroup, acctrole)
+    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods." % (dn, acctgroup, acctrole))
     raise AuthenticationError(dn, acctgroup)
 
 

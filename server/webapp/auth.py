@@ -194,7 +194,7 @@ def kadmin_command(command):
     return 0
 
 
-def authenticate_old(dn):
+def authenticate_kca_dn(dn):
     KCA_DN_PATTERN_LIST=os.environ.get('KCA_DN_PATTERN_LIST')
     logger.log("dns patterns supported:%s "% KCA_DN_PATTERN_LIST )
 
@@ -223,7 +223,14 @@ def authenticate(dn, acctgroup, acctrole):
         return authenticate_gums(dn, acctgroup, acctrole)
     except:
         logger.log("Failed to authenticate using GUMS. Checking for KCA DN based authentication")
-        return authenticate_old(dn)
+
+    try:
+        return authenticate_kca_dn(dn)
+    except:
+        logger.log("Failed to authenticate using KCA DN Pattern.")
+
+    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods." % (dn, acctgroup, acctrole)
+    raise AuthenticationError(dn, acctgroup)
 
 
 def get_gums_mapping(dn, fqan):

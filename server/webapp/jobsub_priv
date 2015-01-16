@@ -196,9 +196,11 @@ class PrivActionManager:
         basedir = argv[1]
         subdirs = argv[2].strip(os.path.sep)
         user = argv[3]
-        mode = 448 # 0700
+        mode_s = '700'
         if len(argv) == 5:
-            mode = int(argv[4])
+            mode_s = argv[4]
+        # Convert the mode string to its octal equivalent
+        mode = int(mode_s, 8)
 
         if not os.path.isdir(basedir):
             raise OSError(2, 'No such file or directory', basedir)

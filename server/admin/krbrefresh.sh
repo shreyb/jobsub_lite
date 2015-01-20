@@ -34,7 +34,7 @@ if [ "$AUTHORIZED_USER" != "$ME" ]; then
     exit 1
 fi
 export PYTHONPATH=/opt/jobsub/lib/logger/:/opt/jobsub/lib/JobsubConfigParser/:/opt/jobsub/server/webapp
-grep  SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed s/SetEnv/export/ | sed 's/\([A-Z]\)\ /\1=/' > /tmp/jobsub_admin_env.sh
+grep  SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed s/SetEnv/export/ | sed 's/\([A-Z]\)\ /\1=/' | sed 's/=[[:space:]]\+/=/'  > /tmp/jobsub_admin_env.sh
 source /tmp/jobsub_admin_env.sh
 
 if [ "$1" = "--refresh-proxies" ]; then

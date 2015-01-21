@@ -12,7 +12,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
 fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
-	source $JOBSUB_UPS_LOCATION
+	source $JOBSUB_UPS_LOCATION > /dev/null 2>&1
 else
 	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
 	exit -1
@@ -54,17 +54,17 @@ fi
 
 JSV=""
 if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
-    JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
+    JSV=" -l +JobsubServerVersion=\\\"$JOBSUB_SERVER_VERSION\\\" "
 fi
 
 JCV=""
 if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
-    JCV=" -l +JobsubClientVersion=\"$JOBSUB_CLIENT_VERSION\" "
+    JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
-JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
-export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\"$JOBSUBPARENTJOBID\" -l +JobsubJobId=\"$JOBSUB_JOBID\" -l +Owner=\"$USER\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV "
+JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
+export JOBSUBPARENTJOBID="\\\$(DAGManJobId)@$SCHEDD"
+export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV "
 
 export JOBSUB_CMD="dagNabbit.py -s -i $@ "
 

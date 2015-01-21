@@ -1,7 +1,7 @@
 #!/bin/env python
 # $Id$
 
-import getopt, sys, os, datetime, commands, pprint, subprocess
+import getopt, sys, os, datetime, commands, pprint, subprocess, shlex
 from groupsettings import *
 
 
@@ -103,6 +103,24 @@ def doSubmit(settings):
  
     
 if __name__ == "__main__":
+    try:
+        a=shlex.split(' '.join(sys.argv))
+        sys.argv=a
+    except:
+        pass
+    notAllowed=['>','<','-','+','=']
+    for arg in sys.argv:
+        if arg == '--show-parsing':
+            print "jobsub parsed input arguments as:%s"%sys.argv
+            sys.exit(0)
+        if arg in notAllowed:
+            print "parsing error detected in arg list:%s"%sys.argv
+            print "this is probably caused by improper quoting"
+            print "try re-grouping arguments with \\\" (escaped quotes) or single quotes "
+            print "use the --show-parsing option to show how your arguments are  parsed and exit without submitting"
+            print "exiting"
+            sys.exit(1)
+
 
     try:
         settings = iterArgs()

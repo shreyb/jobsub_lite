@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-#DEBUG_JOBSUB=TRUE
+DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -12,7 +12,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
 fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
-	source $JOBSUB_UPS_LOCATION
+	source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
 else
 	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
 	exit -1
@@ -54,19 +54,20 @@ fi
 
 JSV=""
 if [ "$JOBSUB_SERVER_VERSION" != "" ]; then
-    JSV=" -l +JobsubServerVersion=\"$JOBSUB_SERVER_VERSION\" "
+    JSV=" -l +JobsubServerVersion=\\\"$JOBSUB_SERVER_VERSION\\\" "
 fi
 
 JCV=""
 if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
-    JCV=" -l +JobsubClientVersion=\"$JOBSUB_CLIENT_VERSION\" "
+    JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
-JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub -l +JobsubJobId=\"$JOBSUB_JOBID\" -l "+Owner=\"$USER\"" $TEC $JSV $JCV $@"
+OWN=" -l +Owner=\\\"$USER\\\" "
+#JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
+export JOBSUB_CMD="jobsub  $OWN $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
+   echo "reformulated: ${JOBSUB_CMD} "  >> /tmp/jobsub_env_runner.log
 fi
 chmod +x ${JOBSUB_COMMAND_FILE_PATH}
 RSLT=`$JOBSUB_CMD`
@@ -78,7 +79,7 @@ JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
-  echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
+  #echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
   cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
   #keep the old link for now for backward compatibility
   ln -s $WORKDIR_ID "${JID}0"

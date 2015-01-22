@@ -167,18 +167,38 @@ def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,j
     return result
 
 
-def get_jobsub_statedir():
+def get_jobsub_state_dir():
     return os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
 
 
+def get_jobsub_creds_dir():
+    return os.path.join(get_jobsub_state_dir(), 'creds')
+
+
+def get_jobsub_keytabs_dir():
+    return os.path.join(get_jobsub_creds_dir(), 'keytabs')
+
+
+def get_jobsub_certs_dir():
+    return os.path.join(get_jobsub_creds_dir(), 'certs')
+
+
+def get_jobsub_proxies_dir():
+    return os.path.join(get_jobsub_creds_dir(), 'proxies')
+
+
+def get_jobsub_krb5cc_dir():
+    return os.path.join(get_jobsub_creds_dir(), 'krb5cc')
+
+
 def get_jobsub_statedir_hierarchy():
-    state_dir = get_jobsub_statedir()
     hierarchy = [
-        (state_dir, '0755'),
-        (os.path.join(state_dir, 'creds'), '0755'),
-        (os.path.join(state_dir, 'creds', 'keytabs'), '0755'),
-        (os.path.join(state_dir, 'creds', 'certs'), '0755'),
-        (os.path.join(state_dir, 'creds', 'proxies'), '0755'),
-        (os.path.join(state_dir, 'tmp'), '1777'),
+        (get_jobsub_state_dir(), '0755'),
+        (get_jobsub_creds_dir(), '0755'),
+        (get_jobsub_keytabs_dir(), '0755'),
+        (get_jobsub_certs_dir(), '0755'),
+        (get_jobsub_proxies_dir(), '0755'),
+        (get_jobsub_krb5cc_dir(), '0755'),
+        (os.path.join(get_jobsub_state_dir(), 'tmp'), '1777'),
     ]
     return hierarchy

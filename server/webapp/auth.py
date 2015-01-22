@@ -24,11 +24,12 @@ import re
 import traceback
 import cherrypy
 import logger
+import jobsub
 import subprocessSupport
+
 from distutils import spawn
 from util import needs_refresh
 from tempfile import NamedTemporaryFile
-from jobsub import AcctGroupNotConfiguredError
 from JobsubConfigParser import JobsubConfigParser
 
 
@@ -82,7 +83,7 @@ def get_voms(acctgroup):
         if p.has_option(acctgroup, 'voms'):
             voms_group = p.get(acctgroup, 'voms')
     else:
-        raise AcctGroupNotConfiguredError(acctgroup)
+        raise jobsub.AcctGroupNotConfiguredError(acctgroup)
     return voms_group
 
 
@@ -101,8 +102,8 @@ def get_voms_fqan(acctgroup, acctrole=None):
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname,delete=False)
-    new_proxy_fname=new_proxy_file.name
+    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
+    new_proxy_fname = new_proxy_file.name
     logger.log("new_proxy_fname=%s"%new_proxy_fname)
     new_proxy_file.close()
     krb5cc_to_x509(krb5cc, x509_fname=new_proxy_fname)
@@ -115,7 +116,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
-    except AcctGroupNotConfiguredError, e: 
+    except jobsub.AcctGroupNotConfiguredError, e: 
         os.remove(new_proxy_fname)
         logger.log("%s"%e) 
         raise
@@ -251,17 +252,19 @@ def get_gums_mapping(dn, fqan):
     return out
 
 
-def x509_proxy_fname(username,acctgroup,acctrole=None):
-    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    creds_dir = os.path.join(creds_base_dir, acctgroup)
+def x509_proxy_fname(username, acctgroup, acctrole=None):
+    #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    proxies_base_dir = jobsub.get_jobsub_proxies_dir()
+    creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
-        os.makedirs(creds_dir, 0700)
-    logger.log('Using credentials dir: %s' % creds_dir)
+        os.makedirs(creds_dir, 0755)
+    #logger.log('Using credentials dir: %s' % creds_dir)
     if acctrole:
-        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
+        x509_cache_fname = os.path.join(creds_dir,
+                                        'x509cc_%s_%s'%(username,acctrole))
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
-    logger.log('returning x509_proxy_name=%s'%x509_cache_fname)
+    logger.log('Using x509_proxy_name=%s'%x509_cache_fname)
     return x509_cache_fname
 
 #for stress testing,add as second parameter to needs_refresh()
@@ -271,16 +274,17 @@ def x509_proxy_fname(username,acctgroup,acctrole=None):
 
 def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    krb5cc_dir = jobsub.get_jobsub_krb5cc_dir()
     try:
         ##TODO:if real_cache_fname and keytab_fname are new enough
         ##we should skip this step and go directly to voms-proxy-init
         ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        real_cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%username)
-        old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
+        real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
+        old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
-        x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
+        #new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
+        x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
 
 
         if not is_valid_cache(real_cache_fname):

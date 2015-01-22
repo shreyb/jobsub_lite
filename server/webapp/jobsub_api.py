@@ -10,7 +10,7 @@ from users_jobs import UsersJobsResource
 from version import VersionResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
-from jobsub import get_jobsub_statedir
+from jobsub import get_jobsub_state_dir
 from jobsub import get_jobsub_statedir_hierarchy
 
 
@@ -39,7 +39,7 @@ def create_statedir(log):
     /var/lib/jobsub/tmp         : rexbatch : 700
     """
 
-    state_dir = get_jobsub_statedir()
+    state_dir = get_jobsub_state_dir()
     err = ''
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)

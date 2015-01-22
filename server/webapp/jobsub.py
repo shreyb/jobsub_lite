@@ -54,12 +54,12 @@ def should_transfer_krb5cc(acctgroup):
     if p.has_section(acctgroup):
         if p.has_option(acctgroup, 'transfer_krbcc_to_job'):
             can_transfer = p.get(acctgroup, 'transfer_krbcc_to_job')
-	    if can_transfer=='False':
-		can_transfer=False
+            if can_transfer=='False':
+                can_transfer=False
     if can_transfer:
-    	logger.log("group %s is authorized to transfer krb5 cache"%acctgroup)
+        logger.log("group %s is authorized to transfer krb5 cache"%acctgroup)
     else:
-    	logger.log("group %s is NOT authorized to transfer krb5 cache"%acctgroup)
+        logger.log("group %s is NOT authorized to transfer krb5 cache"%acctgroup)
 
     return can_transfer
 
@@ -107,7 +107,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
     if should_transfer_krb5cc(acctgroup):
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
-        logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))
+        #logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))
         child_env['ENCRYPT_INPUT_FILES']=cache_fname
         child_env['KRB5CCNAME']=cache_fname
 
@@ -119,14 +119,12 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
         'out': pp.stdout.readlines(),
         'err': pp.stderr.readlines()
     }
-    errlist=result['err']
-    newlist=[]
-    ignore_msg='jobsub.ini for jobsub config'
-    for m in errlist:
-        if ignore_msg not in m:
-            newlist.append(m)
-    result['err']=newlist
-    logger.log('jobsub command result: %s' % str(result))
+    for rslt in result['out']:
+        if rslt.lower().find('jobsubjobid')>=0:
+            logger.log(rslt)
+            break
+    if len(result['err'])>0:
+        logger.log(str(result['err']))
     return result
 
 def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
@@ -144,7 +142,6 @@ def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,j
     if should_transfer_krb5cc(acctgroup):
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
-        logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))
         child_env['ENCRYPT_INPUT_FILES']=cache_fname
         child_env['KRB5CCNAME']=cache_fname
 
@@ -156,13 +153,11 @@ def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,j
         'out': pp.stdout.readlines(),
         'err': pp.stderr.readlines()
     }
-    errlist=result['err']
-    newlist=[]
-    ignore_msg='jobsub.ini for jobsub config'
-    for m in errlist:
-        if ignore_msg not in m:
-            newlist.append(m)
-    result['err']=newlist
-    logger.log('jobsub command result: %s' % str(result))
 
+    for rslt in result['out']:
+        if rslt.lower().find('jobsubjobid')>=0:
+            logger.log(rslt)
+            break
+    if len(result['err'])>0:
+        logger.log(str(result['err']))
     return result

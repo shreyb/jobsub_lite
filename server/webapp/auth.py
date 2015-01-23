@@ -225,9 +225,12 @@ def authenticate(dn, acctgroup, acctrole):
     except:
         logger.log("Failed to authenticate using GUMS. Checking for KCA DN based authentication")
 
-    raise AuthenticationError(dn, acctgroup)
+    #raise AuthenticationError(dn, acctgroup)
+    logger.log("Authenticating using KCA DN Pattern.")
     try:
-        return authenticate_kca_dn(dn)
+        username = authenticate_kca_dn(dn)
+        cherrypy.response.status = 200
+        return username
     except:
         logger.log("Failed to authenticate using KCA DN Pattern.")
 

@@ -745,10 +745,18 @@ class JobSettings(object):
         else:
             cmd="""%s  cp  -D  """%ifdh_cmd
         cnt=""
+        transfer_file_list=[]
+        if settings['transfer_input_files'] is not None:
+            transfer_file_list=settings['transfer_input_files'].split(',')
+
         for idir in settings['input_dir_array']:
-            cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
-            cnt="\;"
-        if len(settings['input_dir_array'])>0:
+            if idir in transfer_file_list:
+		ifile=os.path.basename(idir)
+                f.write("""mv %s ${CONDOR_DIR_INPUT}/\n"""%ifile)
+            else:
+                cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
+                cnt="\;"
+        if cnt=="\;":
             f.write("""%s  log "%s BEGIN %s"\n"""%(ifdh_cmd,settings['user'],cmd))
             f.write("%s\n"%cmd)
             f.write("""%s  log "%s FINISHED %s"\n"""%(ifdh_cmd,settings['user'],cmd))

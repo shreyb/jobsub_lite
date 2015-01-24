@@ -191,6 +191,10 @@ def get_jobsub_krb5cc_dir():
     return os.path.join(get_jobsub_creds_dir(), 'krb5cc')
 
 
+def get_jobsub_tmp_dir():
+    return os.path.join(get_jobsub_state_dir(), 'tmp')
+
+
 def get_jobsub_statedir_hierarchy():
     hierarchy = [
         (get_jobsub_state_dir(), '0755'),

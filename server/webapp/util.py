@@ -104,14 +104,12 @@ def needs_refresh(filepath,agelimit=3600):
     agelimit=int(agelimit)
     age=sys.maxint
     try:
-        if  os.path.exists(filepath):
-            st=os.stat(filepath)
-            age=(time.time()-st.st_mtime)
+        st=os.stat(filepath)
+        age=(time.time()-st.st_mtime)
     except:
         pass
     if age>agelimit:
         rslt=True
-    #logger.log("needs_refresh:file %s age %s limit %s needs_refresh=%s"%(filepath,age,agelimit,rslt))
     return rslt
 
 

@@ -99,9 +99,58 @@ def get_voms_fqan(acctgroup, acctrole=None):
     return attrs[-1]
 
 
+def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
+    # TODO: krb5cc_to_vomsproxy and x509pair_to_vomsproxy share lot of
+    #       code. Extract common functionality to conert x509 to voms proxy
+
+    tmp_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
+    tmp_proxy_fname = tmp_proxy_file.name
+    tmp_proxy_file.close()
+    logger.log("tmp_proxy_fname=%s"%tmp_proxy_fname)
+    voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
+    if not voms_proxy_init_exe:
+        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
+
+    voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
+    if not voms_proxy_init_exe:
+        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
+
+    # Any exception raised will result in Authorization Error by the caller
+    try:
+        voms_attrs = get_voms_attrs(acctgroup, acctrole)
+    except jobsub.AcctGroupNotConfiguredError, e: 
+        logger.log("%s"%e) 
+        raise
+
+    cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s -out %s -cert %s -key %s" % (voms_proxy_init_exe, voms_attrs, tmp_proxy_fname, cert, key)
+    logger.log(cmd)
+
+    try:
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    except:
+        # Catch and ignore warnings
+        proxy_created_pattern = 'Creating proxy  Done'
+        tb = traceback.format_exc()
+        if len(re.findall(proxy_created_pattern, tb)):
+            logger.log('Proxy was created. Ignoring warnings.')
+            logger.log('Output from running voms-proxy-init:\n%s' % tb) 
+        else:
+            # Anything else we should just raise
+            os.remove(tmp_proxy_fname)
+            raise
+    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,tmp_proxy_fname)
+    logger.log(cmd)
+    ret_code = os.system(cmd)
+    if ret_code == 0:
+	os.rename(tmp_proxy_fname, proxy_fname)
+    else:
+        os.remove(tmp_proxy_fname)
+
+
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
-    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
     new_proxy_fname = new_proxy_file.name
     logger.log("new_proxy_fname=%s"%new_proxy_fname)
@@ -238,12 +287,17 @@ def authenticate(dn, acctgroup, acctrole):
     raise AuthenticationError(dn, acctgroup)
 
 
-def get_gums_mapping(dn, fqan):
+def get_jobsub_priv_exe():
+    # TODO: Need to find a proper library for this call
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)
     if not exe:
         raise Exception("Unable to find command '%s' in the PATH." % exe)
+    return exe
 
+
+def get_gums_mapping(dn, fqan):
+    exe = get_jobsub_priv_exe()
     cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
@@ -261,7 +315,6 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
     creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
         os.makedirs(creds_dir, 0755)
-    #logger.log('Using credentials dir: %s' % creds_dir)
     if acctrole:
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s'%(username,acctrole))
@@ -276,41 +329,81 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
 #REFRESH_EVERY_4_HOURS=4
 
 def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
+    # TODO: Break this into smaller functions. Krb5 related code 
+    #       should be split out
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     krb5cc_dir = jobsub.get_jobsub_krb5cc_dir()
     try:
-        ##TODO:if real_cache_fname and keytab_fname are new enough
-        ##we should skip this step and go directly to voms-proxy-init
-        ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        #new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
+        x509_user_cert = os.path.join(jobsub.get_jobsub_certs_dir(),
+                                      '%s.cert'%username)
+        x509_user_key = os.path.join(jobsub.get_jobsub_certs_dir(),
+                                     '%s.key'%username)
 
+        # Create the proxy as a temporary file in tmp_dir and perform a
+        # privileged move on the file.
+        x509_tmp_prefix = os.path.join(jobsub.get_jobsub_tmp_dir(),
+                                       os.path.basename(x509_cache_fname))
+        x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
+                                           delete=False)
+        x509_tmp_fname = x509_tmp_file.name
+        x509_tmp_file.close()
 
-        if not is_valid_cache(real_cache_fname):
-            new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
-            new_cache_fname = new_cache_file.name
-            logger.log("new_cache_fname=%s"%new_cache_fname)
-	    new_cache_file.close()
-            logger.log('Creating krb5 ticket ...')
-            krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
-            krb5_ticket.create()
-            logger.log('Creating krb5 ticket ... DONE')
-
-            # Rename is atomic and silently overwrites destination
-            if os.path.exists(new_cache_fname):
-                 os.rename(new_cache_fname, real_cache_fname)
-        ##TODO: maybe skip this too if x509_cache_fname is new enough?
+        # If the x509_cache_fname is new enough skip everything and use it
+        # needs_refresh only looks for file existance and stat. It works on
+        # proxies owned by other users as well.
         if needs_refresh(x509_cache_fname):
-            krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
+            # First check if need to use keytab/KCA robot keytab
+            if os.path.exists(keytab_fname):
+                if not is_valid_cache(real_cache_fname):
+                    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+                    new_cache_fname = new_cache_file.name
+                    logger.log("new_cache_fname=%s"%new_cache_fname)
+	            new_cache_file.close()
+                    logger.log('Creating krb5 ticket ...')
+                    krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
+                    krb5_ticket.create()
+                    logger.log('Creating krb5 ticket ... DONE')
+
+                    # Rename is atomic and silently overwrites destination
+                    if os.path.exists(new_cache_fname):
+                         os.rename(new_cache_fname, real_cache_fname)
+
+                krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
+                                    acctgroup, acctrole)
+            elif( os.path.exists(x509_user_cert) and
+                  os.path.exists(x509_user_key) ):
+                # Convert x509 cert-key pair to voms proxy
+                x509pair_to_vomsproxy(x509_user_cert, x509_user_key,
+                                      x509_tmp_fname, acctgroup,
+                                      acctrole=acctrole)
+            else:
+                # No source credentials found for this user.
+                logger.log('Unable to find Kerberoes keytab file or a X509 cert-key pair for user %s' % (username))
+                raise AuthorizationError(dn, acctgroup)
+
+            exe = get_jobsub_priv_exe()
+            cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, x509_tmp_fname,
+                                                        x509_cache_fname,
+                                                        username)
+            err = ''
+            logger.log(cmd)
+            try:
+                out, err = subprocessSupport.iexe_priv_cmd(cmd)
+            except:
+                logger.log('Error moving file as user using command %s: %s' % (cmd, err))
+                raise
+
         return x509_cache_fname
     except:
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
+
 
 def is_valid_cache(cache_name):
     klist_exe=spawn.find_executable("klist")

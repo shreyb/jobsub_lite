@@ -103,6 +103,7 @@ class PrivActionManager:
             'copyFileAsUser',
             'moveFileAsUser',
             'mkdirsAsUser',
+            'chown',
         ]
 
 
@@ -228,6 +229,26 @@ class PrivActionManager:
         except:
             raise
 
+
+    def chown(self, argv):
+        if len(argv) != 3:
+            raise BadArgumentsError(argv[0], argv[1:])
+        path = argv[1]
+        user = argv[2]
+
+        if not os.path.exists(path):
+            raise OSError(2, 'No such file or directory', path)
+        
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = pwd.getpwnam(user).pw_gid
+        except KeyError, e:
+            raise UnknownUserError(user)
+
+        try:
+            os.chown(path, uid, gid)
+        except:
+            raise
 ###############################################################################
 # Main starts here
 ###############################################################################

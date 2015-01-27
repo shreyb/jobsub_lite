@@ -287,17 +287,8 @@ def authenticate(dn, acctgroup, acctrole):
     raise AuthenticationError(dn, acctgroup)
 
 
-def get_jobsub_priv_exe():
-    # TODO: Need to find a proper library for this call
-    path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
-    exe = spawn.find_executable('jobsub_priv', path=path)
-    if not exe:
-        raise Exception("Unable to find command '%s' in the PATH." % exe)
-    return exe
-
-
 def get_gums_mapping(dn, fqan):
-    exe = get_jobsub_priv_exe()
+    exe = jobsub.get_jobsub_priv_exe()
     cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
@@ -386,7 +377,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                 logger.log('Unable to find Kerberoes keytab file or a X509 cert-key pair for user %s' % (username))
                 raise AuthorizationError(dn, acctgroup)
 
-            exe = get_jobsub_priv_exe()
+            exe = jobsub.get_jobsub_priv_exe()
             cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, x509_tmp_fname,
                                                         x509_cache_fname,
                                                         username)
@@ -423,8 +414,7 @@ def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authorizing user: %s' % username)
     voms_proxy = authorize(dn, username, acctgroup, role)
     logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
-    return voms_proxy
-
+    return (username, voms_proxy)
 
 
 def refresh_proxies(agelimit=3600):
@@ -463,7 +453,6 @@ def refresh_proxies(agelimit=3600):
     #if user not in queued_users remove krb5cc_(user) and (user).keytab
 
 
-
 def _check_auth(dn, acctgroup, role):
     return create_voms_proxy(dn, acctgroup, role)
 
@@ -481,8 +470,11 @@ def check_auth(func):
                 if len(tokens) > 1:
                     (acctgroup, role) = tokens[0:2]
                     logger.log('found ROLE %s in %s' %(role,tokens))
-                if _check_auth(dn, acctgroup, role):
-                    kwargs['role']=role
+                username, voms_proxy =  _check_auth(dn, acctgroup, role)
+                if username and voms_proxy:
+                    kwargs['role'] = role
+                    kwargs['username'] = username
+                    kwargs['voms_proxy'] = voms_proxy
                     return func(self, acctgroup, *args, **kwargs)
                 else:
                     # return error for failed auth

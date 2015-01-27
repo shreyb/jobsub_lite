@@ -377,6 +377,8 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                 logger.log('Unable to find Kerberoes keytab file or a X509 cert-key pair for user %s' % (username))
                 raise AuthorizationError(dn, acctgroup)
 
+            jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
+            """
             exe = jobsub.get_jobsub_priv_exe()
             cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, x509_tmp_fname,
                                                         x509_cache_fname,
@@ -388,6 +390,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
             except:
                 logger.log('Error moving file as user using command %s: %s' % (cmd, err))
                 raise
+            """
 
         return x509_cache_fname
     except:

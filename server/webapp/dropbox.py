@@ -10,7 +10,6 @@ from auth import check_auth
 from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups
-from jobsub import execute_jobsub_command
 from jobsub import get_dropbox_path_root
 from util import mkdir_p
 from util import digest_for_file

@@ -9,7 +9,7 @@ from cherrypy.lib.static import serve_file
 
 from util import get_uid, mkdir_p, create_zipfile, create_tarfile
 from auth import check_auth
-from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
+from jobsub import is_supported_accountinggroup, get_command_path_root
 from format import format_response
 from condor_commands import api_condor_q
 from datetime import datetime

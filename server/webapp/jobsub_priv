@@ -133,7 +133,8 @@ class PrivActionManager:
             raise e
     
         # Print stderr separately
-        print(err, file=sys.stderr)
+        if err.strip():
+            print(err, file=sys.stderr)
         return out
 
 

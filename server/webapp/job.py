@@ -15,7 +15,6 @@ from tempfile import NamedTemporaryFile
 from util import get_uid, mkdir_p
 from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
-from jobsub import execute_jobsub_command
 from jobsub import execute_job_submit_wrapper
 from jobsub import get_jobsub_tmp_dir
 from jobsub import get_command_path_root

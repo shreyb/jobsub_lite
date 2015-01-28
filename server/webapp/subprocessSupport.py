@@ -84,7 +84,15 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
     return (stdoutdata, stderrdata)
 
 
-def iexe_priv_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
-    out, err = iexe_cmd('sudo %s' % cmd, useShell=useShell,
+def iexe_priv_cmd(cmd, useShell=False, stdin_data=None,
+                  child_env=None, username=None):
+    """
+    Run a privileged command. If username is specified run it as that user.
+    """
+
+    sudo_opts = ''
+    if username:
+        sudo_opts = '-u %s -E' % username
+    out, err = iexe_cmd('sudo %s %s' % (sudo_opts, cmd), useShell=useShell,
                         stdin_data=stdin_data, child_env=child_env)
     return out, err

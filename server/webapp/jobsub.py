@@ -92,58 +92,52 @@ def get_jobsub_wrapper(submit_type='job'):
 
 def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                workdir_id=None, role=None,
-                               jobsub_client_version=None,
-                               submit_type='job'):
+                               jobsub_client_version='UNKNOWN',
+                               submit_type='job', priv_mode=True):
 
     envrunner = get_jobsub_wrapper(submit_type=submit_type)
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
 
-    job_submit_dir = os.path.join(get_command_path_user(acctgroup, username),
-                                  workdir_id)
-
+    out = err = ''
     child_env = os.environ.copy()
-    child_env['SCHEDD'] = schedd_name()
-    child_env['ROLE'] = role
-    child_env['WORKDIR_ID'] = workdir_id
-    child_env['GROUP'] = acctgroup
-    child_env['USER'] = username
     child_env['JOBSUB_CLIENT_VERSION'] = jobsub_client_version
-    if should_transfer_krb5cc(acctgroup):
-        src_cache_fname = os.path.join(get_jobsub_krb5cc_dir(),
-                                       'krb5cc_%s'%username)
-        dst_cache_fname = os.path.join(job_submit_dir, 'krb5cc_%s'%username)
+    child_env['GROUP'] = acctgroup
 
-        copy_file_as_user(src_cache_fname, dst_cache_fname, username)
-        logger.log('Adding %s for acctgroup %s to transfer_encrypt_files'%(dst_cache_fname, acctgroup))
-        child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
-        child_env['KRB5CCNAME'] = dst_cache_fname
+    if priv_mode:
+        # Only required for the job submission
+        job_submit_dir = os.path.join(get_command_path_user(acctgroup,
+                                                            username),
+                                      workdir_id)
 
-    out, err = run_cmd_as_user(command, username, child_env=child_env)
+        child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
+        child_env['SCHEDD'] = schedd_name()
+        child_env['ROLE'] = role
+        child_env['WORKDIR_ID'] = workdir_id
+        child_env['USER'] = username
+        if should_transfer_krb5cc(acctgroup):
+            src_cache_fname = os.path.join(get_jobsub_krb5cc_dir(),
+                                           'krb5cc_%s'%username)
+            dst_cache_fname = os.path.join(job_submit_dir, 'krb5cc_%s'%username)
+
+            copy_file_as_user(src_cache_fname, dst_cache_fname, username)
+            logger.log('Adding %s for acctgroup %s to transfer_encrypt_files'%(dst_cache_fname, acctgroup))
+            child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
+            child_env['KRB5CCNAME'] = dst_cache_fname
+
+        out, err = run_cmd_as_user(command, username, child_env=child_env)
+    else:
+        # Some commands like --help do not need sudo
+        out, err = subprocessSupport.iexe_cmd('%s' % ' '.join(command),
+                                              child_env=child_env)
+        #out = out.split('\n\n')
+        #err = err.split('\n\n')
 
     result = {
         'out': out,
         'err': err
     }
 
-
-    """
-    pp = Popen(command, stdout=PIPE, stderr=PIPE, env=child_env)
-
-    result = {
-        'out': pp.stdout.readlines(),
-        'err': pp.stderr.readlines()
-    }
-    errlist=result['err']
-    newlist=[]
-    ignore_msg='jobsub.ini for jobsub config'
-    for m in errlist:
-        if ignore_msg not in m:
-            newlist.append(m)
-    result['err']=newlist
-    logger.log('jobsub command result: %s' % str(result))
-    logger.log('jobsub command result: %s' % str(pp.returncode))
-    """
     return result
 
 

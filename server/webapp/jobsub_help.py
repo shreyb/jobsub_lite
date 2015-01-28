@@ -8,7 +8,7 @@ import socket
 from util import get_uid
 from auth import check_auth
 from format import format_response
-from jobsub import execute_jobsub_command
+from jobsub import execute_job_submit_wrapper
 
 
 
@@ -20,8 +20,8 @@ class JobsubHelpResource(object):
         """
         jobsub_args = ['--help']
         subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
-        rc = execute_jobsub_command(acctgroup, uid, jobsub_args)
+        rc = execute_job_submit_wrapper(acctgroup, None, jobsub_args,
+                                        priv_mode=False)
 
         return rc
 

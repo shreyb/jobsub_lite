@@ -69,7 +69,11 @@ export JOBSUB_CMD="jobsub  $OWN $TEC $JSV $JCV $@"
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: ${JOBSUB_CMD} "  >> /tmp/jobsub_env_runner.log
 fi
-chmod +x ${JOBSUB_COMMAND_FILE_PATH}
+
+if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
+    chmod +x ${JOBSUB_COMMAND_FILE_PATH}
+fi
+
 
 RSLT=`$JOBSUB_CMD`
 if [ "$DEBUG_JOBSUB" != "" ]; then

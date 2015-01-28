@@ -151,16 +151,17 @@ class JobSubClient:
                                 else:
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
-                                tfiles.append(srv_argv[idx])
+                                if srv_argv[idx] not in tfiles:
+                                    tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
-                    if len(tfiles)>0:
-                        transfer_input_files=','.join(tfiles)
-                        self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
-                        if self.dropboxServer is None and self.server != actual_server:
-                            self.server=actual_server
+                if len(tfiles)>0:
+                    transfer_input_files=','.join(tfiles)
+                    self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
+                    if self.dropboxServer is None and self.server != actual_server:
+                        self.server=actual_server
 
             if self.jobExeURI and self.jobExe:
                 idx = get_jobexe_idx(srv_argv)

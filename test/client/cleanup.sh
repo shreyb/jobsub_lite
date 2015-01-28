@@ -11,6 +11,6 @@ if [ "$R1" != "0" ]  || [ "$R2" != "0" ]; then
 fi
 find . -name '*out' -type f  -exec rm -f {} \;
 find . -name '*log' -type f  -exec rm -f {} \;
-/bin/rm -rf UNZIPDIR curl python 
+/bin/rm -rf unarchive curl python 
 /bin/rm -f  1 
 cd -

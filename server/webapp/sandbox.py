@@ -13,7 +13,7 @@ from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_com
 from format import format_response
 from condor_commands import api_condor_q
 from datetime import datetime
-
+from JobsubConfigParser import JobsubConfigParser
 
 condor_job_status = {
     1: 'Idle',
@@ -44,21 +44,29 @@ def cleanup(zip_file, outfilename=None):
         logger.log(err)
 
 
+def create_archive(zip_file, zip_path, job_id,format):
+    if format=='tgz':
+        create_tarfile(zip_file, zip_path, job_id)
+    else:
+        create_zipfile(zip_file, zip_path, job_id)
+        
+
+
 class SandboxResource(object):
     """ Download compressed output sandbox for a given job
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
     """
 
-    def find_sandbox(self,path,uid):
+    def find_sandbox(self, path, uid):
         if os.path.exists(path):
             return path
-        jobid=os.path.basename(path)
+        jobid = os.path.basename(path)
         logger.log('jobid:%s'%jobid)
-        uid='/%s/'%uid
-        cmd1=""" -format '%s' iwd -constraint """ 
-        cmd2="""'jobsubjobid=="%s"' """%(jobid)
+        uid = '/%s/'%uid
+        cmd1 = """ -format '%s' iwd -constraint """ 
+        cmd2 = """'jobsubjobid=="%s"' """%(jobid)
         for cmd0 in ['condor_history ','condor_q ']:
-            cmd=cmd0+cmd1+cmd2
+            cmd = cmd0 + cmd1 + cmd2
             logger.log(cmd)
             newpath, cmd_err = subprocessSupport.iexe_cmd(cmd)
             #logger.log('result:%s status:%s'%(newpath,cmd_err))
@@ -73,6 +81,18 @@ class SandboxResource(object):
 
     #@format_response
     def doGET(self, acctgroup, job_id, kwargs):
+        #set cherrypy.response.timeout to something bigger than 300 seconds
+        timeout = 60*15 
+        try:
+            p = JobsubConfigParser()
+            t = p.get('default', 'sandbox_timeout')
+            if t is not None:
+                timeout = t
+        except Exception, e:
+            logger.log('caught %s  setting default timeout'%e)
+            
+        cherrypy.response.timeout=timeout
+        logger.log('sandbox timeout=%s'%cherrypy.response.timeout)
         logger.log(kwargs)
         logger.log(job_id)
         subject_dn = cherrypy.request.headers.get('Auth-User')
@@ -80,9 +100,6 @@ class SandboxResource(object):
         command_path_root = get_command_path_root()
         if job_id is None:
              job_id='I_am_planning_on_failing'
-        #else:
-        #    job_tokens = job_id.split('.')
-        #job_id = '%s.0' % job_tokens[0]
         zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
         zip_path = self.find_sandbox(zip_path,uid)
         if zip_path:
@@ -90,23 +107,25 @@ class SandboxResource(object):
             format=kwargs.get('archive_format')
             logger.log('archive_format:%s'%format)
             if format and format=='zip':
-                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.zip'%(job_tokens[0],ts))
-                create_zipfile(zip_file, zip_path, job_id)
+		pass
             else:           
-                zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.%s.tgz'%(job_id,ts))
-                create_tarfile(zip_file, zip_path, job_id)
-
+                format='tgz'
+            zip_file = os.path.join(command_path_root, 
+                                    acctgroup, 
+                                    uid, 
+                                    '%s.%s.%s'%(job_id,ts,format))
+            cherrypy.request.hooks.attach('on_end_request', 
+                                           cleanup, zip_file=zip_file)
+            cherrypy.request.hooks.attach('after_error_response', 
+                                           cleanup, zip_file=zip_file)
+            create_archive(zip_file, zip_path, job_id, format)
             rc = {'out': zip_file}
 
-            cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download','attachment')
 
         else:
             # return error for no data found
-            err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-            logger.log(err)
-            #rc = {'err': err}
             cherrypy.response.status = 404
             jobs_file_path = os.path.join(command_path_root, acctgroup, uid)
             sandbox_cluster_ids = list()
@@ -115,12 +134,17 @@ class SandboxResource(object):
                 dirs=os.listdir(jobs_file_path)
                 for dir in dirs:
                     if os.path.islink(os.path.join(jobs_file_path, dir)) and dir.find('@')>0:
-                        frag="""<a href="../../%s/sandbox/">%s</a>"""%(dir,dir)
+                        frag="""%s"""%(dir)
                         sandbox_cluster_ids.append(frag)
                 sandbox_cluster_ids.sort()
-            outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (uid,acctgroup)
-            sandbox_cluster_ids.insert(0,outmsg)
-            rc = {'out': sandbox_cluster_ids , 'err':err }
+            if len(sandbox_cluster_ids)>0:
+                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (uid,acctgroup)
+                sandbox_cluster_ids.insert(0,outmsg)
+                rc = {'out': sandbox_cluster_ids }
+            else:
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+                logger.log(err)
+                rc = {'err':err }
 
         return rc
 

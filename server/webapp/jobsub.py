@@ -2,6 +2,8 @@ from subprocess import Popen, PIPE
 from condor_commands import schedd_name
 import logger
 import os
+import pwd
+import pipes
 import socket
 from distutils import spawn
 import subprocessSupport
@@ -65,20 +67,6 @@ def should_transfer_krb5cc(acctgroup):
 
     return can_transfer
 
-"""
-# Moved this to auth.py where itbelongs
-def get_voms(acctgroup):
-    rc = 'fermilab:/fermilab/%s' % acctgroup
-    p = JobsubConfigParser()
-    if p.has_section(acctgroup):
-        if p.has_option(acctgroup, 'voms'):
-            rc = p.get(acctgroup, 'voms')
-    else:
-        raise AcctGroupNotConfiguredError(acctgroup)
-
-    return rc
-"""
-
 
 def get_dropbox_path_root():
     rc = '/opt/jobsub/dropbox'
@@ -102,20 +90,6 @@ def get_jobsub_wrapper(submit_type='job'):
     return wrapper
 
 
-def check_command_path_user(acctgroup_dir, username):
-    """
-    Check if user specific jobs dir exists and is owned by the user.
-    If not create it or change the ownership accordingly.
-    """
-
-
-    if os.path.exists(os.path.join(acctgroup_dir, username)):
-        # Check and change ownership as required
-        pass
-    else:
-        create_dir_as_user(acctgroup_dir, username, username, mode='755')
-
-
 def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                workdir_id=None, role=None,
                                jobsub_client_version=None,
@@ -124,6 +98,10 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     envrunner = get_jobsub_wrapper(submit_type=submit_type)
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
+
+    job_submit_dir = os.path.join(get_command_path_user(acctgroup, username),
+                                  workdir_id)
+
     child_env = os.environ.copy()
     child_env['SCHEDD'] = schedd_name()
     child_env['ROLE'] = role
@@ -132,12 +110,24 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     child_env['USER'] = username
     child_env['JOBSUB_CLIENT_VERSION'] = jobsub_client_version
     if should_transfer_krb5cc(acctgroup):
-        cache_fname = os.path.join(get_jobsub_creds_dir(), 'krb5cc_%s'%uid)
-        logger.log('Adding %s for acctgroup %s to transfer_encrypt_files'%(cache_fname, acctgroup))
-        child_env['ENCRYPT_INPUT_FILES']=cache_fname
-        child_env['KRB5CCNAME']=cache_fname
+        src_cache_fname = os.path.join(get_jobsub_krb5cc_dir(),
+                                       'krb5cc_%s'%username)
+        dst_cache_fname = os.path.join(job_submit_dir, 'krb5cc_%s'%username)
+
+        copy_file_as_user(src_cache_fname, dst_cache_fname, username)
+        logger.log('Adding %s for acctgroup %s to transfer_encrypt_files'%(dst_cache_fname, acctgroup))
+        child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
+        child_env['KRB5CCNAME'] = dst_cache_fname
+
+    out, err = run_cmd_as_user(command, username, child_env=child_env)
+
+    result = {
+        'out': out,
+        'err': err
+    }
 
 
+    """
     pp = Popen(command, stdout=PIPE, stderr=PIPE, env=child_env)
 
     result = {
@@ -152,6 +142,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             newlist.append(m)
     result['err']=newlist
     logger.log('jobsub command result: %s' % str(result))
+    logger.log('jobsub command result: %s' % str(pp.returncode))
+    """
     return result
 
 
@@ -160,7 +152,6 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
-    logger.log('----- user: %s' % uid)
     child_env = os.environ.copy()
     schedd=schedd_name(jobsub_args)
     logger.log('schedd=%s'%schedd)
@@ -192,6 +183,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
     if len(result['err'])>0:
         logger.log(str(result['err']))
     return result
+
 
 def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
 
@@ -282,6 +274,22 @@ def get_command_path_user(acctgroup, user):
     return os.path.join(get_command_path_acctgroup(acctgroup), user)
 
 
+def check_command_path_user(acctgroup_dir, username):
+    """
+    Check if user specific jobs dir exists and is owned by the user.
+    If not create it or change the ownership accordingly.
+    """
+
+    user_dir = os.path.join(acctgroup_dir, username)
+    if os.path.exists(user_dir):
+        # Check and change ownership as required.
+        # Only invoked after the upgrade from legacy code or change in mapping
+        if (os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid):
+            chown_as_user(user_dir, username)
+    else:
+        create_dir_as_user(acctgroup_dir, username, username, mode='755')
+
+
 ############
 # TODO: Following should be converted to class and helper functions
 ############
@@ -309,7 +317,6 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
         #raise RuntimeError, err_str % (cmd, out, err, e)
 
 
-
 def move_file_as_user(src, dst, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
@@ -320,3 +327,43 @@ def move_file_as_user(src, dst, username):
     except Exception, e:
         err_str = 'Error moving file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         raise RuntimeError, err_str % (cmd, out, err, e)
+
+
+def copy_file_as_user(src, dst, username):
+    exe = get_jobsub_priv_exe()
+    cmd = '%s copyFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
+    out = err = ''
+    logger.log(cmd)
+    try:
+        out, err = subprocessSupport.iexe_priv_cmd(cmd)
+    except Exception, e:
+        err_str = 'Error copying file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        raise RuntimeError, err_str % (cmd, out, err, e)
+
+
+def chown_as_user(path, username):
+    exe = get_jobsub_priv_exe()
+    cmd = '%s chown "%s" "%s"' % (exe, path, username)
+    out = err = ''
+    logger.log(cmd)
+    try:
+        out, err = subprocessSupport.iexe_priv_cmd(cmd)
+    except Exception, e:
+        err_str = 'Error changing ownership of path as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        raise RuntimeError, err_str % (cmd, out, err, e)
+
+
+def run_cmd_as_user(command, username, child_env={}):
+    exe = get_jobsub_priv_exe()
+    c = ' '.join(pipes.quote(s) for s in command)
+    cmd = '%s runCommand %s' % (exe, c)
+    out = err = ''
+    logger.log(cmd)
+    try:
+        out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
+                                                   username=username)
+    except Exception, e:
+        err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        raise RuntimeError, err_str % (username, cmd, out, err, e)
+
+    return out, err

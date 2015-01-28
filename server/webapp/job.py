@@ -11,12 +11,19 @@ from datetime import datetime
 from shutil import copyfileobj
 
 from cherrypy.lib.static import serve_file
-
+from tempfile import NamedTemporaryFile
 from util import get_uid, mkdir_p
 from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_jobsub_command
+from jobsub import execute_job_submit_wrapper
+from jobsub import get_jobsub_tmp_dir
 from jobsub import get_command_path_root
+from jobsub import get_command_path_acctgroup
+from jobsub import get_command_path_user
+from jobsub import check_command_path_user
+from jobsub import create_dir_as_user
+from jobsub import move_file_as_user
 from format import format_response
 from condor_commands import condor, api_condor_q,ui_condor_q
 from condor_commands import classad_to_dict,constructFilter
@@ -31,17 +38,20 @@ from queued_dag import QueuedDagResource
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
-	self.role=None
+	self.role = None
+	self.username = None
+	self.vomsProxy = None
         self.sandbox = SandboxResource()
 	self.history = HistoryResource()
         self.dag = DagResource()
-	self.long=QueuedLongResource()
-	self.dags=QueuedDagResource()
+	self.long = QueuedLongResource()
+	self.dags = QueuedDagResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
             'RELEASE': condor.JobAction.Release,
         }
+
 
     def doGET(self, acctgroup, job_id, kwargs):
         """ Serves the following APIs:
@@ -54,7 +64,7 @@ class AccountJobsResource(object):
             objects in the queue
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
-        subject_dn = cherrypy.request.headers.get('Auth-User')
+        #subject_dn = cherrypy.request.headers.get('Auth-User')
         #uid = get_uid(subject_dn)
 	uid = kwargs.get('user_id')
         filter = constructFilter(acctgroup,uid,job_id)
@@ -129,23 +139,46 @@ class AccountJobsResource(object):
                 role  = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %(jobsub_command))
                 logger.log('job.py:doPost:role %s ' % (role))
-                subject_dn = cherrypy.request.headers.get('Auth-User')
-                uid = get_uid(subject_dn)
-                command_path_root = get_command_path_root()
-                ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f") # add request id
+                #subject_dn = cherrypy.request.headers.get('Auth-User')
+
+                command_path_acctgroup = get_command_path_acctgroup(acctgroup)
+                mkdir_p(command_path_acctgroup)
+                command_path_user = get_command_path_user(acctgroup,
+                                                          self.username)
+                # Check if the user specific dir exist with correct
+                # ownership. If not create it.
+                check_command_path_user(command_path_acctgroup, self.username)
+
+                ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer=random.randrange(0,10000)
                 workdir_id = '%s_%s' % (ts, uniquer)
-                command_path = os.path.join(command_path_root, acctgroup, uid, workdir_id)
+                command_path = os.path.join(command_path_acctgroup, 
+                                            self.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
-		os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,role)
-                mkdir_p(command_path)
+		os.environ['X509_USER_PROXY'] = x509_proxy_fname(self.username,
+                                                                 acctgroup, role)
+                # Create the job's working directory as user 
+                create_dir_as_user(command_path_user, workdir_id,
+                                   self.username, mode='755')
                 if jobsub_command is not None:
-                    command_file_path = os.path.join(command_path, jobsub_command.filename)
+                    command_file_path = os.path.join(command_path,
+                                                     jobsub_command.filename)
                     os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
-                    with open(command_file_path, 'wb') as dst_file:
-                        copyfileobj(jobsub_command.file, dst_file)
+                    # First create a tmp file before moving the command file
+                    # in place as correct user under the jobdir
+                    tmp_file_prefix = os.path.join(get_jobsub_tmp_dir(),
+                                                   jobsub_command.filename)
+                    tmp_cmd_fd = NamedTemporaryFile(prefix="%s_"%tmp_file_prefix,
+                                                    delete=False)
+                    copyfileobj(jobsub_command.file, tmp_cmd_fd)
+
+                    tmp_cmd_fd.close()
+                    move_file_as_user(tmp_cmd_fd.name, command_file_path, self.username)
+                    #with open(command_file_path, 'wb') as dst_file:
+                    #    copyfileobj(jobsub_command.file, dst_file)
+
                     # replace the command file name in the arguments with 
                     # the path on the local machine.  
                     command_tag = '\ \@(\S*)%s' % jobsub_command.filename
@@ -154,7 +187,10 @@ class AccountJobsResource(object):
 
                 jobsub_args = jobsub_args.split(' ')
 
-                rc = execute_jobsub_command(acctgroup=acctgroup, uid=uid, jobsub_args=jobsub_args, workdir_id=workdir_id, role=role, jobsub_client_version=jobsub_client_version)
+                rc = execute_job_submit_wrapper(
+                         acctgroup=acctgroup, username=self.username,
+                         jobsub_args=jobsub_args, workdir_id=workdir_id,
+                         role=role, jobsub_client_version=jobsub_client_version)
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
@@ -168,6 +204,7 @@ class AccountJobsResource(object):
 
         return rc
    
+
     @cherrypy.expose
     @format_response
     def default(self,kwargs):
@@ -180,6 +217,8 @@ class AccountJobsResource(object):
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
             self.role = kwargs.get('role')
+            self.username = kwargs.get('username')
+            self.vomsProxy = kwargs.get('voms_proxy')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)

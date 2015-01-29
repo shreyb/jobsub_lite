@@ -6,7 +6,7 @@ import socket
 import sys
 import subprocessSupport
 
-from jobsub import is_supported_accountinggroup, execute_jobsub_command, get_command_path_root
+from jobsub import is_supported_accountinggroup, get_command_path_root
 from format import format_response
 
 

@@ -71,7 +71,7 @@ for URL in ${GET_URLS}; do
    cmd="curl $GET_FLAGS https://${MACH}.fnal.gov:8443${URL} "
 
    echo "https://${MACH}.fnal.gov:8443${URL}"
-   echo $cmd >> $outfile
+   echo $cmd > $outfile
    echo '--------------------------------------------------' >> $outfile
    bash -c "$cmd" >> $outfile
 done

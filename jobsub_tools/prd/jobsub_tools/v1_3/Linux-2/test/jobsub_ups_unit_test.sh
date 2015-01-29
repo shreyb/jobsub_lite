@@ -79,8 +79,8 @@ test_append_requirements4() {
 }
 
 test_append_accounting_group() {
-   SUBMIT_HOST=gpsn01.fnal.gov
-   JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
+   #SUBMIT_HOST=gpsn01.fnal.gov
+   #JOBSUB_INI_FILE=${JOBSUB_TOOLS_DIR}/bin/jobsub.ini
    file=`jobsub -n -g -l '+AccountingGroup = "group_highprio.minervapro"' /usr/bin/printenv`
    print_cmd_file
 
@@ -140,7 +140,6 @@ testsuite setups_suite	\
     test_append_requirements2 \
     test_append_requirements3 \
     test_append_requirements4 \
-    test_append_accounting_group \
     test_OS \
     test_drain \
     test_mem_disk_cpu_1 \

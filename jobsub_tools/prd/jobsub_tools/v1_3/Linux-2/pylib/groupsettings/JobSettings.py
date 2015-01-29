@@ -79,13 +79,12 @@ class JobSettings(object):
         self.initCmdParser()
         self.initFileParser()
         self.settings = {}
-        self.settings['submit_host'] = os.environ.get("SUBMIT_HOST")
-        if self.settings['submit_host'] == None:
-            self.settings['submit_host'] = "gpsn01.fnal.gov"
-        ##self.settings['local_host']=os.environ.get("HOSTNAME")
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput("/bin/hostname")
         self.settings['local_host']=rslt
+        self.settings['submit_host'] = os.environ.get("SUBMIT_HOST")
+        if self.settings['submit_host'] == None:
+            self.settings['local_host']=rslt
                         
         self.settings['condor_tmp'] = os.environ.get("CONDOR_TMP","/tmp")
         if self.settings['condor_tmp'] == None:
@@ -433,8 +432,7 @@ class JobSettings(object):
 
         file_group.add_option("--tar_file_name", dest="tar_file_name",action="store",
             help="""name of tarball to transfer to worker node. Will be added to the transfer_input_files 
-            list, and visible to the user job as $INPUT_TAR_FILE.  Does not work on submit host gpsn01, 
-            use the -f option to transfer a tar file to gpsn01""")
+            list, and visible to the user job as $INPUT_TAR_FILE.   """)
 
         generic_group.add_option("-n","--no_submit", dest="submit",action="store_false",default=True,
             help="generate condor_command file but do not submit")
@@ -490,9 +488,6 @@ class JobSettings(object):
             err = " --use_gftp and --no_log_buffer together make no sense"
             raise InitializationError(err)
 
-        if settings['submit_host']=="gpsn01.fnal.gov" and settings['tar_file_name'] !='':
-            err = "tarball submission has been disabled for gpsn01, use the -f option instead"
-            raise InitializationError(err) 
         
         if settings['nologbuffer'] and settings['joblogfile'] == "":
             err = "you must specify an input value for the log file with -L if you use --no_log_buffer"
@@ -1154,12 +1149,6 @@ class JobSettings(object):
 
            
 
-    def makeCommandFile(self, job_iter=0 ):
-        #print "testing for submit host:%s"%self.settings['submit_host']
-        if self.settings['submit_host'].find("gpsn01")>=0:
-            self.makeGPSN01CommandFile(job_iter)
-        else:
-            self.makeOtherCommandFile(job_iter)
 
     def shouldTransferInput(self):
         settings=self.settings
@@ -1302,8 +1291,7 @@ class JobSettings(object):
                 settings['requirements'] = settings['requirements'] + " && %s " % req
         return settings['requirements']
 
-    def makeOtherCommandFile(self, job_iter=0 ):
-        #print "self.makeOtherCommandFile"
+    def makeCommandFile(self, job_iter=0 ):
         settings = self.settings
         settings['cmd_file_list'].append(settings['cmdfile'])
         f = open(settings['cmdfile'], 'w')
@@ -1377,128 +1365,3 @@ class JobSettings(object):
 
         f.close
 
-    def makeGPSN01CommandFile(self, job_iter=0 ):
-        #print "self.makeGPSN01CommandFile(%s)"%job_iter
-        settings = self.settings
-        if job_iter <=1:
-            if settings['grid']:
-                settings['requirements'] = settings['requirements'] + settings['desired_os'] + ' && (target.IS_Glidein==true) '
-            else:
-                settings['requirements'] = settings['requirements'] + ' && (target.IS_Glidein=?=UNDEFINED) '
-        settings['cmd_file_list'].append(settings['cmdfile'])
-        f = open(settings['cmdfile'], 'w')
-        f.write("universe          = vanilla\n")
-        if settings['grid'] and settings['forcenoparrot'] \
-                and settings['needafs'] and settings['forceparrot']:
-            settings['useparrot']=True
-            f.write("executable        = %s\n"%settings['parrotfile'])
-        elif settings['tar_file_name']!="":
-            settings['useparrot']=False
-            f.write("executable        = %s\n"%settings['tar_file_name'])
-                        
-        elif settings['nowrapfile']:
-            settings['useparrot']=False
-            f.write("executable        = %s\n"%settings['exe_script'])
-        else:
-            settings['useparrot']=False
-            f.write("executable        = %s\n"%settings['wrapfile'])
-        args = ""
-        if settings['tar_file_name']!="":
-            args = "./"+os.path.basename(settings['exe_script'])+ " "
-        for arg in settings['script_args']:
-            args = args+" "+arg+" "
-        if job_iter <=1:
-            for arg in settings['added_environment']:
-                settings['environment'] = settings['environment']+";"+\
-                    arg+'='+os.environ.get(arg)
-            self.completeEnvList()
-                #print "after environment=%s"%settings['environment']
-        f.write("arguments         = %s\n"%args)
-        f.write("output                = %s\n"%settings['outfile'])
-        f.write("error                 = %s\n"%settings['errfile'])
-        f.write("log                   = %s\n"%settings['logfile'])
-        f.write("environment   = %s\n"%settings['environment'])
-        f.write("rank                  = Mips / 2 + Memory\n")
-        f.write("job_lease_duration = 21600\n")
-
-        if settings['notify']==0:
-            f.write("notification  = Never\n")
-        elif settings['notify']==1:
-            f.write("notification  = Error\n")
-        else:
-            f.write("notification  = Always\n")
-        f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
-        f.write("transfer_output                 = True\n")
-        f.write("transfer_error                  = True\n")
-        f.write("transfer_output_files = \n")
-        #tval=self.shouldTransferInput()
-        tval="transfer_executable     = False\n"
-
-        f.write(tval)
-
-        if job_iter <=1:
-            for x in settings['resource_list']:
-                (opt,val)=x.split('=')
-                settings['requirements']=settings['requirements']+\
-                     """&&(stringListsIntersect(toUpper(target.HAS_%s), toUpper(my.DESIRED_%s)))"""%(opt,opt)
-        if settings['grid']:
-            if job_iter<=1:
-                self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
-                self.addToLineSetting("+RunOnGrid                          = True")
-                settings['requirements']=settings['requirements'] + \
-                      '  && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))'
-
-
-            if not settings['site']:
-                if job_iter <= 1:
-                    settings['requirements']=settings['requirements'] + \
-                        '  && (target.AGroup==my.AGroup)'
-                        
-                if settings['opportunistic']==0:
-                    settings['site']="FNAL_%s" % settings['group']
-                else:
-                    settings['site']="FNAL_%s,FNAL_%s_opportunistic" % (settings['group'],settings['group'])
-
-            if job_iter <=1 and  'append_requirements' in settings:
-                for req in settings['append_requirements']:
-                    settings['requirements'] = settings['requirements'] + " && %s " % req
-        
-
-        else:
-            if job_iter <=1:
-                settings['requirements']=settings['requirements'] + ' && (target.GLIDEIN_Site=?=UNDEFINED)'
-            if 'append_requirements' in settings:
-                for req in settings['append_requirements']:
-                    settings['requirements'] = settings['requirements'] + " && %s " % req
-
-        if settings['istestjob'] == True:
-            f.write("+AccountingGroup = \"group_testjobs\"\n")
-
-        if settings['group'] != "" and settings['istestjob'] == False:
-            f.write("+AccountingGroup = \"group_%s.%s\"\n"%(settings['accountinggroup'],settings['user']))
-
-        self.addToLineSetting("+Agroup = \"group_%s\""%settings['group'])
-
-        self.handleResourceProvides(f,job_iter)
-        if 'disk' in settings:
-            f.write("request_disk = %s\n"%settings['disk'])
-        if 'memory' in settings:
-            f.write("request_memory = %s\n"%settings['memory'])
-        if 'cpu' in settings:
-            f.write("request_cpu = %s\n"%settings['cpu'])
-
-        if 'overwriterequirements' in settings:
-            f.write("requirements  = %s\n"%settings['overwriterequirements'])
-        else:
-            f.write("requirements  = %s\n"%settings['requirements'])
-
-
-
-
-
-        #f.write("%s"%settings['lines'])
-        f.write("\n")
-        f.write("\n")
-        f.write("queue %s"%settings['queuecount'])
-
-        f.close

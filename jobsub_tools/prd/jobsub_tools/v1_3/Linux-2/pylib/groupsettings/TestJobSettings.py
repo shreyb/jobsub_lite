@@ -57,16 +57,18 @@ class JobTest(unittest.TestCase):
         self.stdioON()
 
     def tearDown(self):
-        ok = self.currentResult.wasSuccessful()
+        #ok = self.currentResult.wasSuccessful()
         errors = self.currentResult.errors
         failures = self.currentResult.failures
         self.stdioON()
-        if ok:
+        if len(errors) > 0  or len (failures) > 0:
+                print """test failed, output saved to %s"""%self.tmpdir
+                print """ errors: %s """ % errors
+                print """ failures: %s """ % failures
+        else:
                 #print "test ok, removing %s"%self.tmpdir
                 import shutil
                 shutil.rmtree(self.tmpdir)
-        else:
-                print """test failed, output saved to %s"""%self.tmpdir
 
     def testConstructor(self):
         """test that JobSettings constructor initializes correctly"""
@@ -147,8 +149,6 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['notify'],1)
         ns.runCmdParser(['-Q','SSSSHHHHH.sh'])
         self.assertEqual(ns.settings['notify'],0)
-        ns.runCmdParser(['-T','huh'])
-        self.assertEqual(ns.settings['istestjob'],True)
         logfile = ns.settings['condor_tmp']+'/testlogfile'
         ns.runCmdParser(["-L%s"%logfile, 'some_script'])
         self.assertEqual(ns.settings['joblogfile'],logfile)

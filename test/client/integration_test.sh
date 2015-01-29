@@ -13,11 +13,13 @@ if [ "$?" == "0" ]; then
     grep -i exception $OUTFILE 
     if [ "$?" = "0" ]; then
     	lg_echo "FAILED"
+        exit 1
     else
 	lg_echo "PASSED"
     fi
 else
     lg_echo "FAILED"
+    exit 1
 fi
 }
 
@@ -46,26 +48,37 @@ fi
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+T1=$?
 JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+T2=$?
 GOTJID=`echo $JID| grep '[0-9].0@'`
+T3=$?
+test $T1 -eq 0 -a $T2 -eq 0 -a $T3 -eq 0
 SUBMIT_WORKED=$?
 if [ "$SUBMIT_WORKED" = "0" ]; then
      lg_echo "successfully submitted job $GOTJID"
 else
     lg_echo "submission problem, please see file $1.submit.$OUTGROUP.log"
 fi 
-
+test $SUBMIT_WORKED -eq 0
+pass_or_fail
 lg_echo test submission with role
 OUTFILE=$1.submit_role.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+T1=$?
 JID2=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+T2=$?
 GOTJID2=`echo $JID2| grep '[0-9].0@'`
+T3=$?
+test $T1 -eq 0 -a $T2 -eq 0 -a $T3 -eq 0
 SUBMIT_WORKED2=$?
 if [ "$SUBMIT_WORKED2" = "0" ]; then
      lg_echo "PASSED successfully submitted job $GOTJID2"
 else
     lg_echo "FAILED submission problem, please see file $1.submit_role.$OUTGROUP.log"
 fi 
+test $SUBMIT_WORKED2 -eq 0
+pass_or_fail
 lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$OUTFILE 2>&1

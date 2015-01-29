@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
 import os
-import string
 import sys
 import stat
-import readline
 import commands
-import pprint
 import re
 import datetime
 import time
-import subprocess
 from JobsubConfigParser import JobsubConfigParser
 
 docString = """
@@ -335,10 +331,10 @@ class DagParser(object):
             self.macroList.append(a)
             self.macroDict[a]=b
             if(b.find("`")==0):
-                    if(b.find("`",1)==(len(b)-1)):
-                        cmd=b[1:len(b)-1]
-                        (retVal,val)=commands.getstatusoutput(cmd)
-                        #print "command %s returns %s"%(b,val)
+                if(b.find("`",1)==(len(b)-1)):
+                    cmd=b[1:len(b)-1]
+                    (retVal,val)=commands.getstatusoutput(cmd)
+                    if retVal == 0:
                         self.macroDict[a]=val
 #######################################################################
 
@@ -383,36 +379,31 @@ class DagParser(object):
                     self.processFinishJob(line)
                     pass
                 
-                elif len(line)>0:
+                elif len(line) > 0:
                     for mac in self.macroList:
                         line = line.replace(mac,self.macroDict[mac])
-                    #line = line.replace('$CONDOR_TMP',self.condor_tmp)
-                    val=""
-                    (retVal,val)=commands.getstatusoutput(line)
-                    ##proc = subprocess.Popen(line,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    ##retVal = proc.wait()
-                    ##for op in proc.stdout:
-                    ##     val=val+op
+                    val = ""
+                    (retVal, val) = commands.getstatusoutput(line)
                     if retVal:
-                        print "error processing command %s"%line
+                        print "error processing command %s" % line
                         print val
                     else:
-                        j=j+1
-                        condor_cmd=''
-                        condor_cmd_list =[]
+                        j = j + 1
+                        condor_cmd = ''
+                        condor_cmd_list = []
                         biglist = val.split()
-                        ncmds=0
-                        i=0
+                        ncmds = 0
+                        i = 0
                         for word in biglist:
-                            if word.find(".cmd")>=0 and word not in condor_cmd_list:
-                                ncmds=ncmds+1
+                            if word.find(".cmd") >= 0 and word not in condor_cmd_list:
+                                ncmds = ncmds + 1
                                 condor_cmd = word     
-                                jobName="Jb_%d_%d"%(j,i)
+                                jobName = "Jb_%d_%d"%(j, i)
                                 self.jobNameList.append(jobName)
-                                self.jobDict[condor_cmd]=jobName
-                                self.jobNameDict[jobName]=condor_cmd
+                                self.jobDict[condor_cmd] = jobName
+                                self.jobNameDict[jobName] = condor_cmd
                                 condor_cmd_list.append(condor_cmd)
-                                i=i+1
+                                i = i + 1
                         if self.processingSerial:
                             self.jobList.append(tuple(condor_cmd_list))
                         if self.processingParallel:
@@ -601,15 +592,20 @@ class ArgParser(object):
         if self.outputFile=="":
             cmd = """date +%Y%m%d_%H%M%S"""
             #commands=JobUtils()
-            (retVal,val)=commands.getstatusoutput(cmd)
-            now = val.rstrip()
-            condor_tmp=os.environ.get("CONDOR_TMP")               
-            home=os.environ.get("HOME")
-            if condor_tmp=="" or condor_tmp == None :
-                self.outputFile = home+"/submit.%s.dag"%now
+            (retVal , val) = commands.getstatusoutput(cmd)
+            if retVal == 0:
+                now = val.rstrip()
+                condor_tmp = os.environ.get("CONDOR_TMP")               
+                home = os.environ.get("HOME")
+                if condor_tmp == "" or condor_tmp == None :
+                    self.outputFile = home+"/submit.%s.dag"%now
+                else:
+                    self.outputFile = condor_tmp+"/submit.%s.dag"%now
+                print "generated DAG saved as ", self.outputFile
             else:
-                self.outputFile = condor_tmp+"/submit.%s.dag"%now
-            print "generated DAG saved as ", self.outputFile
+                print "error executing %s " % cmd
+                sys.exit(1)
+
     def report(self):
         print "====================================="
         print "inputFile = ",self.inputFile
@@ -637,35 +633,35 @@ class JobRunner(object):
     def doSubmit(self,args=None):
         cmd=""
         #commands=JobUtils()
-        (retVal,host)=commands.getstatusoutput("uname -n")
+        (retVal, host) = commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")
         if ups_shell is None:
             ups_shell="sh"
-        if ups_shell == "csh" and args.condorSetup.find( '/opt/condor/condor.sh')>=0 :
-            args.condorSetup = 'source /opt/condor/condor.csh ;'
 
         if host == args.submitHost:
-            cmd = """ %s  condor_submit_dag -dont_suppress_notification  """ % args.condorSetup
+            cmd = """condor_submit_dag -dont_suppress_notification  """ 
         else:
-            cmd = """ssh %s " %s  condor_submit_dag -dont_suppress_notification """ % (args.submitHost,args.condorSetup)
-        cmd2 = "/grid/fermiapp/common/graphviz/zgrviewer/zgrview "
+            cmd = """ssh %s "condor_submit_dag -dont_suppress_notification """\
+                   % (args.submitHost)
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
-        usr=os.environ.get("USER")
-        grp=os.environ.get("GROUP")
+        usr = os.environ.get("USER")
+        grp = os.environ.get("GROUP")
 
-        cmd = cmd + """ -append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """%(usr,grp,usr)
+        cmd = cmd + """ -append "+Owner=\\"%s\\"" """ % usr 
+        cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
+                (grp, usr)
         cmd = cmd + args.outputFile
         if host != args.submitHost:
             cmd = cmd + ' "'
         print "executing ", cmd
-        (retVal,val)=commands.getstatusoutput(cmd)
+        (retVal, val) = commands.getstatusoutput(cmd)
         if retVal:
-            print "ERROR executing ",cmd
+            print "ERROR executing %s" % cmd
             print val
-            retVal=retVal%256
-            if retVal==0:
-                retVal=1
+            retVal = retVal % 256
+            if retVal == 0:
+                retVal = 1
             sys.exit(retVal)
         print val
 

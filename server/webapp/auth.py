@@ -268,7 +268,7 @@ def authenticate_gums(dn, acctgroup, acctrole):
     raise AuthenticationError(dn, acctgroup)
 
 
-def authenticate(dn, acctgroup, acctrole):
+def authenticate_old(dn, acctgroup, acctrole):
     try:
         return authenticate_gums(dn, acctgroup, acctrole)
     except:
@@ -284,6 +284,25 @@ def authenticate(dn, acctgroup, acctrole):
         logger.log("Failed to authenticate using KCA DN Pattern.")
 
     logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods." % (dn, acctgroup, acctrole))
+    raise AuthenticationError(dn, acctgroup)
+
+
+def authenticate(dn, acctgroup, acctrole):
+    methods = jobsub.get_authentication_methods(acctgroup)
+    for method in methods:
+        cherrypy.response.status = 200
+        logger.log("Authenticatiing using method: %s" % method)
+        try:
+            if method.lower() == 'gums':
+                return authenticate_gums(dn, acctgroup, acctrole)
+            elif method.lower() == 'kca-dn':
+                return authenticate_kca_dn(dn)
+            else:
+                logger.log("Unknown authenticate method: %s" % method)
+        except:
+            logger.log("Failed to authenticate using method: %s" % method)
+
+    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" % (dn, acctgroup, acctrole))
     raise AuthenticationError(dn, acctgroup)
 
 

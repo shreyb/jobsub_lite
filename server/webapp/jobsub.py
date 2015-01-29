@@ -42,6 +42,22 @@ def get_supported_accountinggroups():
     return rc
 
 
+def get_authentication_methods(acctgroup):
+    rc = 'kca-dn'
+    try:
+        p = JobsubConfigParser()
+        if p.has_section(acctgroup):
+            if p.has_option(acctgroup, 'authentication_methods'):
+                rc = p.get(acctgroup, 'authentication_methods')
+    except:
+        logger.log('Failed to get accounting groups: ', traceback=True)
+
+    methods = list()
+    for m in rc.split(','):
+        methods.append(m.strip())
+    return methods
+
+
 def get_command_path_root():
     rc = '/opt/jobsub/uploads'
     p = JobsubConfigParser()

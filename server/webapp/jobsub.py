@@ -7,6 +7,7 @@ import pipes
 import socket
 from distutils import spawn
 import subprocessSupport
+import StringIO
 
 
 from JobsubConfigParser import JobsubConfigParser
@@ -105,10 +106,11 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     child_env['GROUP'] = acctgroup
 
     if priv_mode:
+        jobsubConfig = JobsubConfig()
         # Only required for the job submission
-        job_submit_dir = os.path.join(get_command_path_user(acctgroup,
-                                                            username),
-                                      workdir_id)
+        job_submit_dir = os.path.join(
+                             jobsubConfig.commandPathUser(acctgroup, username),
+                             workdir_id)
 
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_name()
@@ -130,8 +132,12 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         # Some commands like --help do not need sudo
         out, err = subprocessSupport.iexe_cmd('%s' % ' '.join(command),
                                               child_env=child_env)
-        #out = out.split('\n\n')
-        #err = err.split('\n\n')
+
+    # Convert the output to list as in case of previous version of jobsub
+    if (type(out) == type('string')) and out.strip():
+        out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+    if (type(err) == type('string')) and err.strip():
+        err = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
 
     result = {
         'out': out,
@@ -141,6 +147,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     return result
 
 
+"""
 def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
 
     envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
@@ -177,6 +184,7 @@ def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=Non
     if len(result['err'])>0:
         logger.log(str(result['err']))
     return result
+"""
 
 
 def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
@@ -215,74 +223,62 @@ def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,j
     return result
 
 
-############
-# TODO: Following should be converted to config class and members
-############
+class JobsubConfig:
 
-def get_jobsub_state_dir():
-    return os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
+    def __init__(self):
+ 
+        self.stateDir = os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
 
+        self.tmpDir = os.path.join(self.stateDir, 'tmp')
+        self.credsDir = os.path.join(self.stateDir, 'creds')
 
-def get_jobsub_creds_dir():
-    return os.path.join(get_jobsub_state_dir(), 'creds')
+        self.keytabsDir = os.path.join(self.credsDir, 'keytabs')
+        self.certsDir = os.path.join(self.credsDir, 'certs')
+        self.proxiesDir = os.path.join(self.credsDir, 'proxies')
+        self.krb5ccDir = os.path.join(self.credsDir, 'krb5cc')
 
-
-def get_jobsub_keytabs_dir():
-    return os.path.join(get_jobsub_creds_dir(), 'keytabs')
-
-
-def get_jobsub_certs_dir():
-    return os.path.join(get_jobsub_creds_dir(), 'certs')
+        self.commandPathRoot = get_command_path_root()
 
 
-def get_jobsub_proxies_dir():
-    return os.path.join(get_jobsub_creds_dir(), 'proxies')
+    def stateDirLayout(self):
+        layout = [
+            (self.stateDir, '0755'),
+            (self.credsDir, '0755'),
+            (self.keytabsDir, '0755'),
+            (self.certsDir, '0755'),
+            (self.proxiesDir, '0755'),
+            (self.krb5ccDir, '0755'),
+            (self.tmpDir, '1777'),
+        ]
+        return layout
 
 
-def get_jobsub_krb5cc_dir():
-    return os.path.join(get_jobsub_creds_dir(), 'krb5cc')
+    def commandPathAcctgroup(self, acctgroup):
+        return os.path.join(self.commandPathRoot, acctgroup)
 
 
-def get_jobsub_tmp_dir():
-    return os.path.join(get_jobsub_state_dir(), 'tmp')
+    def commandPathUser(self, acctgroup, user):
+        return os.path.join(self.commandPathAcctgroup(acctgroup), user)
 
 
-def get_jobsub_statedir_hierarchy():
-    hierarchy = [
-        (get_jobsub_state_dir(), '0755'),
-        (get_jobsub_creds_dir(), '0755'),
-        (get_jobsub_keytabs_dir(), '0755'),
-        (get_jobsub_certs_dir(), '0755'),
-        (get_jobsub_proxies_dir(), '0755'),
-        (get_jobsub_krb5cc_dir(), '0755'),
-        (os.path.join(get_jobsub_state_dir(), 'tmp'), '1777'),
-    ]
-    return hierarchy
+    def initCommandPathUser(self, acctgroup, username):
+        """
+        Check if user specific jobs dir exists and is owned by the user.
+        If not create it or change the ownership accordingly.
+        """
+
+        user_dir = self.commandPathUser(acctgroup, username)
+        if os.path.exists(user_dir):
+            # Check and change ownership as required.
+            # Only invoked after the upgrade from legacy code or
+            # when there is a change in GUMS mapping
+            if (os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid):
+                chown_as_user(user_dir, username)
+        else:
+            create_dir_as_user(acctgroup_dir, username, username, mode='755')
 
 
-def get_command_path_acctgroup(acctgroup):
-    return os.path.join(get_command_path_root(), acctgroup)
-
-
-def get_command_path_user(acctgroup, user):
-    return os.path.join(get_command_path_acctgroup(acctgroup), user)
-
-
-def check_command_path_user(acctgroup_dir, username):
-    """
-    Check if user specific jobs dir exists and is owned by the user.
-    If not create it or change the ownership accordingly.
-    """
-
-    user_dir = os.path.join(acctgroup_dir, username)
-    if os.path.exists(user_dir):
-        # Check and change ownership as required.
-        # Only invoked after the upgrade from legacy code or change in mapping
-        if (os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid):
-            chown_as_user(user_dir, username)
-    else:
-        create_dir_as_user(acctgroup_dir, username, username, mode='755')
-
+#jobsubConfig = JobsubConfig()
 
 ############
 # TODO: Following should be converted to class and helper functions

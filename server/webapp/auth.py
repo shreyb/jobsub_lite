@@ -302,7 +302,8 @@ def get_gums_mapping(dn, fqan):
 
 def x509_proxy_fname(username, acctgroup, acctrole=None):
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    proxies_base_dir = jobsub.get_jobsub_proxies_dir()
+    jobsubConfig = jobsub.JobsubConfig()
+    proxies_base_dir = jobsubConfig.proxiesDir
     creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
         os.makedirs(creds_dir, 0755)
@@ -322,22 +323,24 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
 def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     # TODO: Break this into smaller functions. Krb5 related code 
     #       should be split out
+
+    jobsubConfig = jobsub.JobsubConfig()
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    krb5cc_dir = jobsub.get_jobsub_krb5cc_dir()
+    krb5cc_dir = jobsubConfig.krb5ccDir
     try:
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
         x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
-        x509_user_cert = os.path.join(jobsub.get_jobsub_certs_dir(),
+        x509_user_cert = os.path.join(jobsubConfig.certsDir,
                                       '%s.cert'%username)
-        x509_user_key = os.path.join(jobsub.get_jobsub_certs_dir(),
+        x509_user_key = os.path.join(jobsubConfig.certsDir,
                                      '%s.key'%username)
 
         # Create the proxy as a temporary file in tmp_dir and perform a
         # privileged move on the file.
-        x509_tmp_prefix = os.path.join(jobsub.get_jobsub_tmp_dir(),
+        x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                        os.path.basename(x509_cache_fname))
         x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
                                            delete=False)

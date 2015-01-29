@@ -16,11 +16,8 @@ from util import get_uid, mkdir_p
 from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_job_submit_wrapper
-from jobsub import get_jobsub_tmp_dir
+from jobsub import JobsubConfig
 from jobsub import get_command_path_root
-from jobsub import get_command_path_acctgroup
-from jobsub import get_command_path_user
-from jobsub import check_command_path_user
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
 from format import format_response
@@ -127,6 +124,7 @@ class AccountJobsResource(object):
         """
 
         if job_id is None:
+            jobsubConfig = JobsubConfig()
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
@@ -140,13 +138,13 @@ class AccountJobsResource(object):
                 logger.log('job.py:doPost:role %s ' % (role))
                 #subject_dn = cherrypy.request.headers.get('Auth-User')
 
-                command_path_acctgroup = get_command_path_acctgroup(acctgroup)
+                command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
-                command_path_user = get_command_path_user(acctgroup,
-                                                          self.username)
+                command_path_user = jobsubConfig.commandPathUser(acctgroup,
+                                                                 self.username)
                 # Check if the user specific dir exist with correct
                 # ownership. If not create it.
-                check_command_path_user(command_path_acctgroup, self.username)
+                jobsubConfig.initCommandPathUser(acctgroup, self.username)
 
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer=random.randrange(0,10000)
@@ -167,7 +165,7 @@ class AccountJobsResource(object):
                     logger.log('command_file_path: %s' % command_file_path)
                     # First create a tmp file before moving the command file
                     # in place as correct user under the jobdir
-                    tmp_file_prefix = os.path.join(get_jobsub_tmp_dir(),
+                    tmp_file_prefix = os.path.join(jobsubConfig.tmpDir,
                                                    jobsub_command.filename)
                     tmp_cmd_fd = NamedTemporaryFile(prefix="%s_"%tmp_file_prefix,
                                                     delete=False)

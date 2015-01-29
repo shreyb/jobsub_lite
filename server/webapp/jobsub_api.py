@@ -10,8 +10,7 @@ from users_jobs import UsersJobsResource
 from version import VersionResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
-from jobsub import get_jobsub_state_dir
-from jobsub import get_jobsub_statedir_hierarchy
+import jobsub
 
 
 class ApplicationInitializationError(Exception):
@@ -39,12 +38,13 @@ def create_statedir(log):
     /var/lib/jobsub/tmp         : rexbatch : 700
     """
 
-    state_dir = get_jobsub_state_dir()
+    jobsubConfig = jobsub.JobsubConfig()
+    state_dir = jobsubConfig.stateDir
     err = ''
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)
 
-    for dir in get_jobsub_statedir_hierarchy():
+    for dir in jobsubConfig.stateDirLayout():
         if not os.path.isdir(dir[0]):
             try:
                 cmd = '%s mkdirsAsUser %s %s %s %s' % (
@@ -54,12 +54,12 @@ def create_statedir(log):
                           getpass.getuser(),
                           dir[1])
                 out, err = iexe_priv_cmd(cmd)
+                log.error('Created statedir/subdirectories' % dir[0])
             except:
                 err = 'Failed creating internal state directory %s' % state_dir
                 log.error(err)
                 log.error(traceback.format_exc())
                 raise ApplicationInitializationError(err)
-    log.error('Created statedir %s and its subdirectories' % state_dir)
 
 
 def initialize(log):

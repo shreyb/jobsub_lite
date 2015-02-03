@@ -289,9 +289,10 @@ def authenticate_old(dn, acctgroup, acctrole):
 
 def authenticate(dn, acctgroup, acctrole):
     methods = jobsub.get_authentication_methods(acctgroup)
+    logger.log("Authentication method precedence: %s" % methods)
     for method in methods:
         cherrypy.response.status = 200
-        logger.log("Authenticatiing using method: %s" % method)
+        logger.log("Authenticating using method: %s" % method)
         try:
             if method.lower() == 'gums':
                 return authenticate_gums(dn, acctgroup, acctrole)

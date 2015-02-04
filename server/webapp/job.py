@@ -6,6 +6,7 @@ import cherrypy
 import logger
 import math
 import subprocessSupport 
+import StringIO
 
 from datetime import datetime
 from shutil import copyfileobj
@@ -20,9 +21,11 @@ from jobsub import JobsubConfig
 from jobsub import get_command_path_root
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
+from jobsub import condor_bin
+from jobsub import run_cmd_as_user
 from format import format_response
-from condor_commands import condor, api_condor_q,ui_condor_q
-from condor_commands import classad_to_dict,constructFilter
+from condor_commands import condor
+from condor_commands import constructFilter, ui_condor_q
 from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
@@ -46,6 +49,11 @@ class AccountJobsResource(object):
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
             'RELEASE': condor.JobAction.Release,
+        }
+        self.condorCommands = {
+            'REMOVE': 'condor_rm',
+            'HOLD': 'condor_hold',
+            'RELEASE': 'condor_release',
         }
 
 
@@ -83,7 +91,7 @@ class AccountJobsResource(object):
         if job_id:
             rc['out'] = self.doJobAction(
                             acctgroup, job_id,
-                            self.condorActions['REMOVE'])
+                            'REMOVE')
         else:
             # Error because job_id is required to DELETE jobs
             err = 'No job id specified with DELETE action'
@@ -94,18 +102,20 @@ class AccountJobsResource(object):
 
 
     def doPUT(self, acctgroup, job_id, kwargs):
+        """
+        Executed to hold and release jobs
+        """
+
         rc = {'out': None, 'err': None}
-
         job_action = kwargs.get('job_action')
-        if job_action and job_id:
 
-            if job_action.upper() in self.condorActions:
+        if job_action and job_id:
+            if job_action.upper() in self.condorCommands:
                 rc['out'] = self.doJobAction(
                                 acctgroup, job_id,
-                                self.condorActions[job_action.upper()])
+                                job_action.upper())
             else:
                 rc['err'] = '%s is not a valid action on jobs' % job_action
-
         elif not job_id:
             # Error because job_id is required to DELETE jobs
             rc['err'] = 'No job id specified with DELETE action'
@@ -220,7 +230,7 @@ class AccountJobsResource(object):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
-                    rc = self.doGET(acctgroup,job_id, kwargs)
+                    rc = self.doGET(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     rc = self.doDELETE(acctgroup, job_id)
                 elif cherrypy.request.method == 'PUT':
@@ -243,13 +253,8 @@ class AccountJobsResource(object):
         return rc
 
 
-
     def doJobAction(self, acctgroup, job_id, job_action):
-        warning=''
-        dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(dn)
-        #constraint = '(AccountingGroup =?= "group_%s.%s") && (Owner =?= "%s")' % (acctgroup, uid, uid)
-        constraint = '(Owner =?= "%s")' % (uid)
+        constraint = '(Owner =?= "%s")' % (self.username)
         # Split the jobid to get cluster_id and proc_id
 	stuff=job_id.split('@')
 	schedd_name='@'.join(stuff[1:])
@@ -260,24 +265,27 @@ class AccountJobsResource(object):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
-	coll = condor.Collector()
-	if schedd_name == '':
-		schedd=condor.Schedd()
-	else:
-		try:
-			schedd_addr = coll.locate(condor.DaemonTypes.Schedd, schedd_name)
-                        schedd = condor.Schedd(schedd_addr)
-		except:
-                        warning='Failed to locate schedd %s,  will try with local schedd.  '%schedd_name
-                        logger.log(warning)
-			schedd=condor.Schedd()
 
-	#os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup)
-	os.environ['X509_USER_PROXY']=x509_proxy_fname(uid,acctgroup,self.role)
-        out = schedd.act(job_action, constraint)
-        logger.log(('%s' % (out)).replace('\n', ' '))
-        retStr=''
-        if len(warning)>0:
-            retStr=warning
-        retStr=retStr+ "Performed %s on %s jobs matching your request" % (job_action, out['TotalSuccess'])
+        cmd = [
+            condor_bin(self.condorCommands[job_action]), '-l',
+            '-name', schedd_name,
+            '-constraint', constraint
+        ]
+                            
+        child_env = os.environ.copy()
+        child_env['X509_USER_PROXY'] = self.vomsProxy
+        out = err = ''
+        affected_jobs = 0
+        try:
+            out, err = run_cmd_as_user(cmd, self.username, child_env=child_env)
+        except:
+            #TODO: We need to change the underlying library to return
+            #      stderr on failure rather than just raising exception
+            pass
+        out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+        regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
+        for line in out:
+            if regex.match(line):
+                affected_jobs += 1
+        retStr = "Performed %s on %s jobs matching your request" % (job_action, affected_jobs)
         return retStr

@@ -373,3 +373,14 @@ def run_cmd_as_user(command, username, child_env={}):
         raise RuntimeError, err_str % (username, cmd, out, err, e)
 
     return out, err
+
+
+def condor_bin(cmd):
+    """
+    Return the full path to the HTCondor command
+    """
+
+    exe = spawn.find_executable(cmd)
+    if not exe:
+        raise Exception("Unable to find command '%s' in the PATH." % exe)
+    return exe

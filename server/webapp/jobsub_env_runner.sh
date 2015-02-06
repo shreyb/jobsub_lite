@@ -1,14 +1,19 @@
 #!/bin/bash
 umask 002
-DEBUG_JOBSUB=TRUE
+WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
+WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
+DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
+cd ${WORKDIR}
+
+#DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
-   echo `whoami` >> /tmp/jobsub_env_runner.log
-   echo "CWD: `pwd`" >> /tmp/jobsub_env_runner.log
-   echo "$date "  >> /tmp/jobsub_env_runner.log
-   echo "$cmd "  >> /tmp/jobsub_env_runner.log
-   printenv | sort >> /tmp/jobsub_env_runner.log
+   echo `whoami` >> $DEBUG_LOG
+   echo "CWD: `pwd`" >> $DEBUG_LOG
+   echo "$date "  >> $DEBUG_LOG
+   echo "$cmd "  >> $DEBUG_LOG
+   printenv | sort >> $DEBUG_LOG
 fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
@@ -25,7 +30,6 @@ export SUBMIT_HOST=$HOSTNAME
 setup jobsub_tools
 
 
-cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT -eq 0 ] ; then
@@ -67,7 +71,7 @@ OWN=" -l +Owner=\\\"$USER\\\" "
 export JOBSUB_CMD="jobsub  $OWN $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "reformulated: ${JOBSUB_CMD} "  >> /tmp/jobsub_env_runner.log
+   echo "reformulated: $JOBSUB_CMD "  >> $DEBUG_LOG
 fi
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
@@ -77,14 +81,14 @@ fi
 
 RSLT=`$JOBSUB_CMD`
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "$RSLT "  >> /tmp/jobsub_env_runner.log
+   echo "$RSLT "  >> $DEBUG_LOG
 fi
 #chmod -R g+w $CONDOR_TMP
 JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
-  cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
+  cd ${WORKDIR_ROOT}
   ln -s $WORKDIR_ID "${JID}0@${SCHEDD}"
   cd -
 fi

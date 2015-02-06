@@ -8,7 +8,8 @@ import socket
 from util import get_uid
 from auth import check_auth
 from format import format_response
-from jobsub import execute_dag_command
+from jobsub import execute_job_submit_wrapper
+
 
 
 
@@ -19,9 +20,8 @@ class DAGHelpResource(object):
             API call is /jobsub/acctgroups/<group_id>/help
         """
         jobsub_args = ['-manual']
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
-        rc = execute_dag_command(acctgroup, uid, jobsub_args)
+        rc = execute_job_submit_wrapper(acctgroup, None, jobsub_args,
+                                        submit_type='dag', priv_mode=False)
 
         return rc
 

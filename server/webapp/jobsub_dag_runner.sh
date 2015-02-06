@@ -1,14 +1,19 @@
 #!/bin/bash
 umask 002
 #DEBUG_JOBSUB=TRUE
+WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
+WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
+DEBUG_LOG=${WORKDIR}/jobsub_dag_runner.log
+cd ${WORKDIR}
+
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="dagNabbit.py $@"
    date=`date`
-   echo `whoami` >> /tmp/jobsub_env_runner.log
-   echo "CWD: `pwd`" >> /tmp/jobsub_env_runner.log
-   echo "$date "  >> /tmp/jobsub_env_runner.log
-   echo "$cmd "  >> /tmp/jobsub_env_runner.log
-   printenv | sort >> /tmp/jobsub_env_runner.log
+   echo `whoami` >> ${DEBUG_LOG}
+   echo "CWD: `pwd`" >> ${DEBUG_LOG}
+   echo "$date "  >> ${DEBUG_LOG}
+   echo "$cmd "  >> ${DEBUG_LOG}
+   printenv | sort >> ${DEBUG_LOG}
 fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
@@ -23,10 +28,7 @@ export SUBMIT_HOST=$HOSTNAME
 
 setup jobsub_tools
 
-
-
-mkdir -p ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
-cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
+tar xzf ${JOBSUB_PAYLOAD:-payload.tgz}
 has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT == 0 ] ; then
@@ -40,11 +42,7 @@ if [ $RSLT == 0 ] ; then
           rm $file
         fi
 fi
-#echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
-#if [ "$?" != "0" ]; then
-#   export TRANSFER_INPUT_FILES=${JOBSUB_COMMAND_FILE_PATH}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
-#fi
-      
+
 if [ "$ENCRYPT_INPUT_FILES" = "" ]; then
    TEC=""
 else
@@ -69,21 +67,19 @@ export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +Job
 export JOBSUB_CMD="dagNabbit.py -s -i $@ "
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "reformulated: $JOBSUB_CMD "  >> /tmp/jobsub_env_runner.log
-   echo "JOBSUB_EXPORTS: $JOBSUB_EXPORTS "  >> /tmp/jobsub_env_runner.log
+   echo "reformulated: $JOBSUB_CMD "  >> ${DEBUG_LOG}
+   echo "JOBSUB_EXPORTS: $JOBSUB_EXPORTS "  >> ${DEBUG_LOG}
 fi
-chmod +x ${JOBSUB_COMMAND_FILE_PATH}
+
 RSLT=`$JOBSUB_CMD`
 if [ "$DEBUG_JOBSUB" != "" ]; then
-   echo "$RSLT "  >> /tmp/jobsub_env_runner.log
+   echo "$RSLT "  >> ${DEBUG_LOG}
 fi
-chmod -R g+w $CONDOR_TMP
 JID=`echo "$RSLT" | grep 'submitted to cluster' | awk '{print $NF}'`
 GOTJID=`echo $JID| grep '[0-9].*'`
 WORKED=$?
 if [ "$WORKED" = "0" ]; then
-  echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
-  cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
+  cd ${WORKDIR_ROOT}
   ln -s $WORKDIR_ID "${JID}0@${SCHEDD}"
   cd -
 fi

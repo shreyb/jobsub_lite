@@ -133,6 +133,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         child_env['ROLE'] = role
         child_env['WORKDIR_ID'] = workdir_id
         child_env['USER'] = username
+        child_env['COMMAND_PATH_ROOT'] = jobsubConfig.commandPathRoot
         if should_transfer_krb5cc(acctgroup):
             src_cache_fname = os.path.join(get_jobsub_krb5cc_dir(),
                                            'krb5cc_%s'%username)
@@ -160,82 +161,6 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         'err': err
     }
 
-    return result
-
-
-"""
-def execute_jobsub_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
-
-    envrunner = os.environ.get('JOBSUB_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
-    command = [envrunner] + jobsub_args
-    logger.log('jobsub command: %s' % command)
-    child_env = os.environ.copy()
-    schedd=schedd_name(jobsub_args)
-    logger.log('schedd=%s'%schedd)
-    child_env['SCHEDD']=schedd
-    child_env['ROLE']=str(role)
-    child_env['WORKDIR_ID']=str(workdir_id)
-    child_env['GROUP']=str(acctgroup)
-    child_env['USER']=str(uid)
-    child_env['JOBSUB_CLIENT_VERSION']=str(jobsub_client_version)
-    if should_transfer_krb5cc(acctgroup):
-        creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-        cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
-        #logger.log("%s add %s here to transfer_encrypt_files"%(acctgroup,cache_fname))
-        child_env['ENCRYPT_INPUT_FILES']=cache_fname
-        child_env['KRB5CCNAME']=cache_fname
-
-    
-    pp = Popen(command, stdout=PIPE, stderr=PIPE, env=child_env)
-
-
-    result = {
-        'out': pp.stdout.readlines(),
-        'err': pp.stderr.readlines()
-    }
-    for rslt in result['out']:
-        if rslt.lower().find('jobsubjobid')>=0:
-            logger.log(rslt)
-            break
-    if len(result['err'])>0:
-        logger.log(str(result['err']))
-    return result
-"""
-
-
-def execute_dag_command(acctgroup, uid, jobsub_args, workdir_id=None,role=None,jobsub_client_version=None):
-
-    envrunner = os.environ.get('DAGMAN_ENV_RUNNER', '/opt/jobsub/server/webapp/jobsub_dag_runner.sh')
-    command = [envrunner] + jobsub_args
-    logger.log('jobsub command: %s' % command)
-    child_env = os.environ.copy()
-    child_env['SCHEDD']=schedd_name()
-    child_env['ROLE']=str(role)
-    child_env['WORKDIR_ID']=str(workdir_id)
-    child_env['GROUP']=str(acctgroup)
-    child_env['USER']=str(uid)
-    child_env['JOBSUB_CLIENT_VERSION']=str(jobsub_client_version)
-    if should_transfer_krb5cc(acctgroup):
-        creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-        cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%uid)
-        child_env['ENCRYPT_INPUT_FILES']=cache_fname
-        child_env['KRB5CCNAME']=cache_fname
-
-    
-    pp = Popen(command, stdout=PIPE, stderr=PIPE, env=child_env)
-
-
-    result = {
-        'out': pp.stdout.readlines(),
-        'err': pp.stderr.readlines()
-    }
-
-    for rslt in result['out']:
-        if rslt.lower().find('jobsubjobid')>=0:
-            logger.log(rslt)
-            break
-    if len(result['err'])>0:
-        logger.log(str(result['err']))
     return result
 
 

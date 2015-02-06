@@ -30,7 +30,8 @@ def log_file_name(whereFrom):
     return logFileName
 
 def setup_admin_logger(wherefrom=None):
-    log_dir = os.environ.get("JOBSUB_LOG_DIR")
+    log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
+    #log_dir = '/var/log/jobsub'
     log_file = "%s/%s"%(log_dir,log_file_name(wherefrom))
     logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
 

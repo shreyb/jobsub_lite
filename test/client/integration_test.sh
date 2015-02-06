@@ -103,6 +103,10 @@ lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
 pass_or_fail
+lg_echo testing dropbox with multiple -f functionality
+OUTFILE=$1.dropbox_minus_f.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
+pass_or_fail
 lg_echo test helpfile
 OUTFILE=$1.help.$OUTGROUP.log 
 sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1

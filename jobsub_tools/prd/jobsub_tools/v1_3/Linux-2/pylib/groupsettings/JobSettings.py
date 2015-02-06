@@ -26,7 +26,7 @@ class InitializationError(Exception):
         Exception.__init__(self, errMsg)
 
 class MyCmdParser(OptionParser):
-                
+
     def print_help(self):
         OptionParser.print_help(self)
         #OptionParser.epilog doesn't work in v python 2.4, here is my workaround
@@ -45,12 +45,12 @@ class MyCmdParser(OptionParser):
         and on this machine at 
         $JOBSUB_TOOLS_DIR/docs/
         address questions to the mailing list jobsub-support@fnal.gov
-        
 
-                
+
+
                 """
         print epilog
-         
+
 class JobSettings(object):
     def __init__(self):
         #print "JobSettings.__init__"
@@ -60,21 +60,21 @@ class JobSettings(object):
         else:
             usage = "usage: %prog [options] your_script [your_script_args]\n"
             usage +="submit your_script to local batch or to the OSG grid "
-                        
-                        
+
+
             self.cmdParser = MyCmdParser(usage=usage, 
                     version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
                     conflict_handler="resolve")
             self.cmdParser.disable_interspersed_args()
             self.generic_group = OptionGroup(self.cmdParser, "Generic Options")
             self.cmdParser.add_option_group(self.generic_group)
-                        
+
             self.file_group= OptionGroup(self.cmdParser, "File Options")
             self.cmdParser.add_option_group(self.file_group)
 
             self.sam_group= OptionGroup(self.cmdParser, "SAM Options")
             self.cmdParser.add_option_group(self.sam_group)
-                        
+
 
         self.initCmdParser()
         self.initFileParser()
@@ -85,11 +85,10 @@ class JobSettings(object):
         self.settings['submit_host'] = os.environ.get("SUBMIT_HOST")
         if self.settings['submit_host'] == None:
             self.settings['local_host']=rslt
-                        
         self.settings['condor_tmp'] = os.environ.get("CONDOR_TMP","/tmp")
         if self.settings['condor_tmp'] == None:
             raise InitializationError("CONDOR_TMP not defined! setup_condor and try again")
-                    
+
         self.settings['condor_exec'] = os.environ.get("CONDOR_EXEC","/tmp")
         self.settings['condor_config'] = os.environ.get("CONDOR_CONFIG")
         self.settings['local_condor'] = os.environ.get("LOCAL_CONDOR","/opt/condor/bin")
@@ -112,7 +111,7 @@ class JobSettings(object):
         self.settings['output_tag_array'] = {}
         self.settings['input_dir_array'] = []
         self.settings['output_dir_array'] = []
-                
+
         self.settings['istestjob'] = False
         self.settings['needafs'] = False
         self.settings['notify'] = 1
@@ -204,7 +203,7 @@ class JobSettings(object):
 
     def runCmdParser(self,a=None,b=None):
         (options, args) = self.cmdParser.parse_args(a,b)
-                
+
         self.runFileParser()
         new_settings=vars(options)
         if new_settings.has_key('verbose') and new_settings['verbose']:
@@ -228,8 +227,8 @@ class JobSettings(object):
         executable_ok=os.access(self.settings['exe_script'],os.X_OK)
         if not executable_ok and os.path.exists(self.settings['exe_script']):
             os.chmod(self.settings['exe_script'],0775)
-                
-                
+
+
         #yuck
         if(len(args)>1):
             self.settings['script_args']=args[1:]
@@ -252,7 +251,7 @@ class JobSettings(object):
             cnf = self.fileParser.findConfigFile()
             self.settings['jobsub_ini_file']=cnf
         return cnf
-        
+
     def runFileParser(self):
         grp=os.environ.get("GROUP")
         commands=JobUtils()
@@ -283,7 +282,7 @@ class JobSettings(object):
                 (stat,rslt)=commands.getstatusoutput(cmd) 
                 self.settings[x]=rslt
 
-                        
+
     def resource_callback(self,option, opt, value, p):
         #print "callback opt=%s val=%s"%(opt,value)
         self.settings['resource_list'].append(value)
@@ -291,24 +290,24 @@ class JobSettings(object):
 
     def initFileParser(self):
         self.fileParser=JobsubConfigParser()
-                
 
-                                
+
+
     def initCmdParser(self):
         #print "JobSettings initCmdParser"
         cmdParser = self.cmdParser
-                
+
         generic_group=self.generic_group
         file_group=self.file_group
         sam_group=self.sam_group
-                
+
 
         file_group.add_option("-l", "--lines", dest="lines",action="append",type="string",
             help="""[Expert option]  Add the line <line> to the
             Condor submission (.cmd) file.  See Condor
             help for more.""")
 
-                
+
         generic_group.add_option("--maxConcurrent", 
             dest="maxConcurrent", action="store",type="string", 
             help="""max number of jobs running concurrently at given time. Use in conjunction with 
@@ -331,7 +330,7 @@ class JobSettings(object):
         sam_group.add_option("--dataset_definition", dest="dataset_definition",
             action="store",type="string",
             help="SAM dataset definition used in a Directed Acyclic Graph (DAG)")
-                
+
         sam_group.add_option("--project_name", dest="project_name",
             action="store",type="string",
             help="optional project name for SAM DAG ")
@@ -339,7 +338,7 @@ class JobSettings(object):
         generic_group.add_option("--drain", dest="drain",
             action="store_true",
             help="mark this job to be allowed to be drained or killed during downtimes ")
-                
+
         generic_group.add_option("--OS", dest="os",
             action="store",type="string",
             help="""specify OS version of worker node. Example --OS=SL5  Comma seperated list 
@@ -369,11 +368,11 @@ class JobSettings(object):
         generic_group.add_option("-M","--mail_always", dest="notify",
             action="store_const",const=2,
             help="send mail when job completes or fails")
-                
+
         generic_group.add_option("-q","--mail_on_error", dest="notify",
             action="store_const",const=1,
             help="send mail only when job fails due to error (default)")
-                
+
         generic_group.add_option("-Q","--mail_never", dest="notify",
             action="store_const",const=0,
             help="never send mail (default is to send mail on error)")
@@ -386,7 +385,7 @@ class JobSettings(object):
 
         file_group.add_option("-L","--log_file", dest="joblogfile",action="store",
             help="Log file to hold log output from job.")
-                
+
         file_group.add_option("--no_log_buffer", dest="nologbuffer",action="store_true",
             help="""write log file directly to disk. Default is to copy it back after job is completed.  
             This option is useful for debugging but can be VERY DANGEROUS as joblogfile typically is sent 
@@ -396,11 +395,11 @@ class JobSettings(object):
         generic_group.add_option("-g","--grid", dest="grid",action="store_true",
             help="""run job on the FNAL GP  grid. Other flags can modify target sites to include other 
             areas of the Open Science Grid""")
-                
+
         generic_group.add_option("--nowrapfile", dest="nowrapfilex",action="store_true",
             help="""DISABLED: formerly was 'do not generate shell wrapper, disabled per request from fermigrid 
             operations.  The wrapfiles used to not  work off site, now they do.""") 
-                
+
 
         file_group.add_option("--use_gftp", dest="use_gftp",action="store_true",default=False,
             help="use grid-ftp to transfer file back")
@@ -452,7 +451,7 @@ class JobSettings(object):
             Example :-f /grid/data/minerva/my/input/file.xxx  
             will be copied to $CONDOR_DIR_INPUT/file.xxx 
             Specify as many -f file1 -f file2 args as you need.""")
-            
+
         file_group.add_option("-d", dest="output_dir_array",action="append",type="string",
             nargs=2,
             help=""" -d<tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
@@ -471,7 +470,7 @@ class JobSettings(object):
             if os.environ.has_key(arg)==False:
                 err = "you used -e %s , but $%s must be set first for this to work!"%(arg,arg)
                 raise InitializationError(err)
-                                                    
+
         if settings['queuecount'] < 1:
             err = "-N  must be a positive number"
             raise InitializationError(err)
@@ -479,20 +478,19 @@ class JobSettings(object):
         if settings['istestjob'] and settings['queuecount'] > 1:
             err = "you may only send one test job at a time, -N=%d not allowed" % settings['queuecount']
             raise InitializationError(err)
-                        
+
         #if settings['nologbuffer'] and settings['queuecount'] > 1:
             #err = " --nologbuffer and -N=%d (where N>1) options are not allowed together " % settings['queuecount']
             #raise InitializationError(err)
-                        
+
         if settings['nologbuffer'] and settings['use_gftp']:
             err = " --use_gftp and --no_log_buffer together make no sense"
             raise InitializationError(err)
 
-        
         if settings['nologbuffer'] and settings['joblogfile'] == "":
             err = "you must specify an input value for the log file with -L if you use --no_log_buffer"
             raise InitializationError(err)
-                
+
         if settings['input_tar_dir'] and settings['tar_file_name'] == "":
             err = "you must specify a --tar_file_name if you create a tar file using --input_tar_dir"
             raise InitializationError(err)
@@ -506,7 +504,7 @@ class JobSettings(object):
 
         if settings['dataset_definition']!="":
             settings['usedagman']=True
-                
+
         if settings.has_key('maxConcurrent') and settings['maxConcurrent']!="":
             settings['usedagman']=True
 
@@ -565,7 +563,7 @@ class JobSettings(object):
             if settings['group']!='cdf':
                 f.write("""if [ -e "$INPUT_TAR_FILE" ]; then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
-                
+
         f.write("# Hold and clear arg list\n")
         f.write("args=\"$@\"\n")
         f.write("set - \"\"\n")
@@ -647,7 +645,7 @@ class JobSettings(object):
         if settings['verbose']:
             f.write("########END JOBSETTINGS makeWrapFile #############\n")
         f.close()
-                
+
 
     def makeWrapFilePostamble(self):
         """ Make end part of wrapfile ($CONDOR_TMP/user_job_(numbers)_wrap.sh . 
@@ -684,15 +682,15 @@ class JobSettings(object):
                     copy_cmd=copy_cmd+""" %s   ${CONDOR_DIR_%s}/* %s """%(cnt,tag[0],tag[1])
                     #append_cmd=append_cmd+"""; chmod g+w %s/*"""%tag[1]
                 cnt='\;'
-                                    
+
             log_cmd1 = """\t%s log "%s BEGIN %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
-            log_cmd2 = """\t%s log "%s FINISHED %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)                                
-        
+            log_cmd2 = """\t%s log "%s FINISHED %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
+
         f.write(log_cmd1)
         f.write("%s %s\n"%(copy_cmd,append_cmd))
         f.write(log_cmd2)
 
-                        
+
         if settings['joblogfile'] != "":
             f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
         f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
@@ -705,11 +703,11 @@ class JobSettings(object):
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput(cmd)
 
-                
-                
+
+
     def wrapFileCopyInput(self):
         """ handle ifdh transfer of input files """
-            
+
         #print "makeWrapFile"
         settings=self.settings
         f = open(settings['wrapfile'], 'a')
@@ -740,14 +738,22 @@ class JobSettings(object):
         else:
             cmd="""%s  cp  -D  """%ifdh_cmd
         cnt=""
+        transfer_file_list=[]
+        if settings['transfer_input_files'] is not None:
+            transfer_file_list=settings['transfer_input_files'].split(',')
+
         for idir in settings['input_dir_array']:
-            cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
-            cnt="\;"
-        if len(settings['input_dir_array'])>0:
+            if idir in transfer_file_list:
+                ifile=os.path.basename(idir)
+                f.write("""mv %s ${CONDOR_DIR_INPUT}/\n"""%ifile)
+            else:
+                cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
+                cnt="\;"
+        if cnt=="\;":
             f.write("""%s  log "%s BEGIN %s"\n"""%(ifdh_cmd,settings['user'],cmd))
             f.write("%s\n"%cmd)
             f.write("""%s  log "%s FINISHED %s"\n"""%(ifdh_cmd,settings['user'],cmd))
-                        
+
         f.write("\n")
 
 
@@ -789,24 +795,24 @@ class JobSettings(object):
         iret,ires=ju.getstatusoutput("cat %s/xtract.sh %s/%s.tgz > %s/%s.sh"%(tmpdir,tmpdir,base,tmpdir,base))
         if iret:
             raise Exception(ires)
-                
+
         iret,ires=ju.getstatusoutput("mv %s/%s.sh %s"%(tmpdir,base,settings['tar_file_name']))
         if iret:
             raise Exception(ires)
-                
+
         iret,ires=ju.getstatusoutput("chmod +x %s"%(settings['tar_file_name']))
         if iret:
             raise Exception(ires)
-                
-                
-                
+
+
+
 
     def makeCondorFiles(self):
         self.checkSanity()
         settings=self.settings
         if settings['input_tar_dir']:
             self.makeTarDir()
-                        
+
         a = settings['exe_script'].split("/")
         ow = datetime.datetime.now()
         pid=os.getpid()
@@ -828,7 +834,7 @@ class JobSettings(object):
                 job_iter += 1
                 settings['needs_appending']=False
 
-                        
+
             self.makeDAGFile()
             self.makeDAGStart()
             self.makeDAGEnd()
@@ -844,7 +850,7 @@ class JobSettings(object):
             self.makeSAMEndFiles()
         else:
             self.makeDAGEndFiles()
-        
+
 
 
     def makeDAGBeginFiles(self):
@@ -858,14 +864,14 @@ class JobSettings(object):
         cmd = "chmod +x %s" % dagbeginexe
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput(cmd)
-                
+
         f = open(settings['dagbeginfile'], 'w')
         f.write("universe          = vanilla\n")
         f.write("executable        = %s\n"%dagbeginexe)
         f.write("arguments         = %s %s %s %s\n"%(settings['group'],
             settings['dataset_definition'],
             settings['project_name'],settings['user']))
-                
+
         f.write("output                = %s/dagbegin-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("error                 = %s/dagbegin-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("log                   = %s/dagbegin-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
@@ -880,10 +886,10 @@ class JobSettings(object):
 
         f.write("requirements  = %s\n"%self.condorRequirements())
 
-        f.write("queue 1\n")         
+        f.write("queue 1\n")
         f.close()
-                                
-        
+
+
     def makeSAMBeginFiles(self):
         settings = self.settings
         sambeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
@@ -918,7 +924,7 @@ class JobSettings(object):
         f.write("fi\n")
         f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
         f.write("%s describeDefinition $SAM_DATASET\n"%settings['ifdh_cmd'])
-        f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])                   
+        f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])
         f.write("EXITSTATUS=$?\n")
         f.write("echo ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
         f.write("exit $EXITSTATUS\n")
@@ -927,7 +933,7 @@ class JobSettings(object):
         cmd = "chmod +x %s" % sambeginexe
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput(cmd)
-        
+
         f = open(settings['dagbeginfile'], 'w')
         f.write("universe          = vanilla\n")
         f.write("executable        = %s\n"%sambeginexe)
@@ -948,10 +954,10 @@ class JobSettings(object):
 
         f.write("requirements  = %s\n"%self.condorRequirements())
 
-        f.write("queue 1\n")         
+        f.write("queue 1\n")
         f.close()
-                                
-        
+
+
     def makeDAGEndFiles(self):
         settings = self.settings
         dagendexe = "%s/%s.dagend.sh"%(settings['condor_exec'],settings['filetag'])
@@ -974,15 +980,15 @@ class JobSettings(object):
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
         f.write("requirements  = %s\n"%self.condorRequirements())
-        f.write("queue 1\n")         
+        f.write("queue 1\n")
 
         f.close()
         cmd = "chmod +x %s" % dagendexe
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput(cmd)
 
-                
-                
+
+
 
     def makeSAMEndFiles(self):
         settings = self.settings
@@ -1000,7 +1006,7 @@ class JobSettings(object):
         f.write("\n")
         f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
         f.write("CPURL=`%s findProject $PRJ_NAME ''` \n" % settings['ifdh_cmd'])
-        f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])                   
+        f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])
         f.write("EXITSTATUS=$?\n")
         f.write("echo ifdh endProject $CPURL exited with status $EXITSTATUS\n")
         f.write("exit $EXITSTATUS\n")
@@ -1020,7 +1026,7 @@ class JobSettings(object):
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
         f.write("requirements  = %s\n"%self.condorRequirements())
-        f.write("queue 1\n")         
+        f.write("queue 1\n")
 
         f.close()
         cmd = "chmod +x %s" % samendexe
@@ -1028,8 +1034,8 @@ class JobSettings(object):
         (retVal,rslt)=commands.getstatusoutput(cmd)
 
 
-                
-                
+
+
 
     def makeDAGFile(self):
         #print "JobSettings.makeDAGFile()"
@@ -1071,10 +1077,10 @@ class JobSettings(object):
             f.write("%s_%d "%(exe,n1))
             n1+=1
         f.write("child %s_END\n"%jobname)
-                
+
         f.close()
-        
-         
+
+
     def makeCondorFiles2(self,job_iter=0):
         settings=self.settings
         filebase="%s_%s"%(settings['filetag'],job_iter)
@@ -1147,7 +1153,7 @@ class JobSettings(object):
                     else:
                         self.makeParrotFile()
 
-           
+
 
 
     def shouldTransferInput(self):
@@ -1186,7 +1192,7 @@ class JobSettings(object):
         settings=self.settings 
         submit_host=settings['submit_host'] 
         fp=self.fileParser 
-        if 'lines' in settings and len(settings['lines']) >0:                        
+        if 'lines' in settings and len(settings['lines']) >0:
             #print("lines setting=%s"%settings['lines'])
             for thingy in settings['lines']:
                 f.write("%s\n" % thingy)
@@ -1225,7 +1231,7 @@ class JobSettings(object):
                         raise InitializationError(err)
                     else:
                         f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
-                        
+
     def condorRequirements(self):
         #print "condorRequirements needs_appending=%s"%self.settings['needs_appending']
         settings=self.settings
@@ -1364,4 +1370,3 @@ class JobSettings(object):
         f.write("queue %s"%settings['queuecount'])
 
         f.close
-

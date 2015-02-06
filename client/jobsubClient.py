@@ -159,6 +159,7 @@ class JobSubClient:
                                 raise JobSubClientSubmissionError
                 if len(tfiles)>0:
                     transfer_input_files=','.join(tfiles)
+
                     self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
                     if self.dropboxServer is None and self.server != actual_server:
                         self.server=actual_server

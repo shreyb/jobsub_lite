@@ -588,7 +588,7 @@ class JobSettings(object):
             f.write("""JOBSUB_MAX_JOBLOG_TAIL_SIZE=%s\n"""%settings['jobsub_max_joblog_tail_size'])
         if settings.has_key('jobsub_max_joblog_head_size'):
             f.write("""JOBSUB_MAX_JOBLOG_HEAD_SIZE=%s\n"""%settings['jobsub_max_joblog_head_size'])
-            f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
+        f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
 
         f.write("\n")
         f.write(JobUtils().krb5ccNameString())

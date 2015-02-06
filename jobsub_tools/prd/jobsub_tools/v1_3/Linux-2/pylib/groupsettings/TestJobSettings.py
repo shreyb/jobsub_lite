@@ -57,9 +57,10 @@ class JobTest(unittest.TestCase):
         self.stdioON()
 
     def tearDown(self):
-        ok = self.currentResult.wasSuccessful()
+        #ok = self.currentResult.wasSuccessful()
         errors = self.currentResult.errors
         failures = self.currentResult.failures
+        ok = len(self.currentResult.errors) == 0 and len(self.currentResult.failures) == 0
         self.stdioON()
         if ok:
                 #print "test ok, removing %s"%self.tmpdir
@@ -147,8 +148,8 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['notify'],1)
         ns.runCmdParser(['-Q','SSSSHHHHH.sh'])
         self.assertEqual(ns.settings['notify'],0)
-        ns.runCmdParser(['-T','huh'])
-        self.assertEqual(ns.settings['istestjob'],True)
+        #ns.runCmdParser(['-T','huh'])
+        #self.assertEqual(ns.settings['istestjob'],True)
         logfile = ns.settings['condor_tmp']+'/testlogfile'
         ns.runCmdParser(["-L%s"%logfile, 'some_script'])
         self.assertEqual(ns.settings['joblogfile'],logfile)

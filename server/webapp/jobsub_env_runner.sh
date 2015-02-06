@@ -1,6 +1,6 @@
 #!/bin/bash
 umask 002
-#DEBUG_JOBSUB=TRUE
+DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -12,7 +12,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
 fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
-	source $JOBSUB_UPS_LOCATION
+	source $JOBSUB_UPS_LOCATION 2>&1
 else
 	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
 	exit -1
@@ -80,13 +80,6 @@ WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
   cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
-  #keep the old link for now for backward compatibility
-  ln -s $WORKDIR_ID "${JID}0"
-
-  #new link.  TODO- jobsub_tools needs to support condor_submit -name
-  #so multiple schedds on same server can be supported 
-  #
-  #SCHEDD=`condor_status -schedd -format "@%s"  name`
   ln -s $WORKDIR_ID "${JID}0@${SCHEDD}"
   cd -
 fi

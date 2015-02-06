@@ -84,13 +84,6 @@ WORKED=$?
 if [ "$WORKED" = "0" ]; then
   echo "$JID $USER $GROUP $WORKDIR_ID " >> ${COMMAND_PATH_ROOT}/job.log
   cd ${COMMAND_PATH_ROOT}/${GROUP}/${USER}/
-  #keep the old link for now for backward compatibility
-  ln -s $WORKDIR_ID "${JID}0"
-
-  #new link.  TODO- jobsub_tools needs to support condor_submit -name
-  #so multiple schedds on same server can be supported 
-  #
-  #SCHEDD=`condor_status -schedd -format "@%s"  name`
   ln -s $WORKDIR_ID "${JID}0@${SCHEDD}"
   cd -
 fi

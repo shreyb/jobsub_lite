@@ -46,9 +46,9 @@ def condor_header(inputSwitch=None):
     if inputSwitch=='long':
         hdr=''
     elif inputSwitch=='dags':
-        hdr="JOBSUBJOBID                       USER     DAG_INFO     SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
+        hdr="JOBSUBJOBID                           USER     DAG_INFO     SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     else:
-        hdr="JOBSUBJOBID                       USER          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
+        hdr="JOBSUBJOBID                           USER          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     return hdr
 
 def condor_format(inputSwitch=None):
@@ -56,9 +56,9 @@ def condor_format(inputSwitch=None):
     if inputSwitch=='long':
         fmt = " -l "
     elif inputSwitch=='dags':
-        fmt="""-format '%-33s'  'regexps("(([a-zA-Z0-9\.\@]+)\#([0-9\.]+)[#](.+))",globaljobid,"\\3@\\2 ")' -format '%-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))' -format '%-14s ' 'ifthenelse(dagmanjobid =!= UNDEFINED, string(dagnodename),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )' -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """ 
+        fmt="""-format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")' -format '%-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))' -format '%-14s ' 'ifthenelse(dagmanjobid =!= UNDEFINED, string(dagnodename),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )' -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """ 
     else:
-        fmt=""" -format '%-33s' 'regexps("(([a-zA-Z0-9\.\@]+)\#([0-9\.]+)[#](.+))",globaljobid,"\\3@\\2 ")'  -format '%-14s ' Owner -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """
+        fmt=""" -format '%-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'  -format '%-14s ' Owner -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """
     return fmt
 
 
@@ -102,7 +102,7 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
         x=jobid.split('@')
         l=len(x)
         clusterid=x[0]
-        host=x[l-1]
+        host='@'.join(x[1:])
         if clusterid.find('.')<0:
             clusterid=clusterid+'.0'
         job_cnst = """regexp("%s#%s.*",GlobalJobId)""" %(host,clusterid)
@@ -182,9 +182,30 @@ def classad_to_dict(classad):
         job_dict[repr(k)] = repr(v)
     return job_dict
 
-def schedd_name():
-    """ returns the name of the local schedd
-    """
-    cmd="""condor_status -schedd -format '%s' name -constraint 'regexp("<%s",MyAddress)'""" % ('%s',socket.gethostbyname(socket.gethostname()))
-    schedd, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    return schedd
+def schedd_list():
+    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -format '%s ' Name """)
+    return schedds.split()
+    
+def schedd_name(arglist=None):
+    #logger.log(arglist)
+    _list=schedd_list()
+    if len(_list) == 1:
+        return _list[0]
+    _name = "%s" % socket.gethostname()
+    if arglist and len(arglist) > 0:
+        i = 0
+        for arg in arglist:
+            arg = str(arg)
+            #logger.log("arg %s i %s"%(arg,i))
+            if arg == '--schedd':
+                _schedd = str(arglist[i + 1])
+                if _schedd in _list:
+                    return _schedd
+
+            if arg.find('--schedd=') == 0:
+                argparts = arg.split('=')
+                _schedd =  '='.join(argparts[1:])
+                if _schedd in _list:
+                    return _schedd
+            i = i + 1
+    return _name

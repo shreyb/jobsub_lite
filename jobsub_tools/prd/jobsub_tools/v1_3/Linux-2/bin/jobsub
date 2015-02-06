@@ -65,9 +65,15 @@ def doSubmit(settings):
                 exports = exports+"""export %s="%s";""" %(var,val)
     cmd = ""
 
+    if settings.has_key('schedd') and settings['schedd'] is not None:
+        schedd_spec = "-name %s " % settings['schedd']
+    else:
+        schedd_spec = ""
 
     if settings['usedagman'] == False:
-        cmd = "cd %s ; condor_submit %s"%(settings['condor_tmp'], settings['cmdfile'])
+        cmd = "cd %s ; condor_submit %s  %s"%(settings['condor_tmp'], 
+                                              schedd_spec, 
+                                              settings['cmdfile'])
     else:
         append = """-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """%\
                 (settings['user'],settings['group'],settings['user'])

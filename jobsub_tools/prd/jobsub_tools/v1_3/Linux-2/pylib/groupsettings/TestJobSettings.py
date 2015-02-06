@@ -60,6 +60,7 @@ class JobTest(unittest.TestCase):
         #ok = self.currentResult.wasSuccessful()
         errors = self.currentResult.errors
         failures = self.currentResult.failures
+        ok = len(self.currentResult.errors) == 0 and len(self.currentResult.failures) == 0
         self.stdioON()
         if len(errors) > 0  or len (failures) > 0:
                 print """test failed, output saved to %s"""%self.tmpdir

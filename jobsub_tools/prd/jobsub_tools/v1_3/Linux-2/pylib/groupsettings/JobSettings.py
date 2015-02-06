@@ -339,6 +339,10 @@ class JobSettings(object):
             action="store_true",
             help="mark this job to be allowed to be drained or killed during downtimes ")
 
+        generic_group.add_option("--schedd", dest="schedd",
+            action="store", type="string",
+            help="name of alternate schedd to submit to")
+                
         generic_group.add_option("--OS", dest="os",
             action="store",type="string",
             help="""specify OS version of worker node. Example --OS=SL5  Comma seperated list 

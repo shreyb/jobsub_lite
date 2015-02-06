@@ -1099,14 +1099,15 @@ class JobSettings(object):
             settings['dagbeginfile']="%s/%s.sambegin.cmd" % (settings['condor_tmp'],filebase)
             settings['dagendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
         uniquer=0
-        retVal = 0
-        while (retVal == 0):
+        retVal = True
+        while (retVal):
             uniquer = uniquer + 1
-            cmd = "ls %s/%s_%d.cmd" % (settings['condor_tmp'],filebase, uniquer) 
-            commands=JobUtils()
-            (retVal,rslt)=commands.getstatusoutput(cmd)
-            if settings['verbose']:
-                print "%s returns %s - %s " % (cmd, retVal, rslt)
+            cmdfile = " %s/%s_%d.cmd" % (settings['condor_tmp'],filebase, uniquer) 
+            retVal=os.path.exists(cmdfile)
+            #commands=JobUtils()
+            #(retVal,rslt)=commands.getstatusoutput(cmd)
+            #if settings['verbose']:
+            #    print "%s returns %s - %s " % (cmd, retVal, rslt)
 
 
             settings['wrapfile'] ="%s/%s_%s_wrap.sh" % \

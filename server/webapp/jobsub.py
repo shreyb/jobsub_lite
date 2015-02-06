@@ -135,7 +135,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         child_env['USER'] = username
         child_env['COMMAND_PATH_ROOT'] = jobsubConfig.commandPathRoot
         if should_transfer_krb5cc(acctgroup):
-            src_cache_fname = os.path.join(get_jobsub_krb5cc_dir(),
+            src_cache_fname = os.path.join(jobsubConfig.krb5ccDir,
                                            'krb5cc_%s'%username)
             dst_cache_fname = os.path.join(job_submit_dir, 'krb5cc_%s'%username)
 
@@ -216,6 +216,9 @@ class JobsubConfig:
             if (os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid):
                 chown_as_user(user_dir, username)
         else:
+            acctgroup_dir = self.commandPathAcctgroup(acctgroup)
+            if not os.path.exists(acctgroup_dir):
+                os.makedirs(acctgroup_dir)
             create_dir_as_user(acctgroup_dir, username, username, mode='755')
 
 

@@ -1,12 +1,12 @@
 <serial>
-jobsub  -n --mail_never $SUBMIT_FLAGS file://jobA.sh 
-jobsub  -n --mail_never $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobA.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
 </serial>
 <parallel>
-jobsub  -n --mail_never $SUBMIT_FLAGS file://jobC.sh 
-jobsub  -n --mail_never $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
 </parallel>
 <serial>
-jobsub  -n --mail_never $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
 </serial>
 

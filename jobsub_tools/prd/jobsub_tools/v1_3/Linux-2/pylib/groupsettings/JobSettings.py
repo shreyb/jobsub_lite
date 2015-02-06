@@ -348,6 +348,12 @@ class JobSettings(object):
             help="""specify OS version of worker node. Example --OS=SL5  Comma seperated list 
             '--OS=SL4,SL5,SL6' works as well . Default is any available OS""")
 
+        generic_group.add_option("--show-parsing", dest="show_parsing",
+            action="store_true",default=False,
+            help="""print out how command line was parsed into argv list and exit.
+                    Useful for seeing how quotes in options are parsed)""")
+
+
         generic_group.add_option("--generate-email-summary", dest="mail_summary",
             action="store_true",default=False,
              help="generate and mail a summary report of completed/failed/removed jobs in a DAG")

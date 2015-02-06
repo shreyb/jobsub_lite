@@ -193,8 +193,8 @@ def schedd_name(arglist=None):
         return _list[0]
     _name = "%s" % socket.gethostname()
     if arglist and len(arglist) > 0:
-    	i = 0
-    	for arg in arglist:
+        i = 0
+        for arg in arglist:
             arg = str(arg)
             #logger.log("arg %s i %s"%(arg,i))
             if arg == '--schedd':

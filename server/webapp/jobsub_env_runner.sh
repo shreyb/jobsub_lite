@@ -1,5 +1,5 @@
 #!/bin/bash
-umask 002
+#umask 002
 WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log

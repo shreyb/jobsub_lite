@@ -895,7 +895,6 @@ def get_dropbox_uri_map(argv):
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI)>=0:
             map[arg] = digest_for_file(uri2path(arg))
-    print "debug get_dropbox_uri_map map=%s"%map
     return map
 
 

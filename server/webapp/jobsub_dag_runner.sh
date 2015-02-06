@@ -28,7 +28,9 @@ export SUBMIT_HOST=$HOSTNAME
 
 setup jobsub_tools
 
-tar xzf ${JOBSUB_PAYLOAD:-payload.tgz}
+payload=${JOBSUB_PAYLOAD:-payload.tgz}
+tar xzf $payload
+rm $payload 
 has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT == 0 ] ; then

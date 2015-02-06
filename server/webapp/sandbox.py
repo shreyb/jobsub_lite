@@ -2,16 +2,16 @@ import os
 import cherrypy
 import logger
 import math
-from util import encode_multipart_formdata
 import subprocessSupport
 
 from cherrypy.lib.static import serve_file
 
-from util import get_uid, mkdir_p, create_zipfile, create_tarfile
+from util import create_zipfile, create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import JobsubConfig
+from jobsub import move_file_as_user
 from format import format_response
-from condor_commands import api_condor_q
 from datetime import datetime
 from JobsubConfigParser import JobsubConfigParser
 
@@ -57,32 +57,33 @@ class SandboxResource(object):
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
     """
 
-    def find_sandbox(self, path, uid):
-        if os.path.exists(path):
-            return path
-        jobid = os.path.basename(path)
-        logger.log('jobid:%s'%jobid)
-        uid = '/%s/'%uid
-        cmd1 = """ -format '%s' iwd -constraint """ 
-        cmd2 = """'jobsubjobid=="%s"' """%(jobid)
-        for cmd0 in ['condor_history ','condor_q ']:
-            cmd = cmd0 + cmd1 + cmd2
+    def __init__(self):
+        self.role = None
+        self.username = None
+        self.vomsProxy = None
+
+    def findSandbox(self, path):
+	if os.path.exists(path):
+	    return path
+	jobid=os.path.basename(path)
+	logger.log('jobid:%s'%jobid)
+	uid = '/%s/' % self.username
+        cmd1=""" -format '%s' iwd -constraint """ 
+        cmd2="""'jobsubjobid=="%s"' """%(jobid)
+	for cmd0 in ['condor_history ','condor_q ']:
+            cmd=cmd0+cmd1+cmd2
             logger.log(cmd)
             newpath, cmd_err = subprocessSupport.iexe_cmd(cmd)
-            #logger.log('result:%s status:%s'%(newpath,cmd_err))
-            if newpath and\
-               len(newpath)>0 and\
-               os.path.exists(newpath) and\
-               uid in newpath:
-               return newpath
+            logger.log('result:%s status:%s'%(newpath,cmd_err))
+            if newpath and len(newpath)>0 and os.path.exists(newpath) and (uid in newpath):
+                return newpath
         return False
-
 
 
     #@format_response
     def doGET(self, acctgroup, job_id, kwargs):
-        #set cherrypy.response.timeout to something bigger than 300 seconds
-        timeout = 60*15 
+        # set cherrypy.response.timeout to something bigger than 300 seconds
+        timeout = 60*15
         try:
             p = JobsubConfigParser()
             t = p.get('default', 'sandbox_timeout')
@@ -90,60 +91,64 @@ class SandboxResource(object):
                 timeout = t
         except Exception, e:
             logger.log('caught %s  setting default timeout'%e)
-            
-        cherrypy.response.timeout=timeout
-        logger.log('sandbox timeout=%s'%cherrypy.response.timeout)
-        logger.log(kwargs)
-        logger.log(job_id)
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
+
+        cherrypy.response.timeout = timeout
+        logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
+        jobsubConfig = JobsubConfig()
+        sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
+        sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, self.username)
+
         command_path_root = get_command_path_root()
         if job_id is None:
              job_id='I_am_planning_on_failing'
-        zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
-        zip_path = self.find_sandbox(zip_path,uid)
+        zip_path = os.path.join(sbx_final_dir, job_id)
+	zip_path = self.findSandbox(zip_path)
         if zip_path:
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
-            format=kwargs.get('archive_format')
+            format = kwargs.get('archive_format', 'tgz')
             logger.log('archive_format:%s'%format)
-            if format and format=='zip':
-		pass
-            else:           
-                format='tgz'
-            zip_file = os.path.join(command_path_root, 
-                                    acctgroup, 
-                                    uid, 
-                                    '%s.%s.%s'%(job_id,ts,format))
-            cherrypy.request.hooks.attach('on_end_request', 
-                                           cleanup, zip_file=zip_file)
-            cherrypy.request.hooks.attach('after_error_response', 
-                                           cleanup, zip_file=zip_file)
-            create_archive(zip_file, zip_path, job_id, format)
+            zip_file_tmp = None
+            if format not in ('zip', 'tgz'):
+                format = 'tgz'
+
+            # Moving the file to user dir and changing the ownership
+            # prevents cherrypy from doing the cleanup. Keep the files in
+            # in acctgroup area to allow for cleanup
+            zip_file = os.path.join(sbx_create_dir,
+                                        '%s.%s.%s' % (job_id, ts, format))
             rc = {'out': zip_file}
 
+            cherrypy.request.hooks.attach('on_end_request', cleanup,
+                                          zip_file=zip_file)
+            cherrypy.request.hooks.attach('after_error_response', cleanup,
+                                          zip_file=zip_file)
+
+            create_archive(zip_file, zip_path, job_id, format)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download','attachment')
 
         else:
+            # TODO: PM
+            # Do we need this logic anymore? fetchlog now supports a much
+            # cleaner option --list-sandboxes
             # return error for no data found
             cherrypy.response.status = 404
-            jobs_file_path = os.path.join(command_path_root, acctgroup, uid)
             sandbox_cluster_ids = list()
-            if os.path.exists(jobs_file_path):
-                logger.log('walking %s'%jobs_file_path)
-                dirs=os.listdir(jobs_file_path)
+            if os.path.exists(sbx_final_dir):
+		logger.log('Looking for available sandboxes %s'%sbx_final_dir)
+                dirs = os.listdir(sbx_final_dir)
                 for dir in dirs:
-                    if os.path.islink(os.path.join(jobs_file_path, dir)) and dir.find('@')>0:
+                    if os.path.islink(os.path.join(sbx_final_dir, dir)) and dir.find('@')>0:
                         frag="""%s"""%(dir)
                         sandbox_cluster_ids.append(frag)
                 sandbox_cluster_ids.sort()
-            if len(sandbox_cluster_ids)>0:
+
+            if sandbox_cluster_ids:
                 outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (uid,acctgroup)
                 sandbox_cluster_ids.insert(0,outmsg)
                 rc = {'out': sandbox_cluster_ids }
             else:
                 err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
-                logger.log(err)
                 rc = {'err':err }
 
         return rc
@@ -153,7 +158,14 @@ class SandboxResource(object):
     @check_auth
     def index(self, acctgroup, job_id, **kwargs):
         logger.log('job_id:%s'%job_id)
+        self.role = kwargs.get('role')
+        self.username = kwargs.get('username')
+        self.vomsProxy = kwargs.get('voms_proxy')
+
         try:
+            if job_id is None:
+                raise
+
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':
                     rc = self.doGET(acctgroup, job_id, kwargs)

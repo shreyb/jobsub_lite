@@ -44,7 +44,7 @@ def cleanup(zip_file, outfilename=None):
         logger.log(err)
 
 
-def create_archive(zip_file, zip_path, job_id,format):
+def create_archive(zip_file, zip_path, job_id, format):
     if format=='tgz':
         create_tarfile(zip_file, zip_path, job_id)
     else:
@@ -61,6 +61,7 @@ class SandboxResource(object):
         self.role = None
         self.username = None
         self.vomsProxy = None
+
 
     def findSandbox(self, path):
 	if os.path.exists(path):
@@ -101,8 +102,8 @@ class SandboxResource(object):
         command_path_root = get_command_path_root()
         if job_id is None:
              job_id='I_am_planning_on_failing'
-        zip_path = os.path.join(sbx_final_dir, job_id)
-	zip_path = self.findSandbox(zip_path)
+        #zip_path = os.path.join(sbx_final_dir, job_id)
+	zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
         if zip_path:
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             format = kwargs.get('archive_format', 'tgz')

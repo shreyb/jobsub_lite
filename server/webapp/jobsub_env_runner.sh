@@ -75,7 +75,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
 fi
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
-    chmod +x ${JOBSUB_COMMAND_FILE_PATH}
+    chmod a+rx ${JOBSUB_COMMAND_FILE_PATH}
 fi
 
 

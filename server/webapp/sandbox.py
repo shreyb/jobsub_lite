@@ -145,11 +145,11 @@ class SandboxResource(object):
                 sandbox_cluster_ids.sort()
 
             if sandbox_cluster_ids:
-                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (uid,acctgroup)
+                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (self.username ,acctgroup)
                 sandbox_cluster_ids.insert(0,outmsg)
                 rc = {'out': sandbox_cluster_ids }
             else:
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (uid, acctgroup, job_id)
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (self.username , acctgroup, job_id)
                 rc = {'err':err }
 
         return rc

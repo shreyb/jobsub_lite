@@ -3,7 +3,6 @@
 WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
-cd ${WORKDIR}
 
 #DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
@@ -75,6 +74,7 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
 fi
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
+    cd ${WORKDIR}
     chmod a+rx ${JOBSUB_COMMAND_FILE_PATH}
 fi
 

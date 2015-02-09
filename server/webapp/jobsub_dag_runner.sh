@@ -4,7 +4,6 @@
 WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_dag_runner.log
-cd ${WORKDIR}
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="dagNabbit.py $@"
@@ -28,9 +27,12 @@ export SUBMIT_HOST=$HOSTNAME
 
 setup jobsub_tools
 
-payload=${JOBSUB_PAYLOAD:-payload.tgz}
-tar xzf $payload
-rm $payload 
+if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
+    cd ${WORKDIR}
+    payload=${JOBSUB_PAYLOAD:-payload.tgz}
+    tar xzf $payload
+    rm $payload 
+fi
 has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT == 0 ] ; then

@@ -121,7 +121,25 @@ $gCMD
 T3=$?
 echo exit status of last command $T3
 
-! (( $T0 || $T1 || $T2 || $T3 ))
+gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    --debug
+    -e IFDH_BASE_URI \
+    -G cdf $RESOURCE_PROVIDES \
+    -N 3 --generate-email-summary \
+    --mail_on_error --maxParallelSec 5 \
+    $SERVER_SPEC \
+    --tarFile=dropbox://input3.tgz \
+     some_subdir/testNoSAM.sh $ foo bar baz"
+echo ======================================================
+echo $gCMD
+echo ======================================================
+
+$gCMD
+
+T4=$?
+echo exit status of last command $T4
+
+! (( $T0 || $T1 || $T2 || $T3  || $T4 ))
 
 TF=$?
 exit $TF

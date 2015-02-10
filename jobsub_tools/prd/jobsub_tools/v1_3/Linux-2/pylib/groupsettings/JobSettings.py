@@ -1246,30 +1246,37 @@ class JobSettings(object):
 
     def completeEnvList(self):
         envDict={
-            'SAM_USER':'user',
             'GRID_USER':'user',
-            'SAM_GROUP':'group',
             'EXPERIMENT':'group',
-            'SAM_STATION':'group',
-            'SAM_DATASET':'dataset_definition',
             'IFDH_BASE_URI':'ifdh_base_uri',
-            'SAM_PROJECT':'project_name',
-            'SAM_PROJECT_NAME':'project_name',
             'INPUT_TAR_FILE':'tar_file_basename',
             'JOBSUBJOBID':'jobsubjobid',
             'JOBSUBPARENTJOBID':'jobsubparentjobid',
             }
-        envStr=self.settings['environment']
-        l1=len(envStr)
-        for key in envDict.keys():
-            k2=key+"="
-            if envStr.find(k2)<0 :
-                val=envDict[key]
+        samDict={
+            'SAM_USER':'user',
+            'SAM_GROUP':'group',
+            'SAM_STATION':'group',
+            'SAM_DATASET':'dataset_definition',
+            'SAM_PROJECT':'project_name',
+            'SAM_PROJECT_NAME':'project_name',
+            }
+        self.addEnv(envDict)
+        if self.settings['dataset_definition']!="":
+            self.addEnv(samDict)
+
+    def addEnv(self, dict):
+        envStr = self.settings['environment']
+        l1 = len(envStr)
+        for key in dict.keys():
+            k2 = key + "="
+            if envStr.find(k2) < 0:
+                val = dict[key]
                 if self.settings.has_key(val) and self.settings[val]!='':
-                    envStr="%s;%s=%s"%(envStr,key,self.settings[val])
-        l2=len(envStr)
-        if l2>l1:
-            self.settings['environment']=envStr
+                    envStr = "%s;%s=%s"%(envStr,key, self.settings[val])
+        l2 = len(envStr)
+        if l2 > l1:
+            self.settings['environment'] = envStr
 
 
 

@@ -75,7 +75,7 @@ def application(environ, start_response):
     os.environ['KCA_DN_PATTERN_LIST'] = environ['KCA_DN_PATTERN_LIST']
     os.environ['KADMIN_PASSWD_FILE'] = \
             os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
-    os.environ['JOBSUB_SERVER_VERSION'] = "1.0.4.0.1.rc3"
+    os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')
     if appname is not None:

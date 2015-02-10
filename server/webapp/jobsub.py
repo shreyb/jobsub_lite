@@ -129,7 +129,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                              workdir_id)
 
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
-        child_env['SCHEDD'] = schedd_name()
+        child_env['SCHEDD'] = schedd_name(jobsub_args)
         child_env['ROLE'] = role
         child_env['WORKDIR_ID'] = workdir_id
         child_env['USER'] = username

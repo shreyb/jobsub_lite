@@ -80,6 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/jobsub_preen.sh
 /opt/jobsub/server/admin/krbrefresh.sh
 /opt/jobsub/server/admin/test_krbrefresh.sh
+/opt/jobsub/server/webapp/jobsub_priv
 /opt/jobsub/server/webapp/__init__.py
 /opt/jobsub/server/webapp/__init__.pyc
 /opt/jobsub/server/webapp/__init__.pyo

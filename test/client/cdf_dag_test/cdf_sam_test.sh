@@ -55,7 +55,7 @@ gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e SAM_GROUP \
     -e SAM_USER \
     -e SAM_DATASET \
-    -e SAM_PROJECT22 \
+    -e SAM_PROJECT2 \
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
     -N 3 --generate-email-summary \

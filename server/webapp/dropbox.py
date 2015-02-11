@@ -28,10 +28,8 @@ class DropboxResource(object):
         """ Serve files from Dropbox service
             API is /jobsub/acctgroups/<group_id>/dropbox/<box_id>/<filename>/
         """
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
         dropbox_path_root = get_dropbox_path_root()
-        dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid)
+        dropbox_path = os.path.join(dropbox_path_root, acctgroup, self.username)
         dropbox_file_path = os.path.join(dropbox_path, box_id, filename)
         return serve_file(dropbox_file_path, "application/x-download", "attachment")
 
@@ -39,12 +37,8 @@ class DropboxResource(object):
         """ Upload files to Dropbox service. Return JSON object describing location of files.
             API is /jobsub/acctgroups/<group_id>/dropbox/
         """
-        subject_dn = cherrypy.request.headers.get('Auth-User')
-        uid = get_uid(subject_dn)
         box_id = str(uuid.uuid4())
         dropbox_path_root = get_dropbox_path_root()
-        #dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, box_id)
-        #mkdir_p(dropbox_path)
         file_map = dict()
         for arg_name, arg_value in kwargs.items():
             logger.log("arg_name=%s arg_value=%s"%(arg_name,arg_value))
@@ -59,7 +53,8 @@ class DropboxResource(object):
                 else:
                     supplied_digest=False
                     phldr=box_id
-                dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, phldr)
+                dropbox_path = os.path.join(dropbox_path_root, acctgroup,
+                                            self.username, phldr)
 		mkdir_p(dropbox_path)
                 dropbox_file_path = os.path.join(dropbox_path, arg_value.filename)
                 dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, phldr, arg_value.filename)
@@ -75,8 +70,12 @@ class DropboxResource(object):
                     downloaded=True
 		if not supplied_digest:
                     derived_digest=digest_for_file(dropbox_file_path)
-                    new_dropbox_path = os.path.join(dropbox_path_root, acctgroup, uid, derived_digest) 
-                    new_dropbox_file_path = os.path.join(dropbox_path_root, acctgroup, uid, derived_digest, arg_value.filename)
+                    new_dropbox_path = os.path.join(dropbox_path_root,
+                                                    acctgroup,
+                                                    self.username,
+                                                    derived_digest)
+                    new_dropbox_file_path = os.path.join(new_dropbox_path,
+                                                         arg_value.filename)
                     dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, derived_digest, arg_value.filename)
                     if os.path.exists(new_dropbox_path):
                         rmtree(dropbox_path)
@@ -108,6 +107,9 @@ class DropboxResource(object):
     @check_auth
     def index(self, acctgroup, box_id=None, filename=None, **kwargs):
         try:
+            self.role = kwargs.get('role')
+            self.username = kwargs.get('username')
+            self.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = cherrypy.request.headers.get('Auth-User')
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

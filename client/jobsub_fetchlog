@@ -150,7 +150,12 @@ def list_sandboxes(options):
 
     rc = 0
     for server in get_jobsub_server_aliases(options.jobsubServer):
-        submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (server, options.acctGroup, user)
+        if options.acctRole is not None :
+            submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE % \
+                (server, options.acctGroup, options.acctRole, user)
+        else:
+            submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (server, options.acctGroup, user)
+        print 'submitURL %s ' % submitURL
         http_code = client.changeJobState(submitURL, 'GET',
                                           ssl_verifyhost=False)
         rc += http_code_to_rc(http_code)
@@ -165,7 +170,12 @@ def get_sandbox(options):
         mach = tokens[-1:][0]
         options.jobsubServer="https://%s:8443"%mach
 
-    sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (
+    if options.acctRole is not None :
+        sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN_WITH_ROLE % (
+                options.jobsubServer, options.acctGroup, 
+                options.acctRole, options.jobId)
+    else:
+        sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (
                  options.jobsubServer, options.acctGroup, options.jobId)
 
     if options.format=='zip':

@@ -71,13 +71,20 @@ class SandboxesResource(object):
 
     @cherrypy.expose
     @format_response
+    @check_auth
+
     def index(self, user_id=None, **kwargs):
         try:
+            self.role = kwargs.get('role')
+            self.username = kwargs.get('username')
+            self.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = cherrypy.request.headers.get('Auth-User')
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)
-            if subject_dn is not None:
+            if not user_id:
+                user_id = self.username
 
+            if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
                     rc = self.doGET(user_id,kwargs)

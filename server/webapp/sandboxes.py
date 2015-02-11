@@ -18,56 +18,55 @@ class SandboxesResource(object):
 
     def doGET(self,user_id=None,kwargs=None):
         """ Query for valid sandboxes for given user/acctgroup.  Returns a JSON list object.
-	    API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
+        API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
         """
-	command_path_root = get_command_path_root()
+        command_path_root = get_command_path_root()
         acctgroup='None'
         if kwargs.has_key('acctgroup'):
                 acctgroup=kwargs.get('acctgroup')
-	if acctgroup !=  'None':
-		cmd= "find  %s/%s -maxdepth 1 -name %s"%(command_path_root,acctgroup,user_id)
-	else:
-		cmd="find  %s -maxdepth 2 -name %s"%(command_path_root,user_id)
-	try:
-		sandbox_dirs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if acctgroup !=  'None':
+            cmd= "find  %s/%s -maxdepth 1 -name %s"%(command_path_root,acctgroup,user_id)
+        else:
+            cmd="find  %s -maxdepth 2 -name %s"%(command_path_root,user_id)
+        try:
+            sandbox_dirs, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
-	except:
-		err="No sandboxes found for user %s accounting group %s" %(acctgroup,user_id)
-		logger.log(err)
-                rc = {'out': err}
-                cherrypy.response.status = 404 
-		logger.log("%s"%sys.exc_info()[1])
-                return rc
+        except:
+            err="No sandboxes found for user %s accounting group %s" %(acctgroup,user_id)
+            logger.log(err)
+            rc = {'out': err}
+            cherrypy.response.status = 404 
+            logger.log("%s"%sys.exc_info()[1])
+            return rc
 
-	
-	l=[]
-	for dir in sandbox_dirs.split('\n'):
-		filedict={}
-		acctgroup=os.path.basename(os.path.dirname(dir))	
-		try:
-		    for f in os.listdir(dir):
-		    	if f.find('@') > 0:
-				try:
-					fp=os.path.join(dir,f)
-					t=os.path.getctime(fp)
-					filedict[t]=f
-				except:
-					logger.log("%s"%sys.exc_info()[1])
-		    keylist=filedict.keys()
-		    if len(keylist)>0:
-			l.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
-		    for key in sorted(keylist,key=float):
-		    	itm="%s           %s"% (filedict[key], time.ctime(key))
-		    	l.append(itm)
-		except:
-			logger.log("%s"%sys.exc_info()[1])
-			
-	if len(l)==0:
-		host = socket.gethostname()
-		return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
-	else:
-		logger.log("%s"%l)
-        	return {'out': l}
+        l=[]
+        for dir in sandbox_dirs.split('\n'):
+            filedict={}
+            acctgroup=os.path.basename(os.path.dirname(dir))
+            try:
+                for f in os.listdir(dir):
+                    if f.find('@') > 0:
+                        try:
+                            fp=os.path.join(dir,f)
+                            t=os.path.getctime(fp)
+                            filedict[t]=f
+                        except:
+                            logger.log("%s"%sys.exc_info()[1])
+                keylist=filedict.keys()
+                if len(keylist)>0:
+                    l.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
+                for key in sorted(keylist,key=float):
+                    itm="%s           %s"% (filedict[key], time.ctime(key))
+                    l.append(itm)
+            except:
+                logger.log("%s"%sys.exc_info()[1])
+
+            if len(l)==0:
+                host = socket.gethostname()
+                return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
+            else:
+                logger.log("%s"%l)
+                return {'out': l}
 
 
     @cherrypy.expose

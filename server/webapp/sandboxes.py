@@ -5,14 +5,14 @@ import time
 import socket
 import sys
 import subprocessSupport
-
+from auth import check_auth
 from jobsub import is_supported_accountinggroup, get_command_path_root
 from format import format_response
 
 
 
-
 @cherrypy.popargs('user_id')
+
 class SandboxesResource(object):
 
 
@@ -73,16 +73,16 @@ class SandboxesResource(object):
     @format_response
     @check_auth
 
-    def index(self, user_id=None, **kwargs):
+    def index(self, acctgroup, **kwargs):
         try:
             self.role = kwargs.get('role')
             self.username = kwargs.get('username')
             self.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = cherrypy.request.headers.get('Auth-User')
+            user_id = kwargs.get('user_id')
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)
-            if not user_id:
-                user_id = self.username
+            user_id = self.username
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

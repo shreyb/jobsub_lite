@@ -155,7 +155,6 @@ def list_sandboxes(options):
                 (server, options.acctGroup, options.acctRole, user)
         else:
             submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (server, options.acctGroup, user)
-        print 'submitURL %s ' % submitURL
         http_code = client.changeJobState(submitURL, 'GET',
                                           ssl_verifyhost=False)
         rc += http_code_to_rc(http_code)

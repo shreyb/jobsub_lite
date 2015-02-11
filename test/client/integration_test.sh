@@ -127,9 +127,13 @@ lg_echo test condor_history
 OUTFILE=$1.history.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 > $OUTFILE 2>&1
 pass_or_fail
-lg_echo test retrieving zip_file from sandbox
+lg_echo test retrieving zip_file from sandbox 
 OUTFILE=$1.sandbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID  >$OUTFILE 2>&1
+pass_or_fail
+lg_echo test retrieving zip_file from sandbox with role Production
+OUTFILE=$1.sandbox.Production.$OUTGROUP.log
+sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
 pass_or_fail
 lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log

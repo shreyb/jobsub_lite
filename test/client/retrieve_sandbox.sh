@@ -20,20 +20,24 @@ mkdir -p unarchive
 if [ "$JOBSUB_GROUP" != "" ]; then
     GROUP=$JOBSUB_GROUP
 fi
+if [ "$3" != "" ]; then
+    ROLE=" --role $3 "
+fi
+
 cd curl
 pwd
-try curl -k --cert /tmp/x509up_u${UID} -H "Accept: application/x-download" -o $CLUSTER.zip -X GET $SERVER/jobsub/acctgroups/${GROUP}/jobs/${CLUSTER}/sandbox/
+#try curl -k --cert /tmp/x509up_u${UID} -H "Accept: application/x-download" -o $CLUSTER.zip -X GET $SERVER/jobsub/acctgroups/${GROUP}/jobs/${CLUSTER}/sandbox/
 cd -
 for FMT in "zip" "tar"; do
   for JOBSPEC in "--job" "--jobid" "-J"; do
     cd python
     pwd
-        try $EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER 
+        try $EXEPATH/jobsub_fetchlog.py $ROLE $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER 
     cd ../unarchive
     pwd
     for ARCHIVESPEC in "--unzipdir" "--destdir" "--dest-dir"; do 
         UNZIPDIR=`echo $JOBSPEC|sed 's/-//g'`"$FMT-$ARCHIVESPEC"
-        try $EXEPATH/jobsub_fetchlog.py --group $GROUP --jobsub-server $SERVER $JOBSPEC $CLUSTER $ARCHIVESPEC $UNZIPDIR 
+        try $EXEPATH/jobsub_fetchlog.py $ROLE --group $GROUP --jobsub-server $SERVER $JOBSPEC $CLUSTER $ARCHIVESPEC $UNZIPDIR 
     done
     cd -
   done

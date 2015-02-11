@@ -5,7 +5,6 @@ import os
 import sys
 import socket
 
-from util import get_uid
 from auth import check_auth
 from format import format_response
 from jobsub import execute_job_submit_wrapper

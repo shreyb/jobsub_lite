@@ -62,7 +62,6 @@ class DagResource(object):
                 role  = kwargs.get('role')
                 logger.log('dag.py:doPost:jobsub_command %s' %(jobsub_command))
                 logger.log('dag.py:doPost:role %s ' % (role))
-                #subject_dn = cherrypy.request.headers.get('Auth-User')
 
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)

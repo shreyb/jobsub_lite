@@ -35,9 +35,13 @@ su products -c ". /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install job
 
 yum -y install $RPM_LOCATION
 yum -y install --enablerepo=osg-development lcmaps-plugins-gums-client
+yum -y install --enablerepo=osg-development lcmaps-without-gsi
 yum -y install --enablerepo=osg-development llrun
+
 cp /etc/lcmaps.db /etc/lcmaps.db.save
 cp lcmaps.db /etc/lcmaps.db
+mkdir -p /etc/lcmaps
+cp lcmaps.db /etc/lcmaps
 
 
 mkdir ~rexbatch/.security
@@ -81,6 +85,15 @@ INI=/etc/httpd/conf.d/jobsub_api.conf
 sed 's|/opt/jobsub/server/log|/var/log/jobsub|' < $INI > $INI.1
 sed 's/grid /rexbatch /' < $INI.1 > $INI.2
 sed 's/condor /fife /' < $INI.2 > $INI
+
+CERT=/var/lib/jobsub/creds/certs/novapro
+kx509
+sed -n '/-----BEGIN RSA PRIVATE KEY-----/,$p'  /tmp/x509up_u0 > $CERT.key
+sed -n '/-----BEGIN RSA PRIVATE KEY-----/q;p' < /tmp/x509up_u0 > $CERT.cert
+chown $USGR $CERT.key
+chown $USGR $CERT.cert
+chmod 600 $CERT.key
+chmod 600 $CERT.cert
 
 service httpd start
 su grid -c '/etc/init.d/condor start'

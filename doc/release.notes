@@ -1,13 +1,49 @@
 ================================================================================
+v1.1
+================================================================================
+CLIENT
+------
+* Bug Fix: jobsub_q now correctly considers group specified by --group. #7403
+* Bug Fix: jobsub_submit now works with the --tar_file_name dropbox://*. #7469
+* Bug Fix: jobsub_fetchlog now correctly accepts --role option. #7089 #7835
+* Bug Fix: jobsub_submit now correctly works with multiple input files from
+  the dropbox. #7459
+* Bug Fix: jobsub_fetchlog now waits longer before timing out. This should
+  help with dwnloading larger sandboxes. #7686
+* Bug Fix: jobsub_client now works with tcsh. #7763
+* Bug Fix: Removed the unused option -test from jobsub_submit. #7640
+* Bug Fix: Fixed issues with the ups packaging of jobsub_client. #7376
+* Bug Fix: Fixed an issue in jobsub_submit where whitespaces supplied to
+  --lineswould cause errors. #7411
+* Bug Fix: jobsub_fetchlog --list-sandboxes now prints unique sandboxes
+  sorted by creation time. #7334
+
+
+SERVER
+------
+* Support authentication using GUMS. #6978 #6779
+* Support authentication using non-KCA X509 credentials. #6978 #6779
+* Support submitting and managing jobs by multiple users with appropriate
+  privileges. #6978 #6779
+* Support starting and stopping HTCondor as root. #6024
+* Jobsub server now supports multiple schedds with name schedd@fqdn. #7145
+* Bug Fix: Server does not try to access $CONDOR_TMP. #7407
+* Bug Fix: Reduced the verbosity of the server log messages. #7320
+* Bug Fix: jobsub_preen now correctly removes symlinks. #7664
+* Bug Fix: jobsub_status --sites now looks at correct classad info to generate
+  the site list. #7682
+* Bug Fix: Jobsub server now prints logs in standard location /var/log. #5657
+
+================================================================================
 v1.0.5
 ================================================================================
 CLIENT
 ------
-* Bug Fix: #7141 jobsub_submit_dag accepts --role but doesn't do 
+* Bug Fix: #7141 jobsub_submit_dag accepts --role but doesn't do
                   anything with it
 * Bug Fix: #7400 --environment not dealt with properly (but -e is)
-* Bug Fix: #7468 jobsub_submit (stuff) --tar_file_name 
-                  dropbox://my_tarball.tgz ./run.sh (stuff) fails to submit. 
+* Bug Fix: #7468 jobsub_submit (stuff) --tar_file_name
+                  dropbox://my_tarball.tgz ./run.sh (stuff) fails to submit.
 
 ================================================================================
 v1.0.4

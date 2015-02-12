@@ -94,7 +94,11 @@ chown $USGR $CERT.key
 chown $USGR $CERT.cert
 chmod 600 $CERT.key
 chmod 600 $CERT.cert
-
+cat condor_schedds.conf >> /etc/condor/condor_config.local
+SPOOL=`condor_config_val SPOOL`
+mkdir $SPOOL/1
+chown condor $SPOOL/1
+mkdir $SPOOL/2
+chown condor $SPOOL/2
 service httpd start
-su grid -c '/etc/init.d/condor start'
 service condor start

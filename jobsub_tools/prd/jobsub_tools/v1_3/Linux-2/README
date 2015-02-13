@@ -21,6 +21,18 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+
+
+v1_3_8 2/12/14
+===================================================
+- #7441 removed  --submit_host and --opportunistic flags
+- #7459 -f dropbox://file1 -f dropbox://file2 works as expected
+- #7665 --schedd (schedd_name) submits to (schedd_name) on jobsub server
+- #7640 remove -t flag
+- #7411 handle whitespace in --lines argument correctly
+- #7708 remove gpsn01 references
+
+
 v1_3_7 12/23/14
 ====================================================
 - #7567  Suppress log messages to stderr

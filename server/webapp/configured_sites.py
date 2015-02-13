@@ -38,8 +38,8 @@ class ConfiguredSitesResource(object):
 				exclude_list=p.get(p.submit_host(),'site_ignore_list')
 			
 			cmd="""condor_status %s  -any """ % pool
-			cmd=cmd+"""-constraint 'glideinmytype=="glideresource"&&"""
-			cmd=cmd+"""regexp(".*%s.*",GlideGroupName)&&""" % acctgroup
+			cmd=cmd+"""-constraint '(glideinmytype=="glideresource")&&"""
+			cmd=cmd+"""(stringlistimember("%s",GLIDEIN_Supported_VOs,",")||stringlistimember("fermilab",GLIDEIN_Supported_VOs,","))&&""" % acctgroup
 			cmd=cmd+"""glidein_site=!=UNDEFINED'"""
 			cmd=cmd+""" -format '%s\n'  glidein_site """
 			logger.log(cmd)

@@ -25,9 +25,11 @@ if [ "$1" != "--dryrun" ]; then
 fi
 
 SHOULDIDOIT=$1
-
+cd /var/lib/
+tar cvf $HOME/jobsub.new.creds.$$.tar jobsub
 cd $HOME
-try tar cvf security.backup.$$.tar .security
+tar cvf security.backup.$$.tar .security
+
 
 for KEYTAB in `find .security -name '*.keytab'`; do
    try mv $KEYTAB /var/lib/jobsub/creds/keytabs
@@ -49,4 +51,14 @@ for GOOD in `find /var/lib/jobsub/creds/proxies -name 'x509cc_*'` ; do
     B2=`basename $D1`
     OLDLOC=".security/$B2/$B1"
     try ln -s $GOOD $OLDLOC
+done
+
+for DIR in `find /scratch/uploads -type d -maxdepth 2`; do
+    U1=`basename $DIR`
+    D1=`dirname $DIR`
+    if [ "$D1" != "/scratch/uploads" ]; then
+      try chmod 755 $D1
+      try chown $U1 $DIR
+      try chmod 755 $DIR 
+    fi
 done

@@ -690,10 +690,11 @@ class JobSettings(object):
 		if settings['input_tar_dir']:
 			self.makeTarDir()
 			
-		a = settings['exe_script'].split("/")
+		a = os.path.basename(settings['exe_script'])
+                a=a.replace(' ','')
 		ow = datetime.datetime.now()
 		pid=os.getpid()
-		filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(a[-1],ow.year,
+		filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(a,ow.year,
 							    ow.month,ow.day,ow.hour,
 							    ow.minute,ow.second,pid)
 		settings['filetag']=filebase
@@ -856,14 +857,15 @@ class JobSettings(object):
 			settings['sambeginfile']="%s/%s.sambegin.cmd" % (settings['condor_tmp'],filebase)
 			settings['samendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
 		uniquer=0
-		retVal = 0
-		while (retVal == 0):
+		retVal = True
+		while (retVal):
 			uniquer = uniquer + 1
-			cmd = "ls %s/%s_%d.cmd" % (settings['condor_tmp'],filebase, uniquer) 
-			commands=JobUtils()
-			(retVal,rslt)=commands.getstatusoutput(cmd)
-			if settings['verbose']:
-				print "%s returns %s - %s " % (cmd, retVal, rslt)
+			cmdfile = " %s/%s_%d.cmd" % (settings['condor_tmp'],filebase, uniquer)
+			retVal=os.path.exists(cmdfile)
+			#commands=JobUtils()
+			#(retVal,rslt)=commands.getstatusoutput(cmd)
+			#if settings['verbose']:
+			#	print "%s returns %s - %s " % (cmd, retVal, rslt)
 
 
 			settings['wrapfile'] ="%s/%s_%s_wrap.sh" % \

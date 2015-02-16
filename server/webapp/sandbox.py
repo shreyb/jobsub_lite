@@ -11,6 +11,7 @@ from auth import check_auth
 from jobsub import is_supported_accountinggroup, get_command_path_root
 from jobsub import JobsubConfig
 from jobsub import move_file_as_user
+from jobsub import run_cmd_as_user
 from format import format_response
 from datetime import datetime
 from JobsubConfigParser import JobsubConfigParser
@@ -42,6 +43,17 @@ def cleanup(zip_file, outfilename=None):
     except:
         err = 'Failed to remove zip file at %s' % zip_file
         logger.log(err)
+
+
+def make_sandbox_readable(workdir, username):
+    cmd = [
+        'chmod',
+        '-R',
+        '+r',
+        os.path.realpath(workdir)
+    ]
+
+    out, err = run_cmd_as_user(cmd, username, child_env=os.environ.copy())
 
 
 def create_archive(zip_file, zip_path, job_id, format):
@@ -124,6 +136,7 @@ class SandboxResource(object):
             cherrypy.request.hooks.attach('after_error_response', cleanup,
                                           zip_file=zip_file)
 
+            make_sandbox_readable(zip_path, self.username)
             create_archive(zip_file, zip_path, job_id, format)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download','attachment')

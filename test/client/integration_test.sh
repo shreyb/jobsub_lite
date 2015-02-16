@@ -10,7 +10,7 @@ function lg_echo {
 function pass_or_fail {
 
 if [ "$?" == "0" ]; then
-    grep -i exception $OUTFILE 
+    grep -i ' exception' $OUTFILE 
     if [ "$?" = "0" ]; then
     	lg_echo "FAILED"
         exit 1

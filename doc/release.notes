@@ -1,6 +1,11 @@
 ================================================================================
 v1.1
 ================================================================================
+
+KNOWN ISSUES
+-----------
+* Fetching log files for running jobs can sometimes fail.
+
 CLIENT
 ------
 * Bug Fix: jobsub_q now correctly considers group specified by --group. #7403
@@ -17,7 +22,6 @@ CLIENT
   --lineswould cause errors. #7411
 * Bug Fix: jobsub_fetchlog --list-sandboxes now prints unique sandboxes
   sorted by creation time. #7334
-
 
 SERVER
 ------

@@ -434,6 +434,7 @@ class JobSubClient:
         post_data = [
             ('job_action', 'RELEASE')
         ]
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
             self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
@@ -441,7 +442,7 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        return self.changeJobState(self.releaseURL, 'PUT', post_data)
+        return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
     def hold(self, jobid):
@@ -449,6 +450,7 @@ class JobSubClient:
         post_data = [
             ('job_action', 'HOLD')
         ]
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
             self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
@@ -456,11 +458,12 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        return self.changeJobState(self.holdURL, 'PUT', post_data)
+        return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
     def remove(self, jobid):
         #jobid=self.checkID(jobid)
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
             self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
@@ -468,7 +471,7 @@ class JobSubClient:
                                  self.server, self.acctGroup, jobid
                              )
 
-        return self.changeJobState(self.removeURL, 'DELETE')
+        return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
 
 
     def history(self, userid=None, jobid=None,outFormat=None):

@@ -757,17 +757,20 @@ def get_client_credentials():
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         env_cert = os.environ.get('X509_USER_CERT')
         env_key = os.environ.get('X509_USER_KEY')
-    elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
-        env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
+    #elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
+    #    env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
     if env_cert is not None:
-        cred_dict['env_cert']=env_cert
-        cred_dict['env_key']=env_key
-    krb5_creds = jobsubClientCredentials.Krb5Ticket()
-    if krb5_creds.isValid():
-        jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
-        cred_dict['cert']=cred_dict['key'] = constants.X509_PROXY_DEFAULT_FILE
+        cred_dict['env_cert'] = cred_dict['cert'] = env_cert
+        cred_dict['env_key'] = cred_dict['key'] = env_key
     else:
-        raise JobSubClientError("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
+        # Look for credentials in form of kerberoes ticket
+        krb5_creds = jobsubClientCredentials.Krb5Ticket()
+        if krb5_creds.isValid():
+            jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
+            cred_dict['cert'] = constants.X509_PROXY_DEFAULT_FILE
+            cred_dict['key'] = constants.X509_PROXY_DEFAULT_FILE
+        else:
+            raise JobSubClientError("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 
     return cred_dict
 

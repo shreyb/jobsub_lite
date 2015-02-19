@@ -8,6 +8,7 @@ KNOWN ISSUES
 
 CLIENT
 ------
+* Bug Fix: jobsub_client correctly uses X509 variables #7896
 * Bug Fix: jobsub_q now correctly considers group specified by --group. #7403
 * Bug Fix: jobsub_submit now works with the --tar_file_name dropbox://*. #7469
 * Bug Fix: jobsub_fetchlog now correctly accepts --role option. #7089 #7835

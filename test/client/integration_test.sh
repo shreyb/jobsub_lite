@@ -13,13 +13,17 @@ if [ "$?" == "0" ]; then
     grep -i ' exception' $OUTFILE 
     if [ "$?" = "0" ]; then
     	lg_echo "FAILED"
-        exit 1
+        if [ "$JOBSUB_TEST_CONTINUE_ON_FAILURE" = "" ]; then
+            exit 1
+        fi
     else
 	lg_echo "PASSED"
     fi
 else
     lg_echo "FAILED"
-    exit 1
+    if [ "$JOBSUB_TEST_CONTINUE_ON_FAILURE" = "" ]; then
+        exit 1
+    fi
 fi
 }
 
@@ -147,5 +151,5 @@ lg_echo testing list-sites
 OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
-./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
-for bug in `ls bug_tests`; do cd bug_tests/$bug ;   ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done
+sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
+for bug in `ls bug_tests`; do cd bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

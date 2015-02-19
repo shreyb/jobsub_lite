@@ -24,8 +24,8 @@ else
         setup pycurl v7_15_5
     fi
     export X509_CERT_DIR=/etc/grid-security/certificates 
-    export X509_USER_CERT=/tmp/x509up_u${UID}
-    export X509_USER_KEY=/tmp/x509up_u${UID}
+    #export X509_USER_CERT=/tmp/x509up_u${UID}
+    #export X509_USER_KEY=/tmp/x509up_u${UID}
 
     export EXEPATH=`pwd`"/../../client"
     if [ "$PYTHONPATH" = "" ]; then

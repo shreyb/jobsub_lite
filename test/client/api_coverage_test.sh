@@ -23,10 +23,13 @@ if [ "$JOBSUB_GROUP" != "" ]; then
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
-
+if [ "$X509_USER_CERT" = ""]; then
+    X509_USER_CERT=$X509_USER_PROXY
+    X509_USER_KEY=$X509_USER_PROXY
+fi
 GET_FLAGS=" -s -i --cacert  /etc/pki/tls/certs/ca-bundle.crt "
-GET_FLAGS=${GET_FLAGS}" --cert /tmp/jobsub_x509up_u${UID} "
-GET_FLAGS=${GET_FLAGS}" --key  /tmp/jobsub_x509up_u${UID} -k "
+GET_FLAGS=${GET_FLAGS}" --cert "${X509_USER_CERT}" "
+GET_FLAGS=${GET_FLAGS}" --key  "${X509_USER_KEY}"  -k "
 GET_FLAGS=${GET_FLAGS}"  -H 'Accept: text/html' -X GET "
 
 #all the GET URLS in JobSub-API-v0.4.pdf
@@ -68,7 +71,7 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/help/ "
 for URL in ${GET_URLS}; do
    cmd_pt=`echo $URL | tr {'/','.'} | tr {'@','.'} | tr {'?','.'}`
    outfile="${MACH}.html${cmd_pt}out"
-   cmd="curl $GET_FLAGS https://${MACH}.fnal.gov:8443${URL} "
+   cmd="curl ${GET_FLAGS} https://${MACH}.fnal.gov:8443${URL} "
 
    echo "https://${MACH}.fnal.gov:8443${URL}"
    echo $cmd > $outfile

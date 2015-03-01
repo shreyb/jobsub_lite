@@ -6,7 +6,7 @@ import sys
 import socket
 
 from util import get_uid
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups
@@ -48,7 +48,7 @@ class AccountingGroupsResource(object):
     @format_response
     def index(self, acctgroup=None, **kwargs):
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':

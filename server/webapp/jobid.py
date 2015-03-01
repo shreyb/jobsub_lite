@@ -6,7 +6,7 @@ from condor_commands import ui_condor_q,constructFilter
 #from not_implemented import NotImplementedResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
-
+from auth import get_client_dn
 
 
 
@@ -31,7 +31,7 @@ class QueuedJobsByJobIDResource(object):
     @format_response
     def index(self, job_id=None, **kwargs):
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             logger.log("job_id %s"%job_id)
             logger.log("kwargs %s"%kwargs)
             if subject_dn is not None:

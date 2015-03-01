@@ -5,7 +5,7 @@ import time
 import socket
 import sys
 import subprocessSupport
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from jobsub import is_supported_accountinggroup, get_command_path_root
 from format import format_response
 
@@ -78,7 +78,7 @@ class SandboxesResource(object):
             self.role = kwargs.get('role')
             self.username = kwargs.get('username')
             self.vomsProxy = kwargs.get('voms_proxy')
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             user_id = kwargs.get('user_id')
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)

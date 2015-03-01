@@ -479,6 +479,23 @@ def refresh_proxies(agelimit=3600):
     #if user not in queued_users remove krb5cc_(user) and (user).keytab
 
 
+def get_client_dn():
+    """
+    Identify the client DN based on if the client is using a X509 cert-key
+    pair or an X509 proxy. Currently only works with a single proxy chain.
+    Wont work if the proxy is derieved from the proxy itself.
+    """
+    
+    issuer_dn = cherrypy.request.headers.get('Ssl-Client-I-Dn')
+    dn = client_dn = cherrypy.request.headers.get('Ssl-Client-S-Dn')
+
+    # In case of proxy additional last part will be of the form /CN=[0-9]*
+    # In other words, issuer_dn is a substring of the client_dn
+    if client_dn.startswith(issuer_dn):
+        dn = issuer_dn
+    return dn
+
+
 def _check_auth(dn, acctgroup, role):
     return create_voms_proxy(dn, acctgroup, role)
 
@@ -486,7 +503,8 @@ def _check_auth(dn, acctgroup, role):
 def check_auth(func):
     def check_auth_wrapper(self, acctgroup, *args, **kwargs):
         logger.log(traceback=True)
-        dn = cherrypy.request.headers.get('Auth-User')
+        #dn = cherrypy.request.headers.get('Auth-User')
+        dn = get_client_dn()
         err = ''
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))

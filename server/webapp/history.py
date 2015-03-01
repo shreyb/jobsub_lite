@@ -1,7 +1,7 @@
 import cherrypy
 import logger
 
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from format import format_response
 from condor_commands import ui_condor_history,constructFilter
 
@@ -28,7 +28,7 @@ class HistoryResource(object):
     @format_response
     def index(self, user_id=None, **kwargs):
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)
             if subject_dn is not None:

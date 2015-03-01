@@ -6,7 +6,7 @@ import sys
 import socket
 
 from util import get_uid
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups
@@ -110,7 +110,7 @@ class DropboxResource(object):
             self.role = kwargs.get('role')
             self.username = kwargs.get('username')
             self.vomsProxy = kwargs.get('voms_proxy')
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'POST':

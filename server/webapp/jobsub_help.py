@@ -6,7 +6,7 @@ import sys
 import socket
 
 from util import get_uid
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from format import format_response
 from jobsub import execute_job_submit_wrapper
 
@@ -19,7 +19,6 @@ class JobsubHelpResource(object):
             API call is /jobsub/acctgroups/<group_id>/help
         """
         jobsub_args = ['--help']
-        subject_dn = cherrypy.request.headers.get('Auth-User')
         rc = execute_job_submit_wrapper(acctgroup, None, jobsub_args,
                                         priv_mode=False)
 
@@ -30,7 +29,7 @@ class JobsubHelpResource(object):
     @format_response
     def index(self, acctgroup, **kwargs):
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':

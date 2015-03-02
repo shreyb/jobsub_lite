@@ -65,7 +65,7 @@ class SandboxesResource(object):
                 host = socket.gethostname()
                 return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
             else:
-                logger.log("%s"%l)
+                #logger.log("%s"%l)
                 return {'out': l}
 
 

@@ -10,7 +10,6 @@ class JobsubConfigParser(object):
 
 	def __init__(self,group=None,submit_host=None):
 	    self.cnf=self.findConfigFile()
-	    logger.log('config file %s'%self.cnf)
 	    self.parser=SafeConfigParser()
             self.group=group
             if self.group is None:
@@ -93,7 +92,8 @@ class JobsubConfigParser(object):
                 ups_ini_file = cnf==ups
                 if cnf is not None: 
                     if not ups_ini_file:
-		        logger.log("using %s for jobsub config"%cnf)
+		        ##logger.log("using %s for jobsub config"%cnf)
+			pass
 		    return cnf
 		for x in [ "PWD", "HOME" ]:
 			path=os.environ.get(x)

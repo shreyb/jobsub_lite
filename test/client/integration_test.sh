@@ -66,43 +66,49 @@ else
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
-lg_echo test submission with role
-OUTFILE=$1.submit_role.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
-T1=$?
-JID2=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-T2=$?
-GOTJID2=`echo $JID2| grep '[0-9].0@'`
-T3=$?
-test $T1 -eq 0 -a $T2 -eq 0 -a $T3 -eq 0
-SUBMIT_WORKED2=$?
-if [ "$SUBMIT_WORKED2" = "0" ]; then
-     lg_echo "PASSED successfully submitted job $GOTJID2"
-else
-    lg_echo "FAILED submission problem, please see file $1.submit_role.$OUTGROUP.log"
-fi 
-test $SUBMIT_WORKED2 -eq 0
-pass_or_fail
+if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
+    lg_echo test submission with role
+    OUTFILE=$1.submit_role.$OUTGROUP.log
+    sh ${TEST_FLAG} ./test_simple_submit_with_role.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+    T1=$?
+    JID2=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    T2=$?
+    GOTJID2=`echo $JID2| grep '[0-9].0@'`
+    T3=$?
+    test $T1 -eq 0 -a $T2 -eq 0 -a $T3 -eq 0
+    SUBMIT_WORKED2=$?
+    if [ "$SUBMIT_WORKED2" = "0" ]; then
+         lg_echo "PASSED successfully submitted job $GOTJID2"
+    else
+         lg_echo "FAILED submission problem, please see file $1.submit_role.$OUTGROUP.log"
+    fi 
+    test $SUBMIT_WORKED2 -eq 0
+    pass_or_fail
+fi
 lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
 lg_echo testing dag submission 
 OUTFILE=$1.testdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
 pass_or_fail
-lg_echo testing dag with role submission 
-OUTFILE=$1.testdag.role.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dag_submit_with_role.sh  $SERVER  >$OUTFILE  2>&1
-pass_or_fail
-lg_echo testing cdf sam job
-cd cdf_dag_test
-OUTFILE="../$1.test_cdf_sam_job.log"
-sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
-pass_or_fail
-JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-GOTJID3=`echo $JID2| grep '[0-9].0@'`
-cd -
+if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
+    lg_echo testing dag with role submission 
+    OUTFILE=$1.testdag.role.$OUTGROUP.log
+    sh ${TEST_FLAG} ./test_dag_submit_with_role.sh  $SERVER  >$OUTFILE  2>&1
+    pass_or_fail
+fi
+if [ "$SKIP_CDF_TEST" = "" ]; then
+    lg_echo testing cdf sam job
+    cd cdf_dag_test
+    OUTFILE="../$1.test_cdf_sam_job.log"
+    sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
+    pass_or_fail
+    JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    GOTJID3=`echo $JID3| grep '[0-9].0@'`
+    cd -
+fi
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
@@ -117,31 +123,33 @@ sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1
 pass_or_fail
 lg_echo test listing jobs
 OUTFILE=$1.list.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
 lg_echo 'test listing --long jobs'
 OUTFILE=$1.listlong.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_listjobs_long.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_listjobs_long.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
 lg_echo 'test listing --dag jobs'
 OUTFILE=$1.listdag.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_listjobs_dag.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_listjobs_dag.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
 lg_echo test condor_history
 OUTFILE=$1.history.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID2 > $OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID > $OUTFILE 2>&1
 pass_or_fail
 lg_echo test retrieving zip_file from sandbox 
 OUTFILE=$1.sandbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID  >$OUTFILE 2>&1
 pass_or_fail
-lg_echo test retrieving zip_file from sandbox with role Production
-OUTFILE=$1.sandbox.Production.$OUTGROUP.log
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
-pass_or_fail
+if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
+    lg_echo test retrieving zip_file from sandbox with role Production
+    OUTFILE=$1.sandbox.Production.$OUTGROUP.log
+    sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
+    pass_or_fail
+fi
 lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID2 >$OUTFILE  2>&1
+sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID >$OUTFILE  2>&1
 pass_or_fail
 lg_echo testing list-sandboxes 
 OUTFILE=$1.testlistsandboxes.$OUTGROUP.log

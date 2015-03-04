@@ -23,7 +23,7 @@ if [ "$JOBSUB_GROUP" != "" ]; then
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
-if [ "$X509_USER_CERT" = ""]; then
+if [ "$X509_USER_CERT" = "" ]; then
     X509_USER_CERT=$X509_USER_PROXY
     X509_USER_KEY=$X509_USER_PROXY
 fi

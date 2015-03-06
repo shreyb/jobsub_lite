@@ -66,9 +66,19 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
     JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
+JCDN=""
+if [ "$JOBSUB_CLIENT_DN" != "" ]; then
+    JCDN=" -l +JobsubClientDN=\\\"'"$JOBSUB_CLIENT_DN"'\\\" "
+fi
+
+JCIA=""
+if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
+    JCIA=" -l +JobsubClientIpAddress=\\\"$JOBSUB_CLIENT_IP_ADDRESS\\\" "
+fi
+
 OWN=" -l +Owner=\\\"$USER\\\" "
 #JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub  $OWN $TEC $JSV $JCV $@"
+export JOBSUB_CMD="jobsub  $JCDN $JCIA $OWN $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> $DEBUG_LOG

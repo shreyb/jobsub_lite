@@ -4,17 +4,6 @@ WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
 
-#DEBUG_JOBSUB=TRUE
-if [ "$DEBUG_JOBSUB" != "" ]; then
-   cmd="jobsub $@"
-   date=`date`
-   echo `whoami` >> $DEBUG_LOG
-   echo "CWD: `pwd`" >> $DEBUG_LOG
-   echo "$date "  >> $DEBUG_LOG
-   echo "$cmd "  >> $DEBUG_LOG
-   printenv | sort >> $DEBUG_LOG
-fi
-
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
    source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
 else
@@ -42,6 +31,18 @@ if [ $RSLT -eq 0 ] ; then
           rm $file
         fi
 fi
+
+#DEBUG_JOBSUB=TRUE
+if [ "$DEBUG_JOBSUB" != "" ]; then
+   cmd="jobsub $@"
+   date=`date`
+   echo `whoami` >> $DEBUG_LOG
+   echo "CWD: `pwd`" >> $DEBUG_LOG
+   echo "$date "  >> $DEBUG_LOG
+   echo "$cmd "  >> $DEBUG_LOG
+   printenv | sort >> $DEBUG_LOG
+fi
+
 
 echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
 if [ "$?" != "0" ]; then
@@ -75,7 +76,6 @@ fi
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
     cd ${WORKDIR}
-    chmod a+rx ${JOBSUB_COMMAND_FILE_PATH}
 fi
 
 

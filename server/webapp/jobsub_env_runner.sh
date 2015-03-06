@@ -4,7 +4,7 @@ WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
 
-DEBUG_JOBSUB=TRUE
+#DEBUG_JOBSUB=TRUE
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`
@@ -65,9 +65,9 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
     JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
-JAU=""
-if [ "$JOBSUB_AUTH_USER" != "" ]; then
-    JAU=" -l +JobsubAuthUser=\\\"'"$JOBSUB_AUTH_USER"'\\\" "
+JCDN=""
+if [ "$JOBSUB_CLIENT_DN" != "" ]; then
+    JCDN=" -l +JobsubClientDN=\\\"'"$JOBSUB_CLIENT_DN"'\\\" "
 fi
 
 JCIA=""
@@ -77,7 +77,7 @@ fi
 
 OWN=" -l +Owner=\\\"$USER\\\" "
 #JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub  $JAU $JCIA $OWN $TEC $JSV $JCV $@"
+export JOBSUB_CMD="jobsub  $JCDN $JCIA $OWN $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> $DEBUG_LOG

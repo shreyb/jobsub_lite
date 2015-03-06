@@ -8,7 +8,7 @@ import subprocessSupport
 from JobsubConfigParser import JobsubConfigParser
 from jobsub import is_supported_accountinggroup,  get_command_path_root
 from format import format_response
-
+from auth import get_client_dn
 
 
 
@@ -73,7 +73,7 @@ class ConfiguredSitesResource(object):
     @format_response
     def index(self, user_id=None, **kwargs):
         try:
-            subject_dn = cherrypy.request.headers.get('Auth-User')
+            subject_dn = get_client_dn()
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)
             if subject_dn is not None:

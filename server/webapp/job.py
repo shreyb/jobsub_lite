@@ -14,7 +14,7 @@ from shutil import copyfileobj
 from cherrypy.lib.static import serve_file
 from tempfile import NamedTemporaryFile
 from util import get_uid, mkdir_p
-from auth import check_auth, x509_proxy_fname
+from auth import check_auth, x509_proxy_fname, get_client_dn
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
@@ -68,8 +68,6 @@ class AccountJobsResource(object):
             objects in the queue
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
-        #subject_dn = cherrypy.request.headers.get('Auth-User')
-        #uid = get_uid(subject_dn)
 	uid = kwargs.get('user_id')
         filter = constructFilter(acctgroup,uid,job_id)
         logger.log('filter=%s'%filter)
@@ -146,7 +144,6 @@ class AccountJobsResource(object):
                 role  = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %(jobsub_command))
                 logger.log('job.py:doPost:role %s ' % (role))
-                #subject_dn = cherrypy.request.headers.get('Auth-User')
 
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)

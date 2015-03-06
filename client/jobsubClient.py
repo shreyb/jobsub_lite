@@ -651,6 +651,11 @@ def curl_secure_context(url, credentials):
 
     curl.setopt(curl.SSLCERT, credentials.get('cert'))
     curl.setopt(curl.SSLKEY, credentials.get('key'))
+    proxy = credentials.get('proxy')
+    if proxy:
+        # When using proxy set the CAINFO to the proxy so curl can correctly
+        # pass the X509 credential chain to the server
+        curl.setopt(curl.CAINFO, proxy)
     curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
@@ -752,13 +757,12 @@ def get_client_credentials():
     env_key = None
     cred_dict={}
     if os.environ.get('X509_USER_PROXY'):
-        env_cert = os.environ.get('X509_USER_PROXY')
-        env_key = os.environ.get('X509_USER_PROXY')
+        cred_dict['proxy'] = env_cert = env_key = os.environ.get('X509_USER_PROXY')
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         env_cert = os.environ.get('X509_USER_CERT')
         env_key = os.environ.get('X509_USER_KEY')
     #elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
-    #    env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
+    #    cred_dict['proxy'] = env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
     if env_cert is not None:
         cred_dict['env_cert'] = cred_dict['cert'] = env_cert
         cred_dict['env_key'] = cred_dict['key'] = env_key

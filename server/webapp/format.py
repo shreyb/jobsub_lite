@@ -58,7 +58,7 @@ def format_response(func):
         log_response = True
         if args[0].__module__ in ('jobsub_help', 'dag_help', 'job', 
                                   'condor_commands', 'history', 'queued_jobs', 
-                                  'users_jobs','queued_long', 'queued_dag' ):
+                                  'users_jobs','queued_long', 'queued_dag','sandboxes' ):
             log_response = False
 
         return _format_response(content_type, data, log_response=log_response)

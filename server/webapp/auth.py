@@ -56,7 +56,7 @@ class Krb5Ticket:
         self.krb5cc = krb5cc
         self.principal = principal
         self.createLifetimeHours = 37
-        self.renewableLifetimeHours = 72
+        self.renewableLifetimeHours = 168
 
     def create(self):
         kinit_exe = spawn.find_executable("kinit")

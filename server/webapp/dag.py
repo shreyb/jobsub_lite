@@ -89,7 +89,7 @@ class DagResource(object):
                                                      jobsub_command.filename)
                     payload_file_path = os.path.join(command_path,
                                                      jobsub_payload.filename)
-                    os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
+                    #os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     logger.log('payload_file_path: %s' % payload_file_path)

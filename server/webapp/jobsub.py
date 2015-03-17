@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 from condor_commands import schedd_name
 import logger
+import cherrypy
 import os
 import pwd
 import pipes
@@ -8,6 +9,7 @@ import socket
 from distutils import spawn
 import subprocessSupport
 import StringIO
+import auth
 
 
 from JobsubConfigParser import JobsubConfigParser
@@ -134,6 +136,9 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         child_env['WORKDIR_ID'] = workdir_id
         child_env['USER'] = username
         child_env['COMMAND_PATH_ROOT'] = jobsubConfig.commandPathRoot
+        child_env['JOBSUB_CLIENT_DN'] = auth.get_client_dn()
+        child_env['JOBSUB_CLIENT_IP_ADDRESS'] = cherrypy.request.headers.get('Remote-Addr')
+
         if should_transfer_krb5cc(acctgroup):
             src_cache_fname = os.path.join(jobsubConfig.krb5ccDir,
                                            'krb5cc_%s'%username)

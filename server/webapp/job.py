@@ -164,6 +164,8 @@ class AccountJobsResource(object):
                 # Create the job's working directory as user 
                 create_dir_as_user(command_path_user, workdir_id,
                                    self.username, mode='755')
+                if os.environ.has_key('JOBSUB_COMMAND_FILE_PATH'):
+                    del os.environ['JOBSUB_COMMAND_FILE_PATH']
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path,
                                                      jobsub_command.filename)

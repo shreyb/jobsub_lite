@@ -64,9 +64,20 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
     JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
+JCDN=""
+if [ "$JOBSUB_CLIENT_DN" != "" ]; then
+    JCDN=" -l +JobsubClientDN=\\\"'"$JOBSUB_CLIENT_DN"'\\\" "
+fi
+
+JCIA=""
+if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
+   JCIA=" -l +JobsubClientIpAddress=\\\"$JOBSUB_CLIENT_IP_ADDRESS\\\" "
+fi
+
+
 JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\\\$(DAGManJobId)@$SCHEDD"
-export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV "
+export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA "
 
 export JOBSUB_CMD="dagNabbit.py -s -i $@ "
 

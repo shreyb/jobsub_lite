@@ -22,6 +22,9 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
+v1_3_9 3/6/14
+==================================================
+- #7768 no longer defines OSG_WN_TMP in users environment
 
 v1_3_8 2/12/14
 ===================================================

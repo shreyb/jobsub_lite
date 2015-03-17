@@ -584,7 +584,6 @@ class JobSettings(object):
         f.write("export TMP=$_CONDOR_SCRATCH_DIR\n")
         f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
         f.write("export TMPDIR=$_CONDOR_SCRATCH_DIR\n")
-        f.write("export OSG_WN_TMP=$TMPDIR\n")
         f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
         f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
         if settings.has_key('jobsub_max_joblog_tail_size'):

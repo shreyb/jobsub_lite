@@ -4,17 +4,6 @@ WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
 
-#DEBUG_JOBSUB=TRUE
-if [ "$DEBUG_JOBSUB" != "" ]; then
-   cmd="jobsub $@"
-   date=`date`
-   echo `whoami` >> $DEBUG_LOG
-   echo "CWD: `pwd`" >> $DEBUG_LOG
-   echo "$date "  >> $DEBUG_LOG
-   echo "$cmd "  >> $DEBUG_LOG
-   printenv | sort >> $DEBUG_LOG
-fi
-
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
    source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
 else
@@ -43,6 +32,18 @@ if [ $RSLT -eq 0 ] ; then
         fi
 fi
 
+#DEBUG_JOBSUB=TRUE
+if [ "$DEBUG_JOBSUB" != "" ]; then
+   cmd="jobsub $@"
+   date=`date`
+   echo `whoami` >> $DEBUG_LOG
+   echo "CWD: `pwd`" >> $DEBUG_LOG
+   echo "$date "  >> $DEBUG_LOG
+   echo "$cmd "  >> $DEBUG_LOG
+   printenv | sort >> $DEBUG_LOG
+fi
+
+
 echo "${TRANSFER_INPUT_FILES}" | grep "${JOBSUB_COMMAND_FILE_PATH}" > /dev/null 2>&1 
 if [ "$?" != "0" ]; then
    export TRANSFER_INPUT_FILES=${JOBSUB_COMMAND_FILE_PATH}${TRANSFER_INPUT_FILES+,$TRANSFER_INPUT_FILES}
@@ -65,9 +66,19 @@ if [ "$JOBSUB_CLIENT_VERSION" != "" ]; then
     JCV=" -l +JobsubClientVersion=\\\"$JOBSUB_CLIENT_VERSION\\\" "
 fi
 
+JCDN=""
+if [ "$JOBSUB_CLIENT_DN" != "" ]; then
+    JCDN=" -l +JobsubClientDN=\\\"'"$JOBSUB_CLIENT_DN"'\\\" "
+fi
+
+JCIA=""
+if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
+    JCIA=" -l +JobsubClientIpAddress=\\\"$JOBSUB_CLIENT_IP_ADDRESS\\\" "
+fi
+
 OWN=" -l +Owner=\\\"$USER\\\" "
 #JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub  $OWN $TEC $JSV $JCV $@"
+export JOBSUB_CMD="jobsub  $JCDN $JCIA $OWN $TEC $JSV $JCV $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> $DEBUG_LOG
@@ -75,7 +86,6 @@ fi
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
     cd ${WORKDIR}
-    chmod a+rx ${JOBSUB_COMMAND_FILE_PATH}
 fi
 
 

@@ -43,6 +43,17 @@ def get_supported_accountinggroups():
 
     return rc
 
+def default_voms_role(acctgroup="default"):
+
+    rc = None
+    try:
+        p = JobsubConfigParser()
+        rc = p.get(acctgroup,'default_voms_role')
+        logger.log('default voms role for %s : %s'%(acctgroup,rc))
+    except:
+        logger.log('exception fetching voms role for acctgroup :%s'%acctgroup)
+        pass
+    return rc
 
 def get_authentication_methods(acctgroup):
     rc = 'kca-dn'

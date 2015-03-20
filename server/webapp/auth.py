@@ -347,6 +347,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
     jobsubConfig = jobsub.JobsubConfig()
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     krb5cc_dir = jobsubConfig.krb5ccDir
+    logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
     try:
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
         real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
@@ -437,7 +438,7 @@ def is_valid_cache(cache_name):
 def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authenticating DN: %s' % dn)
     username = authenticate(dn, acctgroup, role)
-    logger.log('create_voms_proxy: Authorizing user: %s' % username)
+    logger.log('create_voms_proxy: Authorizing user: %s acctgroup: %s role: %s' % (username,acctgroup,role))
     voms_proxy = authorize(dn, username, acctgroup, role)
     logger.log('User authorized. Voms proxy file: %s' % voms_proxy)
     return (username, voms_proxy)
@@ -509,7 +510,9 @@ def check_auth(func):
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
             try:
-                role = 'Analysis'
+                #role = 'Analysis'
+                role = jobsub.default_voms_role(acctgroup)
+                #logger.log('default voms role:%s' % role)
                 tokens = acctgroup.split('--ROLE--')
                 if len(tokens) > 1:
                     (acctgroup, role) = tokens[0:2]

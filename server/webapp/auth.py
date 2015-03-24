@@ -52,9 +52,9 @@ class AuthorizationError(Exception):
 class Krb5Ticket:
 
     def __init__(self, keytab, krb5cc, principal):
-        self.keytab = keytab
-        self.krb5cc = krb5cc
-        self.principal = principal
+        cherrypy.request.keytab = keytab
+        cherrypy.request.krb5cc = krb5cc
+        cherrypy.request.principal = principal
         self.createLifetimeHours = 37
         self.renewableLifetimeHours = 72
 
@@ -63,16 +63,16 @@ class Krb5Ticket:
         if not kinit_exe:
             raise Exception("Unable to find command 'kinit' in the PATH.")
 
-        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
+        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, cherrypy.request.keytab,
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
-                                                      self.krb5cc, self.principal)
+                                                      cherrypy.request.krb5cc, cherrypy.request.principal)
         logger.log(cmd)
         try:
             kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         except:
-            logger.log('removing file %s'%self.krb5cc)
-            os.remove(self.krb5cc)
+            logger.log('removing file %s'%cherrypy.request.krb5cc)
+            os.remove(cherrypy.request.krb5cc)
             raise 
 
 

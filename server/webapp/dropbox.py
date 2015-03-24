@@ -29,7 +29,7 @@ class DropboxResource(object):
             API is /jobsub/acctgroups/<group_id>/dropbox/<box_id>/<filename>/
         """
         dropbox_path_root = get_dropbox_path_root()
-        dropbox_path = os.path.join(dropbox_path_root, acctgroup, self.username)
+        dropbox_path = os.path.join(dropbox_path_root, acctgroup, cherrypy.request.username)
         dropbox_file_path = os.path.join(dropbox_path, box_id, filename)
         return serve_file(dropbox_file_path, "application/x-download", "attachment")
 
@@ -54,7 +54,7 @@ class DropboxResource(object):
                     supplied_digest=False
                     phldr=box_id
                 dropbox_path = os.path.join(dropbox_path_root, acctgroup,
-                                            self.username, phldr)
+                                            cherrypy.request.username, phldr)
 		mkdir_p(dropbox_path)
                 dropbox_file_path = os.path.join(dropbox_path, arg_value.filename)
                 dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' % (acctgroup, phldr, arg_value.filename)
@@ -72,7 +72,7 @@ class DropboxResource(object):
                     derived_digest=digest_for_file(dropbox_file_path)
                     new_dropbox_path = os.path.join(dropbox_path_root,
                                                     acctgroup,
-                                                    self.username,
+                                                    cherrypy.request.username,
                                                     derived_digest)
                     new_dropbox_file_path = os.path.join(new_dropbox_path,
                                                          arg_value.filename)
@@ -107,9 +107,9 @@ class DropboxResource(object):
     @check_auth
     def index(self, acctgroup, box_id=None, filename=None, **kwargs):
         try:
-            self.role = kwargs.get('role')
-            self.username = kwargs.get('username')
-            self.vomsProxy = kwargs.get('voms_proxy')
+            cherrypy.request.role = kwargs.get('role')
+            cherrypy.request.username = kwargs.get('username')
+            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = get_client_dn()
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

@@ -75,14 +75,14 @@ class SandboxesResource(object):
 
     def index(self, acctgroup, **kwargs):
         try:
-            self.role = kwargs.get('role')
-            self.username = kwargs.get('username')
-            self.vomsProxy = kwargs.get('voms_proxy')
+            cherrypy.request.role = kwargs.get('role')
+            cherrypy.request.username = kwargs.get('username')
+            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = get_client_dn()
             user_id = kwargs.get('user_id')
             logger.log("user_id %s"%user_id)
             logger.log("kwargs %s"%kwargs)
-            user_id = self.username
+            user_id = cherrypy.request.username
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

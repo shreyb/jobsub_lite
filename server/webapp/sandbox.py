@@ -70,9 +70,9 @@ class SandboxResource(object):
     """
 
     def __init__(self):
-        self.role = None
-        self.username = None
-        self.vomsProxy = None
+        cherrypy.request.role = None
+        cherrypy.request.username = None
+        cherrypy.request.vomsProxy = None
 
 
     def findSandbox(self, path):
@@ -80,7 +80,7 @@ class SandboxResource(object):
 	    return path
 	jobid=os.path.basename(path)
 	logger.log('jobid:%s'%jobid)
-	uid = '/%s/' % self.username
+	uid = '/%s/' % cherrypy.request.username
         cmd1=""" -format '%s' iwd -constraint """ 
         cmd2="""'jobsubjobid=="%s"' """%(jobid)
 	for cmd0 in ['condor_history ','condor_q ']:
@@ -109,7 +109,7 @@ class SandboxResource(object):
         logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
         jobsubConfig = JobsubConfig()
         sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
-        sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, self.username)
+        sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, cherrypy.request.username)
 
         command_path_root = get_command_path_root()
         if job_id is None:
@@ -136,7 +136,7 @@ class SandboxResource(object):
             cherrypy.request.hooks.attach('after_error_response', cleanup,
                                           zip_file=zip_file)
 
-            make_sandbox_readable(zip_path, self.username)
+            make_sandbox_readable(zip_path, cherrypy.request.username)
             create_archive(zip_file, zip_path, job_id, format)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download','attachment')
@@ -158,11 +158,11 @@ class SandboxResource(object):
                 sandbox_cluster_ids.sort()
 
             if sandbox_cluster_ids:
-                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (self.username ,acctgroup)
+                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (cherrypy.request.username ,acctgroup)
                 sandbox_cluster_ids.insert(0,outmsg)
                 rc = {'out': sandbox_cluster_ids }
             else:
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (self.username , acctgroup, job_id)
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (cherrypy.request.username , acctgroup, job_id)
                 rc = {'err':err }
 
         return rc
@@ -172,9 +172,9 @@ class SandboxResource(object):
     @check_auth
     def index(self, acctgroup, job_id, **kwargs):
         logger.log('job_id:%s'%job_id)
-        self.role = kwargs.get('role')
-        self.username = kwargs.get('username')
-        self.vomsProxy = kwargs.get('voms_proxy')
+        cherrypy.request.role = kwargs.get('role')
+        cherrypy.request.username = kwargs.get('username')
+        cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
 
         try:
             if job_id is None:

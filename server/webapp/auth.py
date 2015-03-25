@@ -370,11 +370,11 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         # If the x509_cache_fname is new enough skip everything and use it
         # needs_refresh only looks for file existance and stat. It works on
         # proxies owned by other users as well.
-        if needs_refresh(x509_cache_fname, age_limit):
+        if needs_refresh(x509_cache_fname,age_limit):
             # First check if need to use keytab/KCA robot keytab
             if os.path.exists(keytab_fname):
-                # always refresh for now
-                # if not is_valid_cache(real_cache_fname):
+                #if not is_valid_cache(real_cache_fname):
+                #always refresh krb5 cache if refreshing proxy
                 if True:
                     new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
                     new_cache_fname = new_cache_file.name
@@ -398,15 +398,13 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                                       x509_tmp_fname, acctgroup,
                                       acctrole=acctrole)
             else:
+                if os.path.exists(x509_tmp_fname):
+                    os.remove(x509_tmp_fname)
                 # No source credentials found for this user.
                 logger.log('Unable to find Kerberoes keytab file or a X509 cert-key pair for user %s' % (username))
                 raise AuthorizationError(dn, acctgroup)
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
-
-        #fix for #8094 we create x509_tmp_name above whether we use it or not.  
-        #if needs_refresh() evaluated to True and no exception occurred it got moved else it hung around
-        #now check for it and remove in either case
 
         if os.path.exists(x509_tmp_fname):
             os.remove(x509_tmp_fname)
@@ -420,11 +418,6 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
 
 
 def is_valid_cache(cache_name):
-    #this always returns False after ownership change of cache_name from 'rexbatch' to its actual uid 
-    #i.e. klist -s executed as 'rexbatch' silently returns 1 in this case with no error output.  
-    #What we missed is that a copy_file_as_user(cache_name, /fife/local/scratch/uploads/...cache_name, username) 
-    #is needed after krbrefresh to keep the jobs krb5 cache updated
-    #
     klist_exe=spawn.find_executable("klist")
     cmd ="%s -s -c %s"%(klist_exe,cache_name)
     try:
@@ -446,11 +439,7 @@ def create_voms_proxy(dn, acctgroup, role):
 
 
 def refresh_proxies(agelimit=3600):
-   
-    cmd = spawn.find_executable('condor_q')
-    if not cmd:
-        raise Exception('Unable to find condor_q in the PATH')
-    cmd += ' -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
+    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -483,34 +472,6 @@ def refresh_proxies(agelimit=3600):
     #-constraint 'EnteredCurrentStatus > one_day_ago'
     #can be checked against already_processed list to remove x509cc_(user)
     #if user not in queued_users remove krb5cc_(user) and (user).keytab
-
-def copy_user_krb5_caches():
-    jobsubConfig = jobsub.JobsubConfig()
-    krb5cc_dir = jobsubConfig.krb5ccDir
-    cmd = spawn.find_executable('condor_q')
-    if not cmd:
-        raise Exception('Unable to find condor_q in the PATH')
-    cmd += """ -format '%s\n' 'ifthenelse (EncrypInputFiles=?=UNDEFINED, string(EncryptInputFiles),string(""))' """ 
-    already_processed=['']
-    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    if cmd_err:
-        logger.log("%s"%sys.exc_info()[1])
-        raise Exception("command %s returned %s"%(cmd,cmd_err))
-    lines = cmd_out.split("\n")
-    for job_krb5_cache in lines:
-        if job_krb5_cache not in already_processed:
-            already_processed.append(job_krb5_cache)
-            cache_basename = os.path.basename(job_krb5_cache)
-            base_parts = cache_basename.split('_')
-            username = base_parts[-1]
-            system_cache_fname = os.path.join(krb5cc_dir, cache_basename)
-            try:
-                logger.log('copying %s to %s'%(system_cache_fname,job_krb5_cache))
-                jobsub.copy_file_as_user(system_cache_fname, job_krb5_cache, username)
-            except:
-                logger.log("Error processing %s" % job_krb5_cache)
-                logger.log("%s"%sys.exc_info()[1])
-
 
 
 def get_client_dn():
@@ -586,13 +547,13 @@ def test():
         'minerva': '/DC=gov/DC=fnal/O=Fermilab/OU=/CN=Parag A. Mhashilkar/CN=UID',
     }
 
-    for group in dns:       
-        try:
+    for group in dns:
+       try:
             create_voms_proxy(dns[group], group)
-        except AuthenticationError, e:
-            logger.log("Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
-        except AuthorizationError, e:
-            logger.log("Unauthorized DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
+       except AuthenticationError, e:
+           logger.log("Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
+       except AuthorizationError, e:
+           logger.log("Unauthorized DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
 
 
 if __name__ == '__main__':
@@ -605,4 +566,3 @@ if __name__ == '__main__':
                 refresh_proxies(sys.argv[2])
             else:
                 refresh_proxies()
-            copy_user_krb5_caches()

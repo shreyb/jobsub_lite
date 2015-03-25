@@ -76,21 +76,10 @@ class SandboxResource(object):
 
 
     def findSandbox(self, path):
-	if os.path.exists(path):
-	    return path
-	jobid=os.path.basename(path)
-	logger.log('jobid:%s'%jobid)
-	uid = '/%s/' % self.username
-        cmd1=""" -format '%s' iwd -constraint """ 
-        cmd2="""'jobsubjobid=="%s"' """%(jobid)
-	for cmd0 in ['condor_history ','condor_q ']:
-            cmd=cmd0+cmd1+cmd2
-            logger.log(cmd)
-            newpath, cmd_err = subprocessSupport.iexe_cmd(cmd)
-            logger.log('result:%s status:%s'%(newpath,cmd_err))
-            if newpath and len(newpath)>0 and os.path.exists(newpath) and (uid in newpath):
-                return newpath
+        if os.path.exists(path):
+            return path 
         return False
+
 
 
     #@format_response
@@ -115,7 +104,7 @@ class SandboxResource(object):
         if job_id is None:
              job_id='I_am_planning_on_failing'
         #zip_path = os.path.join(sbx_final_dir, job_id)
-	zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
+        zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
         if zip_path:
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             format = kwargs.get('archive_format', 'tgz')
@@ -149,7 +138,7 @@ class SandboxResource(object):
             cherrypy.response.status = 404
             sandbox_cluster_ids = list()
             if os.path.exists(sbx_final_dir):
-		logger.log('Looking for available sandboxes %s'%sbx_final_dir)
+                logger.log('Looking for available sandboxes %s'%sbx_final_dir)
                 dirs = os.listdir(sbx_final_dir)
                 for dir in dirs:
                     if os.path.islink(os.path.join(sbx_final_dir, dir)) and dir.find('@')>0:

@@ -143,7 +143,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
 
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_name(jobsub_args)
-        child_env['ROLE'] = role
+        if role:
+            child_env['ROLE'] = role
         child_env['WORKDIR_ID'] = workdir_id
         child_env['USER'] = username
         child_env['COMMAND_PATH_ROOT'] = jobsubConfig.commandPathRoot
@@ -309,6 +310,7 @@ def run_cmd_as_user(command, username, child_env={}):
     cmd = '%s runCommand %s' % (exe, c)
     out = err = ''
     logger.log(cmd)
+    logger.log(child_env)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)

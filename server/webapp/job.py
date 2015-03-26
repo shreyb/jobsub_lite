@@ -37,9 +37,9 @@ from queued_dag import QueuedDagResource
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
-	self.role = None
-	self.username = None
-	self.vomsProxy = None
+	cherrypy.request.role = None
+	cherrypy.request.username = None
+	cherrypy.request.vomsProxy = None
         self.sandbox = SandboxResource()
 	self.history = HistoryResource()
         self.dag = DagResource()
@@ -148,22 +148,22 @@ class AccountJobsResource(object):
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
                 command_path_user = jobsubConfig.commandPathUser(acctgroup,
-                                                                 self.username)
+                                                                 cherrypy.request.username)
                 # Check if the user specific dir exist with correct
                 # ownership. If not create it.
-                jobsubConfig.initCommandPathUser(acctgroup, self.username)
+                jobsubConfig.initCommandPathUser(acctgroup, cherrypy.request.username)
 
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer=random.randrange(0,10000)
                 workdir_id = '%s_%s' % (ts, uniquer)
                 command_path = os.path.join(command_path_acctgroup, 
-                                            self.username, workdir_id)
+                                            cherrypy.request.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
-		os.environ['X509_USER_PROXY'] = x509_proxy_fname(self.username,
+		os.environ['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                  acctgroup, role)
                 # Create the job's working directory as user 
                 create_dir_as_user(command_path_user, workdir_id,
-                                   self.username, mode='755')
+                                   cherrypy.request.username, mode='755')
                 if os.environ.has_key('JOBSUB_COMMAND_FILE_PATH'):
                     del os.environ['JOBSUB_COMMAND_FILE_PATH']
                 if jobsub_command is not None:
@@ -181,7 +181,7 @@ class AccountJobsResource(object):
                     copyfileobj(jobsub_command.file, tmp_cmd_fd)
 
                     tmp_cmd_fd.close()
-                    move_file_as_user(tmp_cmd_fd.name, command_file_path, self.username)
+                    move_file_as_user(tmp_cmd_fd.name, command_file_path, cherrypy.request.username)
                     #with open(command_file_path, 'wb') as dst_file:
                     #    copyfileobj(jobsub_command.file, dst_file)
 
@@ -194,7 +194,7 @@ class AccountJobsResource(object):
                 jobsub_args = jobsub_args.split(' ')
 
                 rc = execute_job_submit_wrapper(
-                         acctgroup=acctgroup, username=self.username,
+                         acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
                          role=role, jobsub_client_version=jobsub_client_version)
             else:
@@ -222,9 +222,9 @@ class AccountJobsResource(object):
     @check_auth
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
-            self.role = kwargs.get('role')
-            self.username = kwargs.get('username')
-            self.vomsProxy = kwargs.get('voms_proxy')
+            cherrypy.request.role = kwargs.get('role')
+            cherrypy.request.username = kwargs.get('username')
+            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rc = self.doPOST(acctgroup, job_id, kwargs)
@@ -253,7 +253,7 @@ class AccountJobsResource(object):
 
 
     def doJobAction(self, acctgroup, job_id, job_action):
-        constraint = '(Owner =?= "%s")' % (self.username)
+        constraint = '(Owner =?= "%s")' % (cherrypy.request.username)
         # Split the jobid to get cluster_id and proc_id
 	stuff=job_id.split('@')
 	schedd_name='@'.join(stuff[1:])
@@ -272,11 +272,11 @@ class AccountJobsResource(object):
         ]
                             
         child_env = os.environ.copy()
-        child_env['X509_USER_PROXY'] = self.vomsProxy
+        child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
         out = err = ''
         affected_jobs = 0
         try:
-            out, err = run_cmd_as_user(cmd, self.username, child_env=child_env)
+            out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
         except:
             #TODO: We need to change the underlying library to return
             #      stderr on failure rather than just raising exception

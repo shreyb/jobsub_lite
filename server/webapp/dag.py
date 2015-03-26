@@ -38,8 +38,8 @@ class DagResource(object):
     
     def __init__(self):
        self.help = DAGHelpResource()
-       self.username = None
-       self.vomsProxy = None
+       cherrypy.request.username = None
+       cherrypy.request.vomsProxy = None
        self.payLoadFileName = 'payload.tgz'
 
 
@@ -66,23 +66,23 @@ class DagResource(object):
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
                 command_path_user = jobsubConfig.commandPathUser(acctgroup,
-                                                                 self.username)
+                                                                 cherrypy.request.username)
                 # Check if the user specific dir exist with correct
                 # ownership. If not create it.
-                jobsubConfig.initCommandPathUser(acctgroup, self.username)
+                jobsubConfig.initCommandPathUser(acctgroup, cherrypy.request.username)
 
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer=random.randrange(0,10000)
                 workdir_id = '%s_%s' % (ts, uniquer)
                 command_path = os.path.join(command_path_acctgroup, 
-                                            self.username, workdir_id)
+                                            cherrypy.request.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
-                os.environ['X509_USER_PROXY'] = x509_proxy_fname(self.username,
+                os.environ['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                  acctgroup, role)
                 os.environ['JOBSUB_PAYLOAD'] = self.payLoadFileName
                 # Create the job's working directory as user
                 create_dir_as_user(command_path_user, workdir_id,
-                                   self.username, mode='755')
+                                   cherrypy.request.username, mode='755')
                 if jobsub_command is not None:
                     os.chdir(command_path)
                     command_file_path = os.path.join(command_path,
@@ -106,7 +106,7 @@ class DagResource(object):
 
                     tmp_payload_fd.close()
                     move_file_as_user(tmp_payload_fd.name, payload_file_path,
-                                      self.username)
+                                      cherrypy.request.username)
 
                     logger.log('before: jobsub_args = %s'%jobsub_args)
                     logger.log("cf_path_w_space='%s'"%cf_path_w_space)
@@ -120,7 +120,7 @@ class DagResource(object):
                 jobsub_args = jobsub_args.strip().split(' ')
 
                 rc = execute_job_submit_wrapper(
-                         acctgroup=acctgroup, username=self.username,
+                         acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
                          role=role, jobsub_client_version=jobsub_client_version,
                          submit_type='dag')
@@ -150,9 +150,9 @@ class DagResource(object):
     @check_auth
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
-            self.role = kwargs.get('role')
-            self.username = kwargs.get('username')
-            self.vomsProxy = kwargs.get('voms_proxy')
+            cherrypy.request.role = kwargs.get('role')
+            cherrypy.request.username = kwargs.get('username')
+            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
 
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':

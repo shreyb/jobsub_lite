@@ -52,27 +52,27 @@ class AuthorizationError(Exception):
 class Krb5Ticket:
 
     def __init__(self, keytab, krb5cc, principal):
-        self.keytab = keytab
-        self.krb5cc = krb5cc
-        self.principal = principal
+        cherrypy.request.keytab = keytab
+        cherrypy.request.krb5cc = krb5cc
+        cherrypy.request.principal = principal
         self.createLifetimeHours = 37
-        self.renewableLifetimeHours = 72
+        self.renewableLifetimeHours = 168
 
     def create(self):
         kinit_exe = spawn.find_executable("kinit")
         if not kinit_exe:
             raise Exception("Unable to find command 'kinit' in the PATH.")
 
-        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, self.keytab,
+        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, cherrypy.request.keytab,
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
-                                                      self.krb5cc, self.principal)
+                                                      cherrypy.request.krb5cc, cherrypy.request.principal)
         logger.log(cmd)
         try:
             kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         except:
-            logger.log('removing file %s'%self.krb5cc)
-            os.remove(self.krb5cc)
+            logger.log('removing file %s'%cherrypy.request.krb5cc)
+            os.remove(cherrypy.request.krb5cc)
             raise 
 
 
@@ -144,7 +144,7 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     logger.log(cmd)
     ret_code = os.system(cmd)
     if ret_code == 0:
-	os.rename(tmp_proxy_fname, proxy_fname)
+        os.rename(tmp_proxy_fname, proxy_fname)
     else:
         os.remove(tmp_proxy_fname)
 
@@ -190,7 +190,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     logger.log(cmd)
     ret_code = os.system(cmd)
     if ret_code == 0:
-	os.rename(new_proxy_fname,proxy_fname)
+        os.rename(new_proxy_fname,proxy_fname)
     else:
         os.remove(new_proxy_fname)
 
@@ -249,9 +249,9 @@ def authenticate_kca_dn(dn):
     logger.log("dns patterns supported:%s "% KCA_DN_PATTERN_LIST )
 
     for pattern in KCA_DN_PATTERN_LIST.split(','):
-    	username = re.findall(pattern, dn)
-    	if len(username) >= 1 and username[0] != '':
-		return username[0]
+        username = re.findall(pattern, dn)
+        if len(username) >= 1 and username[0] != '':
+            return username[0]
 
     raise AuthenticationError(dn)
 
@@ -371,14 +371,16 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         # If the x509_cache_fname is new enough skip everything and use it
         # needs_refresh only looks for file existance and stat. It works on
         # proxies owned by other users as well.
-        if needs_refresh(x509_cache_fname):
+        if needs_refresh(x509_cache_fname,age_limit):
             # First check if need to use keytab/KCA robot keytab
             if os.path.exists(keytab_fname):
-                if not is_valid_cache(real_cache_fname):
+                #if not is_valid_cache(real_cache_fname):
+                #always refresh krb5 cache if refreshing proxy
+                if True:
                     new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
                     new_cache_fname = new_cache_file.name
                     logger.log("new_cache_fname=%s"%new_cache_fname)
-	            new_cache_file.close()
+                    new_cache_file.close()
                     logger.log('Creating krb5 ticket ...')
                     krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
                     krb5_ticket.create()
@@ -397,27 +399,20 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                                       x509_tmp_fname, acctgroup,
                                       acctrole=acctrole)
             else:
+                if os.path.exists(x509_tmp_fname):
+                    os.remove(x509_tmp_fname)
                 # No source credentials found for this user.
                 logger.log('Unable to find Kerberoes keytab file or a X509 cert-key pair for user %s' % (username))
                 raise AuthorizationError(dn, acctgroup)
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
-            """
-            exe = jobsub.get_jobsub_priv_exe()
-            cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, x509_tmp_fname,
-                                                        x509_cache_fname,
-                                                        username)
-            err = ''
-            logger.log(cmd)
-            try:
-                out, err = subprocessSupport.iexe_priv_cmd(cmd)
-            except:
-                logger.log('Error moving file as user using command %s: %s' % (cmd, err))
-                raise
-            """
 
+        if os.path.exists(x509_tmp_fname):
+            os.remove(x509_tmp_fname)
         return x509_cache_fname
     except:
+        if os.path.exists(x509_tmp_fname):
+            os.remove(x509_tmp_fname)
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
@@ -464,8 +459,8 @@ def refresh_proxies(agelimit=3600):
                     if user not in queued_users:
                         queued_users.append(user)
                     grp=grp.replace("group_","")
-		    proxy_name=os.path.basename(check[2])
-		    x,uid,role=proxy_name.split('_')	
+                    proxy_name=os.path.basename(check[2])
+                    x,uid,role=proxy_name.split('_')
                     print "checking proxy %s %s %s %s"%(dn,user,grp,role)
                     authorize(dn,user,grp,role,agelimit)
                 except:

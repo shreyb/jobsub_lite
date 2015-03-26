@@ -144,9 +144,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                            'krb5cc_%s'%username)
             dst_cache_fname = os.path.join(job_submit_dir, 'krb5cc_%s'%username)
 
-            ln_cmd = [ 'ln', '-s', src_cache_fname, dst_cache_fname ]
-            out, err = run_cmd_as_user(ln_cmd, username, child_env=child_env)
-            #os.symlink(src_cache_fname, dst_cache_fname)
+            copy_file_as_user(src_cache_fname, dst_cache_fname, username)
             logger.log('Adding %s for acctgroup %s to transfer_encrypt_files'%(dst_cache_fname, acctgroup))
             child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
             child_env['KRB5CCNAME'] = dst_cache_fname

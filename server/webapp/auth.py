@@ -340,7 +340,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
 #REFRESH_DAILY=24
 #REFRESH_EVERY_4_HOURS=4
 
-def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
+def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     # TODO: Break this into smaller functions. Krb5 related code 
     #       should be split out
 

@@ -58,13 +58,10 @@ class JobsubConfigParser(object):
         logger.log(sect)
         if self.parser.has_section('default'):
             pairs.extend(self.parser.items('default'))
-            logger.log('default %s'%pairs)
         if sect==self.submit_host and self.parser.has_section(self.group):
             pairs.extend(self.parser.items(self.group))
-            logger.log('group before submit_host %s'%pairs)
         if self.parser.has_section(sect):
             pairs.extend(self.parser.items(sect))
-            logger.log('section %s: %s'%(sect,pairs))
         valdict=dict(pairs)
         return valdict.items()
 

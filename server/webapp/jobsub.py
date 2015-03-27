@@ -52,7 +52,6 @@ def default_voms_role(acctgroup="default"):
         logger.log('default voms role for %s : %s'%(acctgroup,rc))
     except:
         logger.log('exception fetching voms role for acctgroup :%s'%acctgroup)
-        pass
     return rc
 
 def get_authentication_methods(acctgroup):
@@ -310,7 +309,6 @@ def run_cmd_as_user(command, username, child_env={}):
     cmd = '%s runCommand %s' % (exe, c)
     out = err = ''
     logger.log(cmd)
-    logger.log(child_env)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)

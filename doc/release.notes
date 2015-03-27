@@ -1,3 +1,21 @@
+
+================================================================================
+v1.1.1 (release candidate 1)
+================================================================================
+
+CLIENT
+-----
+* Bug fix: make client commands work with proxies #7988
+SERVER
+------
+* Bug fix: server losing track of user and group it submits as #8196
+* Bug fix: unnecessary condor_history makes fetchlog slow 8138
+* Bug fix: temporary files filling up /var #8094
+* Bug fix: current krb5 cache lifetime too short #8065
+* Bug fix: chmod error for CDF DAG submission #7968
+* Bug fix: server side logging too verbose #7962
+* Feature: DN and submission node now in job classad #7908
+
 ================================================================================
 v1.1
 ================================================================================

@@ -55,7 +55,6 @@ class JobsubConfigParser(object):
 
     def items(self,sect):
         pairs=[]
-        logger.log(sect)
         if self.parser.has_section('default'):
             pairs.extend(self.parser.items('default'))
         if sect==self.submit_host and self.parser.has_section(self.group):

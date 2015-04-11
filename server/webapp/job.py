@@ -37,14 +37,14 @@ from queued_dag import QueuedDagResource
 @cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
-	cherrypy.request.role = None
-	cherrypy.request.username = None
-	cherrypy.request.vomsProxy = None
+        cherrypy.request.role = None
+        cherrypy.request.username = None
+        cherrypy.request.vomsProxy = None
         self.sandbox = SandboxResource()
-	self.history = HistoryResource()
+        self.history = HistoryResource()
         self.dag = DagResource()
-	self.long = QueuedLongResource()
-	self.dags = QueuedDagResource()
+        self.long = QueuedLongResource()
+        self.dags = QueuedDagResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,
@@ -68,7 +68,7 @@ class AccountJobsResource(object):
             objects in the queue
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
-	uid = kwargs.get('user_id')
+        uid = kwargs.get('user_id')
         filter = constructFilter(acctgroup,uid,job_id)
         logger.log('filter=%s'%filter)
         q=ui_condor_q(filter)
@@ -159,7 +159,7 @@ class AccountJobsResource(object):
                 command_path = os.path.join(command_path_acctgroup, 
                                             cherrypy.request.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
-		os.environ['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
+                os.environ['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                  acctgroup, role)
                 # Create the job's working directory as user 
                 create_dir_as_user(command_path_user, workdir_id,
@@ -197,6 +197,12 @@ class AccountJobsResource(object):
                          acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
                          role=role, jobsub_client_version=jobsub_client_version)
+                if rc.has_key('out'):
+                    for line in rc['out']:
+                        if 'jobsubjobid' in line.lower():
+                            logger.log(line)
+                if rc.has_key('err') and rc['err'] and len(rc['err'])>0:
+                    logger.log(rc['err'])
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
@@ -214,8 +220,8 @@ class AccountJobsResource(object):
     @cherrypy.expose
     @format_response
     def default(self,kwargs):
-	logger.log('kwargs=%s'%kwargs)
-	return {'out':"kwargs=%s"%kwargs}
+        logger.log('kwargs=%s'%kwargs)
+        return {'out':"kwargs=%s"%kwargs}
 
     @cherrypy.expose
     @format_response
@@ -255,9 +261,9 @@ class AccountJobsResource(object):
     def doJobAction(self, acctgroup, job_id, job_action):
         constraint = '(Owner =?= "%s")' % (cherrypy.request.username)
         # Split the jobid to get cluster_id and proc_id
-	stuff=job_id.split('@')
-	schedd_name='@'.join(stuff[1:])
-	logger.log("schedd_name is %s"%schedd_name)
+        stuff=job_id.split('@')
+        schedd_name='@'.join(stuff[1:])
+        logger.log("schedd_name is %s"%schedd_name)
         ids = stuff[0].split('.')
         constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
         if (len(ids) > 1) and (ids[1]):

@@ -125,6 +125,12 @@ class DagResource(object):
                          role=role, jobsub_client_version=jobsub_client_version,
                          submit_type='dag')
 
+                if rc.has_key('out'):
+                    for line in rc['out']:
+                        if 'jobsubjobid' in line.lower():
+                            logger.log(line)
+                if rc.has_key('err') and rc['err'] and len(rc['err'])>0:
+                    logger.log(rc['err'])
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'

@@ -15,8 +15,12 @@ $EXEPATH/jobsub_q.py --debug $GROUP_SPEC $SERVER_SPEC --jobid $JOB --long
 T2=$?
 $EXEPATH/jobsub_q.py --debug $GROUP_SPEC $SERVER_SPEC --jobid $JOB --user $USER --long
 T3=$?
-$EXEPATH/jobsub_q.py --debug $SERVER_SPEC --long
-T4=$?
+#don't do this test on production server it takes forever and fills up the disk
+T4=0
+if [ "$SERVER_SPEC" != "https://fifebatch.fnal.gov:8443" ]; then
+    $EXEPATH/jobsub_q.py --debug $SERVER_SPEC --long
+    T4=$?
+fi
 $EXEPATH/jobsub_q.py --debug $SERVER_SPEC --user $USER --long
 T5=$?
 $EXEPATH/jobsub_q.py --debug $SERVER_SPEC --jobid $JOB --long

@@ -109,55 +109,73 @@ if [ "$SKIP_CDF_TEST" = "" ]; then
     GOTJID3=`echo $JID3| grep '[0-9].0@'`
     cd -
 fi
+
+lg_echo test --maxConcurrent submit
+OUTFILE=$1.maxConcurrent.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+pass_or_fail
+
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo testing dropbox with multiple -f functionality
 OUTFILE=$1.dropbox_minus_f.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo test helpfile
 OUTFILE=$1.help.$OUTGROUP.log 
 sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo test listing jobs
 OUTFILE=$1.list.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_listjobs.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo 'test listing --long jobs'
 OUTFILE=$1.listlong.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_listjobs_long.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo 'test listing --dag jobs'
 OUTFILE=$1.listdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_listjobs_dag.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
+
 lg_echo test condor_history
 OUTFILE=$1.history.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_history.sh $SERVER $GOTJID > $OUTFILE 2>&1
 pass_or_fail
+
 lg_echo test retrieving zip_file from sandbox 
 OUTFILE=$1.sandbox.$OUTGROUP.log
 sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID  >$OUTFILE 2>&1
 pass_or_fail
+
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test retrieving zip_file from sandbox with role Production
     OUTFILE=$1.sandbox.Production.$OUTGROUP.log
     sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
     pass_or_fail
 fi
+
 lg_echo testing removing job
 OUTFILE=$1.testrm.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_rm.sh  $SERVER $GOTJID >$OUTFILE  2>&1
 pass_or_fail
+
 lg_echo testing list-sandboxes 
 OUTFILE=$1.testlistsandboxes.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_listsandboxes.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
+
 lg_echo testing list-sites 
 OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
+
 sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
 for bug in `ls bug_tests`; do cd bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done

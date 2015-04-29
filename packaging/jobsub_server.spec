@@ -56,7 +56,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.py
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.pyc
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.pyo
-/opt/jobsub/lib/JobsubConfigParser/__init.py__
+/opt/jobsub/lib/JobsubConfigParser/__init__.py
+/opt/jobsub/lib/JobsubConfigParser/__init__.pyc
+/opt/jobsub/lib/JobsubConfigParser/__init__.pyo
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.py
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyc
 /opt/jobsub/lib/JobsubConfigParser/JobsubConfigParser.pyo

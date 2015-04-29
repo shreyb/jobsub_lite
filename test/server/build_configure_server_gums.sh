@@ -41,11 +41,14 @@ yum -y install --enablerepo=osg-development llrun
 cp /etc/lcmaps.db /etc/lcmaps.db.save
 cp lcmaps.db /etc/lcmaps.db
 mkdir -p /etc/lcmaps
-cp lcmaps.db /etc/lcmaps
+rm -f /etc/lcmaps/lcmaps.db
+cd /etc/lcmaps
+ln -s ../lcmaps.db .
+cd -
 
 
 mkdir ~rexbatch/.security
-scp ${SPECIAL_PRINCIPAL_LOCATION}:.security/*.keytab  ~rexbatch/.security 
+scp ${SPECIAL_PRINCIPAL_LOCATION}:~rexbatch/.security/*.keytab  ~rexbatch/.security 
 chmod -R 700 ~rexbatch/.security
 chown -R $USGR  ~rexbatch/.security
 LOGDIR=/var/log/jobsub

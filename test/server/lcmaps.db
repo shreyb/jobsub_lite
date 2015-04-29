@@ -41,11 +41,7 @@ gumsclient = "lcmaps_gums_client.mod"
              "-key    /etc/grid-security/hostkey.pem"
              "--cert-owner root"
              "--use-dn-and-fqans"
-             #"--endpoint https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
-             #"--endpoint https://fermicloud114.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
-             "--endpoint https://fermicloud023.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
-             #"--endpoint https://gums.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
-             #"--endpoint https://fermicloud023.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
+             "--endpoint https://gums-crit.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
 # Uncomment this to set a different expected host certificate name for server
 #            "--override-expected-hostname overridegumsname.yourdomain"
 

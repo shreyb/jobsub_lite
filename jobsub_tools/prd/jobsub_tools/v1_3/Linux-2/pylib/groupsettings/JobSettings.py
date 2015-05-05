@@ -195,6 +195,7 @@ class JobSettings(object):
         self.settings['this_script'] = jobsub
         self.settings['summary_script'] = "%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
+        self.settings['subgroup'] = '.'
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -364,7 +365,11 @@ class JobSettings(object):
 
         generic_group.add_option("-G","--group", dest="accountinggroup",
             action="store",type="string",
-            help="Group/Experiment/Subgroup for priorities and accounting")
+            help="Group/Experiment for priorities and accounting")
+
+        generic_group.add_option("--subgroup", dest="subgroup",
+            action="store",type="string",
+            help="Subgroup for priorities and accounting")
 
         generic_group.add_option("-v", "--verbose", dest="verbose",action="store_true",default=False,
             help="dump internal state of program (useful for debugging)")
@@ -521,6 +526,13 @@ class JobSettings(object):
         if settings['usedagman']:
             settings['jobsubparentjobid']="$(DAGManJobId).0@%s"%settings['submit_host']
             self.addToLineSetting("""+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
+
+        if settings['subgroup'] != '.' :
+            if settings['subgroup'][0] != '.' :
+                settings['subgroup'] = ".%s" % settings['subgroup']
+            if settings['subgroup'][-1] != '.' :
+                settings['subgroup'] = "%s." % settings['subgroup']
+            
 
         return True
 
@@ -1368,8 +1380,8 @@ class JobSettings(object):
             self.addToLineSetting("+AccountingGroup = \"group_testjobs\"")
 
         if settings['group'] != "" and settings['istestjob'] == False:
-            self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
-                    (settings['accountinggroup'],settings['user']))
+            self.addToLineSetting("+AccountingGroup = \"group_%s%s%s\""%\
+                    (settings['accountinggroup'],settings['subgroup'],settings['user']))
 
         self.handleResourceProvides(f,job_iter)
 

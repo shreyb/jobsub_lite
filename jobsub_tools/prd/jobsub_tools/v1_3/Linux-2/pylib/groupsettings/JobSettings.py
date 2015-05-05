@@ -369,7 +369,8 @@ class JobSettings(object):
 
         generic_group.add_option("--subgroup", dest="subgroup",
             action="store",type="string",
-            help="Subgroup for priorities and accounting")
+            help="""Subgroup for priorities and accounting. See <we_need_some_url,experiment specific or what?> 
+            for more documentation on using --subgroup to set job quotas and priorities""")
 
         generic_group.add_option("-v", "--verbose", dest="verbose",action="store_true",default=False,
             help="dump internal state of program (useful for debugging)")

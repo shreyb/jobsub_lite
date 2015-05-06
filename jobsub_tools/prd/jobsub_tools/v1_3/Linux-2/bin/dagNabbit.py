@@ -129,7 +129,7 @@ flag will ensure that only (pos_integer) number of your jobs will run at the sam
 is intended to prevent overwhelming shared resources such as databases.
 """
 usage = """
-usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [-submit_host some_machine.fnal.gov ][--maxConcurrent  max_concurrent_jobs ]
+usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ]
 
 for detailed instructions on how to use:
 %s -manual | less
@@ -345,10 +345,9 @@ class DagParser(object):
         print self.jobList
         print self.jobDict
 
-    def digestInputFile(self, infile=""):
+    def digestInputFile(self, args):
         #strip out comments starting with '#'
-        if infile=="":
-            infile=sys.argv[1]
+        infile=args.inputFile
         r =re.compile("#.*")
         plist = []
         if len(sys.argv)>1:
@@ -383,6 +382,9 @@ class DagParser(object):
                     for mac in self.macroList:
                         line = line.replace(mac,self.macroDict[mac])
                     val = ""
+                    passedArgs = ' '.join(args.passedArgs)
+                    repVal = "jobsub %s " %passedArgs
+                    line = line.replace("jobsub ",repVal)
                     (retVal, val) = commands.getstatusoutput(line)
                     if retVal:
                         print "error processing command %s" % line
@@ -464,8 +466,6 @@ class DagParser(object):
                 f.write(l)
                 j=j+1
 
-          
-
         while (i<jend-1):
             j=0
             while(j<self.redundancy):
@@ -482,7 +482,6 @@ class DagParser(object):
                 l = "parent %s child JOB_FINISH\n"% self.getJobName(jlist,i,j)
                 f.write(l)
                 j=j+1
-
                
         f.close()
           
@@ -545,17 +544,27 @@ class DagParser(object):
         f.close()
         self.generateDependencies(outputFile,self.jobList)
 
+
+#this should really use optparse but too many of the input
+#options are malformed for optparse  - not enough dashes etc
+#also --subgroups has to go both to this programs input and on to jobsub
+#
+#parse out the ones we intend to use and pass the rest on to jobsub
+#
 class ArgParser(object):
     def __init__(self,cfp):
         cfp.findConfigFile()
-        self.inputFile = ""
+        self.inputFile = None
         self.outputFile = ""
         self.runDag = False
         self.viewDag = False
         self.maxJobs = 0
+        self.passedArgs = None
         self.submitHost = os.environ.get("SUBMIT_HOST")
         self.condorSetup = cfp.get(self.submitHost,"condor_setup_cmd")
         self.group = os.environ.get("GROUP")
+        self.subgroup="."
+        self.passedArgs = []
         allowed = cfp.supportedGroups()
         if len(self.condorSetup)>0 and self.condorSetup.find(';')<0:
             self.condorSetup=self.condorSetup+";"
@@ -567,28 +576,53 @@ class ArgParser(object):
                
 
         i=0
+        args = sys.argv
+        passedArgs = []
+        argLen = len(sys.argv)
 
-        for arg in sys.argv:
-            i=i+1
-               
+        while i < argLen:
+            arg = args[i]
             if arg in ["--h", "-h", "--help", "-help"]:
                 self.printHelp()
-            if arg in [ "-man", "-manual"]:
+            elif arg in [ "-man", "-manual"]:
                 self.printManual()
-            if arg in ["--inputFile", "-input_file","-i" ]:
-                self.inputFile = sys.argv[i]
-            if arg in ["--outputFile", "-output_file", "-o" ]:
-                self.outputFile = sys.argv[i]
-            if arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
-                self.maxJobs = int(sys.argv[i])
-            if arg in ["--submit", "-submit", "-s" ]:
+            elif arg in ["--inputFile", "-input_file","-i" ]:
+                self.inputFile = args[i+1]
+                i +=1
+            elif arg in ["--outputFile", "-output_file", "-o" ]:
+                self.outputFile = args[i+1]
+                i += 1
+            elif arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
+                self.maxJobs = int(args[i+1])
+                i += 1
+            elif arg in ["--submit", "-submit", "-s" ]:
                 self.runDag = True
-            if arg in ["--submitHost", "-submit_host" ]:
-                self.submitHost = sys.argv[i]
-        if i==1:
-            self.printHelp()
-            sys.exit(0)
+            elif arg ==  "--subgroup" :
+                
+                self.subgroup = args[i+1]
+                if self.subgroup[0] != '.':
+                    self.subgroup = ".%s" % self.subgroup
+                if self.subgroup[-1] != '.':
+                    self.subgroup = "%s." % self.subgroup
+                self.passedArgs.append("--subgroup")
+                self.passedArgs.append(self.subgroup)
+                i += 1
+
+            elif i > 0:
+                self.passedArgs.append(arg)
+            i += 1
                     
+        if self.inputFile is None:
+            i = 0
+            fileOpts = [ '-L', '--log_file', '--tar_file_name', '-f', '-i', '-t' ]
+            for arg in self.passedArgs:
+                if os.path.isfile(arg):
+                    if (i == 0) or ((i > 0) and (self.passedArgs[i-1] not in fileOpts)):
+                        self.inputFile = self.passedArgs[i]
+                        del self.passedArgs[i]
+                        break
+                i += 1
+
         if self.outputFile=="":
             cmd = """date +%Y%m%d_%H%M%S"""
             #commands=JobUtils()
@@ -648,9 +682,14 @@ class JobRunner(object):
         usr = os.environ.get("USER")
         grp = os.environ.get("GROUP")
 
+        if args is None:
+            subgroup = "."
+        else:
+            subgroup = args.subgroup
+
         cmd = cmd + """ -append "+Owner=\\"%s\\"" """ % usr 
-        cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
-                (grp, usr)
+        cmd = cmd + """-append "+AccountingGroup=\\"group_%s%s%s\\"" """%\
+                (grp, subgroup, usr)
         cmd = cmd + args.outputFile
         if host != args.submitHost:
             cmd = cmd + ' "'
@@ -672,7 +711,7 @@ if __name__ == '__main__':
     c=JobsubConfigParser()
     args=ArgParser(c)
     d=DagParser()
-    d.digestInputFile(args.inputFile)
+    d.digestInputFile(args)
     d.generateDag(args.outputFile)
     if args.runDag:
         j = JobRunner()

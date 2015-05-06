@@ -31,6 +31,7 @@ import tempfile
 import tarfile
 import socket
 import time
+import shutil
 
 
 def version_string():
@@ -278,6 +279,7 @@ class JobSubClient:
                 err += "your server specification \n( --jobsub-server %s )?"%self.server 
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
+        shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
 
         self.printResponse(curl, response, response_time)
         curl.close()

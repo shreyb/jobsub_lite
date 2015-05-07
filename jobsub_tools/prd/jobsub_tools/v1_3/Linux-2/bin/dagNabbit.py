@@ -563,7 +563,7 @@ class ArgParser(object):
         self.submitHost = os.environ.get("SUBMIT_HOST")
         self.condorSetup = cfp.get(self.submitHost,"condor_setup_cmd")
         self.group = os.environ.get("GROUP")
-        self.subgroup="."
+        self.subgroup = None
         self.passedArgs = []
         allowed = cfp.supportedGroups()
         if len(self.condorSetup)>0 and self.condorSetup.find(';')<0:
@@ -587,8 +587,9 @@ class ArgParser(object):
             elif arg in [ "-man", "-manual"]:
                 self.printManual()
             elif arg in ["--inputFile", "-input_file","-i" ]:
-                self.inputFile = args[i+1]
-                i +=1
+                if os.path.isfile(args[i+1]):
+                    self.inputFile = args[i+1]
+                    i += 1
             elif arg in ["--outputFile", "-output_file", "-o" ]:
                 self.outputFile = args[i+1]
                 i += 1
@@ -598,12 +599,7 @@ class ArgParser(object):
             elif arg in ["--submit", "-submit", "-s" ]:
                 self.runDag = True
             elif arg ==  "--subgroup" :
-                
                 self.subgroup = args[i+1]
-                if self.subgroup[0] != '.':
-                    self.subgroup = ".%s" % self.subgroup
-                if self.subgroup[-1] != '.':
-                    self.subgroup = "%s." % self.subgroup
                 self.passedArgs.append("--subgroup")
                 self.passedArgs.append(self.subgroup)
                 i += 1
@@ -682,14 +678,18 @@ class JobRunner(object):
         usr = os.environ.get("USER")
         grp = os.environ.get("GROUP")
 
-        if args is None:
-            subgroup = "."
-        else:
+        subgroup = None
+        if args is not None:
             subgroup = args.subgroup
 
         cmd = cmd + """ -append "+Owner=\\"%s\\"" """ % usr 
-        cmd = cmd + """-append "+AccountingGroup=\\"group_%s%s%s\\"" """%\
+        if subgroup:
+            cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """%\
                 (grp, subgroup, usr)
+        else:
+            cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
+                (grp,  usr)
+
         cmd = cmd + args.outputFile
         if host != args.submitHost:
             cmd = cmd + ' "'

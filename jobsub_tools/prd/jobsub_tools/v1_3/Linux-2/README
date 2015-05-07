@@ -22,11 +22,19 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
-v1_3_9 3/6/14
+v1_3_10 5/7/15
+==================================================
+- #7483 priority accounting groups.  Jobsub_submit and jobsub_submit_dag now
+  support the --subgroup option.  Example jobsub_submit -G nova --subgroup
+  hi_pri generates condor jdf with +Accounting_group="group_nova.hi_pri.<usr>"
+  Fixed a bug in condor_submit_dag where it was not passing on unparsed
+  server arguments to the individual jobs JDF generation step.
+
+v1_3_9 3/6/15
 ==================================================
 - #7768 no longer defines OSG_WN_TMP in users environment
 
-v1_3_8 2/12/14
+v1_3_8 2/12/15
 ===================================================
 - #7441 removed  --submit_host and --opportunistic flags
 - #7459 -f dropbox://file1 -f dropbox://file2 works as expected

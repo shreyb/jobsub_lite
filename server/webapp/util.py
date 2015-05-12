@@ -93,9 +93,9 @@ def create_tarfile(tar_file, tar_path, job_id=None):
     f0 = os.path.realpath(tar_path)
     files=os.listdir(tar_path)
     for file in files:
-	f1=os.path.join(f0,file)
+        f1=os.path.join(f0,file)
         try:
-	    tar.add(f1,file)
+            tar.add(f1,file)
         except:
             logger.log('failed to add %s to %s '%(file,tar_file))
             failed_file_list.append(file)

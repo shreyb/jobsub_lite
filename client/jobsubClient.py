@@ -174,16 +174,6 @@ class JobSubClient:
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
-        # Submit URL: Depends on the VOMS Role
-        if self.acctRole:
-            if self.useDag:
-                self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
-            else:
-                self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
-        elif self.useDag:
-            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
-        else:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
 
 
     def dropbox_upload(self):
@@ -231,6 +221,11 @@ class JobSubClient:
 
 
     def submit_dag(self):
+        self.bestSchedd()
+        if self.acctRole:
+            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+        else:
+            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
             ('jobsub_client_version', version_string()),
@@ -249,8 +244,8 @@ class JobSubClient:
         curl.setopt(curl.POST, True)
         # If we uploaded a dropbox file we saved the actual hostname to
         # self.server and self.submitURL so disable SSL_VERIFYHOST
-        if self.jobDropboxURIMap and self.dropboxServer is None:
-            curl.setopt(curl.SSL_VERIFYHOST, 0)
+        #if we select the best schedd we have to disable this
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
@@ -323,6 +318,11 @@ class JobSubClient:
 
 
     def submit(self):
+        self.bestSchedd()
+        if self.acctRole:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+        else:
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
             ('jobsub_client_version', version_string()),
@@ -341,8 +341,8 @@ class JobSubClient:
         curl.setopt(curl.POST, True)
         # If we uploaded a dropbox file we saved the actual hostname to
         # self.server and self.submitURL so disable SSL_VERIFYHOST
-        if self.jobDropboxURIMap and self.dropboxServer is None:
-            curl.setopt(curl.SSL_VERIFYHOST, 0)
+        #always have to do this now as we select the best schedd and submit directly to it
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
@@ -505,6 +505,46 @@ class JobSubClient:
     def summary(self):
         self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(self.listURL, 'GET')
+
+    def bestSchedd(self, ignore_secondary_schedds = True):
+        listScheddsURL = constants.JOBSUB_JOB_LOAD_PATTERN % (self.server)
+        curl, response = curl_secure_context(listScheddsURL, self.credentials)
+        curl.setopt(curl.CUSTOMREQUEST, 'GET' )
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
+        best_schedd = self.server
+        best_jobload = sys.maxsize
+        try:
+            curl.perform()
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            schedd_list = json.loads(response.getvalue())
+            for line in schedd_list['out']:
+                  pts = line.split()
+                  if len(pts[:1]) and len(pts[-1:]):
+                      schedd = pts[:1][0]
+                      jobload = long(pts[-1:][0])
+                      if schedd.find('@') > 0 and ignore_secondary_schedds:
+                          continue
+                      if jobload < best_jobload:
+                          best_schedd = schedd
+                          best_jobload = jobload
+            #this will fail for secondary schedd with @ in name
+            #so ignore_secondary_schedds must be true for now
+            self.server = "https://%s:%s"%(best_schedd,self.serverPort)
+        except pycurl.error, error:
+            errno, errstr = error
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
+            logSupport.dprint(traceback.format_exc())
+            raise JobSubClientError(err)
+        except:
+            #probably called a server that doesnt support this URL, just continue
+            #and let round robin do its thing
+            logSupport.dprint( "Error: %s "% sys.exc_info()[0])
+            pass
+
+        curl.close()
+        response.close()
+
 
     def listConfiguredSites(self):
         self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%(self.server,self.acctGroup)

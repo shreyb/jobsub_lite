@@ -8,6 +8,7 @@ from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
 from users_jobs import UsersJobsResource
 from version import VersionResource
+from load import JobLoadResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
 import jobsub
@@ -29,7 +30,7 @@ root.acctgroups = AccountingGroupsResource()
 root.jobs = QueuedJobsResource()
 root.users = UsersJobsResource()
 root.version = VersionResource()
-
+root.load = JobLoadResource()
 
 def create_statedir(log):
     """

@@ -28,6 +28,11 @@ def ui_condor_userprio():
             'condor_userprio -allusers')
     return all_users
 
+def ui_condor_status_totaljobs():
+    all_jobs, cmd_err = subprocessSupport.iexe_cmd(
+            'condor_status -schedd -af name totaljobads')
+    return all_jobs
+
 def ui_condor_queued_jobs_summary():
     all_queued1, cmd_err = subprocessSupport.iexe_cmd(
             'condor_status -submitter -wide')

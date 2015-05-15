@@ -35,7 +35,8 @@ class SandboxesResource(object):
             logger.log("%s"%sys.exc_info()[1])
             return rc
 
-        filelist=[]
+        filelist = []
+        outlist = []
         for dir in sandbox_dirs.split('\n'):
             acctgroup=os.path.basename(os.path.dirname(dir))
             try:
@@ -48,19 +49,19 @@ class SandboxesResource(object):
                             filelist.append(itm)
                         except:
                             logger.log("%s"%sys.exc_info()[1])
-                if len(filelist)>0:
-                    filelist.sort(key= lambda itm: itm[1])
-                    outlist = ["JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup)]
+                if filelist:
+                    filelist.sort(key = lambda itm: itm[1])
+                    outlist.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
                     for itm in filelist:
                         outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
             except:
                 logger.log("%s"%sys.exc_info()[1])
 
-            if len(filelist)==0:
+            if outlist:
+                return {'out': outlist}
+            else:
                 host = socket.gethostname()
                 return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
-            else:
-                return {'out': outlist}
 
 
     @cherrypy.expose

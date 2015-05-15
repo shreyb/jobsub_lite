@@ -1,5 +1,22 @@
 
 ================================================================================
+v1.1.2
+================================================================================
+
+CLIENT
+-----
+* Feature #8707 Add load balancing to jobsub_submit
+* Bug #8444 jobsub_submit_dag leaves entries in /tmp
+
+SERVER
+------
+* Feature #7483 Priority accounting groups
+* Bug #7944 Race condition between condor and jobsub_fetchlog - fixes Known Issue
+  from v1.1
+* Bug #8681 fetchlog --list-sandboxes failure
+
+
+================================================================================
 v1.1.1
 ================================================================================
 

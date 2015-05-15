@@ -85,14 +85,39 @@ def create_zipfile(zip_file, zip_path, job_id=None):
     zip.close()
 
 def create_tarfile(tar_file, tar_path, job_id=None):
+    logger.log('tar_file=%s tar_path=%s job_id=%s'%(tar_file, tar_path, job_id))
     tar = tarfile.open(tar_file,'w:gz')
     os.chdir(tar_path)
     logger.log('creating tar of %s'%tar_path)
+    failed_file_list=[]
+    f0 = os.path.realpath(tar_path)
     files=os.listdir(tar_path)
     for file in files:
-	f1=os.path.realpath(file)
-	f2=os.path.basename(f1)
-	tar.add(f1,f2)
+        f1=os.path.join(f0,file)
+        try:
+            tar.add(f1,file)
+        except:
+            logger.log('failed to add %s to %s '%(file,tar_file))
+            failed_file_list.append(file)
+    if len(failed_file_list)>0:
+        failed_fname = "/tmp/%s.MISSING_FILES" % \
+            os.path.basename(tar_file)
+        f=open(failed_fname,"w")
+        f.write("""
+                The following files were present in the log directory
+                but were not downloaded.  The most likely reason is that 
+                condor changed read permissions on individual files as jobs 
+                completed.  If you repeat the jobsub_fetchlog command that
+                retrieved this tarball  after the jobs that caused the
+                problem have completed they will probably download:
+                \n"""
+                )
+        for fname in failed_file_list:
+            f.write("%s\n" % fname)
+        f.close() 
+        tar.add(failed_fname , 
+            os.path.basename(failed_fname))
+        os.remove(failed_fname)
     tar.close()
 
 def needs_refresh(filepath,agelimit=3600):

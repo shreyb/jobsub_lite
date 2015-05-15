@@ -70,7 +70,7 @@ JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/
 
 JOBSUB_JOB_RELEASE_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
-JOBSUB_JOB_LOAD_PATTERN = '%s/jobsub/load/'
+JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
 ################################################################################
 # HTTP/REST API Constants
 ################################################################################

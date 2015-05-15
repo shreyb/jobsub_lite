@@ -30,7 +30,7 @@ root.acctgroups = AccountingGroupsResource()
 root.jobs = QueuedJobsResource()
 root.users = UsersJobsResource()
 root.version = VersionResource()
-root.load = JobLoadResource()
+root.scheddload = ScheddLoadResource()
 
 def create_statedir(log):
     """

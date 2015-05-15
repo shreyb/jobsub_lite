@@ -131,9 +131,6 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/jobsub_help.py
 /opt/jobsub/server/webapp/jobsub_help.pyc
 /opt/jobsub/server/webapp/jobsub_help.pyo
-/opt/jobsub/server/webapp/load.py
-/opt/jobsub/server/webapp/load.pyc
-/opt/jobsub/server/webapp/load.pyo
 /opt/jobsub/server/webapp/not_implemented.py
 /opt/jobsub/server/webapp/not_implemented.pyc
 /opt/jobsub/server/webapp/not_implemented.pyo
@@ -152,6 +149,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/sandboxes.py
 /opt/jobsub/server/webapp/sandboxes.pyc
 /opt/jobsub/server/webapp/sandboxes.pyo
+/opt/jobsub/server/webapp/scheddload.py
+/opt/jobsub/server/webapp/scheddload.pyc
+/opt/jobsub/server/webapp/scheddload.pyo
 /opt/jobsub/server/webapp/subprocessSupport.py
 /opt/jobsub/server/webapp/subprocessSupport.pyc
 /opt/jobsub/server/webapp/subprocessSupport.pyo

@@ -10,7 +10,7 @@ from format import format_response
 
 
 
-class JobLoadResource(object):
+class ScheddLoadResource(object):
 
     def doGET(self, kwargs):
 	jobs = ui_condor_status_totaljobs()
@@ -27,7 +27,7 @@ class JobLoadResource(object):
                 logger.log(err)
                 rc = {'err': err}
         except:
-            err = 'Exception on JobLoadResouce.index: %s'%sys.exc_info()[1]
+            err = 'Exception on ScheddLoadResource.index: %s'%sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, traceback=True)
             rc = {'err': err}

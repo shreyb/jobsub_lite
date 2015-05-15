@@ -509,10 +509,10 @@ class JobSubClient:
         return self.changeJobState(self.listURL, 'GET')
 
     def bestSchedd(self, ignore_secondary_schedds = True):
-        listScheddsURL = constants.JOBSUB_JOB_LOAD_PATTERN % (self.server)
+        listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET' )
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
+        #curl.setopt(curl.SSL_VERIFYHOST, 0)
         best_schedd = self.server
         best_jobload = sys.maxsize
         try:

@@ -21,27 +21,23 @@ class SandboxesResource(object):
         API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
         """
         command_path_root = get_command_path_root()
-        acctgroup='None'
-        if kwargs.has_key('acctgroup'):
-                acctgroup=kwargs.get('acctgroup')
-        if acctgroup !=  'None':
-            cmd= "find  %s/%s -maxdepth 1 -name %s"%(command_path_root,acctgroup,user_id)
-        else:
-            cmd="find  %s -maxdepth 2 -name %s"%(command_path_root,user_id)
+        cmd= "find  %s/%s -maxdepth 1 -name %s"%\
+            (command_path_root,cherrypy.request.acctgroup,user_id)
         try:
             sandbox_dirs, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
         except:
-            err="No sandboxes found for user %s accounting group %s" %(acctgroup,user_id)
+            err="No sandboxes found for user %s accounting group %s" %\
+                (user_id, cherrypy.request.acctgroup)
             logger.log(err)
             rc = {'out': err}
             cherrypy.response.status = 404 
             logger.log("%s"%sys.exc_info()[1])
             return rc
 
-        l=[]
+        filelist = []
+        outlist = []
         for dir in sandbox_dirs.split('\n'):
-            filedict={}
             acctgroup=os.path.basename(os.path.dirname(dir))
             try:
                 for f in os.listdir(dir):
@@ -49,24 +45,23 @@ class SandboxesResource(object):
                         try:
                             fp=os.path.join(dir,f)
                             t=os.path.getctime(fp)
-                            filedict[t]=f
+                            itm=(f, t)
+                            filelist.append(itm)
                         except:
                             logger.log("%s"%sys.exc_info()[1])
-                keylist=filedict.keys()
-                if len(keylist)>0:
-                    l.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
-                for key in sorted(keylist,key=float):
-                    itm="%s           %s"% (filedict[key], time.ctime(key))
-                    l.append(itm)
+                if filelist:
+                    filelist.sort(key = lambda itm: itm[1])
+                    outlist.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
+                    for itm in filelist:
+                        outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
             except:
                 logger.log("%s"%sys.exc_info()[1])
 
-            if len(l)==0:
+            if outlist:
+                return {'out': outlist}
+            else:
                 host = socket.gethostname()
                 return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
-            else:
-                #logger.log("%s"%l)
-                return {'out': l}
 
 
     @cherrypy.expose
@@ -78,6 +73,7 @@ class SandboxesResource(object):
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+            cherrypy.request.acctgroup = acctgroup
             subject_dn = get_client_dn()
             user_id = kwargs.get('user_id')
             logger.log("user_id %s"%user_id)

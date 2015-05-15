@@ -23,14 +23,13 @@ fi
 if [ "$3" != "" ]; then
     ROLE=" --role $3 "
 fi
-
+HERE=`pwd`
 cd curl
-pwd
 #try curl -k --cert /tmp/x509up_u${UID} -H "Accept: application/x-download" -o $CLUSTER.zip -X GET $SERVER/jobsub/acctgroups/${GROUP}/jobs/${CLUSTER}/sandbox/
-cd -
+cd $HERE 
 for FMT in "zip" "tar"; do
   for JOBSPEC in "--job" "--jobid" "-J"; do
-    cd python
+    cd $HERE/python
     pwd
         try $EXEPATH/jobsub_fetchlog.py $ROLE $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER 
     cd ../unarchive

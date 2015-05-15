@@ -222,7 +222,8 @@ class JobSubClient:
 
 
     def submit_dag(self):
-        self.bestSchedd()
+        if (not self.jobDropboxURIMap) or self.dropboxServer:
+            self.bestSchedd()
         if self.acctRole:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -320,7 +321,8 @@ class JobSubClient:
 
 
     def submit(self):
-        self.bestSchedd()
+        if (not self.jobDropboxURIMap) or self.dropboxServer:
+            self.bestSchedd()
         if self.acctRole:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -512,12 +514,12 @@ class JobSubClient:
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET' )
-        #curl.setopt(curl.SSL_VERIFYHOST, 0)
         best_schedd = self.server
         best_jobload = sys.maxsize
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r = response.getvalue()
             schedd_list = json.loads(response.getvalue())
             for line in schedd_list['out']:
                   pts = line.split()
@@ -536,7 +538,8 @@ class JobSubClient:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc(limit=10))
+            traceback.print_stack()
             raise JobSubClientError(err)
         except:
             #probably called a server that doesnt support this URL, just continue

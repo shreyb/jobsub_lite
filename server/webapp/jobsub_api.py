@@ -8,7 +8,7 @@ from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
 from users_jobs import UsersJobsResource
 from version import VersionResource
-from load import JobLoadResource
+from scheddload import ScheddLoadResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
 import jobsub

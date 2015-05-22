@@ -108,3 +108,12 @@ if [ "$WORKED" = "0" ]; then
    echo "JobsubJobId of first job: ${JID}0@${SCHEDD}"
    echo "Use job id ${JID}0@${SCHEDD} to retrieve output"
 fi
+
+echo "$@" | grep '\-\-help' > /dev/null 2>&1
+FOUND_HELP_FLAG=$?
+
+if [ "$FOUND_HELP_FLAG" = "0" ];then
+   exit $FOUND_HELP_FLAG
+else
+   exit $WORKED
+fi

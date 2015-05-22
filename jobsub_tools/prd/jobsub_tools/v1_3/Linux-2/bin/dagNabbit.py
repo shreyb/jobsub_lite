@@ -389,6 +389,7 @@ class DagParser(object):
                     if retVal:
                         print "error processing command %s" % line
                         print val
+                        sys.exit(1)
                     else:
                         j = j + 1
                         condor_cmd = ''
@@ -631,9 +632,10 @@ class ArgParser(object):
                     self.outputFile = home+"/submit.%s.dag"%now
                 else:
                     self.outputFile = condor_tmp+"/submit.%s.dag"%now
-                print "generated DAG saved as ", self.outputFile
+                #print "generated DAG saved as ", self.outputFile
             else:
-                print "error executing %s " % cmd
+                sys.stderr.write("error executing %s\n ") % cmd
+                sys.stderr.write("%s\n ") % val
                 sys.exit(1)
 
     def report(self):

@@ -313,8 +313,11 @@ def run_cmd_as_user(command, username, child_env={}):
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)
     except Exception, e:
-        err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
-        raise RuntimeError, err_str % (username, cmd, out, err, e)
+        err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'% (username, cmd, out, err, e)
+	logger.log(err_str)
+        err = err_str
+        #raise RuntimeError, err_str % (username, cmd, out, err, e)
+        pass
 
     return out, err
 

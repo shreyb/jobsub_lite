@@ -192,7 +192,6 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-
                 rc = execute_job_submit_wrapper(
                          acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
@@ -254,7 +253,8 @@ class AccountJobsResource(object):
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
-
+        if rc.has_key('err') and rc['err']:
+            cherrypy.response.status = 500
         return rc
 
 
@@ -286,7 +286,8 @@ class AccountJobsResource(object):
         except:
             #TODO: We need to change the underlying library to return
             #      stderr on failure rather than just raising exception
-            pass
+            #pass
+            return {'out':out, 'err':err}
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
         regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
         for line in out:

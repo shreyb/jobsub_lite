@@ -142,7 +142,8 @@ class DagResource(object):
             err = 'User has supplied job_id but POST is for creating new jobs'
             logger.log(err)
             rc = {'err': err}
-
+        if rc.has_key('err') and rc['err']:
+            cherrypy.response.status = 500
         return rc
    
     @cherrypy.expose

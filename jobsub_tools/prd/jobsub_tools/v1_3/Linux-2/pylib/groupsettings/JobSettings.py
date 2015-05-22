@@ -41,10 +41,8 @@ class MyCmdParser(OptionParser):
         with -d and -f flags instead of the current ifdh version in KITS
 
         More documentation is available at 
-        https://cdcvs.fnal.gov/redmine/projects/ifront/wiki/UsingJobSub
-        and on this machine at 
-        $JOBSUB_TOOLS_DIR/docs/
-        address questions to the mailing list jobsub-support@fnal.gov
+        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Using_the_Client
+        address questions or problems to the service desk 
 
 
 
@@ -516,7 +514,7 @@ class JobSettings(object):
             print """WARNING the --nowrapfile option has been disabled at the request of 
             the Grid Operations group.  Your jobs will be submitted with a wrapper and should still 
             run normally. If they do not please open a service desk ticket 
-            or send mail to  jobsub-support@fnal.gov """
+             """
             settings['nowrapfilex']=False
 
         if settings['dataset_definition']!="":
@@ -536,7 +534,7 @@ class JobSettings(object):
 
 
     def makeParrotFile(self):
-        raise Exception("parrot file generation has been turned off.  Please report this error to fife-jobsub-support@fnal.gov")
+        raise Exception("parrot file generation has been turned off.  Please report this error to the service desk")
         # print "makeParrotFile"
         settings = self.settings
         commands = JobUtils()

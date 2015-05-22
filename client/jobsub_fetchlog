@@ -41,7 +41,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="questions or comments may be sent to jobsub-support@fnal.gov")
+                                   epilog="please direct questions, comments, or problems to the service desk")
 
     # Required args
     parser.add_option('-G', '--group',

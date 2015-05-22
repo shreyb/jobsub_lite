@@ -106,7 +106,7 @@ def parse_opts(argv):
                                    version=version_string(),
                                    add_help_option=False,
                                    conflict_handler="resolve",
-                                   epilog="questions or comments may be sent to jobsub-support@fnal.gov")
+                                   epilog="please direct questions,  comments, and problems to the service desk")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

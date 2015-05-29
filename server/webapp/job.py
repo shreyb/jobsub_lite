@@ -132,6 +132,7 @@ class AccountJobsResource(object):
         """
 
         if job_id is None:
+            child_env = os.environ.copy()
             jobsubConfig = JobsubConfig()
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
@@ -159,17 +160,17 @@ class AccountJobsResource(object):
                 command_path = os.path.join(command_path_acctgroup, 
                                             cherrypy.request.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
-                os.environ['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
+                child_env['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                  acctgroup, role)
                 # Create the job's working directory as user 
                 create_dir_as_user(command_path_user, workdir_id,
                                    cherrypy.request.username, mode='755')
-                if os.environ.has_key('JOBSUB_COMMAND_FILE_PATH'):
-                    del os.environ['JOBSUB_COMMAND_FILE_PATH']
+                #if os.environ.has_key('JOBSUB_COMMAND_FILE_PATH'):
+                #    del os.environ['JOBSUB_COMMAND_FILE_PATH']
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path,
                                                      jobsub_command.filename)
-                    os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
+                    child_env['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s'%command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     # First create a tmp file before moving the command file
@@ -195,7 +196,8 @@ class AccountJobsResource(object):
                 rc = execute_job_submit_wrapper(
                          acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
-                         role=role, jobsub_client_version=jobsub_client_version)
+                         role=role, jobsub_client_version=jobsub_client_version,
+                         child_env=child_env)
                 if rc.has_key('out'):
                     for line in rc['out']:
                         if 'jobsubjobid' in line.lower():

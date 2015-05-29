@@ -196,6 +196,7 @@ class JobSettings(object):
         self.settings['summary_script'] = "%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
+        #self.settings['job_count'] = 0
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -826,6 +827,8 @@ class JobSettings(object):
 
 
     def makeCondorFiles(self):
+        #print 'self.makeCondorFiles'
+        #sys.exit(0)
         self.checkSanity()
         settings=self.settings
         if settings['input_tar_dir']:
@@ -847,7 +850,7 @@ class JobSettings(object):
             settings['queuecount']=1
             job_iter=1
             while (job_iter <= job_count):
-                #print "calling self.makeCondorFiles2(%d)"%job_iter
+                print "calling self.makeCondorFiles2(%d)"%job_iter
                 self.makeCondorFiles2(job_iter)
                 job_iter += 1
                 settings['needs_appending']=False

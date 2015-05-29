@@ -122,14 +122,16 @@ def get_jobsub_wrapper(submit_type='job'):
 def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                workdir_id=None, role=None,
                                jobsub_client_version='UNKNOWN',
-                               submit_type='job', priv_mode=True):
+                               submit_type='job', priv_mode=True,
+                               child_env=None):
 
     envrunner = get_jobsub_wrapper(submit_type=submit_type)
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
 
     out = err = ''
-    child_env = os.environ.copy()
+    if not child_env:
+        child_env = os.environ.copy()
     child_env['JOBSUB_CLIENT_VERSION'] = jobsub_client_version
     child_env['GROUP'] = acctgroup
 

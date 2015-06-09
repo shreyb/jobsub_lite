@@ -4,14 +4,10 @@ import os
 import re
 import cherrypy
 import logger
-import math
-import subprocessSupport 
-import tarfile
 
 from datetime import datetime
 from shutil import copyfileobj
 
-from cherrypy.lib.static import serve_file
 
 from tempfile import NamedTemporaryFile
 
@@ -19,16 +15,12 @@ from util import mkdir_p
 from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import JobsubConfig
-from jobsub import get_command_path_root
 from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
-from jobsub import get_command_path_root
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
-from jobsub import run_cmd_as_user
 
 from format import format_response
-from sandbox import SandboxResource
 from dag_help import DAGHelpResource
 
 
@@ -37,10 +29,10 @@ from dag_help import DAGHelpResource
 class DagResource(object):
     
     def __init__(self):
-       self.help = DAGHelpResource()
-       cherrypy.request.username = None
-       cherrypy.request.vomsProxy = None
-       self.payLoadFileName = 'payload.tgz'
+        self.help = DAGHelpResource()
+        cherrypy.request.username = None
+        cherrypy.request.vomsProxy = None
+        self.payLoadFileName = 'payload.tgz'
 
 
     def doPOST(self, acctgroup, job_id, kwargs):
@@ -60,7 +52,7 @@ class DagResource(object):
                 logger.log('jobsub_args: %s' % jobsub_args)
                 jobsub_command = kwargs.get('jobsub_command')
                 jobsub_payload = kwargs.get('jobsub_payload')
-                role  = kwargs.get('role')
+                role = kwargs.get('role')
                 logger.log('dag.py:doPost:jobsub_command %s' %(jobsub_command))
                 logger.log('dag.py:doPost:role %s ' % (role))
 
@@ -73,7 +65,7 @@ class DagResource(object):
                 jobsubConfig.initCommandPathUser(acctgroup, cherrypy.request.username)
 
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
-                uniquer=random.randrange(0,10000)
+                uniquer = random.randrange(0, 10000)
                 workdir_id = '%s_%s' % (ts, uniquer)
                 command_path = os.path.join(command_path_acctgroup, 
                                             cherrypy.request.username, workdir_id)

@@ -4,21 +4,17 @@ import os
 import re
 import cherrypy
 import logger
-import math
-import subprocessSupport 
 import StringIO
 
 from datetime import datetime
 from shutil import copyfileobj
 
-from cherrypy.lib.static import serve_file
 from tempfile import NamedTemporaryFile
-from util import get_uid, mkdir_p
-from auth import check_auth, x509_proxy_fname, get_client_dn
+from util import  mkdir_p
+from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
-from jobsub import get_command_path_root
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
 from jobsub import condor_bin

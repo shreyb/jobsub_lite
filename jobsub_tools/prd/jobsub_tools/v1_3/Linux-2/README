@@ -22,6 +22,11 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
+v1_3_11 6/9/15
+==================================================
+- #8329 wrapper script tries to source files from /grid/fermiapp, even offsite
+- #8105 jobsub_submit returns success even when given invalid arguments
+
 v1_3_10 5/7/15
 ==================================================
 - #7483 priority accounting groups.  Jobsub_submit and jobsub_submit_dag now

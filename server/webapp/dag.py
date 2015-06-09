@@ -126,11 +126,11 @@ class DagResource(object):
                          role=role, jobsub_client_version=jobsub_client_version,
                          submit_type='dag', child_env=child_env)
 
-                if rc.has_key('out'):
+                if rc.get('out'):
                     for line in rc['out']:
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
-                if rc.has_key('err') and rc['err'] and len(rc['err'])>0:
+                if rc.get('err'):
                     logger.log(rc['err'])
             else:
                 # return an error because no command was supplied
@@ -143,15 +143,15 @@ class DagResource(object):
             err = 'User has supplied job_id but POST is for creating new jobs'
             logger.log(err)
             rc = {'err': err}
-        if rc.has_key('err') and rc['err']:
+        if rc.get('err'):
             cherrypy.response.status = 500
         return rc
    
     @cherrypy.expose
     @format_response
     def default(self,kwargs):
-	logger.log('kwargs=%s'%kwargs)
-	return {'out':"kwargs=%s"%kwargs}
+        logger.log('kwargs=%s'%kwargs)
+        return {'out':"kwargs=%s"%kwargs}
 
     @cherrypy.expose
     @format_response

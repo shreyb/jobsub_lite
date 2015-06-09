@@ -165,8 +165,6 @@ class AccountJobsResource(object):
                 # Create the job's working directory as user 
                 create_dir_as_user(command_path_user, workdir_id,
                                    cherrypy.request.username, mode='755')
-                #if os.environ.has_key('JOBSUB_COMMAND_FILE_PATH'):
-                #    del os.environ['JOBSUB_COMMAND_FILE_PATH']
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path,
                                                      jobsub_command.filename)
@@ -198,11 +196,11 @@ class AccountJobsResource(object):
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
                          role=role, jobsub_client_version=jobsub_client_version,
                          child_env=child_env)
-                if rc.has_key('out'):
+                if rc.get('out'):
                     for line in rc['out']:
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
-                if rc.has_key('err') and rc['err'] and len(rc['err'])>0:
+                if rc.get('err'):
                     logger.log(rc['err'])
             else:
                 # return an error because no command was supplied
@@ -255,7 +253,7 @@ class AccountJobsResource(object):
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
-        if rc.has_key('err') and rc['err']:
+        if rc.get('err'):
             cherrypy.response.status = 500
         return rc
 

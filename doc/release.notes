@@ -1,3 +1,19 @@
+================================================================================
+v1.1.3
+================================================================================
+
+CLIENT
+------
+* Feature #8526 change references to jobsub-support mailing list to Service Desk
+* Bug #8105 jobsub_submit returns success when given invalid input options
+
+SERVER
+------
+* Bug #8940 thread safety issues cause submission failure under heavy load.
+* Bug #8329 wrapper script for Minos jobs tries to source script from /grid/fermiapp,
+  even off site
+
+
 
 ================================================================================
 v1.1.2

@@ -29,6 +29,10 @@ fi
 
 
 SERVER=$1
+if [ -e "$2" ]; then
+    source $2
+fi
+
 export TESTLOGFILE=$SERVER.testlog
 
 if [ "$SERVER" = "" ]; then
@@ -48,11 +52,13 @@ fi
 if [ "$JOBSUB_GROUP" != "" ]; then
     export OUTGROUP=$JOBSUB_GROUP
 fi
-
+/usr/bin/printenv
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_test.sh
+sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER ${GROUP}_test.sh 1 >$OUTFILE 2>&1
 T1=$?
+rm ${GROUP}_test.sh
 JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 T2=$?
 GOTJID=`echo $JID| grep '[0-9].0@'`
@@ -112,19 +118,22 @@ fi
 
 lg_echo test --maxConcurrent submit
 OUTFILE=$1.maxConcurrent.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_maxConcurrent.sh
+sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER ${GROUP}_maxConcurrent.sh 1 >$OUTFILE 2>&1
 pass_or_fail
-
+rm ${GROUP}_maxConcurrent.sh
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_dropbox.sh
+sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER ${GROUP}_dropbox.sh >$OUTFILE 2>&1
 pass_or_fail
 
 lg_echo testing dropbox with multiple -f functionality
+mv ${GROUP}_dropbox.sh ${GROUP}_minus_f.sh
 OUTFILE=$1.dropbox_minus_f.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER ${GROUP}_minus_f.sh >$OUTFILE 2>&1
 pass_or_fail
-
+rm ${GROUP}_minus_f.sh
 lg_echo test helpfile
 OUTFILE=$1.help.$OUTGROUP.log 
 sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1
@@ -178,4 +187,5 @@ sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
 
 sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
-for bug in `ls bug_tests`; do cd bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done
+HERE=`pwd`
+for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ;   ./${bug}_report.sh;  pass_or_fail ;   done

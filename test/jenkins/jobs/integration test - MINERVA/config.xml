@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <jenkins.triggers.ReverseBuildTrigger>
+      <spec></spec>
+      <upstreamProjects>install jobsub client</upstreamProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </jenkins.triggers.ReverseBuildTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>BASE=/home/dbox
+GIT=$BASE/jobsub
+SERVER=`hostname`
+SOURCE_ME=/tmp/jobsub_test_env_$$
+echo &quot;export X509_USER_CERT=$BASE/.globus/dbox.digicert.cert.pem&quot; &gt; $SOURCE_ME
+echo &quot;export X509_USER_KEY=$BASE/.globus/dbox.digicert.decrypted.key.pem&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export GROUP=minerva&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export SKIP_CDF_TEST=YES&quot; &gt;&gt; $SOURCE_ME
+
+cd $GIT/test/client
+sudo -u dbox ./integration_test.sh $SERVER $SOURCE_ME
+RSLT=$?
+if [ &quot;$RSLT&quot; = &quot;0&quot; ]; then
+   rm $SOURCE_ME
+fi
+exit $RSLT</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

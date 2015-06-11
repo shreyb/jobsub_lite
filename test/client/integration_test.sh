@@ -186,6 +186,9 @@ OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
 
-sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
+OUTFILE=$1.api_coverage.$OUTGROUP.log
+sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP >$OUTFILE 2>&1
+pass_or_fail
+
 HERE=`pwd`
-for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ;   ./${bug}_report.sh;  pass_or_fail ;   done
+for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ;   ./${bug}_report.sh;  export RSLT=$?;  if [ "$RSLT" != "0" ]; then break ; fi ;   done

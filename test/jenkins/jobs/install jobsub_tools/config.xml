@@ -24,7 +24,8 @@
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>GIT=/home/dbox/jobsub
+      <command>#
+GIT=/home/dbox/jobsub
 cd $GIT/jobsub_tools
 sudo -u dbox ./install_local_jobsub_tools.sh </command>
     </hudson.tasks.Shell>

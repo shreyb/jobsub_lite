@@ -12,7 +12,7 @@
   <triggers>
     <jenkins.triggers.ReverseBuildTrigger>
       <spec></spec>
-      <upstreamProjects>build jobsub rpm</upstreamProjects>
+      <upstreamProjects>install jobsub client</upstreamProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
@@ -25,7 +25,21 @@
   <builders>
     <hudson.tasks.Shell>
       <command>#
-sudo /usr/bin/yum update -y `ls /var/tmp/cli/1.1.3/*.rpm`</command>
+TEST_DURATION=600
+BASE=/home/dbox
+GIT=$BASE/jobsub
+SERVER=`hostname`
+SOURCE_ME=/tmp/jobsub_test_env_$$
+echo &quot;export X509_USER_CERT=$BASE/.globus/dbox.digicert.cert.pem&quot; &gt; $SOURCE_ME
+echo &quot;export X509_USER_KEY=$BASE/.globus/dbox.digicert.decrypted.key.pem&quot; &gt;&gt; $SOURCE_ME
+
+cd $GIT/test/client/loadTestDir
+sudo -u dbox ./flood_dag_submits.sh $SERVER $TEST_DURATION $SOURCE_ME
+RSLT=$?
+if [ &quot;$RSLT&quot; = &quot;0&quot; ]; then
+   rm $SOURCE_ME
+fi
+exit $RSLT</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>

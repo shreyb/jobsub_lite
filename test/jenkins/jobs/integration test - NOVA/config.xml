@@ -24,7 +24,8 @@
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>BASE=/home/dbox
+      <command>#
+BASE=/home/dbox
 GIT=$BASE/jobsub
 SOURCE_ME=/tmp/jobsub_test_env_$$
 SERVER=`hostname`

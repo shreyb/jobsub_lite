@@ -27,18 +27,7 @@ lbne_pid=$!
 
 echo "pids:  nova $nova_pid  minos $minos_pid  minerva $minerva_pid  lbne $lbne_pid "
 
-#wait $nova_pid
-#nova_status=$?
-#wait $minos_pid
-#minos_status=$?
-#wait $minerva_pid
-#minerva_status=$?
-#wait $lbne_pid
-#lbne_status=$?
-
-#echo "status:  nova $nova_status  minos $minos_status  minerva $minerva_status  lbne $lbne_status "
-#! (( $nova_status || $minos_status || $minerva_status || $lbne_status ))
-wait
+wait $nova_pid $minos_pid $minerva_pid $lbne_pid
 stat=$?
 echo $0 exiting with status $stat
 exit $stat

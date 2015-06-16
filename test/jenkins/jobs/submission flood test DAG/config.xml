@@ -25,21 +25,37 @@
   <builders>
     <hudson.tasks.Shell>
       <command>#
-TEST_DURATION=600
-BASE=/home/dbox
-GIT=$BASE/jobsub
-SERVER=`hostname`
+#
+if [ &quot;$FLOOD_TEST_DURATION&quot; = &quot;&quot; ]; then
+    FLOOD_TEST_DURATION=600
+fi
+if [ &quot;$TEST_USER&quot; = &quot;&quot; ]; then
+   export TEST_USER=dbox
+fi
+TEST_BASE=`getent passwd $TEST_USER | cut -d: -f6 `
+if [ &quot;$GIT_DIR&quot; = &quot;&quot; ]; then
+   GIT_DIR=$TEST_BASE/jobsub
+fi
+if [ &quot;$JOBSUB_SERVER&quot; = &quot;&quot; ]; then
+   JOBSUB_SERVER=`hostname`
+fi
+if [ &quot;$X509_USER_CERT&quot; = &quot;&quot; ]; then
+   X509_USER_CERT=$TEST_BASE/.globus/dbox.digicert.cert.pem
+   X509_USER_KEY=$TEST_BASE/.globus/dbox.digicert.decrypted.key.pem
+fi
 SOURCE_ME=/tmp/jobsub_test_env_$$
-echo &quot;export X509_USER_CERT=$BASE/.globus/dbox.digicert.cert.pem&quot; &gt; $SOURCE_ME
-echo &quot;export X509_USER_KEY=$BASE/.globus/dbox.digicert.decrypted.key.pem&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export X509_USER_CERT=$X509_USER_CERT&quot; &gt; $SOURCE_ME
+echo &quot;export X509_USER_KEY=$X509_USER_KEY&quot; &gt;&gt; $SOURCE_ME
+cd $GIT_DIR/test/client/loadTestDir
 
-cd $GIT/test/client/loadTestDir
-sudo -u dbox ./flood_dag_submits.sh $SERVER $TEST_DURATION $SOURCE_ME
+sudo -u $TEST_USER ./flood_dag_submits.sh $JOBSUB_SERVER $FLOOD_TEST_DURATION $SOURCE_ME
+
 RSLT=$?
 if [ &quot;$RSLT&quot; = &quot;0&quot; ]; then
    rm $SOURCE_ME
 fi
-exit $RSLT</command>
+exit $RSLT
+</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>

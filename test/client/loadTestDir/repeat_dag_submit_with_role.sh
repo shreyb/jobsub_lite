@@ -24,3 +24,4 @@ do
 done
 rm -f ${GROUP}_pro.sh
 echo ${GROUP} submits exiting with status $T1
+exit $T1

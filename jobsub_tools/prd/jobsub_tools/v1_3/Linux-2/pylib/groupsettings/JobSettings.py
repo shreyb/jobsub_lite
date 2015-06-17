@@ -1340,8 +1340,7 @@ class JobSettings(object):
                     arg+'='+os.environ.get(arg)
             self.completeEnvList()
         #print "after environment=%s"%settings['environment']
-        env_list = settings['environment'].copy()
-        env_list = env_list + ";JOBSUBJOBSECTION=%s"%job_iter
+        env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
         f.write("arguments         = %s\n"%args)
         f.write("output                = %s\n"%settings['outfile'])
         f.write("error                 = %s\n"%settings['errfile'])

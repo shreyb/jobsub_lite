@@ -382,7 +382,10 @@ class DagParser(object):
                     for mac in self.macroList:
                         line = line.replace(mac,self.macroDict[mac])
                     val = ""
+                    j = j + 1
+                    os.environ['JOBSUBJOBSECTION'] = 6
                     passedArgs = ' '.join(args.passedArgs)
+                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection="%s"'"""%(j,passedArgs)
                     repVal = "jobsub %s " %passedArgs
                     line = line.replace("jobsub ",repVal)
                     (retVal, val) = commands.getstatusoutput(line)
@@ -391,7 +394,6 @@ class DagParser(object):
                         print val
                         sys.exit(1)
                     else:
-                        j = j + 1
                         condor_cmd = ''
                         condor_cmd_list = []
                         biglist = val.split()

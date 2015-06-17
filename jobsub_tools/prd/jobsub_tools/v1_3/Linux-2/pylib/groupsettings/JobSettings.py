@@ -1201,6 +1201,15 @@ class JobSettings(object):
 
         return rsp
 
+    def replaceLineSetting(self,thingy):
+        settings = self.settings
+        if 'lines' in settings:
+            parts = thingy.split()
+            for line in settings['lines']:
+                if parts[0].upper() in line.upper():
+                    settings['lines'].remove['line']
+            settings['lines'].append(thingy)
+
     def addToLineSetting(self,thingy):
         settings=self.settings
         if settings['needs_appending']:
@@ -1339,13 +1348,15 @@ class JobSettings(object):
                 settings['environment'] = settings['environment']+";"+\
                     arg+'='+os.environ.get(arg)
             self.completeEnvList()
-        #print "after environment=%s"%settings['environment']
-        env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
+        env_list = settings['environment']
+        if settings['usedagman'] and 'JOBSUBJOBSECTION' not in settings['added_environment']:
+            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
+            self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n"%args)
         f.write("output                = %s\n"%settings['outfile'])
         f.write("error                 = %s\n"%settings['errfile'])
         f.write("log                   = %s\n"%settings['logfile'])
-        f.write("environment   = %s\n" % env_list)
+        f.write("environment   = %s\n" % settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = 21600\n")
 
@@ -1361,7 +1372,6 @@ class JobSettings(object):
         f.write("transfer_error                  = True\n")
         tval=self.shouldTransferInput()
         f.write(tval)
-        f.write("""+JobsubJobSection = \"%s\"\n""" % job_iter)
 
         if 'notify_user' not in settings:
             settings['notify_user']="%s@%s"%(settings['user'],settings['mail_domain'])

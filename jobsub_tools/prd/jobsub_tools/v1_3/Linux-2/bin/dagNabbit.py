@@ -385,7 +385,7 @@ class DagParser(object):
                     j = j + 1
                     os.environ['JOBSUBJOBSECTION'] = "%s"%j
                     passedArgs = ' '.join(args.passedArgs)
-                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection="%s"' %s """%(j,passedArgs)
+                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection=\"%s\"' %s """%(j,passedArgs)
                     repVal = "jobsub %s " %passedArgs
                     line = line.replace("jobsub ",repVal)
                     (retVal, val) = commands.getstatusoutput(line)

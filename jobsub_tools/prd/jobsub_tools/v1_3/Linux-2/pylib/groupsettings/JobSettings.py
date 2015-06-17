@@ -1207,7 +1207,7 @@ class JobSettings(object):
             parts = thingy.split()
             for line in settings['lines']:
                 if parts[0].upper() in line.upper():
-                    settings['lines'].remove['line']
+                    settings['lines'].remove('line')
             settings['lines'].append(thingy)
 
     def addToLineSetting(self,thingy):

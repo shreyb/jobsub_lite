@@ -383,7 +383,7 @@ class DagParser(object):
                         line = line.replace(mac,self.macroDict[mac])
                     val = ""
                     j = j + 1
-                    os.environ['JOBSUBJOBSECTION'] = 6
+                    os.environ['JOBSUBJOBSECTION'] = "%s"%j
                     passedArgs = ' '.join(args.passedArgs)
                     passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection="%s"'"""%(j,passedArgs)
                     repVal = "jobsub %s " %passedArgs

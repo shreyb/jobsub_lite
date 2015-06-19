@@ -2,7 +2,7 @@
 
 here=`pwd`
 dir=`basename $here`
-outfile=$dir.out
+outfile=$dir.$GROUP.out
 cnt=`grep 'JobsubJobId of first job' $outfile | wc -l` 2>&1
 test "$cnt" = "1"
 rslt=$?

@@ -848,15 +848,22 @@ class JobSettings(object):
             settings['queuecount']=1
             job_iter=1
             while (job_iter <= job_count):
-                print "calling self.makeCondorFiles2(%d)"%job_iter
+                #print "calling self.makeCondorFiles2(%d)"%job_iter
                 self.makeCondorFiles2(job_iter)
                 job_iter += 1
                 settings['needs_appending']=False
 
 
             self.makeDAGFile()
+            env_list=settings['environment']
+            settings['environment']="%s;JOBSUBJOBSECTION=0" % env_list
+            self.replaceLineSetting("""+JobsubJobSection = \"0\"\n""")
             self.makeDAGStart()
+            job_iter += 1
+            settings['environment']="%s;JOBSUBJOBSECTION=%s" % (env_list, job_iter )
+            self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter )
             self.makeDAGEnd()
+            settings['environment']=env_list
 
     def makeDAGStart(self):
         if self.settings['dataset_definition']!="":
@@ -991,7 +998,7 @@ class JobSettings(object):
         f.write("output                = %s/dagend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("error                 = %s/dagend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("log                   = %s/dagend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-        f.write("environment = %si\n"%settings['environment'])
+        f.write("environment = %s\n"%settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
         f.write("+RUN_ON_HEADNODE= True\n")
@@ -1037,7 +1044,7 @@ class JobSettings(object):
         f.write("output                = %s/samend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("error                 = %s/samend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("log                   = %s/samend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-        f.write("environment = %si\n"%settings['environment'])
+        f.write("environment = %s\n"%settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
         f.write("+RUN_ON_HEADNODE= True\n")
@@ -1207,7 +1214,7 @@ class JobSettings(object):
             parts = thingy.split()
             for line in settings['lines']:
                 if parts[0].upper() in line.upper():
-                    settings['lines'].remove('line')
+                    settings['lines'].remove(line)
             settings['lines'].append(thingy)
 
     def addToLineSetting(self,thingy):
@@ -1356,7 +1363,7 @@ class JobSettings(object):
         f.write("output                = %s\n"%settings['outfile'])
         f.write("error                 = %s\n"%settings['errfile'])
         f.write("log                   = %s\n"%settings['logfile'])
-        f.write("environment   = %s\n" % settings['environment'])
+        f.write("environment   = %s\n" % env_list)
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = 21600\n")
 

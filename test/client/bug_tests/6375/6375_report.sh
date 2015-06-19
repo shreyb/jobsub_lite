@@ -2,7 +2,7 @@
 
 here=`pwd`
 dir=`basename $here`
-outfile=$dir.out
+outfile=$dir.$GROUP.out
 grep 'authorization has failed' $outfile > /dev/null 2>&1
 rslt=$?
 echo -n "test $dir: "

@@ -25,7 +25,7 @@ class UsersResource(object):
         job_id=kwargs.get('job_id')
         filter = constructFilter(acctgroup,user_id,job_id)
         logger.log("filter=%s"%filter)
-	all_jobs = ui_condor_q( filter  )
+        all_jobs = ui_condor_q( filter  )
         return {'out': all_jobs.split("\n")}
 
     @cherrypy.expose

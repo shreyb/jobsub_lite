@@ -1,3 +1,4 @@
+import cherrypy
 import logger
 import traceback
 import math
@@ -61,7 +62,7 @@ def condor_format(inputSwitch=None):
     if inputSwitch=='long':
         fmt = " -l "
     elif inputSwitch=='dags':
-        fmt="""-format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")' -format '%-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))' -format '%-14s ' 'ifthenelse(dagmanjobid =!= UNDEFINED, string(dagnodename),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )' -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """ 
+        fmt="""-format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")' -format '%-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))' -format '%-14s ' 'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )' -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """ 
     else:
         fmt=""" -format '%-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'  -format '%-14s ' Owner -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' -format '%3d+' 'int(RemoteUserCpu/(60*60*24))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60*24))*60*60*24))/(60*60))' -format '%02d:' 'int((RemoteUserCpu-(int(RemoteUserCpu/(60*60))*60*60))/(60))' -format '%02d ' 'int(RemoteUserCpu-(int(RemoteUserCpu/60)*60))' -format '%-2s ' 'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))' -format '%-3d ' JobPrio -format '%-4.1f ' ImageSize/1024.0 -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """
     return fmt
@@ -123,8 +124,15 @@ def ui_condor_history(filter=None,format=None):
         cmd = 'condor_history %s' % condor_format(format)
     else:
         cmd = 'condor_history %s %s' % (condor_format(format),filter)
-    all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    return hdr + all_jobs
+    try:
+        all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        return hdr + all_jobs
+    except:
+        cherrypy.response.status = 500
+        tb = traceback.format_exc()
+        logger.log(tb)
+        return tb
+
 
 def ui_condor_q(filter=None,format=None):
 
@@ -147,6 +155,7 @@ def ui_condor_q(filter=None,format=None):
         if len(re.findall(no_jobs, tb)):
             return no_jobs
         else:
+            cherrypy.response.status = 500
             return tb
 
 

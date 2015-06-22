@@ -117,6 +117,13 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
     filter = " %s -constraint '%s && %s && %s' "%(lorw, ac_cnst,usr_cnst,job_cnst)
     return filter
 
+def contains_jobid(a_filter=""):
+    if "GLOBALJOBID" in filter.upper() or "CLUSTERID" in filter.upper():
+        return True
+    return False
+
+
+
 def ui_condor_history(filter=None,format=None):
     hdr=condor_header(format)
     if filter is None:

@@ -118,7 +118,7 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
     return filter
 
 def contains_jobid(a_filter=""):
-    if "GLOBALJOBID" in filter.upper() or "CLUSTERID" in filter.upper():
+    if "GLOBALJOBID" in a_filter.upper() or "CLUSTERID" in a_filter.upper():
         return True
     return False
 
@@ -129,7 +129,7 @@ def ui_condor_history(filter=None,format=None):
     if filter is None:
         cmd = 'condor_history %s' % condor_format(format)
     else:
-        if "GlobalJobId" in filter:
+        if contains_jobid(filter):
             filter = "%s %s" % (filter, "-match 1")
         cmd = 'condor_history %s %s' % (condor_format(format),filter)
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)

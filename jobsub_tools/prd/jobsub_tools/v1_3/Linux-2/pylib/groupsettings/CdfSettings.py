@@ -192,6 +192,14 @@ class CdfSettings(JobSettings):
             settings['environment'] = y
         super(CdfSettings,self).makeCommandFile(job_iter)
 
+    def makeCondorFiles(self):
+        settings = self.settings
+        if 'SAM_GROUP' not in settings['added_environment']:
+            settings['added_environment'].append('SAM_GROUP')
+        if not os.environ.get('SAM_GROUP'):
+            os.envrion['SAM_GROUP']='test'
+        super(CdfSettings,self).makeCondorFiles()
+
     def checkSanity(self):
         settings=self.settings
         if not settings.has_key('outLocation'):

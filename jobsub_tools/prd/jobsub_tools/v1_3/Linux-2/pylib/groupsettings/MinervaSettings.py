@@ -27,13 +27,9 @@ class MinervaSettings(JobSettings):
 
     def initCmdParser(self):
         #print "MinervaSettings initCmdParser"
-        cmdParser = self.cmdParser
         self.minerva_group = OptionGroup(self.cmdParser, "Minerva Specific Options")
         self.cmdParser.add_option_group(self.minerva_group)
 
-        #print "MinervaSettings initCmdParser cmdParser=%s"%self.cmdParser
-        #print "MinervaSettings initCmdParser file_group=%s"%self.file_group
-        #return
     
         
         self.minerva_group.add_option("-i", dest="reldir",
@@ -103,15 +99,20 @@ class MinervaSettings(JobSettings):
             f.write("\n")
         f.close()
         
-
-    def makeCondorFiles(self):
+    def makeFileTag(self):
         settings=self.settings
         a = settings['exe_script'].split("/")
         prefix=a[-1]
-        if settings['prefix'] != "":
-            prefix=settings['prefix']
-            
-        return super(MinervaSettings,self).makeCondorFiles()
+        p=settings.get('prefix')
+        if p:
+            prefix = p
+        ow = datetime.datetime.now()
+        pid=os.getpid()
+        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
+            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
+        return filebase
+
+
 
 
     def checkSanity(self):

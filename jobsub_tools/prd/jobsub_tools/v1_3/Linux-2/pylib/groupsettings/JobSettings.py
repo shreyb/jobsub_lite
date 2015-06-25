@@ -537,14 +537,6 @@ class JobSettings(object):
     def makeParrotFile(self):
         raise Exception("parrot file generation has been turned off.  Please report this error to the service desk")
         # print "makeParrotFile"
-        settings = self.settings
-        commands = JobUtils()
-        #glob = commands.parrotString()
-
-        glob = glob.replace('WRAPFILETAG', settings['wrapfile'])
-        f = open(settings['parrotfile'], 'w')
-        f.write(glob)
-        f.close()
 
     def makeWrapFilePreamble(self):
         """ Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env 
@@ -821,7 +813,15 @@ class JobSettings(object):
         if iret:
             raise Exception(ires)
 
-
+    def makeFileTag(self):
+        settings=self.settings
+        a = settings['exe_script'].split("/")
+        prefix=a[-1]
+        ow = datetime.datetime.now()
+        pid=os.getpid()
+        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
+            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
+        return filebase
 
 
     def makeCondorFiles(self):
@@ -832,16 +832,7 @@ class JobSettings(object):
         if settings['input_tar_dir']:
             self.makeTarDir()
 
-        a = settings['exe_script'].split("/")
-        prefix=a[-1]
-        p=settings.get('prefix')
-        if p:
-            prefix = p
-        ow = datetime.datetime.now()
-        pid=os.getpid()
-        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
-            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
-        settings['filetag']=filebase
+        settings['filetag']=self.makeFileTag()
         if settings['usedagman']==False:
             self.makeCondorFiles2()
         else:

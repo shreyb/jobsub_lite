@@ -833,9 +833,13 @@ class JobSettings(object):
             self.makeTarDir()
 
         a = settings['exe_script'].split("/")
+        prefix=a[-1]
+        p=settings.get('prefix')
+        if p:
+            prefix = p
         ow = datetime.datetime.now()
         pid=os.getpid()
-        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(a[-1],ow.year,
+        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
             ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
         settings['filetag']=filebase
         if settings['usedagman']==False:

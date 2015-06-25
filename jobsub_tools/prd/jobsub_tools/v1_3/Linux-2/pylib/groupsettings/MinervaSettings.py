@@ -111,31 +111,7 @@ class MinervaSettings(JobSettings):
         if settings['prefix'] != "":
             prefix=settings['prefix']
             
-        ow = datetime.now()
-        pid=os.getpid()
-    
-        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
-                ow.month,ow.day,ow.hour,
-                ow.minute,ow.second,pid)
-            
-        settings['filetag']=filebase
-        if settings['dataset_definition']=="":
-            self.makeCondorFiles2()
-        else:
-            if settings['project_name']=="":
-                settings['project_name']="%s-%s"%(settings['user'],settings['filetag'])
-            job_count=settings['queuecount']
-            settings['queuecount']=1
-            job_iter=1
-            while (job_iter <= job_count):
-                #print "calling self.makeCondorFiles2(%d)"%job_iter
-                self.makeCondorFiles2(job_iter)
-                job_iter += 1
-
-                
-            self.makeDAGFile()
-            self.makeSAMBeginFiles()
-            self.makeSAMEndFiles()
+        return super(MinervaSettings,self).makeCondorFiles()
 
 
     def checkSanity(self):

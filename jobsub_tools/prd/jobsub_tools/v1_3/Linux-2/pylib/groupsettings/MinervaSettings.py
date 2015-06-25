@@ -3,7 +3,7 @@
 from JobSettings import JobSettings
 from optparse import OptionGroup
 import os
-from datetime import datetime
+import datetime
 
 class MinervaSettings(JobSettings):
     def __init__(self):

@@ -133,6 +133,7 @@ class AccountJobsResource(object):
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
+            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal')
             if jobsub_args is not None:
 
                 jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()
@@ -191,6 +192,7 @@ class AccountJobsResource(object):
                          acctgroup=acctgroup, username=cherrypy.request.username,
                          jobsub_args=jobsub_args, workdir_id=workdir_id,
                          role=role, jobsub_client_version=jobsub_client_version,
+                         jobsub_client_krb5_principal=jobsub_client_krb5_principal,
                          child_env=child_env)
                 if rc.get('out'):
                     for line in rc['out']:

@@ -187,6 +187,22 @@ def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
 
 
+def krb5_default_principal(cache=None):
+    try:
+        if not cache:
+            cache = Krb5Ticket().krb5CredCache 
+        klist_cmd = spawn.find_executable("klist")
+        if not klist_cmd:
+            raise Exception("Unable to find command 'klist' in the PATH")
+        cmd = '%s -c %s' % (klist_cmd, cache)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        prn  = (re.findall(constants.KRB5TICKET_DEFAULT_PRINCIPAL, cmd_out))[0]
+    except:
+        print sys.exc_info()[1]
+        prn = "UNKNOWN"
+    return prn
+            
+
 def krb5_ticket_lifetime(cache):
     klist_cmd = spawn.find_executable("klist")
     if not klist_cmd:

@@ -74,10 +74,11 @@ if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
    JCIA=" -l +JobsubClientIpAddress=\\\"$JOBSUB_CLIENT_IP_ADDRESS\\\" "
 fi
 
+JCKP=" -l +JobsubClientKerberosPrincipal=\\\"$JOBSUB_CLIENT_KRB5_PRINCIPAL\\\" "
 
 JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\\\$(DAGManJobId)@$SCHEDD"
-export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA "
+export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA $JCKP "
 
 export JOBSUB_CMD="dagNabbit.py -s  $@ "
 

@@ -122,6 +122,7 @@ def get_jobsub_wrapper(submit_type='job'):
 def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                workdir_id=None, role=None,
                                jobsub_client_version='UNKNOWN',
+                               jobsub_client_krb5_principal='UNKNOWN',
                                submit_type='job', priv_mode=True,
                                child_env=None):
 
@@ -133,6 +134,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     if not child_env:
         child_env = os.environ.copy()
     child_env['JOBSUB_CLIENT_VERSION'] = jobsub_client_version
+    child_env['JOBSUB_CLIENT_KRB5_PRINCIPAL'] = jobsub_client_krb5_principal
     child_env['GROUP'] = acctgroup
 
     if priv_mode:

@@ -228,9 +228,11 @@ class JobSubClient:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+        krb5_principal = jobsubClientCredentials.krb5_default_principal()
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
             ('jobsub_client_version', version_string()),
+            ('jobsub_client_krb5_principal', krb5_principal),
         ]
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
@@ -327,9 +329,11 @@ class JobSubClient:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+        krb5_principal = jobsubClientCredentials.krb5_default_principal()
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
             ('jobsub_client_version', version_string()),
+            ('jobsub_client_krb5_principal', krb5_principal),
         ]
 
         logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))

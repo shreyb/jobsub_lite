@@ -28,7 +28,7 @@ fi
 }
 
 
-SERVER=$1
+export SERVER=$1
 export TESTLOGFILE=$SERVER.testlog
 
 if [ "$SERVER" = "" ]; then

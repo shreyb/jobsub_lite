@@ -10,11 +10,11 @@ source ./setup_env.sh
 cd -
 
 export SERVER=https://${MACH}:8443
-cp 7072.sh ${GROUP}_7072.sh
+cp 8999.sh ${GROUP}_8999.sh
 $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC $SUBMIT_FLAGS \
-            -e SERVER --nowrapfile   file://${GROUP}_7072.sh 7000000
+            -e SERVER --subgroup test  file://${GROUP}_8999.sh 
 R=$?
-rm ${GROUP}_7072.sh
+rm ${GROUP}_8999.sh
 exit $R
 

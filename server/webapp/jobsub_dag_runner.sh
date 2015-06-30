@@ -77,7 +77,7 @@ fi
 JCKP=" -l +JobsubClientKerberosPrincipal=\\\"$JOBSUB_CLIENT_KRB5_PRINCIPAL\\\" "
 
 JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
-export JOBSUBPARENTJOBID="\\\$(DAGManJobId)@$SCHEDD"
+export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
 export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA $JCKP "
 
 export JOBSUB_CMD="dagNabbit.py -s  $@ "

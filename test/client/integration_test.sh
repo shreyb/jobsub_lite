@@ -52,7 +52,6 @@ fi
 if [ "$JOBSUB_GROUP" != "" ]; then
     export OUTGROUP=$JOBSUB_GROUP
 fi
-/usr/bin/printenv
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
 cp simple_worker_script.sh ${GROUP}_test.sh
@@ -99,20 +98,25 @@ lg_echo testing dag submission
 OUTFILE=$1.testdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
 pass_or_fail
+DAGJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+echo use $DAGJID to retrieve dag submission results
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo testing dag with role submission 
     OUTFILE=$1.testdag.role.$OUTGROUP.log
     sh ${TEST_FLAG} ./test_dag_submit_with_role.sh  $SERVER  >$OUTFILE  2>&1
     pass_or_fail
+    DAGROLEJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    echo use $DAGROLEJID to retrieve dag submission results
 fi
 if [ "$SKIP_CDF_TEST" = "" ]; then
     lg_echo testing cdf sam job
+    OUTFILE=`pwd`/$1.$GROUP.test_cdf_sam_job.log
     cd cdf_dag_test
-    OUTFILE="../$1.test_cdf_sam_job.log"
     sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
     pass_or_fail
-    JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-    GOTJID3=`echo $JID3| grep '[0-9].0@'`
+    CDFJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    GOTJID3=`echo $CDFJID | grep '[0-9].0@'`
+    echo use $CDFJID to retrieve cdf submission results
     cd -
 fi
 
@@ -121,6 +125,8 @@ OUTFILE=$1.maxConcurrent.$OUTGROUP.log
 cp simple_worker_script.sh ${GROUP}_maxConcurrent.sh
 sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER ${GROUP}_maxConcurrent.sh 1 >$OUTFILE 2>&1
 pass_or_fail
+MAXCONCURRENTJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+echo use $MAXCONCURRENTJID to retrieve maxconncurent results
 rm ${GROUP}_maxConcurrent.sh
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
@@ -186,9 +192,30 @@ OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
 
+OUTFILE=$1.jobsubjobsections.$OUTGROUP.log
+for JOB in $DAGJID  $MAXCONCURRENTJID ; do
+    lg_echo checking $JOB for JobsubJobSections
+    ./test_for_jobsubjobsection.sh $SERVER $JOB >> $OUTFILE  2>&1
+    pass_or_fail
+done
+
+for JOB in $CDFJID ; do
+    lg_echo checking cdf $JOB for JobsubJobSections
+    ./test_cdf_jobsubjobsection.sh $SERVER $JOB >> $OUTFILE  2>&1
+    pass_or_fail
+done
+
 OUTFILE=$1.api_coverage.$OUTGROUP.log
+lg_echo testing api coverage of URLS
 sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP >$OUTFILE 2>&1
+RSLT=$?
+grep 'HTTP/1.1' `echo $SERVER | cut -d '.' -f1`*out | cut -d ' ' -f2-4 | sort | uniq -c
+test "$RSLT" = "0"
 pass_or_fail
 
 HERE=`pwd`
-for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ;   ./${bug}_report.sh;  export RSLT=$?;  if [ "$RSLT" != "0" ]; then break ; fi ;   done
+OUTFILE=$1.bug_tests.$OUTGROUP.log
+RSLT=0
+for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ; cat ${bug}.${GROUP}.out >> $OUTFILE ;   ./${bug}_report.sh;  export RSLT=$?;  if [ "$RSLT" != "0" ]; then break ; fi ;   done 
+test "$RSLT" = "0"
+pass_or_fail

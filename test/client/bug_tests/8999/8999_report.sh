@@ -18,13 +18,18 @@ test "$cnt" = "1"
 T1=$?
 jobid=`grep 'JobsubJobId of first job' $outfile | awk '{print $5}'`
 T2=$?
-$EXEPATH/jobsub_fetchlog -G $GROUP --jobsub-server $SERVER --jobid $jobid --out-dir $GROUP/$jobid"
+$EXEPATH/jobsub_fetchlog -G $GROUP --jobsub-server $SERVER --jobid $jobid --dest-dir $GROUP/$jobid >>$outfile 2>&1
 T3=$?
-grep '+Jobsub_Group' $GROUP/$jobid/*cmd
+grep '+Jobsub_Group' $GROUP/$jobid/*cmd >>$outfile 2>&1
 T4=$?
-grep '+Jobsub_SubGroup' $GROUP/$jobid/*cmd
+grep '+Jobsub_SubGroup="test"' $GROUP/$jobid/*cmd >>$outfile 2>&1
 T5=$?
 
 ! (( $T1 || $T2 || $T3 || $T4 || $T5 ))
 rslt=$?
+if [ "$rslt" = "0" ]; then
+    echo "OK"
+else
+    echo "FAILED"
+fi
 exit $rslt

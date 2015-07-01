@@ -630,6 +630,7 @@ class JobSettings(object):
         if settings['transfer_executable']:
             exe_script=os.path.basename(settings['exe_script'])
         f.write("export JOBSUB_EXE_SCRIPT=`find . -name %s -print`\n"%os.path.basename(settings['exe_script']))
+        f.write("chmod +x $JOBSUB_EXE_SCRIPT\n")
         script_args=''
         if settings['verbose']:
             f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")

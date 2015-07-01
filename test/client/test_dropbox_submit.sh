@@ -6,7 +6,9 @@ if [ "$1" = "" ]; then
     exit 0
 fi
 source ./setup_env.sh
-tar cfv stuff.tar * > /dev/null
+if [ ! -e "stuff.tar" ]; then
+  tar cfv stuff.tar * > /dev/null
+fi
 
 export SERVER=https://${MACH}:8443
 
@@ -15,6 +17,6 @@ $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
               --tar_file_name dropbox://stuff.tar \
             -e SERVER --nowrapfile  file://"$@"
 SUBMIT_WORKED=$?
-rm stuff.tar
+#rm stuff.tar
 echo $0 exiting with status $SUBMIT_WORKED
 exit $SUBMIT_WORKED

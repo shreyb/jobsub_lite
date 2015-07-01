@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <jenkins.triggers.ReverseBuildTrigger>
+      <spec></spec>
+      <upstreamProjects>integration test - ARGONEUT, </upstreamProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </jenkins.triggers.ReverseBuildTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#
+GROUP=lbne
+if [ &quot;$TEST_USER&quot; = &quot;&quot; ]; then
+   export TEST_USER=dbox
+fi
+TEST_BASE=`getent passwd $TEST_USER | cut -d: -f6 `
+if [ &quot;$GIT_DIR&quot; = &quot;&quot; ]; then
+   GIT_DIR=$TEST_BASE/jobsub
+fi
+if [ &quot;$JOBSUB_SERVER&quot; = &quot;&quot; ]; then
+   JOBSUB_SERVER=`hostname`
+fi
+if [ &quot;$X509_USER_CERT&quot; = &quot;&quot; ]; then
+   X509_USER_CERT=$TEST_BASE/.globus/dbox.digicert.cert.pem
+   X509_USER_KEY=$TEST_BASE/.globus/dbox.digicert.decrypted.key.pem
+fi
+SOURCE_ME=/tmp/jobsub_test_env_$$
+echo &quot;export X509_USER_CERT=$X509_USER_CERT&quot; &gt; $SOURCE_ME
+echo &quot;export X509_USER_KEY=$X509_USER_KEY&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export GROUP=$GROUP&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export SKIP_PRODUCTION_TEST=YES&quot; &gt;&gt; $SOURCE_ME
+echo &quot;export SKIP_CDF_TEST=YES&quot; &gt;&gt; $SOURCE_ME
+
+cd $GIT_DIR/test/client
+sudo -u $TEST_USER ./integration_test.sh $JOBSUB_SERVER $SOURCE_ME
+RSLT=$?
+if [ &quot;$RSLT&quot; = &quot;0&quot; ]; then
+   rm $SOURCE_ME
+fi
+exit $RSLT
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

@@ -691,7 +691,7 @@ class JobSettings(object):
             for tag in settings['output_dir_array']:
                 f.write("if [ \"$(ls -A ${CONDOR_DIR_%s})\" ]; then\n" %(tag[0]))
                 f.write("\tchmod a+rwx ${CONDOR_DIR_%s}/*\n" % tag[0])
-                f.write("\tmkdir -p %s\n" % tag[1])
+                f.write("\t%s mkdir  %s\n" % (ifdh_cmd,tag[1]))
                 f.write("fi\n")
 
                 if settings['use_gftp']:
@@ -709,8 +709,11 @@ class JobSettings(object):
         f.write(log_cmd2)
 
 
-        if settings['joblogfile'] != "":
-            f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
+        if settings['joblogfile'] != "" and not settings['nologbuffer']:
+            use_gftp = ""
+            if settings['use_gftp']:
+                use_gftp = "--force=expgridftp"
+            f.write("%s cp %s $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,use_gftp,settings['joblogfile']))
         f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 
         f.write("exit $JOB_RET_STATUS\n")
@@ -1157,7 +1160,7 @@ class JobSettings(object):
 
 
             for tag in settings['output_tag_array'].keys():
-                cmd1 = "mkdir -p %s " % settings['output_tag_array'][tag]
+                cmd1 = "%s mkdir  %s " % (settings['ifdh_cmd'],settings['output_tag_array'][tag])
                 settings['wrapper_cmd_array'].append(cmd1)
                 if settings['verbose']:
                     print cmd1

@@ -133,10 +133,8 @@ class CdfSettings(JobSettings):
         wrapCommands = [ 
             "echo executing in directory",
             "pwd",
-            "echo its contents:",
-            "find . -ls  ",
             """ if [ -e "$INPUT_TAR_FILE" ]; then echo untarring $INPUT_TAR_FILE; tar xvf "$INPUT_TAR_FILE" ; fi""",
-            """export JOBSUB_USER_SCRIPT=`find . -name %s -print`    """%os.path.basename(settings['exe_script']),
+            """export JOBSUB_USER_SCRIPT=%s    """%settings['exe_script'].replace('file://',''),
             """echo executing: $JOBSUB_USER_SCRIPT "$@"   """,
             """$JOBSUB_USER_SCRIPT "$@"   """,
             "export JOB_RET_STATUS=$?",
@@ -191,6 +189,14 @@ class CdfSettings(JobSettings):
             y=re.sub(";;",";",y2)
             settings['environment'] = y
         super(CdfSettings,self).makeCommandFile(job_iter)
+
+    def makeCondorFiles(self):
+        settings = self.settings
+        if 'SAM_GROUP' not in settings['added_environment']:
+            settings['added_environment'].append('SAM_GROUP')
+        if not os.environ.get('SAM_GROUP'):
+            os.environ['SAM_GROUP']='test'
+        super(CdfSettings,self).makeCondorFiles()
 
     def checkSanity(self):
         settings=self.settings

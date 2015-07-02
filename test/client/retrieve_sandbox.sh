@@ -15,8 +15,8 @@ if [ "$CLUSTER" = "" ];then
 fi
 export SERVER=https://${MACH}:8443
 mkdir -p curl
-mkdir -p python
-mkdir -p unarchive
+mkdir -p python/${GROUP}
+mkdir -p unarchive/${GROUP}
 if [ "$JOBSUB_GROUP" != "" ]; then
     GROUP=$JOBSUB_GROUP
 fi
@@ -29,16 +29,15 @@ cd curl
 cd $HERE 
 for FMT in "zip" "tar"; do
   for JOBSPEC in "--job" "--jobid" "-J"; do
-    cd $HERE/python
+    cd $HERE/python/${GROUP}
     pwd
         try $EXEPATH/jobsub_fetchlog.py $ROLE $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER 
-    cd ../unarchive
+    cd $HERE/unarchive/${GROUP}
     pwd
     for ARCHIVESPEC in "--unzipdir" "--destdir" "--dest-dir"; do 
         UNZIPDIR=`echo $JOBSPEC|sed 's/-//g'`"$FMT-$ARCHIVESPEC"
         try $EXEPATH/jobsub_fetchlog.py $ROLE --group $GROUP --jobsub-server $SERVER $JOBSPEC $CLUSTER $ARCHIVESPEC $UNZIPDIR 
     done
-    cd -
   done
 done
 exit 0

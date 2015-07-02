@@ -8,15 +8,16 @@ from condor_commands import ui_condor_history,constructFilter
 
 
 
-@cherrypy.popargs('user_id')
+@cherrypy.popargs('user_id','job_id')
 class HistoryResource(object):
 
-    def doGET(self, user_id,kwargs):
+    def doGET(self, user_id=None,job_id=None,**kwargs):
         """ Query list of user_ids. Returns a JSON list object.
 	    API is /acctgroups/<group>/users/<user_id>jobs/history
         """
         acctgroup=kwargs.get('acctgroup')
-        job_id=kwargs.get('job_id')
+        if job_id is None:
+            job_id=kwargs.get('job_id')
         if user_id is None:
             user_id = kwargs.get('user_id')
         filter = constructFilter(acctgroup,user_id,job_id)
@@ -26,16 +27,18 @@ class HistoryResource(object):
 
     @cherrypy.expose
     @format_response
-    def index(self, user_id=None, **kwargs):
+    def index(self, user_id=None, job_id=None, **kwargs):
         try:
             subject_dn = get_client_dn()
             logger.log("user_id %s"%user_id)
+            logger.log("job_id %s"%job_id)
             logger.log("kwargs %s"%kwargs)
             if subject_dn is not None:
 
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(user_id,kwargs)
+                    logger.log('user_id=%s job_id=%s'%(user_id,job_id))
+                    rc = self.doGET(user_id,job_id,**kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

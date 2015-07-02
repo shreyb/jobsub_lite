@@ -28,7 +28,11 @@ fi
 }
 
 
-SERVER=$1
+export SERVER=$1
+if [ -e "$2" ]; then
+    source $2
+fi
+
 export TESTLOGFILE=$SERVER.testlog
 
 if [ "$SERVER" = "" ]; then
@@ -48,11 +52,12 @@ fi
 if [ "$JOBSUB_GROUP" != "" ]; then
     export OUTGROUP=$JOBSUB_GROUP
 fi
-
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_test.sh
+sh ${TEST_FLAG} ./test_simple_submit.sh $SERVER ${GROUP}_test.sh 1 >$OUTFILE 2>&1
 T1=$?
+rm ${GROUP}_test.sh
 JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
 T2=$?
 GOTJID=`echo $JID| grep '[0-9].0@'`
@@ -93,38 +98,48 @@ lg_echo testing dag submission
 OUTFILE=$1.testdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
 pass_or_fail
+DAGJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+echo use $DAGJID to retrieve dag submission results
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo testing dag with role submission 
     OUTFILE=$1.testdag.role.$OUTGROUP.log
     sh ${TEST_FLAG} ./test_dag_submit_with_role.sh  $SERVER  >$OUTFILE  2>&1
     pass_or_fail
+    DAGROLEJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    echo use $DAGROLEJID to retrieve dag submission results
 fi
 if [ "$SKIP_CDF_TEST" = "" ]; then
     lg_echo testing cdf sam job
+    OUTFILE=`pwd`/$1.$GROUP.test_cdf_sam_job.log
     cd cdf_dag_test
-    OUTFILE="../$1.test_cdf_sam_job.log"
     sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
     pass_or_fail
-    JID3=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-    GOTJID3=`echo $JID3| grep '[0-9].0@'`
+    CDFJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+    GOTJID3=`echo $CDFJID | grep '[0-9].0@'`
+    echo use $CDFJID to retrieve cdf submission results
     cd -
 fi
 
 lg_echo test --maxConcurrent submit
 OUTFILE=$1.maxConcurrent.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER simple_worker_script.sh 1 >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_maxConcurrent.sh
+sh ${TEST_FLAG} ./test_maxConcurrent_submit.sh $SERVER ${GROUP}_maxConcurrent.sh 1 >$OUTFILE 2>&1
 pass_or_fail
-
+MAXCONCURRENTJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+echo use $MAXCONCURRENTJID to retrieve maxconncurent results
+rm ${GROUP}_maxConcurrent.sh
 lg_echo testing dropbox functionality
 OUTFILE=$1.dropbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
+cp simple_worker_script.sh ${GROUP}_dropbox.sh
+sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER ${GROUP}_dropbox.sh >$OUTFILE 2>&1
 pass_or_fail
 
 lg_echo testing dropbox with multiple -f functionality
+mv ${GROUP}_dropbox.sh ${GROUP}_minus_f.sh
 OUTFILE=$1.dropbox_minus_f.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER simple_worker_script.sh >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER ${GROUP}_minus_f.sh >$OUTFILE 2>&1
 pass_or_fail
-
+rm ${GROUP}_minus_f.sh
 lg_echo test helpfile
 OUTFILE=$1.help.$OUTGROUP.log 
 sh ${TEST_FLAG} ./test_help.sh $SERVER >$OUTFILE 2>&1
@@ -177,5 +192,30 @@ OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
 
-sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP
-for bug in `ls bug_tests`; do cd bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER >${bug}.out 2>&1 ;  ./${bug}_report.sh; cd ../.. ; done
+OUTFILE=$1.jobsubjobsections.$OUTGROUP.log
+for JOB in $DAGJID  $MAXCONCURRENTJID ; do
+    lg_echo checking $JOB for JobsubJobSections
+    ./test_for_jobsubjobsection.sh $SERVER $JOB >> $OUTFILE  2>&1
+    pass_or_fail
+done
+
+for JOB in $CDFJID ; do
+    lg_echo checking cdf $JOB for JobsubJobSections
+    ./test_cdf_jobsubjobsection.sh $SERVER $JOB >> $OUTFILE  2>&1
+    pass_or_fail
+done
+
+OUTFILE=$1.api_coverage.$OUTGROUP.log
+lg_echo testing api coverage of URLS
+sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP >$OUTFILE 2>&1
+RSLT=$?
+grep 'HTTP/1.1' `echo $SERVER | cut -d '.' -f1`*out | cut -d ' ' -f2-4 | sort | uniq -c
+test "$RSLT" = "0"
+pass_or_fail
+
+HERE=`pwd`
+OUTFILE=$1.bug_tests.$OUTGROUP.log
+RSLT=0
+for bug in `ls bug_tests`; do cd $HERE/bug_tests/$bug ;  sh ${TEST_FLAG} ./${bug}_test.sh $SERVER > ${bug}.${GROUP}.out 2>&1 ; cat ${bug}.${GROUP}.out >> $OUTFILE ;   ./${bug}_report.sh;  export RSLT=$?;  if [ "$RSLT" != "0" ]; then break ; fi ;   done 
+test "$RSLT" = "0"
+pass_or_fail

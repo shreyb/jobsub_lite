@@ -114,8 +114,13 @@ fi
 echo "$@" | grep '\-\-help' > /dev/null 2>&1
 FOUND_HELP_FLAG=$?
 
+echo "$@" | grep '\-\-version' > /dev/null 2>&1
+FOUND_VERSION_FLAG=$?
+
 if [ "$FOUND_HELP_FLAG" = "0" ];then
    exit $FOUND_HELP_FLAG
+elif [ "$FOUND_VERSION_FLAG" = "0" ];then
+   exit $FOUND_VERSION_FLAG
 else
    exit $WORKED
 fi

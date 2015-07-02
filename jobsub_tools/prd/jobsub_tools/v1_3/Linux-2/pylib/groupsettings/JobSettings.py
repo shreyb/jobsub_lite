@@ -10,18 +10,18 @@ from JobsubConfigParser import JobsubConfigParser
 
 
 class UnknownInputError(Exception):
-    def __init__(self,errMsg="Unknown Input"):
+    def __init__(self, errMsg="Unknown Input"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 
 class IllegalInputError(Exception):
-    def __init__(self,errMsg="Illegal Input"):
+    def __init__(self, errMsg="Illegal Input"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 class InitializationError(Exception):
-    def __init__(self,errMsg="Initialization Error"):
+    def __init__(self, errMsg="Initialization Error"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
@@ -30,7 +30,7 @@ class MyCmdParser(OptionParser):
     def print_help(self):
         OptionParser.print_help(self)
         #OptionParser.epilog doesn't work in v python 2.4, here is my workaround
-        epilog="""
+        epilog = """
         NOTES
         You can have as many instances of -c, -d, -e, -f, -l and -y as you need.
 
@@ -57,17 +57,17 @@ class JobSettings(object):
             pass
         else:
             usage = "usage: %prog [options] your_script [your_script_args]\n"
-            usage +="submit your_script to local batch or to the OSG grid "
+            usage += "submit your_script to local batch or to the OSG grid "
 
 
             self.cmdParser = MyCmdParser(usage=usage, 
-                    version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
-                    conflict_handler="resolve")
+                    version = os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
+                    conflict_handler = "resolve")
             self.cmdParser.disable_interspersed_args()
             self.generic_group = OptionGroup(self.cmdParser, "Generic Options")
             self.cmdParser.add_option_group(self.generic_group)
 
-            self.file_group= OptionGroup(self.cmdParser, "File Options")
+            self.file_group = OptionGroup(self.cmdParser, "File Options")
             self.cmdParser.add_option_group(self.file_group)
 
             self.sam_group= OptionGroup(self.cmdParser, "SAM Options")
@@ -630,6 +630,7 @@ class JobSettings(object):
         if settings['transfer_executable']:
             exe_script=os.path.basename(settings['exe_script'])
         f.write("export JOBSUB_EXE_SCRIPT=`find . -name %s -print`\n"%os.path.basename(settings['exe_script']))
+        f.write("chmod +x $JOBSUB_EXE_SCRIPT\n")
         script_args=''
         if settings['verbose']:
             f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")
@@ -848,15 +849,22 @@ class JobSettings(object):
             settings['queuecount']=1
             job_iter=1
             while (job_iter <= job_count):
-                print "calling self.makeCondorFiles2(%d)"%job_iter
+                #print "calling self.makeCondorFiles2(%d)"%job_iter
                 self.makeCondorFiles2(job_iter)
                 job_iter += 1
                 settings['needs_appending']=False
 
 
             self.makeDAGFile()
+            env_list=settings['environment']
+            settings['environment']="%s;JOBSUBJOBSECTION=0" % env_list
+            self.replaceLineSetting("""+JobsubJobSection = \"0\"\n""")
             self.makeDAGStart()
+            job_iter += 1
+            settings['environment']="%s;JOBSUBJOBSECTION=%s" % (env_list, job_iter )
+            self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter )
             self.makeDAGEnd()
+            settings['environment']=env_list
 
     def makeDAGStart(self):
         if self.settings['dataset_definition']!="":
@@ -991,7 +999,7 @@ class JobSettings(object):
         f.write("output                = %s/dagend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("error                 = %s/dagend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("log                   = %s/dagend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-        f.write("environment = %si\n"%settings['environment'])
+        f.write("environment = %s\n"%settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
         f.write("+RUN_ON_HEADNODE= True\n")
@@ -1037,7 +1045,7 @@ class JobSettings(object):
         f.write("output                = %s/samend-%s.out\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("error                 = %s/samend-%s.err\n"%(settings['condor_tmp'],settings['filetag']))
         f.write("log                   = %s/samend-%s.log\n"%(settings['condor_tmp'],settings['filetag']))
-        f.write("environment = %si\n"%settings['environment'])
+        f.write("environment = %s\n"%settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
         f.write("+RUN_ON_HEADNODE= True\n")
@@ -1201,6 +1209,15 @@ class JobSettings(object):
 
         return rsp
 
+    def replaceLineSetting(self,thingy):
+        settings = self.settings
+        if 'lines' in settings:
+            parts = thingy.split()
+            for line in settings['lines']:
+                if parts[0].upper() in line.upper():
+                    settings['lines'].remove(line)
+            settings['lines'].append(thingy)
+
     def addToLineSetting(self,thingy):
         settings=self.settings
         if settings['needs_appending']:
@@ -1339,12 +1356,15 @@ class JobSettings(object):
                 settings['environment'] = settings['environment']+";"+\
                     arg+'='+os.environ.get(arg)
             self.completeEnvList()
-        #print "after environment=%s"%settings['environment']
+        env_list = settings['environment']
+        if settings['usedagman'] and 'JOBSUBJOBSECTION' not in settings['added_environment']:
+            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
+            self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n"%args)
         f.write("output                = %s\n"%settings['outfile'])
         f.write("error                 = %s\n"%settings['errfile'])
         f.write("log                   = %s\n"%settings['logfile'])
-        f.write("environment   = %s\n"%settings['environment'])
+        f.write("environment   = %s\n" % env_list)
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = 21600\n")
 
@@ -1384,6 +1404,9 @@ class JobSettings(object):
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
                     (settings['accountinggroup'],settings['user']))
+        self.addToLineSetting("+Jobsub_Group=\"%s\""%settings['group'])
+        if settings['subgroup']:
+            self.addToLineSetting("+Jobsub_SubGroup=\"%s\""%settings['subgroup'])
 
         self.handleResourceProvides(f,job_iter)
 

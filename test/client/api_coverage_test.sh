@@ -1,6 +1,6 @@
 #!/bin/sh
 
-GREPLIST="GROUP= MACH= "
+GREPLIST="GROUP= MACH= X509_USER_CERT= X509_USER_KEY="
 for OPT in "$@" ; do
     for ITM in ${GREPLIST}; do
         echo $OPT | grep $ITM > /dev/null 2>&1
@@ -84,4 +84,11 @@ echo
 echo quick and dirty report of which pages are implemented or not
 echo
 grep 'HTTP/1.1' ${MACH}.*out
-grep 'HTTP/1.1' ${MACH}.*out >> $TESTLOGFILE
+grep 'HTTP/1.1' ${MACH}.*out | cut -d ' ' -f2-4 | sort | uniq -c
+grep Exception ${MACH}*out
+if [ $? = 0 ] ; then
+    echo 'FAILED'
+    exit 1
+fi
+echo PASSED
+exit 0

@@ -21,14 +21,14 @@ class QueuedJobsResource(object):
 
     def __init__(self):
         self.history=HistoryResource()
-	self.summary=JobSummaryResource()
+        self.summary=JobSummaryResource()
         self.jobid=QueuedJobsByJobIDResource()
-	self.long=QueuedLongResource()
-	self.dags=QueuedDagResource()
+        self.long=QueuedLongResource()
+        self.dags=QueuedDagResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.
-	    API is /acctgroups/<group>/users/<uid>/jobs
+            API is /acctgroups/<group>/users/<uid>/jobs
         """
         #acctgroup=kwargs.get('acctgroup')
         #job_id=kwargs.get('job_id')
@@ -36,7 +36,7 @@ class QueuedJobsResource(object):
             user_id=kwargs.get('user_id')
         filter = constructFilter(None,user_id,job_id)
         logger.log("filter=%s"%filter)
-	history = ui_condor_q( filter  )
+        history = ui_condor_q( filter  )
         return {'out': history.split('\n')}
 
     @cherrypy.expose

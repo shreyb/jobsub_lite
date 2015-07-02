@@ -21,6 +21,16 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+v1_3_12 7/2/15
+==================================================
+* Feature 8301 JOBSUBJOBSECTION number defined for DAG members
+* Feature 8999 add Jobsub_Group and Jobsub_Subgroup to jobs classad
+* Bug 7697 inconsistencies between -L and --use_gftp
+* Bug 8038 --dataset-definition DAG doesnt end project if one job fails
+* Bug 8277 CDF wrapper script problem 
+* Bug 8278 Change default SAM_GROUP in CDF wrapper
+* Bug 8941 --maxConcurrent broken for Minerva
+
 
 v1_3_11 6/9/15
 ==================================================

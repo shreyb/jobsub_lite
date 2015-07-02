@@ -3,7 +3,7 @@
 from JobSettings import JobSettings
 from optparse import OptionGroup
 import os
-from datetime import datetime
+import datetime
 
 class MinervaSettings(JobSettings):
     def __init__(self):
@@ -27,13 +27,9 @@ class MinervaSettings(JobSettings):
 
     def initCmdParser(self):
         #print "MinervaSettings initCmdParser"
-        cmdParser = self.cmdParser
         self.minerva_group = OptionGroup(self.cmdParser, "Minerva Specific Options")
         self.cmdParser.add_option_group(self.minerva_group)
 
-        #print "MinervaSettings initCmdParser cmdParser=%s"%self.cmdParser
-        #print "MinervaSettings initCmdParser file_group=%s"%self.file_group
-        #return
     
         
         self.minerva_group.add_option("-i", dest="reldir",
@@ -103,39 +99,20 @@ class MinervaSettings(JobSettings):
             f.write("\n")
         f.close()
         
-
-    def makeCondorFiles(self):
+    def makeFileTag(self):
         settings=self.settings
         a = settings['exe_script'].split("/")
         prefix=a[-1]
-        if settings['prefix'] != "":
-            prefix=settings['prefix']
-            
-        ow = datetime.now()
+        p=settings.get('prefix')
+        if p:
+            prefix = p
+        ow = datetime.datetime.now()
         pid=os.getpid()
-    
         filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
-                ow.month,ow.day,ow.hour,
-                ow.minute,ow.second,pid)
-            
-        settings['filetag']=filebase
-        if settings['dataset_definition']=="":
-            self.makeCondorFiles2()
-        else:
-            if settings['project_name']=="":
-                settings['project_name']="%s-%s"%(settings['user'],settings['filetag'])
-            job_count=settings['queuecount']
-            settings['queuecount']=1
-            job_iter=1
-            while (job_iter <= job_count):
-                #print "calling self.makeCondorFiles2(%d)"%job_iter
-                self.makeCondorFiles2(job_iter)
-                job_iter += 1
+            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
+        return filebase
 
-                
-            self.makeDAGFile()
-            self.makeSAMBeginFiles()
-            self.makeSAMEndFiles()
+
 
 
     def checkSanity(self):

@@ -537,14 +537,6 @@ class JobSettings(object):
     def makeParrotFile(self):
         raise Exception("parrot file generation has been turned off.  Please report this error to the service desk")
         # print "makeParrotFile"
-        settings = self.settings
-        commands = JobUtils()
-        #glob = commands.parrotString()
-
-        glob = glob.replace('WRAPFILETAG', settings['wrapfile'])
-        f = open(settings['parrotfile'], 'w')
-        f.write(glob)
-        f.close()
 
     def makeWrapFilePreamble(self):
         """ Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env 
@@ -691,7 +683,7 @@ class JobSettings(object):
             for tag in settings['output_dir_array']:
                 f.write("if [ \"$(ls -A ${CONDOR_DIR_%s})\" ]; then\n" %(tag[0]))
                 f.write("\tchmod a+rwx ${CONDOR_DIR_%s}/*\n" % tag[0])
-                f.write("\tmkdir -p %s\n" % tag[1])
+                f.write("\t%s mkdir  %s\n" % (ifdh_cmd,tag[1]))
                 f.write("fi\n")
 
                 if settings['use_gftp']:
@@ -709,8 +701,11 @@ class JobSettings(object):
         f.write(log_cmd2)
 
 
-        if settings['joblogfile'] != "":
-            f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
+        if settings['joblogfile'] != "" and not settings['nologbuffer']:
+            use_gftp = ""
+            if settings['use_gftp']:
+                use_gftp = "--force=expgridftp"
+            f.write("%s cp %s $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,use_gftp,settings['joblogfile']))
         f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 
         f.write("exit $JOB_RET_STATUS\n")
@@ -822,7 +817,15 @@ class JobSettings(object):
         if iret:
             raise Exception(ires)
 
-
+    def makeFileTag(self):
+        settings=self.settings
+        a = settings['exe_script'].split("/")
+        prefix=a[-1]
+        ow = datetime.datetime.now()
+        pid=os.getpid()
+        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(prefix,ow.year,
+            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
+        return filebase
 
 
     def makeCondorFiles(self):
@@ -833,12 +836,7 @@ class JobSettings(object):
         if settings['input_tar_dir']:
             self.makeTarDir()
 
-        a = settings['exe_script'].split("/")
-        ow = datetime.datetime.now()
-        pid=os.getpid()
-        filebase = "%s_%s%02d%02d_%02d%02d%02d_%s"%(a[-1],ow.year,
-            ow.month,ow.day,ow.hour, ow.minute,ow.second,pid)
-        settings['filetag']=filebase
+        settings['filetag']=self.makeFileTag()
         if settings['usedagman']==False:
             self.makeCondorFiles2()
         else:
@@ -1157,7 +1155,7 @@ class JobSettings(object):
 
 
             for tag in settings['output_tag_array'].keys():
-                cmd1 = "mkdir -p %s " % settings['output_tag_array'][tag]
+                cmd1 = "%s mkdir  %s " % (settings['ifdh_cmd'],settings['output_tag_array'][tag])
                 settings['wrapper_cmd_array'].append(cmd1)
                 if settings['verbose']:
                     print cmd1

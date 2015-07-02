@@ -52,7 +52,6 @@ T0=$?
 gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --debug
     -e SAM_STATION \
-    -e SAM_GROUP \
     -e SAM_USER \
     -e SAM_DATASET \
     -e SAM_PROJECT2 \
@@ -76,7 +75,6 @@ T1=$?
 gCMD3="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --debug
     -e SAM_STATION \
-    -e SAM_GROUP \
     -e SAM_USER \
     -e SAM_DATASET \
     -e SAM_PROJECT3 \
@@ -99,7 +97,6 @@ T2=$?
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --debug
     -e SAM_STATION \
-    -e SAM_GROUP \
     -e SAM_USER \
     -e SAM_DATASET \
     -e SAM_PROJECT1 \

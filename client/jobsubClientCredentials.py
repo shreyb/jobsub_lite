@@ -147,8 +147,8 @@ class Krb5Ticket(Credentials):
         return '%s' % {
             'KRB5CCNAME': self.krb5CredCache,
             'VALID_FROM': self.validFrom,
-            'VALID_TO'  : self.validTo
-            'DEFAULT_PRINCIPAL'  : self.principal
+            'VALID_TO'  : self.validTo,
+            'DEFAULT_PRINCIPAL'  : self.principal,
         }
 
 

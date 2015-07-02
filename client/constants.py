@@ -117,7 +117,7 @@ JOBSUB_SERVER_OPT_ENV = ('-e','--environment',)
 ################################################################################
 
 KRB5TICKET_VALIDITY_HEADER = "Valid starting     Expires            Service principal\\n(.*)\\n.*"
-KRB5TICKET_DEFAULT_PRINCIPAL = "Default principal: (.*)"
+KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN = "Default principal: (.*)"
 
 KRB5_DEFAULT_CC = 'FILE:/tmp/krb5cc_%s' % os.getuid()
 

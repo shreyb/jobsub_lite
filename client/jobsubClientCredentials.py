@@ -134,10 +134,12 @@ class Krb5Ticket(Credentials):
             lt = krb5_ticket_lifetime(self.krb5CredCache)
             self.validFrom = lt['stime']
             self.validTo = lt['etime']
+            self.principal = krb5_default_principal(self.krb5CredCache) 
         except:
             self.krb5CredCache = None
             self.validFrom = None
             self.validTo = None
+            self.principal = None
             raise
 
 
@@ -146,6 +148,7 @@ class Krb5Ticket(Credentials):
             'KRB5CCNAME': self.krb5CredCache,
             'VALID_FROM': self.validFrom,
             'VALID_TO'  : self.validTo
+            'DEFAULT_PRINCIPAL'  : self.principal
         }
 
 
@@ -196,7 +199,7 @@ def krb5_default_principal(cache=None):
             raise Exception("Unable to find command 'klist' in the PATH")
         cmd = '%s -c %s' % (klist_cmd, cache)
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        prn  = (re.findall(constants.KRB5TICKET_DEFAULT_PRINCIPAL, cmd_out))[0]
+        prn  = (re.findall(constants.KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN, cmd_out))[0]
     except:
         print sys.exc_info()[1]
         prn = "UNKNOWN"

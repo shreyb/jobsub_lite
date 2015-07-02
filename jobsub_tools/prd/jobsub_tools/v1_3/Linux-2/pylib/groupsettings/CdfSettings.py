@@ -133,10 +133,8 @@ class CdfSettings(JobSettings):
         wrapCommands = [ 
             "echo executing in directory",
             "pwd",
-            "echo its contents:",
-            "find . -ls  ",
             """ if [ -e "$INPUT_TAR_FILE" ]; then echo untarring $INPUT_TAR_FILE; tar xvf "$INPUT_TAR_FILE" ; fi""",
-            """export JOBSUB_USER_SCRIPT=`find . -name %s -print`    """%os.path.basename(settings['exe_script']),
+            """export JOBSUB_USER_SCRIPT=%s    """%settings['exe_script'].replace('file://',''),
             """echo executing: $JOBSUB_USER_SCRIPT "$@"   """,
             """$JOBSUB_USER_SCRIPT "$@"   """,
             "export JOB_RET_STATUS=$?",

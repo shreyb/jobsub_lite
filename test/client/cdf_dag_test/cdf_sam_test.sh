@@ -139,7 +139,31 @@ $gCMD
 T4=$?
 echo exit status of last command $T4
 
-! (( $T0 || $T1 || $T2 || $T3  || $T4 ))
+gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    --debug
+    -e SAM_STATION \
+    -e SAM_GROUP \
+    -e SAM_USER \
+    -e SAM_DATASET \
+    -e SAM_PROJECT1 \
+    -e IFDH_BASE_URI \
+    -G cdf $RESOURCE_PROVIDES \
+    -N 3 --generate-email-summary \
+    --mail_on_error --maxParallelSec 5 \
+    --dataset_definition=$SAM_DATASET \
+    --project_name=$SAM_PROJECT1 \
+    $SERVER_SPEC \
+    --tarFile=dropbox://input.tgz \
+     testSAM.sh $ foo bar baz"
+echo ======================================================
+echo $gCMD
+echo ======================================================
+
+$gCMD
+T5=$?
+echo exit status of last command $T5
+
+! (( $T0 || $T1 || $T2 || $T3  || $T4 || $T5 ))
 
 TF=$?
 exit $TF

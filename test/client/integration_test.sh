@@ -28,7 +28,7 @@ fi
 }
 
 
-SERVER=$1
+export SERVER=$1
 if [ -e "$2" ]; then
     source $2
 fi

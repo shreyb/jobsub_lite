@@ -10,18 +10,18 @@ from JobsubConfigParser import JobsubConfigParser
 
 
 class UnknownInputError(Exception):
-    def __init__(self,errMsg="Unknown Input"):
+    def __init__(self, errMsg="Unknown Input"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 
 class IllegalInputError(Exception):
-    def __init__(self,errMsg="Illegal Input"):
+    def __init__(self, errMsg="Illegal Input"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
 class InitializationError(Exception):
-    def __init__(self,errMsg="Initialization Error"):
+    def __init__(self, errMsg="Initialization Error"):
         sys.exit(errMsg)
         Exception.__init__(self, errMsg)
 
@@ -30,7 +30,7 @@ class MyCmdParser(OptionParser):
     def print_help(self):
         OptionParser.print_help(self)
         #OptionParser.epilog doesn't work in v python 2.4, here is my workaround
-        epilog="""
+        epilog = """
         NOTES
         You can have as many instances of -c, -d, -e, -f, -l and -y as you need.
 
@@ -57,17 +57,17 @@ class JobSettings(object):
             pass
         else:
             usage = "usage: %prog [options] your_script [your_script_args]\n"
-            usage +="submit your_script to local batch or to the OSG grid "
+            usage += "submit your_script to local batch or to the OSG grid "
 
 
             self.cmdParser = MyCmdParser(usage=usage, 
-                    version=os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
-                    conflict_handler="resolve")
+                    version = os.environ.get("SETUP_JOBSUB_TOOLS","NO_UPS_DIR"),
+                    conflict_handler = "resolve")
             self.cmdParser.disable_interspersed_args()
             self.generic_group = OptionGroup(self.cmdParser, "Generic Options")
             self.cmdParser.add_option_group(self.generic_group)
 
-            self.file_group= OptionGroup(self.cmdParser, "File Options")
+            self.file_group = OptionGroup(self.cmdParser, "File Options")
             self.cmdParser.add_option_group(self.file_group)
 
             self.sam_group= OptionGroup(self.cmdParser, "SAM Options")
@@ -1404,6 +1404,9 @@ class JobSettings(object):
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
                     (settings['accountinggroup'],settings['user']))
+        self.addToLineSetting("+Jobsub_Group=\"%s\""%settings['group'])
+        if settings['subgroup']:
+            self.addToLineSetting("+Jobsub_SubGroup=\"%s\""%settings['subgroup'])
 
         self.handleResourceProvides(f,job_iter)
 

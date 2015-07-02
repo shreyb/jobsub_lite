@@ -8,7 +8,6 @@ source ./setup_env.sh
 cd -
 
 export SERVER=https://${SERVER_SAVE}:8443
-#$EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
 
 here=`pwd`
 dir=`basename $here`
@@ -27,6 +26,7 @@ T5=$?
 
 ! (( $T1 || $T2 || $T3 || $T4 || $T5 ))
 rslt=$?
+echo -n "test ${dir}: "
 if [ "$rslt" = "0" ]; then
     echo "OK"
 else

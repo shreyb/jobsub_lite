@@ -1016,6 +1016,7 @@ class JobSettings(object):
 
 
     def makeSAMEndFiles(self):
+        self.makeDAGEndFiles()
         settings = self.settings
         samendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
         f = open(samendexe,'wx')
@@ -1036,7 +1037,7 @@ class JobSettings(object):
         f.write("echo ifdh endProject $CPURL exited with status $EXITSTATUS\n")
         f.write("exit $EXITSTATUS\n")
         f.close()
-        f = open(settings['dagendfile'], 'w')
+        f = open(settings['samendfile'], 'w')
         f.write("universe          = vanilla\n")
         f.write("executable        = %s\n"%samendexe)
         f.write("arguments         = %s \n"%(settings['project_name']))
@@ -1086,10 +1087,10 @@ class JobSettings(object):
             if settings['mail_summary']:
                 f.write("SCRIPT POST %s_%d %s  \n"%(exe,n,settings['dummy_script']))
             n+=1
-        f.write("JOB %s_END %s\n"%(jobname,settings['dagendfile']))
-        if settings['mail_summary']:
-            f.write("SCRIPT POST %s_END %s %s \n"%\
-                (jobname,settings['summary_script'],settings['dagendfile']))
+        f.write("JOB DAG_END %s\n"%(settings['dagendfile']))
+        samendfile = settings.get('samendfile')
+        #if samendfile:
+            #f.write("JOB SAM_END %s\n" % samendfile)
         f.write("Parent %s_START child "%jobname)
         n1=nOrig
         while (n1 <n):
@@ -1101,7 +1102,12 @@ class JobSettings(object):
         while (n1 <n):
             f.write("%s_%d "%(exe,n1))
             n1+=1
-        f.write("child %s_END\n"%jobname)
+        f.write("child DAG_END\n")
+        if samendfile:
+            f.write("FINAL SAM_END %s\n" % samendfile )
+        if settings['mail_summary']:
+            f.write("SCRIPT POST %s_END %s %s \n"%\
+                (jobname,settings['summary_script'],settings['dagendfile']))
 
         f.close()
 
@@ -1111,8 +1117,10 @@ class JobSettings(object):
         filebase="%s_%s"%(settings['filetag'],job_iter)
         if settings['dagfile']=='':
             settings['dagfile']="%s/%s.dag" % (settings['condor_tmp'],filebase)
-            settings['dagbeginfile']="%s/%s.sambegin.cmd" % (settings['condor_tmp'],filebase)
-            settings['dagendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
+            settings['dagbeginfile']="%s/%s.dagbegin.cmd" % (settings['condor_tmp'],filebase)
+            settings['dagendfile']="%s/%s.dagend.cmd" % (settings['condor_tmp'],filebase)
+            if self.settings['dataset_definition']!="":
+                settings['samendfile']="%s/%s.samend.cmd" % (settings['condor_tmp'],filebase)
         uniquer=0
         retVal = True
         while (retVal):

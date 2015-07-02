@@ -14,6 +14,8 @@ define_if_needed SAM_DATASET `whoami`_test_zzz_10
 define_if_needed SAM_PROJECT1 `whoami`_test_project_1_`date +%s`
 define_if_needed SAM_PROJECT2 `whoami`_test_project_2_`date +%s`
 define_if_needed SAM_PROJECT3 `whoami`_test_project_3_`date +%s`
+define_if_needed SAM_PROJECT4 `whoami`_test_project_4_`date +%s`
+define_if_needed SAM_PROJECT5 `whoami`_test_project_5_`date +%s`
 define_if_needed IFDH_BASE_URI http://samweb.fnal.gov:8480/sam/cdf/api
 
 cd ..
@@ -148,7 +150,7 @@ gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -N 3 --generate-email-summary \
     --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
-    --project_name=$SAM_PROJECT1 \
+    --project_name=$SAM_PROJECT4 \
     $SERVER_SPEC \
     --tarFile=dropbox://input.tgz \
      testSAM.sh $ foo bar baz"
@@ -160,7 +162,35 @@ $gCMD
 T5=$?
 echo exit status of last command $T5
 
-! (( $T0 || $T1 || $T2 || $T3  || $T4 || $T5 ))
+
+tar cvzf input4.tgz I_will_fail.sh 
+
+gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    --debug
+    -e SAM_STATION \
+    -e SAM_GROUP \
+    -e SAM_USER \
+    -e SAM_DATASET \
+    -e SAM_PROJECT1 \
+    -e IFDH_BASE_URI \
+    -G cdf $RESOURCE_PROVIDES \
+    -N 3  \
+    --mail_on_error --maxParallelSec 5 \
+    --dataset_definition=$SAM_DATASET \
+    --project_name=$SAM_PROJECT5 \
+    $SERVER_SPEC \
+    --tarFile=dropbox://input4.tgz \
+     I_will_fail.sh $ foo bar baz"
+echo ======================================================
+echo $gCMD
+echo ======================================================
+
+$gCMD
+T6=$?
+echo exit status of last command $T6
+
+
+! (( $T0 || $T1 || $T2 || $T3  || $T4 || $T5 || $T6 ))
 
 TF=$?
 exit $TF

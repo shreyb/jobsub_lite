@@ -1,3 +1,32 @@
+
+================================================================================
+v1.1.4
+================================================================================
+
+CLIENT
+------
+* Support 8131 jobsub_status documentation update
+* Bug 9192 jobsub_q exits with wrong status 
+* 
+
+SERVER
+------
+* Feature 8301 JOBSUBJOBSECTION number defined for DAG members
+* Feature 8657 gpsn01 - style concurrency limits 
+* Feature 8999 add Jobsub_Group and Jobsub_Subgroup to jobs classad
+* Feature 9305 add kerberos principal to job classad as JobsubClientKrb5Principal
+* Bug 7697 inconsistencies between -L and --use_gftp
+* Bug 8038 --dataset-definition DAG doesnt end project if one job fails
+* Bug 8277 CDF wrapper script problem 
+* Bug 8278 Change default SAM_GROUP in CDF wrapper
+* Bug 8886 Jobsub (sometimes) changes executable permissions on user script 
+* Bug 8941 --maxConcurrent broken for Minerva
+* Bug 9183 fix jobsub_history - faster searching for individual jobs by jobid
+* Bug 9184 server version URL throws exception and internal server error
+* Maintenance 9157 CI implementation and test suite improvement
+
+
+
 ================================================================================
 v1.1.3
 ================================================================================

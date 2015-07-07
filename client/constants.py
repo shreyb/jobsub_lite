@@ -97,7 +97,7 @@ HTTP_RESPONSE_CODE_STATUS = {
 # PyCurl Constants
 ################################################################################
 
-JOBSUB_PYCURL_CONNECTTIMEOUT = 10
+JOBSUB_PYCURL_CONNECTTIMEOUT = 60
 JOBSUB_PYCURL_TIMEOUT = 600
 JOBSUB_SSL_VERIFYHOST = 2
 

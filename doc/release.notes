@@ -7,7 +7,7 @@ CLIENT
 ------
 * Support 8131 jobsub_status documentation update
 * Bug 9192 jobsub_q exits with wrong status 
-* 
+* Bug 9380 increase client timeout setting
 
 SERVER
 ------

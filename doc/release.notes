@@ -24,6 +24,7 @@ SERVER
 * Bug 9183 fix jobsub_history - faster searching for individual jobs by jobid
 * Bug 9184 server version URL throws exception and internal server error
 * Maintenance 9157 CI implementation and test suite improvement
+* Bug 9534 fix incompatiblity with 1_1_3 version of client
 
 
 

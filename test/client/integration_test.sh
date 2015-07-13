@@ -52,6 +52,13 @@ fi
 if [ "$JOBSUB_GROUP" != "" ]; then
     export OUTGROUP=$JOBSUB_GROUP
 fi
+if [ "$USE_UPS_DIR" != "" ]; then
+    source $USE_UPS_DIR
+fi
+if [ "$USE_JOBSUB_CLIENT_VERSION" != "" ]; then
+    setup jobsub_client $USE_JOBSUB_CLIENT_VERSION
+fi
+
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
 cp simple_worker_script.sh ${GROUP}_test.sh

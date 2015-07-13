@@ -133,7 +133,7 @@ class AccountJobsResource(object):
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
-            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal')
+            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal','UNKNOWN')
             if jobsub_args is not None:
 
                 jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()

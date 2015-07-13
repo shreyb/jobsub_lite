@@ -45,7 +45,7 @@ class DagResource(object):
             logger.log('dag.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
-            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal')
+            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal','UNKNOWN')
             child_env = os.environ.copy()
             if jobsub_args is not None:
 

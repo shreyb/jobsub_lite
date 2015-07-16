@@ -68,6 +68,7 @@ fi
 
 JCDN=""
 if [ "$JOBSUB_CLIENT_DN" != "" ]; then
+    export JOBSUB_CLIENT_DN=`echo $JOBSUB_CLIENT_DN | sed "s/'//"`
     JCDN=" -l +JobsubClientDN=\\\"'"$JOBSUB_CLIENT_DN"'\\\" "
 fi
 

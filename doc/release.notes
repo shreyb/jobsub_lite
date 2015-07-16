@@ -25,6 +25,7 @@ SERVER
 * Bug 9184 server version URL throws exception and internal server error
 * Maintenance 9157 CI implementation and test suite improvement
 * Bug 9534 fix incompatiblity with 1_1_3 version of client
+* Bug 9518 apostrophe in DN causing submission and other problems
 
 
 

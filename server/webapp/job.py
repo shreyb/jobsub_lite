@@ -5,7 +5,7 @@ import re
 import cherrypy
 import logger
 import StringIO
-
+from socket import gethostname
 from datetime import datetime
 from shutil import copyfileobj
 
@@ -257,15 +257,19 @@ class AccountJobsResource(object):
 
 
     def doJobAction(self, acctgroup, job_id, job_action):
-        constraint = '(Owner =?= "%s")' % (cherrypy.request.username)
-        # Split the jobid to get cluster_id and proc_id
-        stuff=job_id.split('@')
-        schedd_name='@'.join(stuff[1:])
-        logger.log("schedd_name is %s"%schedd_name)
-        ids = stuff[0].split('.')
-        constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
-        if (len(ids) > 1) and (ids[1]):
-            constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
+        schedd_name = gethostname()
+        if '@' in job_id:
+            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (cherrypy.request.username,acctgroup)
+            # Split the jobid to get cluster_id and proc_id
+            stuff=job_id.split('@')
+            schedd_name='@'.join(stuff[1:])
+            logger.log("schedd_name is %s"%schedd_name)
+            ids = stuff[0].split('.')
+            constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
+            if (len(ids) > 1) and (ids[1]):
+                constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
+        else:
+            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (job_id,acctgroup)
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
 

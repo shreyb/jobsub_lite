@@ -34,7 +34,8 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer and options.jobId:
+        if options.acctGroup and options.jobsubServer and \
+                (options.jobId or options.uid):
             return True
     except AttributeError:
         return False
@@ -46,7 +47,8 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="please direct questions comments, or problems to the service desk")
+                                   epilog="""Required options are (-G AND --jobsub-server AND  ( --jobid OR --user) ).  Please direct questions, comments, or problems to the service desk""")
+
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
@@ -81,6 +83,14 @@ def parse_opts(argv):
                          action='store',
                          metavar='<Job ID>',
                          help='CSV list of Job Ids to release')
+
+    opt_group.add_option('--user',
+                         dest='uid',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<user ID>',
+                         help='release all jobs with this uid ')
 
     opt_group.add_option('--debug',
                          dest='debug',
@@ -120,14 +130,20 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, None)
-    rc = 1
+    rc = 0
     try:
         tmp_rc = 0
-        for jid in options.jobId.split(','):
-            print 'Releasing job with jobid=%s' % jid
-            http_code = js_client.release(jid)
+        if options.jobId:
+            for jid in options.jobId.split(','):
+                print 'Releasing job with jobid=%s' % jid
+                http_code = js_client.release(jid)
+                tmp_rc += http_code_to_rc(http_code)
+            rc += tmp_rc
+        if options.uid:
+            print 'Releasing jobs with uid=%s' % options.uid
+            http_code = js_client.release(jobid=None,uid=options.uid)
             tmp_rc += http_code_to_rc(http_code)
-        rc = tmp_rc
+        rc += tmp_rc
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

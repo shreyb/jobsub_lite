@@ -34,7 +34,8 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer and options.jobId:
+        if options.acctGroup and options.jobsubServer and \
+            ( options.jobId or options.uid):
             return True
     except AttributeError:
         return False
@@ -46,7 +47,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="please direct questions, comments, or problems to the service desk")
+                                   epilog="""Required options are (-G AND --jobsub-server AND  ( --jobid OR --user) ).  Please direct questions, comments, or problems to the service desk""")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
@@ -79,8 +80,17 @@ def parse_opts(argv):
                          dest='jobId',
                          type='string',
                          action='store',
+                         default=None,
                          metavar='<Job ID>',
                          help='CSV list of Job Ids to remove')
+
+    opt_group.add_option('--user',
+                         dest='uid',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<user ID>',
+                         help='remove all jobs with this uid ')
 
     opt_group.add_option('--debug',
                          dest='debug',
@@ -120,14 +130,20 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, None)
-    rc = 1
+    rc = 0
     try:
         tmp_rc = 0
-        for jid in options.jobId.split(','):
-            print 'Removing job with jobid=%s' % jid
-            http_code = js_client.remove(jid)
+        if options.jobId:
+            for jid in options.jobId.split(','):
+                print 'Removing job with jobid=%s' % jid
+                http_code = js_client.remove(jid)
+                tmp_rc += http_code_to_rc(http_code)
+            rc += tmp_rc
+        if options.uid:
+            print 'Removing jobs with uid=%s' % options.uid
+            http_code = js_client.remove(jobid=None,uid=options.uid)
             tmp_rc += http_code_to_rc(http_code)
-        rc = tmp_rc
+        rc += tmp_rc
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

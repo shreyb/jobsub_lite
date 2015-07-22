@@ -437,71 +437,52 @@ class JobSubClient:
         return jobid
 
 
-    def release(self, jobid=None, uid=None):
+    def release(self, jobid):
         #jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("release requires either a jobid or uid")
-
-
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item)
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
 
         return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
-    def hold(self, jobid=None, uid=None):
+    def hold(self, jobid):
+        #jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("hold requires either a jobid or uid")
-
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item )
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
 
         return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
-    def remove(self, jobid=None, uid=None):
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("remove requires either a jobid or uid")
-
+    def remove(self, jobid):
+        #jobid=self.checkID(jobid)
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item)
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
         return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
 
 
-    def history(self, userid=None, jobid=None, outFormat=None):
+    def history(self, userid=None, jobid=None,outFormat=None):
         servers = get_jobsub_server_aliases(self.server)
         jobid = self.checkID(jobid)
 

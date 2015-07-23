@@ -8,6 +8,7 @@ source ./setup_env.sh
 
 $EXEPATH/jobsub_status $GROUP_SPEC $SERVER_SPEC --sites
 T1=$?
-echo $0 exiting with status $T1
-exit $T1
+TFINAL=$T1
+echo $0 exiting with status $TFINAL
+exit $TFINAL
 

@@ -47,7 +47,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="""Required options are (-G AND --jobsub-server AND  ( --jobid OR --user) ).  Please direct questions, comments, or problems to the service desk""")
+                                   epilog="""REQUIRED ARGUMENTS to release jobs  are ((-G AND --jobsub-server) AND  (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
 
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
@@ -119,6 +119,7 @@ def parse_opts(argv):
 
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
+        print "%s" % parser.epilog
         parser.print_help()
         sys.exit(1)
     return options

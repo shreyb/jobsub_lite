@@ -78,6 +78,14 @@ else
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
+lg_echo testing holding and releasing
+OUTFILE=$1.holdrelease.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
+pass_or_fail
+lg_echo testing holding and releasing $GROUP jobs owned by $USER
+OUTFILE=$1.holdrelease.byuser.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_hold_release_byuser.sh $SERVER $GOTJID >$OUTFILE 2>&1
+pass_or_fail
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test submission with role
     OUTFILE=$1.submit_role.$OUTGROUP.log
@@ -96,11 +104,16 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     fi 
     test $SUBMIT_WORKED2 -eq 0
     pass_or_fail
+    lg_echo testing holding and releasing with role
+    OUTFILE=$1.holdrelease.role.$OUTGROUP.log
+    sh ${TEST_FLAG} ./test_hold_release_role.sh $SERVER $GOTJID2 >$OUTFILE 2>&1
+    pass_or_fail
+    GUSER=${GROUP}pro
+    lg_echo testing holding and releasing $GROUP jobs owned by $GUSER
+    OUTFILE=$1.holdrelease.byuser.role$OUTGROUP.log
+    sh ${TEST_FLAG} ./test_hold_release_byuser_role.sh $SERVER $GOTJID >$OUTFILE 2>&1
+    pass_or_fail
 fi
-lg_echo testing holding and releasing
-OUTFILE=$1.holdrelease.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
-pass_or_fail
 lg_echo testing dag submission 
 OUTFILE=$1.testdag.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dag_submit.sh  $SERVER  >$OUTFILE  2>&1
@@ -174,13 +187,13 @@ pass_or_fail
 
 lg_echo test retrieving zip_file from sandbox 
 OUTFILE=$1.sandbox.$OUTGROUP.log
-sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID  >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./test_retrieve_sandbox.sh $SERVER $GOTJID  >$OUTFILE 2>&1
 pass_or_fail
 
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test retrieving zip_file from sandbox with role Production
     OUTFILE=$1.sandbox.Production.$OUTGROUP.log
-    sh ${TEST_FLAG} ./retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
+    sh ${TEST_FLAG} ./test_retrieve_sandbox.sh $SERVER $GOTJID2 Production >$OUTFILE 2>&1
     pass_or_fail
 fi
 

@@ -4,8 +4,8 @@ import os
 import re
 import cherrypy
 import logger
+import sys
 import StringIO
-from socket import gethostname
 from datetime import datetime
 from shutil import copyfileobj
 
@@ -21,7 +21,7 @@ from jobsub import condor_bin
 from jobsub import run_cmd_as_user
 from format import format_response
 from condor_commands import condor
-from condor_commands import constructFilter, ui_condor_q
+from condor_commands import constructFilter, ui_condor_q, schedd_list
 from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
@@ -257,43 +257,54 @@ class AccountJobsResource(object):
 
 
     def doJobAction(self, acctgroup, job_id, job_action):
-        schedd_name = gethostname()
+        scheddList = []
         if '@' in job_id:
-            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (cherrypy.request.username,acctgroup)
+            #job_id is a jobsubjobid
+            constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
             # Split the jobid to get cluster_id and proc_id
             stuff=job_id.split('@')
             schedd_name='@'.join(stuff[1:])
             logger.log("schedd_name is %s"%schedd_name)
+            scheddList.append(schedd_name)
             ids = stuff[0].split('.')
             constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
             if (len(ids) > 1) and (ids[1]):
                 constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
         else:
+            #job_id is an owner 
             constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (job_id,acctgroup)
+            scheddList = schedd_list()
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
 
-        cmd = [
-            condor_bin(self.condorCommands[job_action]), '-l',
-            '-name', schedd_name,
-            '-constraint', constraint
-        ]
                             
         child_env = os.environ.copy()
         child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
         out = err = ''
         affected_jobs = 0
-        try:
-            out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
-        except:
-            #TODO: We need to change the underlying library to return
-            #      stderr on failure rather than just raising exception
-            #pass
-            return {'out':out, 'err':err}
-        out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
         regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
-        for line in out:
-            if regex.match(line):
-                affected_jobs += 1
-        retStr = "Performed %s on %s jobs matching your request" % (job_action, affected_jobs)
+        extra_err = ""
+        for schedd_name in scheddList:
+            try:
+                cmd = [
+                    condor_bin(self.condorCommands[job_action]), '-l',
+                    '-name', schedd_name,
+                    '-constraint', constraint
+                ]
+                out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
+            except:
+                #TODO: We need to change the underlying library to return
+                #      stderr on failure rather than just raising exception
+                #however, as we are iterating over schedds we don't want
+                #to return error condition if one fails, we need to 
+                #continue and process the other ones
+                err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
+                logger.log(err,traceback=1)
+                extra_err = extra_err + err
+                #return {'out':out, 'err':err}
+            out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+            for line in out:
+                if regex.match(line):
+                    affected_jobs += 1
+        retStr = "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
         return retStr

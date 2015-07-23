@@ -32,7 +32,7 @@ T4=$?
 
 
 ! (( $T1 || $T2 || $T3 || $T4 ))
-T6=$?
-echo $0 exiting with status $T6
-exit $T6
+TFINAL=$?
+echo $0 exiting with status $TFINAL
+exit $TFINAL
 

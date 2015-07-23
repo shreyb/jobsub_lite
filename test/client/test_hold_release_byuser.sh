@@ -8,23 +8,23 @@ source ./setup_env.sh
 JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 
 echo before
-$EXEPATH/jobsub_q $GROUP_SPEC $SERVER_SPEC  
+$EXEPATH/jobsub_q --user $USER $GROUP_SPEC $SERVER_SPEC  
 T1=$?
 echo T1=$T1
-echo holding joblist=${JOBLIST}
-$EXEPATH/jobsub_hold $GROUP_SPEC $SERVER_SPEC  --jobid $JOBLIST --debug
+echo holding $GROUP jobs belonging to $USER 
+$EXEPATH/jobsub_hold $GROUP_SPEC $SERVER_SPEC  --user $USER --debug
 T2=$?
 echo T2=$T2
 echo after hold
-$EXEPATH/jobsub_q $GROUP_SPEC $SERVER_SPEC  
+$EXEPATH/jobsub_q --user $USER $GROUP_SPEC $SERVER_SPEC  
 T3=$?
 echo T3=$T3
-echo releasing joblist=${JOBLIST}
-$EXEPATH/jobsub_release $GROUP_SPEC $SERVER_SPEC  --jobid $JOBLIST --debug
+echo releasing $GROUP jobs belonging to $USER  
+$EXEPATH/jobsub_release $GROUP_SPEC $SERVER_SPEC  --user $USER --debug
 T4=$?
 echo T4=$T4
 echo after release
-$EXEPATH/jobsub_q $GROUP_SPEC $SERVER_SPEC  
+$EXEPATH/jobsub_q --user $USER $GROUP_SPEC $SERVER_SPEC  
 T5=$?
 echo T5=$T5
 ! (( $T1 || $T2 || $T3 || $T4 || $T5 ))

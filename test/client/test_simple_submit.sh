@@ -20,7 +20,7 @@ $EXEPATH/jobsub_submit.py $GROUP_SPEC \
 T2=$?
 
 ! (( $T1 || $T2 ))
-T3=$?
-echo $0 exiting with status $T3
-exit $T3
+TFINAL=$?
+echo $0 exiting with status $TFINAL
+exit $TFINAL
 

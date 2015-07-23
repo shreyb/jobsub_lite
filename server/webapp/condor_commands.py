@@ -206,7 +206,7 @@ def classad_to_dict(classad):
     return job_dict
 
 def schedd_list():
-    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -format '%s ' Name """)
+    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -af name """)
     return schedds.split()
     
 def schedd_name(arglist=None):

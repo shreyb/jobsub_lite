@@ -9,6 +9,7 @@ $EXEPATH/jobsub_submit_dag   $GROUP_SPEC \
 --debug $SERVER_SPEC  file://dagTest  --maxConcurrent 3
 T1=$?
 cd -
-echo $0 exiting with status $T1
-exit $T1
+TFINAL=$T1
+echo $0 exiting with status $TFINAL
+exit $TFINAL
 

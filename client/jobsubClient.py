@@ -737,11 +737,39 @@ def curl_context(url):
     return (curl, response)
 
 
+def report_counts(msg):
+    jobs = 0 
+    completed = 0
+    removed = 0
+    idle = 0
+    running = 0
+    held = 0
+    suspended = 0
+    jjid_pattern = re.compile('^[0-9]+[.][0-9]+[@].*$')
+    for line in msg:
+        if jjid_pattern.match(line):
+            jobs += 1
+            if ' C  ' in line:
+                completed += 1
+            elif ' X  ' in line:
+                removed += 1
+            elif ' I  ' in line:
+                idle += 1
+            elif ' R  ' in line:
+                running += 1
+            elif ' H  ' in line:
+                held += 1
+            elif ' S  ' in line:
+                suspended += 1
+    if jobs:
+        print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" %( jobs, completed, removed, idle, running, held, suspended) 
+
 def print_msg(msg):
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):
         print '%s' % '\n'.join(msg)
+        report_counts(msg)
     elif isinstance(msg, (dict)):
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(msg)

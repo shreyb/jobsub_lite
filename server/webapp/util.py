@@ -130,8 +130,6 @@ def needs_refresh(filepath,agelimit=3600):
     age=sys.maxint
     try:
         st=os.stat(filepath)
-        if st.st_size <= 0:
-            return True
         age=(time.time()-st.st_mtime)
     except:
         pass

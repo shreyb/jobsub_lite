@@ -48,8 +48,8 @@ class AuthorizationError(Exception):
         self.acctgroup = acctgroup
         Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
 
-class BadRoleError(Exception):
-    def __init__(self, errmsg="Cant authenticate with given role. Is it a typo?"):
+class OtherAuthError(Exception):
+    def __init__(self, errmsg="Authentication Error, please open a service desk ticket"):
         cherrypy.response.status = 401
         Exception.__init__(self, errmsg)
 
@@ -63,9 +63,10 @@ class Krb5Ticket:
         self.renewableLifetimeHours = 168
 
     def create(self):
-        kinit_exe = spawn.find_executable("kinit")
-        if not kinit_exe:
-            raise Exception("Unable to find command 'kinit' in the PATH.")
+        try:
+            kinit_exe = spawn.find_executable("kinit")
+        except:
+            raise OtherAuthError("Unable to find command 'kinit' in the PATH.")
 
         cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, cherrypy.request.keytab,
                                                       self.createLifetimeHours,
@@ -77,7 +78,7 @@ class Krb5Ticket:
         except:
             logger.log('removing file %s'%cherrypy.request.krb5cc)
             os.remove(cherrypy.request.krb5cc)
-            raise 
+            raise OtherAuthError("%s failed:  %s"%(cmd, sys.exc_info()[1]) )
 
 
 def get_voms(acctgroup):
@@ -102,24 +103,13 @@ def get_voms_fqan(acctgroup, acctrole=None):
     attrs = get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
     return attrs[-1]
 
-
 def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
-    # TODO: krb5cc_to_vomsproxy and x509pair_to_vomsproxy share lot of
-    #       code. Extract common functionality to conert x509 to voms proxy
-
-    tmp_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
-    tmp_proxy_fname = tmp_proxy_file.name
-    tmp_proxy_file.close()
+    tmp_proxy_fname = mk_temp_fname(proxy_fname)
     logger.log("tmp_proxy_fname=%s"%tmp_proxy_fname)
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
-    voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
-    if not voms_proxy_init_exe:
-        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
     # Any exception raised will result in Authorization Error by the caller
     try:
@@ -130,50 +120,13 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
 
     cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s -out %s -cert %s -key %s" % (voms_proxy_init_exe, voms_attrs, tmp_proxy_fname, cert, key)
     logger.log(cmd)
-
-    try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    except:
-        # Catch and ignore warnings
-        proxy_created_pattern = 'Creating proxy  Done'
-        tb = traceback.format_exc()
-        if len(re.findall(proxy_created_pattern, tb)):
-            logger.log('Proxy was created. Ignoring warnings.')
-            logger.log('Output from running voms-proxy-init:\n%s' % tb) 
-        else:
-            # Anything else we should just raise
-            os.remove(tmp_proxy_fname)
-            raise
-
-    cmd = "%s -all -file %s "%(voms_proxy_info_exe,tmp_proxy_fname)
-    logger.log(cmd)
-    #ret_code = os.system(cmd)
-    cmd_out, ret_code = subprocessSupport.iexe_cmd(cmd)
-    if acctrole:
-        role_pattern="%s/Role=%s"%(acctgroup,acctrole)
-        if role_pattern in cmd_out and 'VO' in cmd_out:
-            logger.log('found %s role in %s authenticated successfully'% (role_pattern,cmd_out))
-            os.rename(tmp_proxy_fname,proxy_fname)
-        else:
-            os.remove(tmp_proxy_fname)
-            raise BadRoleError("unable to authenticate with role='%s'.  Is this a typo?"%acctrole)
-
-    else:
-        if ret_code == 0 and 'VO' in cmd_out:
-            os.rename(tmp_proxy_fname,proxy_fname)
-        else:
-            os.remove(tmp_proxy_fname)
+    make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=acctrole )
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
-    # First convert the krb5cc to regular x509 credentials
-    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
-    new_proxy_fname = new_proxy_file.name
-    logger.log("new_proxy_fname=%s"%new_proxy_fname)
-    new_proxy_file.close()
+    new_proxy_fname = mk_temp_fname( proxy_fname)
     krb5cc_to_x509(krb5cc, x509_fname=new_proxy_fname)
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
@@ -188,11 +141,25 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
+    make_proxy_from_cmd(cmd, proxy_fname, new_proxy_fname, role=acctrole, env_dict=cmd_env)
+
+
+def mk_temp_fname( fname ):
+    tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=False)
+    tmp_fname = tmp_file.name
+    tmp_file.close()
+    return tmp_fname
+
+def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=None):
+
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
+    if not voms_proxy_info_exe:
+        raise OtherAuthError("Unable to find command 'voms-proxy-init' in the PATH.")
+
     try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=env_dict)
     except:
         # Catch and ignore warnings
-        # warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
         proxy_created_pattern = 'Creating proxy  Done'
         tb = traceback.format_exc()
         if len(re.findall(proxy_created_pattern, tb)):
@@ -200,25 +167,39 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
             logger.log('Output from running voms-proxy-init:\n%s' % tb) 
         else:
             # Anything else we should just raise
+            os.remove(tmp_proxy_fname)
             raise
-    cmd = "%s -all -file %s "%(voms_proxy_info_exe,new_proxy_fname)
-    logger.log(cmd)
-    #ret_code = os.system(cmd)
-    cmd_out, ret_code = subprocessSupport.iexe_cmd(cmd)
-    if acctrole:
-        role_pattern="%s/Role=%s"%(acctgroup,acctrole)
-        if role_pattern in cmd_out and 'VO' in cmd_out:
-            logger.log('found %s in %s role authenticated successfully'% (role_pattern,cmd_out))
-            os.rename(new_proxy_fname,proxy_fname)
-        else:
-            os.remove(new_proxy_fname)
-            raise BadRoleError("unable to authenticate with role='%s'.  Is this a typo?"%acctrole)
 
-    else:
-        if ret_code == 0 and 'VO' in cmd_out:
-            os.rename(new_proxy_fname,proxy_fname)
+    cmd = "%s -all -file %s "%(voms_proxy_info_exe,tmp_proxy_fname)
+    logger.log(cmd)
+    try:
+        cmd_out, cmd_err  = subprocessSupport.iexe_cmd(cmd)
+        if role:
+            role_pattern="/Role=%s/Capability"%(role)
+            if (role_pattern in cmd_out) and ('VO' in cmd_out):
+                logger.log('found role %s , authenticated successfully'% (role_pattern))
+                os.rename(tmp_proxy_fname,proxy_fname)
+            else:
+                logger.log('failed to find %s in %s'%(role_pattern,cmd_out))
+                t1=role_pattern in cmd_out
+                t2='VO' in cmd_out
+                logger.log('test (%s in cmd_out)=%s test(VO in cmd_out)=%s'%(role_pattern,t1,t2) )
+                os.remove(tmp_proxy_fname)
+                raise OtherAuthError("unable to authenticate with role='%s'.  Is this a typo?" % role)
+    
         else:
-            os.remove(new_proxy_fname)
+            if ('VO' in cmd_out):
+                os.rename(tmp_proxy_fname,proxy_fname)
+            else:
+                os.remove(tmp_proxy_fname)
+                logger.log("result:%s:%s does not appear to contain valid VO information. Failed to authenticate"%(cmd_out,cmd_err))
+                raise OtherAuthError("Your certificate is not valid. Please contact the service desk")
+    except:
+        logger.log("%s"%sys.exc_info()[1])
+        raise OtherAuthError("%s"%sys.exc_info()[1])
+    finally:
+        if os.path.exists(tmp_proxy_fname):
+            os.remove(tmp_proxy_fname)
 
 
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
@@ -231,7 +212,14 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
     logger.log(cmd)
-    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    try:
+        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    except:
+        logger.log("%s"%sys.exc_info()[1])
+        if os.path.exists(x509_fname):
+            os.remove(x509_fname)
+        raise OtherAuthError("%s"%sys.exc_info()[1])
+
 
 
 
@@ -431,7 +419,7 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
 
-    except BadRoleError, e:
+    except OtherAuthError, e:
         raise
     except:
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')

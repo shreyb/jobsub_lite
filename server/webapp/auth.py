@@ -48,6 +48,10 @@ class AuthorizationError(Exception):
         self.acctgroup = acctgroup
         Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
 
+class BadRoleError(Exception):
+    def __init__(self, errmsg="Cant authenticate with given role. Is it a typo?"):
+        cherrypy.response.status = 401
+        Exception.__init__(self, errmsg)
 
 class Krb5Ticket:
 
@@ -140,14 +144,25 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
             # Anything else we should just raise
             os.remove(tmp_proxy_fname)
             raise
-    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,tmp_proxy_fname)
-    logger.log(cmd)
-    ret_code = os.system(cmd)
-    if ret_code == 0:
-        os.rename(tmp_proxy_fname, proxy_fname)
-    else:
-        os.remove(tmp_proxy_fname)
 
+    cmd = "%s -all -file %s "%(voms_proxy_info_exe,tmp_proxy_fname)
+    logger.log(cmd)
+    #ret_code = os.system(cmd)
+    cmd_out, ret_code = subprocessSupport.iexe_cmd(cmd)
+    if acctrole:
+        role_pattern="%s/Role=%s"%(acctgroup,acctrole)
+        if role_pattern in cmd_out and 'VO' in cmd_out:
+            logger.log('found %s role in %s authenticated successfully'% (role_pattern,cmd_out))
+            os.rename(tmp_proxy_fname,proxy_fname)
+        else:
+            os.remove(tmp_proxy_fname)
+            raise BadRoleError("unable to authenticate with role='%s'.  Is this a typo?"%acctrole)
+
+    else:
+        if ret_code == 0 and 'VO' in cmd_out:
+            os.rename(tmp_proxy_fname,proxy_fname)
+        else:
+            os.remove(tmp_proxy_fname)
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
@@ -186,13 +201,24 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         else:
             # Anything else we should just raise
             raise
-    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,new_proxy_fname)
+    cmd = "%s -all -file %s "%(voms_proxy_info_exe,new_proxy_fname)
     logger.log(cmd)
-    ret_code = os.system(cmd)
-    if ret_code == 0:
-        os.rename(new_proxy_fname,proxy_fname)
+    #ret_code = os.system(cmd)
+    cmd_out, ret_code = subprocessSupport.iexe_cmd(cmd)
+    if acctrole:
+        role_pattern="%s/Role=%s"%(acctgroup,acctrole)
+        if role_pattern in cmd_out and 'VO' in cmd_out:
+            logger.log('found %s in %s role authenticated successfully'% (role_pattern,cmd_out))
+            os.rename(new_proxy_fname,proxy_fname)
+        else:
+            os.remove(new_proxy_fname)
+            raise BadRoleError("unable to authenticate with role='%s'.  Is this a typo?"%acctrole)
+
     else:
-        os.remove(new_proxy_fname)
+        if ret_code == 0 and 'VO' in cmd_out:
+            os.rename(new_proxy_fname,proxy_fname)
+        else:
+            os.remove(new_proxy_fname)
 
 
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
@@ -348,25 +374,29 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     krb5cc_dir = jobsubConfig.krb5ccDir
     logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
+    # Create the proxy as a temporary file in tmp_dir and perform a
+    # privileged move on the file.
+    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
+    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
+                                   os.path.basename(x509_cache_fname))
+    x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
+                                       delete=False)
+    x509_tmp_fname = x509_tmp_file.name
+    x509_tmp_file.close()
+    real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
+    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+    new_cache_fname = new_cache_file.name
+    logger.log("new_cache_fname=%s"%new_cache_fname)
+    new_cache_file.close()
     try:
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
         x509_user_cert = os.path.join(jobsubConfig.certsDir,
                                       '%s.cert'%username)
         x509_user_key = os.path.join(jobsubConfig.certsDir,
                                      '%s.key'%username)
 
-        # Create the proxy as a temporary file in tmp_dir and perform a
-        # privileged move on the file.
-        x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
-                                       os.path.basename(x509_cache_fname))
-        x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
-                                           delete=False)
-        x509_tmp_fname = x509_tmp_file.name
-        x509_tmp_file.close()
 
         # If the x509_cache_fname is new enough skip everything and use it
         # needs_refresh only looks for file existance and stat. It works on
@@ -377,10 +407,6 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
                 # always refresh for now
                 # if not is_valid_cache(real_cache_fname):
                 if True:
-                    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
-                    new_cache_fname = new_cache_file.name
-                    logger.log("new_cache_fname=%s"%new_cache_fname)
-                    new_cache_file.close()
                     logger.log('Creating krb5 ticket ...')
                     krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
                     krb5_ticket.create()
@@ -405,20 +431,21 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
 
-        #fix for #8094 we create x509_tmp_name above whether we use it or not.  
-        #if needs_refresh() evaluated to True and no exception occurred it got moved else it hung around
-        #now check for it and remove in either case
-
-        if os.path.exists(x509_tmp_fname):
-            os.remove(x509_tmp_fname)
-        return x509_cache_fname
+    except BadRoleError, e:
+        raise
     except:
-        if os.path.exists(x509_tmp_fname):
-            os.remove(x509_tmp_fname)
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
+    finally:
+        if os.path.exists(x509_tmp_fname):
+            os.remove(x509_tmp_fname)
+            logger.log("cleanup:rm %s"%x509_tmp_fname)
+        if os.path.exists(new_cache_fname):
+            os.remove(new_cache_fname)
+            logger.log("cleanup:rm %s"% new_cache_fname)
 
+    return x509_cache_fname
 
 def is_valid_cache(cache_name):
     #this always returns False after ownership change of cache_name from 'rexbatch' to its actual uid 

@@ -63,7 +63,7 @@ def condor_format(inputSwitch=None):
 
     dagStatusStr="""'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'"""
 
-    runTimeStr="""ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(CompletionDate==0,time()-JobCurrentStartDate,completiondate-jobcurrentstartdate))"""
+    runTimeStr="""ifthenelse(JobStartDate=?=UNDEFINED,0,ifthenelse(CompletionDate==0,ServerTime-JobStartDate,CompletionDate-JobStartDate))"""
 
     if inputSwitch=='long':
         fmtList =[ " -l " ]
@@ -189,7 +189,7 @@ def ui_condor_q(filter=None,format=None):
 
     try:
         all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        #logger.log("cmd=%s"%cmd)
+        logger.log("cmd=%s"%cmd)
         #logger.log("rslt=%s"%all_jobs)
         return hdr + all_jobs
     except:
@@ -241,7 +241,7 @@ def classad_to_dict(classad):
     return job_dict
 
 def schedd_list():
-    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -format '%s ' Name """)
+    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -af name """)
     return schedds.split()
     
 def schedd_name(arglist=None):

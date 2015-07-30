@@ -52,39 +52,52 @@ def condor_header(inputSwitch=None):
     if inputSwitch=='long':
         hdr=''
     elif inputSwitch=='dags':
-        hdr="JOBSUBJOBID                           USER     DAG_INFO     SUBMITTED         RUN_TIME   ST PRI SIZE CMD\n"
+        hdr="JOBSUBJOBID                           OWNER    DAG_INFO          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     else:
-        hdr="JOBSUBJOBID                           USER          SUBMITTED         RUN_TIME   ST PRI SIZE CMD\n"
+        hdr="JOBSUBJOBID                           OWNER           SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     return hdr
 
 def condor_format(inputSwitch=None):
 
-    statStr="""'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))'"""
-    runTimeStr="""'ifthenelse(JobCurrentStartDate=?=UNDEFINED,string("0+00:00:00"),ifthenelse(CompletionDate==0,interval(time()-JobCurrentStartDate),interval(completiondate-jobcurrentstartdate)))'"""
+    jobStatusStr="""'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))'"""
+
+    dagStatusStr="""'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'"""
+
+    runTimeStr="""ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(CompletionDate==0,time()-JobCurrentStartDate,completiondate-jobcurrentstartdate))"""
+
     if inputSwitch=='long':
         fmtList =[ " -l " ]
     elif inputSwitch=='dags':
+        #don't try this at home folks
         fmtList=[
                 """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
                 """ -format ' %-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))'""",
-                """ -format ' %-16s ' 'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'""",
+                """ -format ' %-16s '""", dagStatusStr,  
                 """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
-                """ -format '%11s ' """, runTimeStr, 
-                """ -format ' %-2s' """, statStr, 
+                """ -format '%3d+' """, """'int(""",runTimeStr,"""/(3600*24))'""",
+                """ -format '%02d' """, """'int(""",runTimeStr,"""/3600)-int(24*INT(""",runTimeStr,"""/(3600*24)))'""",
+                """ -format ':%02d' """, """'int(""",runTimeStr,"""/60)-int(60*INT(INT(""",runTimeStr,"""/60)/60))'""",
+                """ -format ':%02d' """, """'""",runTimeStr,"""-int(60*int(""",runTimeStr,"""/60))'""",
+                """ -format ' %-2s' """, jobStatusStr, 
                 """ -format '%3d ' JobPrio """,
-                """ -format '%4.1f ' ImageSize/1024.0 """,
-                """ -format ' %-30s' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """ 
+                """ -format ' %4.1f ' ImageSize/1024.0 """,
+                """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+                """ -format '\\n' Owner """, 
                 ]
     else:
         fmtList=[   
-                """ -format ' %-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+                """ -format '%-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
                 """ -format ' %-14s ' Owner """,
                 """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
-                """ -format '%11s ' """, runTimeStr, 
-                """ -format ' %-2s' """, statStr, 
+                """ -format '%3d+' """, """'int(""",runTimeStr,"""/(3600*24))'""",
+                """ -format '%02d' """, """'int(""",runTimeStr,"""/3600)-int(24*INT(""",runTimeStr,"""/(3600*24)))'""",
+                """ -format ':%02d' """, """'int(""",runTimeStr,"""/60)-int(60*INT(INT(""",runTimeStr,"""/60)/60))'""",
+                """ -format ':%02d' """, """'""",runTimeStr,"""-int(60*int(""",runTimeStr,"""/60))'""",
+                """ -format ' %-2s' """, jobStatusStr, 
                 """ -format '%3d ' JobPrio """,
-                """ -format '%4.1f ' ImageSize/1024.0 """,
-                """ -format ' %-30s ' 'regexps(".*\/(.+)",cmd,"\\1")' -format '\\n' Owner """
+                """ -format ' %4.1f ' ImageSize/1024.0 """,
+                """ -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+                """ -format '\\n' Owner """,
                 ]
 
     return ' '.join(fmtList) 

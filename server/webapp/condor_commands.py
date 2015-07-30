@@ -189,7 +189,7 @@ def ui_condor_q(filter=None,format=None):
 
     try:
         all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        logger.log("cmd=%s"%cmd)
+        #logger.log("cmd=%s"%cmd)
         #logger.log("rslt=%s"%all_jobs)
         return hdr + all_jobs
     except:

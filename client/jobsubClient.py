@@ -427,18 +427,13 @@ class JobSubClient:
     def checkID(self,jobid):
         if jobid is None:
             return jobid
-        if jobid.find('@')>=0:
-            jobidparts = jobid.split('@')
-            server=jobidparts[-1]
-            jobid='@'.join(jobidparts[:-1])
-            self.server="https://%s:8443"%server
-        if jobid=='':
-            jobid = None
-        return jobid
-
+        elif '@' in jobid:
+            return jobid
+        else:
+            raise JobSubClientError("ERROR: jobid must be of the form 'jobnumber@server' example: 123099.0@fifebatch.fnal.gov")
 
     def release(self, jobid):
-        #jobid=self.checkID(jobid)
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
@@ -454,7 +449,7 @@ class JobSubClient:
 
 
     def hold(self, jobid):
-        #jobid=self.checkID(jobid)
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
@@ -470,7 +465,7 @@ class JobSubClient:
 
 
     def remove(self, jobid):
-        #jobid=self.checkID(jobid)
+        jobid=self.checkID(jobid)
         self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
             self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
@@ -560,7 +555,7 @@ class JobSubClient:
         return self.changeJobState(self.listURL,'GET')
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
-        #jobid=self.checkID(jobid)
+        jobid=self.checkID(jobid)
         if jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:

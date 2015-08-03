@@ -44,7 +44,7 @@ class SandboxesResource(object):
                     if f.find('@') > 0:
                         try:
                             fp=os.path.join(dir,f)
-                            t=os.path.getctime(fp)
+                            t=os.path.getmtime(fp)
                             itm=(f, t)
                             filelist.append(itm)
                         except:

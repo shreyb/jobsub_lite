@@ -65,7 +65,7 @@ class JobSubClientSubmissionError(Exception):
 class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
-                 dropboxServer=None, useDag=False, server_version='current'):
+                 dropboxServer=None, useDag=False, server_version='current', verbose=False):
         self.server = server
         actual_server = server
         self.dropboxServer = dropboxServer
@@ -74,6 +74,7 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.useDag=useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
+        self.verbose=verbose
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
@@ -215,7 +216,7 @@ class JobSubClient:
                 result = json.loads(value)
             else:
                 print_formatted_response(value, response_code, self.server,
-                                         serving_server, response_time)
+                                         serving_server, response_time, verbose=self.verbose)
         response.close()
 
         return result
@@ -642,10 +643,10 @@ class JobSubClient:
 
         if content_type == 'application/json':
             print_json_response(value, code, self.server,
-                                serving_server, response_time)
+                                serving_server, response_time, verbose=self.verbose )
         else:
             print_formatted_response(value, code, self.server,
-                                     serving_server, response_time)
+                                     serving_server, response_time, verbose=self.verbose)
 
 
 def get_jobsub_server_aliases(server):
@@ -762,29 +763,34 @@ def print_server_details(response_code, server, serving_server, response_time):
 
 
 def print_json_response(response, response_code, server, serving_server,
-                        response_time, ignore_empty_msg=True):
+                        response_time, ignore_empty_msg=True, verbose=False):
     response_dict = json.loads(response)
     output = response_dict.get('out')
     error = response_dict.get('err')
     # Print output and error
     if output:
         print_msg(output)
+        if verbose:
+            print_server_details(response_code, server, serving_server, response_time)
+
     if error or not ignore_empty_msg:
         print 'RESPONSE ERROR:'
         print_msg(error)
-    print_server_details(response_code, server, serving_server, response_time)
+        print_server_details(response_code, server, serving_server, response_time)
 
    
 
 def print_formatted_response(msg, response_code, server, serving_server,
                              response_time, msg_type='OUTPUT',
-                             ignore_empty_msg=True, print_msg_type=True):
+                             ignore_empty_msg=True, print_msg_type=True, verbose=False):
     if ignore_empty_msg and not msg:
         return
     if print_msg_type:
         print 'Response %s:' % msg_type
     print_msg(msg)
-    print_server_details(response_code, server, serving_server, response_time)
+    rsp = constants.HTTP_RESPONSE_CODE_STATUS.get(response_code)
+    if rsp !='Success' or verbose:
+        print_server_details(response_code, server, serving_server, response_time)
 
 
 def get_client_credentials():

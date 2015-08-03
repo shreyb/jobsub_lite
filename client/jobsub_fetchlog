@@ -106,6 +106,14 @@ def parse_opts(argv):
                       default=False,
                       help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
 
+    parser.add_option('--verbose', 
+                      dest='verbose',
+                      action='store_true',
+                      metavar='<Verbose Output Option>',
+                      default=False,
+                      help='Show server contacted, http response code, response time. Default is to not show these uness error occurs.')
+
+
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
@@ -146,7 +154,7 @@ def list_sandboxes(options):
         err = "cannot extract user information from %s"%cert 
         sys.exit(err)
 
-    client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [])
+    client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [], verbose=options.verbose)
 
     rc = 0
     for server in get_jobsub_server_aliases(options.jobsubServer):
@@ -260,15 +268,15 @@ def get_sandbox(options):
                 value = fp.read()
             os.remove(fn)
 
-        if response_content_type == 'application/json':
+        if response_content_type == 'application/json' :
             print_json_response(value, response_code, options.jobsubServer,
                                 serving_server, response_time,
-                                ignore_empty_msg=False)
+                                ignore_empty_msg=False, verbose=options.verbose )
         else:
             print_formatted_response(value, response_code, options.jobsubServer,
                                      serving_server, response_time,
                                      ignore_empty_msg=False,
-                                     print_msg_type=False)
+                                     print_msg_type=False, verbose=options.verbose)
     except:
         print 'Error extracting the fetched files'
         sandbox_extract_rc = 1

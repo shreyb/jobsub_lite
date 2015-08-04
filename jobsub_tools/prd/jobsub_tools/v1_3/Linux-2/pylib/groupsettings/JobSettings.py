@@ -482,10 +482,24 @@ class JobSettings(object):
 
     def checkSanity(self):
         settings = self.settings
-        for arg in settings['added_environment']:
-            if os.environ.has_key(arg)==False:
-                err = "you used -e %s , but $%s must be set first for this to work!"%(arg,arg)
-                raise InitializationError(err)
+        for i, arg in enumerate(settings['added_environment']):
+            if '=' in arg or os.environ.has_key(arg)==False:
+                if os.environ.has_key(arg)==False and '=' not in arg:
+                    err = "you used -e %s , but $%s must be set first for this to work!"%(arg,arg)
+                    raise InitializationError(err)
+                elif '=' in arg:
+                    try:
+                        a,b = arg.split('=')
+                        if len(a)<1:
+                            raise InitializationError("error processing -e %s" % arg)
+                        os.environ[a] = b
+                        settings['added_environment'].pop(i)
+                        settings['added_environment'].insert(i,a)
+                    except Exception, e:
+                        raise InitializationError("error processing -e %s" % arg)
+                else:
+                    err = 'error setting up running environment' 
+                    raise InitializationError(err)
 
         if settings['queuecount'] < 1:
             err = "-N  must be a positive number"
@@ -1362,7 +1376,7 @@ class JobSettings(object):
         if job_iter <=1:
             for arg in settings['added_environment']:
                 settings['environment'] = settings['environment']+";"+\
-                    arg+'='+os.environ.get(arg)
+                    arg+'='+os.environ.get(arg,'NOT_SET')
             self.completeEnvList()
         env_list = settings['environment']
         if settings['usedagman'] and 'JOBSUBJOBSECTION' not in settings['added_environment']:

@@ -48,6 +48,10 @@ class AuthorizationError(Exception):
         self.acctgroup = acctgroup
         Exception.__init__(self, "Error authorizing DN='%s' for AcctGroup='%s'" % (self.dn, self.acctgroup))
 
+class OtherAuthError(Exception):
+    def __init__(self, errmsg="Authentication Error, please open a service desk ticket"):
+        cherrypy.response.status = 401
+        Exception.__init__(self, errmsg)
 
 class Krb5Ticket:
 
@@ -59,9 +63,10 @@ class Krb5Ticket:
         self.renewableLifetimeHours = 168
 
     def create(self):
-        kinit_exe = spawn.find_executable("kinit")
-        if not kinit_exe:
-            raise Exception("Unable to find command 'kinit' in the PATH.")
+        try:
+            kinit_exe = spawn.find_executable("kinit")
+        except:
+            raise OtherAuthError("Unable to find command 'kinit' in the PATH.")
 
         cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, cherrypy.request.keytab,
                                                       self.createLifetimeHours,
@@ -73,7 +78,7 @@ class Krb5Ticket:
         except:
             logger.log('removing file %s'%cherrypy.request.krb5cc)
             os.remove(cherrypy.request.krb5cc)
-            raise 
+            raise OtherAuthError("%s failed:  %s"%(cmd, sys.exc_info()[1]) )
 
 
 def get_voms(acctgroup):
@@ -98,24 +103,13 @@ def get_voms_fqan(acctgroup, acctrole=None):
     attrs = get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
     return attrs[-1]
 
-
 def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
-    # TODO: krb5cc_to_vomsproxy and x509pair_to_vomsproxy share lot of
-    #       code. Extract common functionality to conert x509 to voms proxy
-
-    tmp_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
-    tmp_proxy_fname = tmp_proxy_file.name
-    tmp_proxy_file.close()
+    tmp_proxy_fname = mk_temp_fname(proxy_fname)
     logger.log("tmp_proxy_fname=%s"%tmp_proxy_fname)
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
-    voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
-    if not voms_proxy_init_exe:
-        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
     # Any exception raised will result in Authorization Error by the caller
     try:
@@ -126,39 +120,13 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
 
     cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s -out %s -cert %s -key %s" % (voms_proxy_init_exe, voms_attrs, tmp_proxy_fname, cert, key)
     logger.log(cmd)
-
-    try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    except:
-        # Catch and ignore warnings
-        proxy_created_pattern = 'Creating proxy  Done'
-        tb = traceback.format_exc()
-        if len(re.findall(proxy_created_pattern, tb)):
-            logger.log('Proxy was created. Ignoring warnings.')
-            logger.log('Output from running voms-proxy-init:\n%s' % tb) 
-        else:
-            # Anything else we should just raise
-            os.remove(tmp_proxy_fname)
-            raise
-    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,tmp_proxy_fname)
-    logger.log(cmd)
-    ret_code = os.system(cmd)
-    if ret_code == 0:
-        os.rename(tmp_proxy_fname, proxy_fname)
-    else:
-        os.remove(tmp_proxy_fname)
-
+    make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=acctrole )
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
-    # First convert the krb5cc to regular x509 credentials
-    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname, delete=False)
-    new_proxy_fname = new_proxy_file.name
-    logger.log("new_proxy_fname=%s"%new_proxy_fname)
-    new_proxy_file.close()
+    new_proxy_fname = mk_temp_fname( proxy_fname)
     krb5cc_to_x509(krb5cc, x509_fname=new_proxy_fname)
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
-    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
@@ -173,11 +141,25 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
+    make_proxy_from_cmd(cmd, proxy_fname, new_proxy_fname, role=acctrole, env_dict=cmd_env)
+
+
+def mk_temp_fname( fname ):
+    tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=False)
+    tmp_fname = tmp_file.name
+    tmp_file.close()
+    return tmp_fname
+
+def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=None):
+
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
+    if not voms_proxy_info_exe:
+        raise OtherAuthError("Unable to find command 'voms-proxy-init' in the PATH.")
+
     try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=env_dict)
     except:
         # Catch and ignore warnings
-        # warning_pattern = 'Warning: voms.fnal.gov:[0-9]*: The validity of this VOMS AC in your proxy is shortened to [0-9]* seconds!'
         proxy_created_pattern = 'Creating proxy  Done'
         tb = traceback.format_exc()
         if len(re.findall(proxy_created_pattern, tb)):
@@ -185,14 +167,39 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
             logger.log('Output from running voms-proxy-init:\n%s' % tb) 
         else:
             # Anything else we should just raise
+            os.remove(tmp_proxy_fname)
             raise
-    cmd = "%s -all -file %s | grep VO"%(voms_proxy_info_exe,new_proxy_fname)
+
+    cmd = "%s -all -file %s "%(voms_proxy_info_exe,tmp_proxy_fname)
     logger.log(cmd)
-    ret_code = os.system(cmd)
-    if ret_code == 0:
-        os.rename(new_proxy_fname,proxy_fname)
-    else:
-        os.remove(new_proxy_fname)
+    try:
+        cmd_out, cmd_err  = subprocessSupport.iexe_cmd(cmd)
+        if role:
+            role_pattern="/Role=%s/Capability"%(role)
+            if (role_pattern in cmd_out) and ('VO' in cmd_out):
+                logger.log('found role %s , authenticated successfully'% (role_pattern))
+                os.rename(tmp_proxy_fname,proxy_fname)
+            else:
+                logger.log('failed to find %s in %s'%(role_pattern,cmd_out))
+                t1=role_pattern in cmd_out
+                t2='VO' in cmd_out
+                logger.log('test (%s in cmd_out)=%s test(VO in cmd_out)=%s'%(role_pattern,t1,t2) )
+                os.remove(tmp_proxy_fname)
+                raise OtherAuthError("unable to authenticate with role='%s'.  Is this a typo?" % role)
+    
+        else:
+            if ('VO' in cmd_out):
+                os.rename(tmp_proxy_fname,proxy_fname)
+            else:
+                os.remove(tmp_proxy_fname)
+                logger.log("result:%s:%s does not appear to contain valid VO information. Failed to authenticate"%(cmd_out,cmd_err))
+                raise OtherAuthError("Your certificate is not valid. Please contact the service desk")
+    except:
+        logger.log("%s"%sys.exc_info()[1])
+        raise OtherAuthError("%s"%sys.exc_info()[1])
+    finally:
+        if os.path.exists(tmp_proxy_fname):
+            os.remove(tmp_proxy_fname)
 
 
 def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
@@ -205,7 +212,14 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
     logger.log(cmd)
-    klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    try:
+        klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    except:
+        logger.log("%s"%sys.exc_info()[1])
+        if os.path.exists(x509_fname):
+            os.remove(x509_fname)
+        raise OtherAuthError("%s"%sys.exc_info()[1])
+
 
 
 
@@ -348,25 +362,29 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     krb5cc_dir = jobsubConfig.krb5ccDir
     logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
+    # Create the proxy as a temporary file in tmp_dir and perform a
+    # privileged move on the file.
+    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
+    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
+                                   os.path.basename(x509_cache_fname))
+    x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
+                                       delete=False)
+    x509_tmp_fname = x509_tmp_file.name
+    x509_tmp_file.close()
+    real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
+    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+    new_cache_fname = new_cache_file.name
+    logger.log("new_cache_fname=%s"%new_cache_fname)
+    new_cache_file.close()
     try:
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
         x509_user_cert = os.path.join(jobsubConfig.certsDir,
                                       '%s.cert'%username)
         x509_user_key = os.path.join(jobsubConfig.certsDir,
                                      '%s.key'%username)
 
-        # Create the proxy as a temporary file in tmp_dir and perform a
-        # privileged move on the file.
-        x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
-                                       os.path.basename(x509_cache_fname))
-        x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
-                                           delete=False)
-        x509_tmp_fname = x509_tmp_file.name
-        x509_tmp_file.close()
 
         # If the x509_cache_fname is new enough skip everything and use it
         # needs_refresh only looks for file existance and stat. It works on
@@ -377,10 +395,6 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
                 # always refresh for now
                 # if not is_valid_cache(real_cache_fname):
                 if True:
-                    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
-                    new_cache_fname = new_cache_file.name
-                    logger.log("new_cache_fname=%s"%new_cache_fname)
-                    new_cache_file.close()
                     logger.log('Creating krb5 ticket ...')
                     krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
                     krb5_ticket.create()
@@ -405,20 +419,21 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
 
-        #fix for #8094 we create x509_tmp_name above whether we use it or not.  
-        #if needs_refresh() evaluated to True and no exception occurred it got moved else it hung around
-        #now check for it and remove in either case
-
-        if os.path.exists(x509_tmp_fname):
-            os.remove(x509_tmp_fname)
-        return x509_cache_fname
+    except OtherAuthError, e:
+        raise
     except:
-        if os.path.exists(x509_tmp_fname):
-            os.remove(x509_tmp_fname)
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
+    finally:
+        if os.path.exists(x509_tmp_fname):
+            os.remove(x509_tmp_fname)
+            logger.log("cleanup:rm %s"%x509_tmp_fname)
+        if os.path.exists(new_cache_fname):
+            os.remove(new_cache_fname)
+            logger.log("cleanup:rm %s"% new_cache_fname)
 
+    return x509_cache_fname
 
 def is_valid_cache(cache_name):
     #this always returns False after ownership change of cache_name from 'rexbatch' to its actual uid 

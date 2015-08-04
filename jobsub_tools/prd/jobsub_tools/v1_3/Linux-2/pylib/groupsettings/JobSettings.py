@@ -707,6 +707,8 @@ class JobSettings(object):
                 use_gftp = "--force=expgridftp"
             f.write("%s cp %s $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,use_gftp,settings['joblogfile']))
         f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
+        f.write("""find $_CONDOR_JOB_IWD -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} \;\n""")
+        
 
         f.write("exit $JOB_RET_STATUS\n")
         if settings['verbose']:

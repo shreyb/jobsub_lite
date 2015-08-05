@@ -134,14 +134,23 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
             options.acctRole, None , extra_opts={'debug':options.debug})
-    rc = 1
+    rc = 0
     try:
         tmp_rc = 0
-        for jid in options.jobId.split(','):
-            print 'Putting job with jobid=%s on hold' % jid
-            http_code = js_client.hold(jid)
+
+        if options.jobId:
+            for jid in options.jobId.split(','):
+                print 'Holding job with jobid=%s' % jid
+                http_code = js_client.hold(jid)
+                tmp_rc += http_code_to_rc(http_code)
+            
+            rc += tmp_rc
+        elif options.uid:
+            print 'Holding jobs with uid=%s' % options.uid
+            http_code = js_client.hold(jobid=None,uid=options.uid)
             tmp_rc += http_code_to_rc(http_code)
-        rc = tmp_rc
+            rc += tmp_rc
+
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

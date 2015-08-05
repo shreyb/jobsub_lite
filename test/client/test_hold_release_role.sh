@@ -27,7 +27,15 @@ echo after release
 $EXEPATH/jobsub_q --user $GUSER  $GROUP_SPEC $SERVER_SPEC  
 T5=$?
 echo T5=$T5
-! (( $T1 || $T2 || $T3 || $T4 || $T5 ))
+echo holding joblist=${JOBLIST} with a bogus role
+$EXEPATH/jobsub_hold --role production $GROUP_SPEC $SERVER_SPEC  --jobid $JOBLIST --debug
+test $? -ne 0
+T6=$?
+echo releasing joblist=${JOBLIST} with a bogus role
+$EXEPATH/jobsub_release --role production $GROUP_SPEC $SERVER_SPEC  --jobid $JOBLIST --debug
+test $? -ne 0
+T7=$?
+! (( $T1 || $T2 || $T3 || $T4 || $T5 || $T6 || $T7 ))
 TFINAL=$?
 
 echo $0 exiting with status $TFINAL

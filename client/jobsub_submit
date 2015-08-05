@@ -179,13 +179,15 @@ def parse_opts(argv):
                          dest='debug',
                          action='store_true',
                          default=False,
-                         help='Print debug messages to stdout')
+                         help='Print debug messages including server contacted, http response, response time')
 
     opt_group.add_option('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
+
+
 
     parser.add_option_group(opt_group)
 
@@ -225,7 +227,7 @@ def print_acctgroup_help(options):
     Format and print the help message from the server
     """
 
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
     response = js_client.help()
 
     out = response.get('out')
@@ -248,7 +250,7 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
-                             options.dropboxServer, options.dag)
+                             options.dropboxServer, options.dag, extra_opts={'debug':options.debug})
     rc = 1
     try:
         http_code = js_client.submit()

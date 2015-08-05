@@ -65,7 +65,7 @@ class JobSubClientSubmissionError(Exception):
 class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
-                 dropboxServer=None, useDag=False, server_version='current'):
+                 dropboxServer=None, useDag=False, server_version='current', extra_opts={}):
         self.server = server
         actual_server = server
         self.dropboxServer = dropboxServer
@@ -74,6 +74,7 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.useDag=useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
+        self.verbose=extra_opts.get('debug',False)
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
@@ -215,7 +216,7 @@ class JobSubClient:
                 result = json.loads(value)
             else:
                 print_formatted_response(value, response_code, self.server,
-                                         serving_server, response_time)
+                                         serving_server, response_time, verbose=self.verbose)
         response.close()
 
         return result
@@ -427,81 +428,57 @@ class JobSubClient:
     def checkID(self,jobid):
         if jobid is None:
             return jobid
-        if jobid.find('@')>=0:
-            jobidparts = jobid.split('@')
-            server=jobidparts[-1]
-            jobid='@'.join(jobidparts[:-1])
-            self.server="https://%s:8443"%server
-        if jobid=='':
-            jobid = None
-        return jobid
+        elif '@' in jobid:
+            return jobid
+        else:
+            raise JobSubClientError("ERROR: jobid must be of the form 'jobnumber@server' example: 123099.0@fifebatch.fnal.gov")
 
-
-    def release(self, jobid=None, uid=None):
-        #jobid=self.checkID(jobid)
+    def release(self, jobid):
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("release requires either a jobid or uid")
-
-
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item)
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
 
         return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
-    def hold(self, jobid=None, uid=None):
+    def hold(self, jobid):
+        jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("hold requires either a jobid or uid")
-
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item )
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
 
         return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
-    def remove(self, jobid=None, uid=None):
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-        elif uid:
-            item = uid
-        else:
-            raise JobSubClientError("remove requires either a jobid or uid")
-
+    def remove(self, jobid):
+        jobid=self.checkID(jobid)
+        self.server="https://%s:8443"%jobid.split('@')[-1]
         if self.acctRole:
-            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item)
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole, jobid)
         else:
-            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN % (
+                                 self.server, self.acctGroup, jobid
+                             )
+
         return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
 
 
-    def history(self, userid=None, jobid=None, outFormat=None):
+    def history(self, userid=None, jobid=None,outFormat=None):
         servers = get_jobsub_server_aliases(self.server)
         jobid = self.checkID(jobid)
 
@@ -579,7 +556,7 @@ class JobSubClient:
         return self.changeJobState(self.listURL,'GET')
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
-        #jobid=self.checkID(jobid)
+        jobid=self.checkID(jobid)
         if jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:
@@ -661,10 +638,10 @@ class JobSubClient:
 
         if content_type == 'application/json':
             print_json_response(value, code, self.server,
-                                serving_server, response_time)
+                                serving_server, response_time, verbose=self.verbose )
         else:
             print_formatted_response(value, code, self.server,
-                                     serving_server, response_time)
+                                     serving_server, response_time, verbose=self.verbose)
 
 
 def get_jobsub_server_aliases(server):
@@ -756,11 +733,39 @@ def curl_context(url):
     return (curl, response)
 
 
+def report_counts(msg):
+    jobs = 0 
+    completed = 0
+    removed = 0
+    idle = 0
+    running = 0
+    held = 0
+    suspended = 0
+    jjid_pattern = re.compile('^[0-9]+[.][0-9]+[@].*$')
+    for line in msg:
+        if jjid_pattern.match(line):
+            jobs += 1
+            if ' C  ' in line:
+                completed += 1
+            elif ' X  ' in line:
+                removed += 1
+            elif ' I  ' in line:
+                idle += 1
+            elif ' R  ' in line:
+                running += 1
+            elif ' H  ' in line:
+                held += 1
+            elif ' S  ' in line:
+                suspended += 1
+    if jobs:
+        print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" %( jobs, completed, removed, idle, running, held, suspended) 
+
 def print_msg(msg):
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):
         print '%s' % '\n'.join(msg)
+        report_counts(msg)
     elif isinstance(msg, (dict)):
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(msg)
@@ -781,29 +786,34 @@ def print_server_details(response_code, server, serving_server, response_time):
 
 
 def print_json_response(response, response_code, server, serving_server,
-                        response_time, ignore_empty_msg=True):
+                        response_time, ignore_empty_msg=True, verbose=False):
     response_dict = json.loads(response)
     output = response_dict.get('out')
     error = response_dict.get('err')
     # Print output and error
     if output:
         print_msg(output)
+        if verbose:
+            print_server_details(response_code, server, serving_server, response_time)
+
     if error or not ignore_empty_msg:
         print 'RESPONSE ERROR:'
         print_msg(error)
-    print_server_details(response_code, server, serving_server, response_time)
+        print_server_details(response_code, server, serving_server, response_time)
 
    
 
 def print_formatted_response(msg, response_code, server, serving_server,
                              response_time, msg_type='OUTPUT',
-                             ignore_empty_msg=True, print_msg_type=True):
+                             ignore_empty_msg=True, print_msg_type=True, verbose=False):
     if ignore_empty_msg and not msg:
         return
     if print_msg_type:
         print 'Response %s:' % msg_type
     print_msg(msg)
-    print_server_details(response_code, server, serving_server, response_time)
+    rsp = constants.HTTP_RESPONSE_CODE_STATUS.get(response_code)
+    if rsp !='Success' or verbose:
+        print_server_details(response_code, server, serving_server, response_time)
 
 
 def get_client_credentials():

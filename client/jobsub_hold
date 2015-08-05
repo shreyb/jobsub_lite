@@ -86,7 +86,7 @@ def parse_opts(argv):
                          dest='debug',
                          action='store_true',
                          default=False,
-                         help='Print debug messages to stdout')
+                         help='Print debug messages including server contacted, http response, response time')
 
     opt_group.add_option('-h', '--help',
                          dest='help',
@@ -95,12 +95,6 @@ def parse_opts(argv):
                          help='Show this help message and exit')
 
 
-    opt_group.add_option('--verbose', 
-                      dest='verbose',
-                      action='store_true',
-                      metavar='<Verbose Output Option>',
-                      default=False,
-                      help='Show server contacted, http response code, response time. Default is to not show these uness error occurs.')
 
     parser.add_option_group(opt_group)
 
@@ -124,12 +118,10 @@ def parse_opts(argv):
 
 def main(argv):
     options = parse_opts(argv)
-    if options.debug:
-        options.verbose = True
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-                             options.acctRole, None , verbose=options.verbose)
+            options.acctRole, None , extra_opts={'debug':options.debug})
     rc = 1
     try:
         tmp_rc = 0

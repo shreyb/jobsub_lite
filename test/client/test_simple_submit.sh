@@ -13,20 +13,23 @@ $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC  $SUBMIT_FLAGS \
             -e SERVER   file://"$@"   2>$0.$GROUP.err
 T1=$?
-
+echo T1=$T1
 test -s $0.$GROUP.err
 
 T2=$?
-
+echo T2=$T2
 cat $0.$GROUP.err
 
 $EXEPATH/jobsub_submit.py $GROUP_SPEC \
        $SERVER_SPEC $SUBMIT_FLAGS \
-           -g -e SERVER   --verbose file://"$@" 2>$0.$GROUP.err
+           -g -e SERVER   --debug file://"$@" 2>$0.$GROUP.err
 T3=$?
+echo T3=$T3
 test -s $0.$GROUP.err
 
 T4=$?
+
+echo T4=$T4
 
 cat $0.$GROUP.err
 

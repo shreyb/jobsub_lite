@@ -65,7 +65,7 @@ class JobSubClientSubmissionError(Exception):
 class JobSubClient:
 
     def __init__(self, server, acct_group, acct_role, server_argv,
-                 dropboxServer=None, useDag=False, server_version='current', verbose=False):
+                 dropboxServer=None, useDag=False, server_version='current', extra_opts={}):
         self.server = server
         actual_server = server
         self.dropboxServer = dropboxServer
@@ -74,7 +74,7 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.useDag=useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
-        self.verbose=verbose
+        self.verbose=extra_opts.get('debug',False)
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:

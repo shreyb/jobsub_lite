@@ -34,7 +34,8 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
-        if options.acctGroup and options.jobsubServer and options.jobId:
+        if options.acctGroup and options.jobsubServer and \
+                (options.jobId or options.uid):
             return True
     except AttributeError:
         return False
@@ -93,6 +94,15 @@ def parse_opts(argv):
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
+
+
+    opt_group.add_option('--user',
+                         dest='uid',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<user ID>',
+                         help='hold all jobs with this uid ')
 
 
 

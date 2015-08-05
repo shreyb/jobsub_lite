@@ -71,7 +71,7 @@ def parse_opts(argv):
                          dest='debug',
                          action='store_true',
                          default=False,
-                         help='Print debug messages to stdout')
+                         help='Print debug messages  including server contacted, http response, response time')
 
     opt_group.add_option('--sites',
                          dest='sites',
@@ -112,7 +112,7 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [])
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
     try:
         if options.sites:
             http_code=js_client.listConfiguredSites()

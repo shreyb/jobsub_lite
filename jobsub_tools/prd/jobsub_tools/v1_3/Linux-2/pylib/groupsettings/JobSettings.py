@@ -302,18 +302,29 @@ class JobSettings(object):
         sam_group=self.sam_group
 
 
-        file_group.add_option("-l", "--lines", dest="lines",action="append",type="string",
-            help="""[Expert option]  Add the line <line> to the
-            Condor submission (.cmd) file.  See Condor
-            help for more.""")
+        file_group.add_option("-l", "--lines", dest="lines",action="append",
+            type="string",metavar='<line>',
+            help="""[Expert option]  Add  <line> to the Condor 
+            submission (.cmd) file, typically as a classad attribute.  
+            See the HTCondor documentation  for more.""")
 
 
         generic_group.add_option("--maxConcurrent", 
             dest="maxConcurrent", action="store",type="string", 
-            help="""max number of jobs running concurrently at given time. Use in conjunction with 
-            -N option to protect a shared resource.  Example: jobsub -N 1000 -maxConcurrent 20 will 
+            help="""max number of jobs running concurrently at given time. Use in 
+            conjunction with -N option to protect a shared resource.  
+            Example: jobsub -N 1000 -maxConcurrent 20 will 
             only run 20 jobs at a time until all 1000 have completed.  
-            This is implemented by running the jobs in a DAG """)
+            This is implemented by running the jobs in a DAG. Normally when 
+            jobs are run with the -N option, they all have the same $CLUSTER
+            number and differing, sequential $PROCESS numbers, and many submission
+            scripts take advantage of this.  When jobs are run with this 
+            option in a DAG each job has a different $CLUSTER number and a 
+            $PROCESS number of 0, which may break scripts that rely on the 
+            normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of 
+            jobs run with this option will have the same $JOBSUBPARENTJOBID,  
+            each individual job will have a unique and sequential $JOBSUBJOBSECTION.
+            Scripts may need modification to take this into account""") 
 
         generic_group.add_option("--disk", dest="disk",
             action="store",type="int",
@@ -435,9 +446,15 @@ class JobSettings(object):
             help="execute on grid from directory you are currently in")
 
         generic_group.add_option("-e","--environment", dest="added_environment",action="append",
-            help="""-e ADDED_ENVIRONMENT exports this variable and its local value to worker node 
-            environment. For example export FOO="BAR"; jobsub -e FOO <more stuff> guarantees that 
-            the value of $FOO on the worker node is "BAR" .  Can use this option as many times as desired""")
+          metavar='ENV_VAR',
+          help="""-e ADDED_ENVIRONMENT exports this variable with its local """+\
+          """value to worker node environment. For example export FOO="BAR"; """+\
+          """jobsub -e FOO <more stuff> guarantees that the value of $FOO on """+\
+          """the worker node is "BAR" .  Alternate format which does not require """+\
+          """setting the env var first is the -e VAR=VAL, idiom which """+\
+          """sets the value of $VAR to 'VAL' in the worker environment. The """+\
+          """-e  option can be used as many times in one jobsub_submit """+\
+          """invocation as desired""")
 
 
 
@@ -445,9 +462,13 @@ class JobSettings(object):
             help="submit jobs to this site ")
 
 
-        file_group.add_option("--tar_file_name", dest="tar_file_name",action="store",
-            help="""name of tarball to transfer to worker node. Will be added to the transfer_input_files 
-            list, and visible to the user job as $INPUT_TAR_FILE.   """)
+        file_group.add_option("--tar_file_name", dest="tar_file_name",
+            action="store", metavar="dropbox://PATH/TO/TAR_FILE",
+            help="""specify tarball to transfer to worker node. TAR_FILE 
+                    will be copied to the jobsub server and added to the 
+                    transfer_input_files list. TAR_FILE will be accessible
+                    to the user job on the worker node via the environment 
+                    variable  $INPUT_TAR_FILE.  """)
 
         generic_group.add_option("-n","--no_submit", dest="submit",action="store_false",default=True,
             help="generate condor_command file but do not submit")
@@ -461,12 +482,14 @@ class JobSettings(object):
             the job ID (the '2' in 134567.2). """)
 
 
-        file_group.add_option("-f", dest="input_dir_array",action="append",type="string",
-            help="""-f <file>          input file <file> will be copied to directory  
+        file_group.add_option("-f", dest="input_dir_array",action="append",
+            type="string", metavar='<input_file>                         ',
+            help=""" <input_file> will be copied to directory  
             $CONDOR_DIR_INPUT on the execution node.  
             Example :-f /grid/data/minerva/my/input/file.xxx  
             will be copied to $CONDOR_DIR_INPUT/file.xxx 
-            Specify as many -f file1 -f file2 args as you need.""")
+            Specify as many -f <input_file1> -f <input_file2>
+            args as you need.""")
 
         file_group.add_option("-d", dest="output_dir_array",action="append",type="string",
             nargs=2,

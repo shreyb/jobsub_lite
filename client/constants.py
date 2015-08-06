@@ -64,12 +64,19 @@ JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
 
 JOBSUB_JOB_REMOVE_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
+JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
+JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
 
 JOBSUB_JOB_HOLD_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
+JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
+JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
 
 JOBSUB_JOB_RELEASE_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
+JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
+JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
+
 JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
 ################################################################################
 # HTTP/REST API Constants

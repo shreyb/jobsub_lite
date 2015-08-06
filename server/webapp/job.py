@@ -30,7 +30,7 @@ from queued_dag import QueuedDagResource
 
 
 
-@cherrypy.popargs('job_id')
+@cherrypy.popargs('job_id','action_user')
 class AccountJobsResource(object):
     def __init__(self):
         cherrypy.request.role = None
@@ -79,23 +79,17 @@ class AccountJobsResource(object):
         return rc
 
 
-    def doDELETE(self, acctgroup, job_id):
+    def doDELETE(self, acctgroup, job_id=None, user=None):
         rc = {'out': None, 'err': None}
 
-        if job_id:
-            rc['out'] = self.doJobAction(
-                            acctgroup, job_id,
-                            'REMOVE')
-        else:
-            # Error because job_id is required to DELETE jobs
-            err = 'No job id specified with DELETE action'
-            logger.log(err)
-            rc['err'] = err
+        rc['out'] = self.doJobAction(
+                            acctgroup, job_id=job_id, user=user,
+                            job_action='REMOVE')
 
         return rc
 
 
-    def doPUT(self, acctgroup, job_id, kwargs):
+    def doPUT(self, acctgroup, job_id=None, user=None,  **kwargs):
         """
         Executed to hold and release jobs
         """
@@ -103,19 +97,13 @@ class AccountJobsResource(object):
         rc = {'out': None, 'err': None}
         job_action = kwargs.get('job_action')
 
-        if job_action and job_id:
-            if job_action.upper() in self.condorCommands:
-                rc['out'] = self.doJobAction(
-                                acctgroup, job_id,
-                                job_action.upper())
-            else:
-                rc['err'] = '%s is not a valid action on jobs' % job_action
-        elif not job_id:
-            # Error because job_id is required to DELETE jobs
-            rc['err'] = 'No job id specified with DELETE action'
+        if job_action and job_action.upper() in self.condorCommands:
+            rc['out'] = self.doJobAction(
+                                acctgroup, job_id=job_id, user=user,
+                                job_action=job_action.upper())
         else:
-            # Error because no args informing the action hold/release given
-            rc['err'] = 'No action (hold/release) specified with PUT action'
+
+            rc['err'] = '%s is not a valid action on jobs' % job_action
 
         logger.log(rc)
 
@@ -223,20 +211,27 @@ class AccountJobsResource(object):
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup, job_id=None, **kwargs):
+    def index(self, acctgroup, job_id=None, action_user=None, **kwargs):
         try:
+            logger.log('job_id=%s action_user=%s'%(job_id,action_user))
+            if job_id == 'user':
+                job_id = None
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
+                    #create job
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
+                    #query job
                     rc = self.doGET(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
-                    rc = self.doDELETE(acctgroup, job_id)
+                    #remove job
+                    rc = self.doDELETE(acctgroup, job_id=job_id, user=action_user)
                 elif cherrypy.request.method == 'PUT':
-                    rc = self.doPUT(acctgroup, job_id, kwargs)
+                    #hold/release
+                    rc = self.doPUT(acctgroup, job_id=job_id, user=action_user, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -256,9 +251,9 @@ class AccountJobsResource(object):
         return rc
 
 
-    def doJobAction(self, acctgroup, job_id, job_action):
+    def doJobAction(self, acctgroup, job_id=None, user=None, job_action=None):
         scheddList = []
-        if '@' in job_id:
+        if job_id:
             #job_id is a jobsubjobid
             constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
             # Split the jobid to get cluster_id and proc_id
@@ -270,9 +265,9 @@ class AccountJobsResource(object):
             constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
             if (len(ids) > 1) and (ids[1]):
                 constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
-        else:
+        elif user:
             #job_id is an owner 
-            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (job_id,acctgroup)
+            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
             scheddList = schedd_list()
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))

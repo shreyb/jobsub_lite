@@ -81,17 +81,17 @@ class AccountJobsResource(object):
         return rc
 
 
-    def doDELETE(self, acctgroup, job_id=None, user=None):
+    def doDELETE(self, acctgroup, job_id=None):
         rc = {'out': None, 'err': None}
 
         rc['out'] = self.doJobAction(
-                            acctgroup, job_id=job_id, user=user,
+                            acctgroup, job_id=job_id, 
                             job_action='REMOVE')
 
         return rc
 
 
-    def doPUT(self, acctgroup, job_id=None, user=None,  **kwargs):
+    def doPUT(self, acctgroup, job_id=None,   **kwargs):
         """
         Executed to hold and release jobs
         """
@@ -101,7 +101,7 @@ class AccountJobsResource(object):
 
         if job_action and job_action.upper() in self.condorCommands:
             rc['out'] = self.doJobAction(
-                                acctgroup, job_id=job_id, user=user,
+                                acctgroup, job_id=job_id, 
                                 job_action=job_action.upper())
         else:
 
@@ -213,11 +213,9 @@ class AccountJobsResource(object):
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup, job_id=None, action_user=None, **kwargs):
+    def index(self, acctgroup, job_id=None,  **kwargs):
         try:
-            logger.log('job_id=%s action_user=%s'%(job_id,action_user))
-            if job_id == 'user':
-                job_id = None
+            logger.log('job_id=%s '%(job_id))
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
@@ -230,10 +228,10 @@ class AccountJobsResource(object):
                     rc = self.doGET(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     #remove job
-                    rc = self.doDELETE(acctgroup, job_id=job_id, user=action_user)
+                    rc = self.doDELETE(acctgroup, job_id=job_id)
                 elif cherrypy.request.method == 'PUT':
                     #hold/release
-                    rc = self.doPUT(acctgroup, job_id=job_id, user=action_user, **kwargs)
+                    rc = self.doPUT(acctgroup, job_id=job_id,  **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -267,10 +265,6 @@ class AccountJobsResource(object):
             constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
             if (len(ids) > 1) and (ids[1]):
                 constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
-        elif user:
-            #job_id is an owner 
-            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
-            scheddList = schedd_list()
 
         logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
 

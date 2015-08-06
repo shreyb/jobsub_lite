@@ -27,10 +27,11 @@ from history import HistoryResource
 from dag import DagResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
+from by_user import AccountJobsByUserResource
 
 
 
-@cherrypy.popargs('job_id','action_user')
+@cherrypy.popargs('job_id')
 class AccountJobsResource(object):
     def __init__(self):
         cherrypy.request.role = None
@@ -41,6 +42,7 @@ class AccountJobsResource(object):
         self.dag = DagResource()
         self.long = QueuedLongResource()
         self.dags = QueuedDagResource()
+        self.user = AccountJobsByUserResource()
         self.condorActions = {
             'REMOVE': condor.JobAction.Remove,
             'HOLD': condor.JobAction.Hold,

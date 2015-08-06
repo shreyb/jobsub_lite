@@ -1255,10 +1255,16 @@ class JobSettings(object):
                 opt=parts[0]
                 val=parts[1]
                 has_opt=opt
-                if opt.lower().find('has_')<0:
+                if 'has_' not in opt.lower():
                     has_opt="has_%s"%opt
                 if not fp.has_option(submit_host,has_opt): 
-                    err="illegal --resource-provides option: %s is not supported on %s according to config file %s.\nSupported options will be under the [%s] section and start with 'has_',\nthe condor admin must add a 'has_%s' section and properly configure condor to use it for this option value to be valid"%(opt,submit_host,self.findConfigFile(),submit_host,opt)
+                    optlist=fp.options(submit_host)
+                    supported=[]
+                    for itm in optlist:
+                        if 'has_' in itm.lower():
+                            supported.append(itm[4:])
+
+                    err=" --resource-provides=%s is not configured on %s . Try --resource-provides=(one of %s) "%(opt,submit_host,supported)
                     raise InitializationError(err)
                 else: 
                     allowed_vals=fp.get(submit_host,has_opt)
@@ -1272,7 +1278,7 @@ class JobSettings(object):
                         if check_val.strip().upper() in allowed_list:
                             vals_ok=True
                     if not vals_ok: 
-                        err="illegal --resource-provides value: %s for option: %s is not supported on %s according to your config file %s.  Legal values are:%s"%(val,opt,submit_host,self.findConfigFile(),allowed_vals.upper())
+                        err=" --resource-provides=%s=%s is not configured on %s .  Legal values are --resource-provides=%s=(one of %s)"%(opt,val,submit_host,opt,allowed_vals.upper())
                         raise InitializationError(err)
                     else:
                         f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))

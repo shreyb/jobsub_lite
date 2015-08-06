@@ -1,10 +1,38 @@
 
 ================================================================================
+v1.1.5
+================================================================================
+
+CLIENT
+------
+* Feature #7966: would be nice to have # idle # running # held at the bottom of jobsub_q output
+* Bug #8045: Client commands should validate --jobid to contain '@server.address
+
+
+SERVER
+------
+* Bug #7989: jobsub command should exit with right error message when incorrect role is specified
+* Feature #7344: jobsub_rm/hold/release mass remove functionality
+* Bug #8032: jobsub_fetchlog is updating the CreationDate field for the jobids
+* Feature #8095: Make environment variables available in job without setting them in sub
+* Feature #8156: can jobsub cleanup user job
+* Bug #8185:    better error checking for non existant role 
+* Feature #9336 : better error message for --resource-provides=
+* Bug #9535: Jobsub server not compatible with proxy generated using certs issued by CILogon OSG CA
+* Bug #9520 : improve --tar_file_name explanation from jobsub_q --help
+* Bug #9621: Remove stderr output from jobsub_client commands, replace with --debug option
+* Bug #9651: job running time in jobsub_q always 0
+
+
+
+
+================================================================================
 v1.1.4
 ================================================================================
 
 CLIENT
 ------
+
 * Support 8131 jobsub_status documentation update
 * Bug 9192 jobsub_q exits with wrong status 
 * Bug 9380 increase client timeout setting

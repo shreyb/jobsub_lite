@@ -21,6 +21,15 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+
+v1_3_13 8/18/15
+==================================================
+* Feature #8095: Make environment variables available in job without setting them in sub
+* Feature #8156: can jobsub cleanup user job
+* Feature #9336 : better error message for --resource-provides=
+* Bug #9520 : improve --tar_file_name explanation from jobsub_q --help
+
+
 v1_3_12 7/2/15
 ==================================================
 * Feature 8301 JOBSUBJOBSECTION number defined for DAG members

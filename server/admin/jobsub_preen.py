@@ -27,6 +27,19 @@ def queuedList():
             queuedlist.append(q2)
     return queuedlist
 
+
+def transInputList():
+    queuedlist = []
+    cmd = """condor_q -af transferinput -constraint """
+    cmd += """ 'regexp(".*dropbox.*",TransferInput)' """
+    queued, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    for q in queued.split('\n'):
+        for f in q.split(','):
+            d = os.path.dirname(f)
+            if 'dropbox' in d and d not in queuedList:
+                queuedlist.append(d)
+    return queuedlist
+
 def findDirs(rootDir):
     #print 'checking %s'%rootDir
     dirlist = []
@@ -38,7 +51,10 @@ def findDirs(rootDir):
     return dirlist
 
 def findRmUserJobDirs(rootDir, ageInDays):
-    ql = queuedList()
+    if 'dropbox' in rootDir:
+        ql = transInputList()
+    else:
+        ql = queuedList()
     ageInSeconds = int(ageInDays)*24*60*60
     now = time.time()
     userDirs = []
@@ -56,7 +72,7 @@ def findRmUserJobDirs(rootDir, ageInDays):
                     os.unlink(fname)
                 except:
                     logger.log("%s"%sys.exc_info()[1])
-                    
+
             if os.path.exists(fname) and \
                 os.stat(fname).st_mtime < now - ageInSeconds:
 
@@ -140,12 +156,13 @@ if __name__ == '__main__':
         elif sys.argv[3] == 'doSubDirs':
             rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True)
         elif sys.argv[3] == 'rmEmptySubdirs':
-            rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True, 
-					rmEmptyDirs=True)
+            rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True,
+                       rmEmptyDirs=True)
         else:
-            print "ERROR option:'%s' not recognized. is this a typo?"%sys.argv[3]
+            err = "ERROR option:'%s' not recognized. A typo?"%sys.argv[3]
+            print err
             print_help()
-            print "ERROR option:'%s' not recognized. is this a typo?"%sys.argv[3]
+            print err
     else:
         print_help()
 

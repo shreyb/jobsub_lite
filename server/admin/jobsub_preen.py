@@ -25,6 +25,7 @@ def queuedList():
                 q2 = ""
         if q2 not in queuedlist and  os.path.lexists(q2):
             queuedlist.append(q2)
+    logger.log('these directories are in the queue:%s'%queuedlist)
     return queuedlist
 
 
@@ -36,8 +37,9 @@ def transInputList():
     for q in queued.split('\n'):
         for f in q.split(','):
             d = os.path.dirname(f)
-            if 'dropbox' in d and d not in queuedList:
+            if 'dropbox' in d and d not in queuedlist:
                 queuedlist.append(d)
+    logger.log('these directories are in the queue:%s'%queuedlist)
     return queuedlist
 
 def findDirs(rootDir):
@@ -121,6 +123,7 @@ def removeEmptyDirs(rootDir):
         if os.path.isdir(fname):
             if len(os.listdir(fname)) == 0:
                 try:
+                    logger.log('removing empty directory  %s'%fname)
                     os.rmdir(fname)
                 except:
                     logger.log("%s"%sys.exc_info()[1])
@@ -130,11 +133,12 @@ def removeEmptyDirs(rootDir):
 def print_help():
     help = """
         usage: %s <root_dir> ageInDays [thisDirOnly||doSubDirs||rmEmptySubdirs]
-        if arg3==[thisDirOnly]:
+
+        if arg 3 is 'thisDirOnly':
            remove all files in <root_dir> older than <ageInDays>
-        elif arg3==[doSubDirs]:
+        elif arg 3 is 'doSubDirs':
            remove all files in <root_dir> and subdirs older than <ageInDays>
-        elif arg3==[rmEmptySubdirs]:
+        elif arg 3 is 'rmEmptySubdirs':
            remove all files in <root_dir> and subdirs older than <ageInDays>,
            also remove any empty subdirectories
         else:
@@ -159,8 +163,7 @@ if __name__ == '__main__':
             rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True,
                        rmEmptyDirs=True)
         else:
-            err = "ERROR option:'%s' not recognized. A typo?"%sys.argv[3]
-            print err
+            err = "ERROR arg 3 == '%s' not recognized. A typo?"%sys.argv[3]
             print_help()
             print err
     else:

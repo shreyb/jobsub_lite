@@ -1466,7 +1466,7 @@ class JobSettings(object):
         if 'memory' in settings:
             f.write("request_memory = %s\n"%settings['memory'])
         if 'cpu' in settings:
-            f.write("request_cpu = %s\n"%settings['cpu'])
+            f.write("request_cpus = %s\n"%settings['cpu'])
 
         f.write("requirements  = %s\n"%self.condorRequirements())
 

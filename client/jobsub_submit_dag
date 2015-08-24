@@ -106,7 +106,7 @@ def parse_opts(argv):
                                    version=version_string(),
                                    add_help_option=False,
                                    conflict_handler="resolve",
-                                   epilog="please direct questions,  comments, and problems to the service desk")
+                                   epilog="REQUIRED arguments are (--group AND --jobsub-server AND file://[dag_description_file]).   Please direct questions,  comments, and problems to the service desk")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
@@ -185,6 +185,7 @@ def parse_opts(argv):
 
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
+        print "%s" % parser.epilog
         parser.print_help()
         sys.exit(1)
     return (options, srv_argv)

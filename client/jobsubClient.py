@@ -72,21 +72,22 @@ class JobSubClient:
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
-        self.useDag=useDag
+        self.useDag = useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
         self.verbose=extra_opts.get('debug',False)
-        serverParts=re.split(':',self.server)
-        if len(serverParts) !=3:
-            if len(serverParts)==1:
-                self.server="https://%s:%s"%(serverParts[0],self.serverPort)
-            if len(serverParts)==2:
-                if serverParts[0].find('http')>=0:
-                    self.server="%s:%s:%s"%(serverParts[0],serverParts[1],self.serverPort)
+        self.better_analyze = extra_opts.get('better_analyze',False)
+        serverParts = re.split(':',self.server)
+        if len(serverParts) != 3:
+            if len(serverParts) == 1:
+                self.server = "https://%s:%s"%(serverParts[0],self.serverPort)
+            if len(serverParts) == 2:
+                if serverParts[0].find('http') >= 0:
+                    self.server = "%s:%s:%s"%(serverParts[0], serverParts[1], self.serverPort)
                 else:
-                    self.server="https://%s:%s"%(serverParts[0],serverParts[1])
+                    self.server = "https://%s:%s"%(serverParts[0], serverParts[1])
         else:
-            if serverParts[2]!=self.serverPort:
-                self.serverPort=serverParts[2]
+            if serverParts[2]!= self.serverPort:
+                self.serverPort = serverParts[2]
         self.credentials = get_client_credentials()
         self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
 
@@ -611,7 +612,10 @@ class JobSubClient:
                 tmpURL="%s%s/"% ( tmpURL, jobid)
             self.listURL = tmpURL
         else :
-            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
+            if self.better_analyze:
+                self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % ( self.server, jobid)
+            else:
+                self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
 
         if outFormat is not None:
             self.listURL="%s%s/"%(self.listURL,outFormat)

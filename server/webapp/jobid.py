@@ -6,6 +6,7 @@ from condor_commands import ui_condor_q,constructFilter
 #from not_implemented import NotImplementedResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
+from better_analyze import BetterAnalyzeResource
 from auth import get_client_dn
 
 
@@ -14,17 +15,18 @@ from auth import get_client_dn
 class QueuedJobsByJobIDResource(object):
 
     def __init__(self):
-	self.long=QueuedLongResource()
-	self.dags=QueuedDagResource()
+        self.long = QueuedLongResource()
+        self.dags = QueuedDagResource()
+        self.betteranalyze = BetterAnalyzeResource()
 
     def doGET(self, job_id,kwargs):
         """ Query list of job_ids. Returns a JSON list object.
-	    API is /jobsub/jobs/jobid/<jobid>
+            API is /jobsub/jobs/jobid/<jobid>
         """
         filter = constructFilter(None,None,job_id)
         logger.log("filter=%s"%filter)
-	history = ui_condor_q( filter  )
-	logger.log('ui_condor_q result: %s'%history)
+        history = ui_condor_q( filter  )
+        logger.log('ui_condor_q result: %s'%history)
         return {'out': history.split('\n')}
 
     @cherrypy.expose

@@ -11,6 +11,35 @@ def whereAmI(nFramesUp=1):
     return "[%s:%s:%s]" % (current_thread().ident, os.path.basename(co.co_filename), co.co_name)
     #return "[%s:%d %s]" % (os.path.basename(co.co_filename), co.co_firstlineno,co.co_name)
 
+def init_logger(logger_name, log_file, level=logging.INFO):
+    l = logging.getLogger(logger_name)
+    try:
+       foo = l.hasBeenSet
+    except:
+       formatter = logging.Formatter('[%(asctime)s] : %(message)s')
+       formatter = logging.Formatter('%(asctime)s %(thread)d [%(levelname)s]  %(message)s')
+       fileHandler = logging.FileHandler(log_file, mode='a')
+       fileHandler.setFormatter(formatter)
+       streamHandler = logging.StreamHandler()
+       streamHandler.setFormatter(formatter)
+       l.setLevel(level)
+       l.addHandler(fileHandler)
+       l.addHandler(streamHandler)   
+       l.hasBeenSet = True
+    return l
+
+def get_logger(logger_name,  level=logging.INFO):
+    log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
+    log_file = "%s/%s.log" % (log_dir,logger_name)
+    l = init_logger(logger_name, log_file, level=level)
+    return l
+
+    
+
+def user_log(msg='', context='', severity=logging.INFO, traceback=False):
+    l  = get_logger('user_action')
+    l.log(severity,msg)
+
 def log(msg='', context='', severity=logging.INFO, traceback=False):
     here = whereAmI()
     msg = '%s %s' % (here, msg)
@@ -32,7 +61,6 @@ def log_file_name(whereFrom):
 
 def setup_admin_logger(wherefrom=None):
     log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
-    #log_dir = '/var/log/jobsub'
     log_file = "%s/%s"%(log_dir,log_file_name(wherefrom))
     logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
 

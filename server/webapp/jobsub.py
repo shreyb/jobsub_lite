@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 from condor_commands import schedd_name
 import logger
+import logging
 import cherrypy
 import os
 import pwd
@@ -118,7 +119,31 @@ def get_jobsub_wrapper(submit_type='job'):
                                  '/opt/jobsub/server/webapp/jobsub_dag_runner.sh')
     return wrapper
 
-
+def log_msg(acctgroup, username, jobsub_args, role=None, 
+                        submit_type='job',jobsub_client_version='UNKNOWN',
+                        jobsub_client_krb5_principal='UNKNOWN'):
+    if jobsub_client_version in [ 'UNKNOWN', '__VERSION__']:
+        jobsub_client_version = '?'
+    if jobsub_client_krb5_principal =='UNKNOWN':
+        jobsub_client_krb5_principal = '?'
+    log_str = "%s %s %s %s" % \
+               (cherrypy.request.headers.get('Remote-Addr'),
+                jobsub_client_krb5_principal,
+                username,
+                jobsub_client_version)
+    cmd = " jobsub_submit "
+    if submit_type == 'dag':
+        cmd = " jobsub_submit_dag "
+    role_c = ''
+    if role and role != 'Analysis':
+        role_c = " --role %s " % role 
+    short_args = []
+    for arg in jobsub_args:
+        if '--export_env=' not in arg:
+            short_args.append(os.path.basename(arg))
+    log_str = "%s %s --group %s %s %s "%(log_str, cmd, acctgroup, role_c, ' '.join(short_args))
+    return log_str
+    
 def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                workdir_id=None, role=None,
                                jobsub_client_version='UNKNOWN',
@@ -129,7 +154,6 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     envrunner = get_jobsub_wrapper(submit_type=submit_type)
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
-
     out = err = ''
     if not child_env:
         child_env = os.environ.copy()
@@ -164,18 +188,28 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
             child_env['KRB5CCNAME'] = dst_cache_fname
 
+
         out, err = run_cmd_as_user(command, username, child_env=child_env)
     else:
-        # Some commands like --help do not need sudo
+        # Some commands like --help do: not need sudo
         out, err = subprocessSupport.iexe_cmd('%s' % ' '.join(command),
                                               child_env=child_env)
+    
+    logger.log(log_msg(acctgroup, username, jobsub_args, role,
+                        submit_type,jobsub_client_version,jobsub_client_krb5_principal))
+    logger.user_log(log_msg(acctgroup, username, jobsub_args, role, 
+                        submit_type,jobsub_client_version,jobsub_client_krb5_principal))
 
     # Convert the output to list as in case of previous version of jobsub
     if (type(out) == type('string')) and out.strip():
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
     if (type(err) == type('string')) and err.strip():
         err = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
-
+    for line in out:
+        if 'jobsubjobid' in line.lower():
+            logger.user_log(line)
+    if len(err):
+        logger.user_log(err,severity=logging.ERROR)
     result = {
         'out': out,
         'err': err

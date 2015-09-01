@@ -8,7 +8,7 @@ import sys
 import StringIO
 from shutil import copyfileobj
 
-from auth import check_auth
+from auth import check_auth, get_client_dn
 from jobsub import is_supported_accountinggroup
 from jobsub import condor_bin
 from jobsub import run_cmd_as_user
@@ -117,7 +117,8 @@ class AccountJobsByUserResource(object):
             constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
             scheddList = schedd_list()
 
-        logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
+        reason = """jobsub_client command %s  %s""" % (get_client_dn(), cherrypy.request.headers.get('Remote-Addr'))
+        logger.log("Performing %s -reason '%s' on jobs with constraints (%s)" % (job_action, reason, constraint))
 
                             
         child_env = os.environ.copy()
@@ -131,7 +132,8 @@ class AccountJobsByUserResource(object):
                 cmd = [
                     condor_bin(self.condorCommands[job_action]), '-l',
                     '-name', schedd_name,
-                    '-constraint', constraint
+                    '-constraint', constraint,
+                    '-reason', reason,
                 ]
                 out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
             except:

@@ -11,7 +11,7 @@ from shutil import copyfileobj
 
 from tempfile import NamedTemporaryFile
 from util import  mkdir_p
-from auth import check_auth, x509_proxy_fname
+from auth import check_auth, x509_proxy_fname, get_client_dn
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
@@ -266,7 +266,8 @@ class AccountJobsResource(object):
             if (len(ids) > 1) and (ids[1]):
                 constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
 
-        logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
+        reason = """jobsub_client command %s  %s""" % (get_client_dn(), cherrypy.request.headers.get('Remote-Addr'))
+        logger.log('Performing %s -reason %s on jobs with constraints (%s)' % (job_action, reason, constraint))
 
                             
         child_env = os.environ.copy()
@@ -280,7 +281,8 @@ class AccountJobsResource(object):
                 cmd = [
                     condor_bin(self.condorCommands[job_action]), '-l',
                     '-name', schedd_name,
-                    '-constraint', constraint
+                    '-constraint', constraint,
+                    '-reason', reason, 
                 ]
                 out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
             except:

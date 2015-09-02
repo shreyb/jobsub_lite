@@ -110,6 +110,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/dropbox.py
 /opt/jobsub/server/webapp/dropbox.pyc
 /opt/jobsub/server/webapp/dropbox.pyo
+/opt/jobsub/server/webapp/forcex_jobid.py
+/opt/jobsub/server/webapp/forcex_jobid.pyc
+/opt/jobsub/server/webapp/forcex_jobid.pyo
 /opt/jobsub/server/webapp/format.py
 /opt/jobsub/server/webapp/format.pyc
 /opt/jobsub/server/webapp/format.pyo

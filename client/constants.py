@@ -64,8 +64,12 @@ JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
 
 JOBSUB_JOB_REMOVE_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
+JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/forcex/%s/'
+JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/forcex/%s/'
 JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
 JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
+JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/forcex/'
+JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/forcex/'
 
 JOBSUB_JOB_HOLD_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
@@ -78,6 +82,20 @@ JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
 JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
 
 JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
+
+
+
+# {(jobid, uid,role,forcex) : STUPID_ASS_REMOVE_URL }
+remove_url_dict = {
+ (False, True, False, False):JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN,
+ (False, True, False, True):JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN,
+ (False, True, True, False):JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE,
+ (False, True, True, True):JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN_WITH_ROLE,
+ (True, False, False, False):JOBSUB_JOB_REMOVE_URL_PATTERN, 
+ (True, False, False, True):JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN,
+ (True, False, True, False):JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE, 
+ (True, False, True, True):JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN_WITH_ROLE,
+ }
 ################################################################################
 # HTTP/REST API Constants
 ################################################################################

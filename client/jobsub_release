@@ -102,7 +102,7 @@ def parse_opts(argv):
                          action='store',
                          default=None,
                          metavar='<user ID>',
-                         help='hold all jobs with this uid ')
+                         help='release all jobs with this uid ')
 
 
 

@@ -102,7 +102,15 @@ def parse_opts(argv):
                          action='store',
                          default=None,
                          metavar='<user ID>',
-                         help='hold all jobs with this uid ')
+                         help='remove all jobs with this uid ')
+
+
+    opt_group.add_option('--forcex',
+                         dest='forcex',
+                         action='store_true',
+                         default=False,
+                         metavar='<force_x>',
+                         help='forcibly remove jobs currently in "X" state ')
 
 
 
@@ -132,7 +140,7 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-            options.acctRole, None, extra_opts={'debug':options.debug})
+            options.acctRole, None, extra_opts={'debug':options.debug, 'forcex':options.forcex })
     
     rc = 0
     try:

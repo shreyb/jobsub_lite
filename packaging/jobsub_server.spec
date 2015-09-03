@@ -152,6 +152,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/sandboxes.py
 /opt/jobsub/server/webapp/sandboxes.pyc
 /opt/jobsub/server/webapp/sandboxes.pyo
+/opt/jobsub/server/webapp/sqlite_commands.py
+/opt/jobsub/server/webapp/sqlite_commands.pyc
+/opt/jobsub/server/webapp/sqlite_commands.pyo
 /opt/jobsub/server/webapp/scheddload.py
 /opt/jobsub/server/webapp/scheddload.pyc
 /opt/jobsub/server/webapp/scheddload.pyo

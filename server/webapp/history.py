@@ -3,7 +3,7 @@ import logger
 
 from auth import check_auth, get_client_dn
 from format import format_response
-from condor_commands import ui_condor_history,constructFilter
+from sqlite_commands import jobsub_history,constructQuery
 
 
 
@@ -20,10 +20,10 @@ class HistoryResource(object):
             job_id=kwargs.get('job_id')
         if user_id is None:
             user_id = kwargs.get('user_id')
-        filter = constructFilter(acctgroup,user_id,job_id)
+        filter = constructQuery(acctgroup,user_id,job_id)
         logger.log("filter=%s"%filter)
-	history = ui_condor_history( filter  )
-        return {'out': history.split('\n')}
+	history = jobsub_history( filter  )
+        return {'out': history}
 
     @cherrypy.expose
     @format_response

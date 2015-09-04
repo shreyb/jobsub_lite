@@ -28,7 +28,6 @@ import jobsub
 import subprocessSupport
 
 from distutils import spawn
-from util import needs_refresh
 from tempfile import NamedTemporaryFile
 from JobsubConfigParser import JobsubConfigParser
 
@@ -593,6 +592,23 @@ def check_auth(func):
         return rc
 
     return check_auth_wrapper
+
+def needs_refresh(filepath,agelimit=3600):
+    if not os.path.exists(filepath):
+        return True
+    if agelimit == sys.maxint:
+        return False
+    rslt=False
+    agelimit=int(agelimit)
+    age=sys.maxint
+    try:
+        st=os.stat(filepath)
+        age=(time.time()-st.st_mtime)
+    except:
+        pass
+    if age>agelimit:
+        rslt=True
+    return rslt
 
 
 def test():

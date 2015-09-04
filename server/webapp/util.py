@@ -9,6 +9,12 @@ import mimetypes
 import base64
 import json
 import hashlib
+import StringIO
+import jobsub
+import condor_commands 
+import re
+import cherrypy
+
 
 
 def encode_multipart_formdata(fields, files, outfile):
@@ -120,22 +126,6 @@ def create_tarfile(tar_file, tar_path, job_id=None):
         os.remove(failed_fname)
     tar.close()
 
-def needs_refresh(filepath,agelimit=3600):
-    if not os.path.exists(filepath):
-        return True
-    if agelimit == sys.maxint:
-        return False
-    rslt=False
-    agelimit=int(agelimit)
-    age=sys.maxint
-    try:
-        st=os.stat(filepath)
-        age=(time.time()-st.st_mtime)
-    except:
-        pass
-    if age>agelimit:
-        rslt=True
-    return rslt
 
 
 def digest_for_file(fileName, block_size=2**20):
@@ -149,3 +139,104 @@ def digest_for_file(fileName, block_size=2**20):
     f.close()
     x=dig.hexdigest()
     return x
+
+def condorCommands():
+    c = {
+        'REMOVE': 'condor_rm',
+        'HOLD': 'condor_hold',
+        'RELEASE': 'condor_release',
+        }
+    return c
+
+def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
+
+    scheddList = []
+    if job_id:
+        #job_id is a jobsubjobid
+        constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
+        # Split the jobid to get cluster_id and proc_id
+        stuff=job_id.split('@')
+        schedd_name='@'.join(stuff[1:])
+        logger.log("schedd_name is %s"%schedd_name)
+        scheddList.append(schedd_name)
+        ids = stuff[0].split('.')
+        constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
+        if (len(ids) > 1) and (ids[1]):
+            constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
+    elif user:
+            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
+            scheddList = condor_commands.schedd_list()
+    else:
+        err = "Failed to supply job_id or uid, cannot perform any action"
+        logger.log(err)
+        return err
+
+    logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
+
+                        
+    child_env = os.environ.copy()
+    child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
+    out = err = ''
+    affected_jobs = 0
+    regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
+    extra_err = ""
+    for schedd_name in scheddList:
+        try:
+            cmd = [
+                jobsub.condor_bin(condorCommands()[job_action]), '-l',
+                '-name', schedd_name,
+                '-constraint', constraint
+            ]
+            if job_action == 'REMOVE' and kwargs.get('forcex'):
+                cmd.append('-forcex')
+            out, err = jobsub.run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
+        except:
+            #TODO: We need to change the underlying library to return
+            #      stderr on failure rather than just raising exception
+            #however, as we are iterating over schedds we don't want
+            #to return error condition if one fails, we need to 
+            #continue and process the other ones
+            err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
+            logger.log(err,traceback=1)
+            extra_err = extra_err + err
+            #return {'out':out, 'err':err}
+        out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+        for line in out:
+            if regex.match(line):
+                affected_jobs += 1
+    retStr = "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
+    return retStr
+
+def doDELETE(acctgroup,  user=None, job_id=None, **kwargs):
+    rc = {'out': None, 'err': None}
+
+    rc['out'] = doJobAction(
+                        acctgroup,  user=user, 
+                        job_id=job_id,
+                        job_action='REMOVE', 
+                        **kwargs)
+
+    return rc
+
+
+def doPUT(acctgroup,  user=None,  job_id=None, **kwargs):
+    """
+    Executed to hold and release jobs
+    """
+
+    rc = {'out': None, 'err': None}
+    job_action = kwargs.get('job_action')
+
+    if job_action and job_action.upper() in condorCommands():
+        rc['out'] = doJobAction(
+                            acctgroup,  user=user,
+                            job_id=job_id,
+                            job_action=job_action.upper())
+    else:
+
+        rc['err'] = '%s is not a valid action on jobs' % job_action
+
+    logger.log(rc)
+
+    return rc
+

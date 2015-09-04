@@ -47,7 +47,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="""REQUIRED ARGUMENTS to release jobs  are ((-G AND --jobsub-server) AND  (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
+                                   epilog="""REQUIRED arguments to release jobs  are (-G AND  (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
 
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
@@ -102,7 +102,7 @@ def parse_opts(argv):
                          action='store',
                          default=None,
                          metavar='<user ID>',
-                         help='hold all jobs with this uid ')
+                         help='release all jobs with this uid ')
 
 
 

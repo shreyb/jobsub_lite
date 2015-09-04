@@ -75,6 +75,7 @@ class JobSubClient:
         self.useDag=useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
         self.verbose=extra_opts.get('debug',False)
+        self.forcex=extra_opts.get('forcex',False)
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
@@ -492,27 +493,32 @@ class JobSubClient:
 
         return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
 
-
+    
     def remove(self, jobid=None, uid=None):
+        url_pattern = constants.remove_url_dict.get( (jobid is not None, 
+                                                     uid is not None, 
+                                                     self.acctRole is not None, 
+                                                     self.forcex) )
         if jobid:
             self.server="https://%s:8443"%jobid.split('@')[-1]
             item = jobid
             if self.acctRole:
-                self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE\
+                self.removeURL = url_pattern\
                     % (self.server, self.acctGroup, self.acctRole, item)
             else:
-                self.removeURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN\
+                self.removeURL = url_pattern\
                     % ( self.server, self.acctGroup, item )
         elif uid:
             item = uid
             if self.acctRole:
-                self.removeURL = constants.JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE\
+                self.removeURL = url_pattern\
                     % (self.server, self.acctGroup, self.acctRole, item)
             else:
-                self.removeURL = constants.JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN\
+                self.removeURL = url_pattern\
                     % ( self.server, self.acctGroup, item )
         else:
             raise JobSubClientError("remove requires either a jobid or uid")
+
 
         return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
 

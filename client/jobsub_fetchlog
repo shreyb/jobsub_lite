@@ -41,7 +41,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="please direct questions, comments, or problems to the service desk")
+                                   epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
 
     # Required args
     parser.add_option('-G', '--group',
@@ -128,6 +128,7 @@ def parse_opts(argv):
 
     if not required_args_present(options):
         print "ERROR: Missing required arguments"
+        print "%s" % parser.epilog
         parser.print_help()
         sys.exit(1)
 
@@ -188,8 +189,9 @@ def get_sandbox(options):
     if options.format=='zip':
         sandboxURL="%s?archive_format=zip"%(sandboxURL)
 
-    logSupport.dprint('CREDENTIALS    : %s\n' % creds)
-    logSupport.dprint('SANDBOX_URL    : %s\n' % sandboxURL)
+    if options.debug:
+        print('CREDENTIALS    : %s\n' % creds)
+        print('SANDBOX_URL    : %s\n' % sandboxURL)
 
     try:
         checkDestDir(options.destdir)
@@ -232,7 +234,7 @@ def get_sandbox(options):
         if errno == 60:
             err += "\nDid you remember to include the port number to "
             err += "your server specification \n( --jobsub-server %s )?"%options.jobsubServer
-        logSupport.dprint(traceback.format_exc())
+        print(traceback.format_exc())
         raise JobSubClientError(err)
 
     serving_server = servicing_jobsub_server(curl)

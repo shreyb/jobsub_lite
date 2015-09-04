@@ -8,32 +8,31 @@ import sys
 import util
 from shutil import copyfileobj
 
-from auth import check_auth, get_client_dn
+from auth import check_auth
 from jobsub import is_supported_accountinggroup
 from format import format_response
 
 
 
-@cherrypy.popargs('action_user','forcex')
-class AccountJobsByUserResource(object):
+@cherrypy.popargs('job_id')
+class RemoveForcexByJobIDResource(object):
 
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup,  action_user=None, **kwargs):
+    def index(self, acctgroup,  job_id=None, **kwargs):
+        cherrypy.request.role = kwargs.get('role')
+        cherrypy.request.username = kwargs.get('username')
+        cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+
         try:
-            cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
-            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-            logger.log('action_user=%s'%(action_user))
+            logger.log('job_id=%s'%(job_id))
+            kwargs['forcex'] = True
             logger.log('kwargs=%s'%kwargs)
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
                     #remove job
-                    rc = util.doDELETE(acctgroup, user=action_user, **kwargs )
-                elif cherrypy.request.method == 'PUT':
-                    #hold/release
-                    rc = util.doPUT(acctgroup,  user=action_user, **kwargs)
+                    rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs )
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -45,10 +44,11 @@ class AccountJobsByUserResource(object):
                 rc = {'err': err}
         except:
             cherrypy.response.status = 500
-            err = 'Exception on AccountJobsByUserResource.index'
+            err = 'Exception on RemoveForcexByJobIDResource.index'
             logger.log(err, traceback=True)
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500
         return rc
+
 

@@ -6,12 +6,13 @@ import cherrypy
 import logger
 import sys
 import StringIO
+import util
+
 from datetime import datetime
 from shutil import copyfileobj
 
 from tempfile import NamedTemporaryFile
-from util import  mkdir_p
-from auth import check_auth, x509_proxy_fname, get_client_dn
+from auth import check_auth, x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
@@ -28,6 +29,7 @@ from dag import DagResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
 from by_user import AccountJobsByUserResource
+from forcex_jobid import RemoveForcexByJobIDResource
 
 
 
@@ -43,16 +45,7 @@ class AccountJobsResource(object):
         self.long = QueuedLongResource()
         self.dags = QueuedDagResource()
         self.user = AccountJobsByUserResource()
-        self.condorActions = {
-            'REMOVE': condor.JobAction.Remove,
-            'HOLD': condor.JobAction.Hold,
-            'RELEASE': condor.JobAction.Release,
-        }
-        self.condorCommands = {
-            'REMOVE': 'condor_rm',
-            'HOLD': 'condor_hold',
-            'RELEASE': 'condor_release',
-        }
+        self.forcex = RemoveForcexByJobIDResource()
 
 
     def doGET(self, acctgroup, job_id, kwargs):
@@ -81,35 +74,6 @@ class AccountJobsResource(object):
         return rc
 
 
-    def doDELETE(self, acctgroup, job_id=None):
-        rc = {'out': None, 'err': None}
-
-        rc['out'] = self.doJobAction(
-                            acctgroup, job_id=job_id, 
-                            job_action='REMOVE')
-
-        return rc
-
-
-    def doPUT(self, acctgroup, job_id=None,   **kwargs):
-        """
-        Executed to hold and release jobs
-        """
-
-        rc = {'out': None, 'err': None}
-        job_action = kwargs.get('job_action')
-
-        if job_action and job_action.upper() in self.condorCommands:
-            rc['out'] = self.doJobAction(
-                                acctgroup, job_id=job_id, 
-                                job_action=job_action.upper())
-        else:
-
-            rc['err'] = '%s is not a valid action on jobs' % job_action
-
-        logger.log(rc)
-
-        return rc
 
 
     def doPOST(self, acctgroup, job_id, kwargs):
@@ -134,7 +98,7 @@ class AccountJobsResource(object):
                 logger.log('job.py:doPost:role %s ' % (role))
 
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
-                mkdir_p(command_path_acctgroup)
+                util.mkdir_p(command_path_acctgroup)
                 command_path_user = jobsubConfig.commandPathUser(acctgroup,
                                                                  cherrypy.request.username)
                 # Check if the user specific dir exist with correct
@@ -207,16 +171,14 @@ class AccountJobsResource(object):
 
     @cherrypy.expose
     @format_response
-    def default(self,kwargs):
-        logger.log('kwargs=%s'%kwargs)
-        return {'out':"kwargs=%s"%kwargs}
-
-    @cherrypy.expose
-    @format_response
     @check_auth
+
     def index(self, acctgroup, job_id=None,  **kwargs):
         try:
             logger.log('job_id=%s '%(job_id))
+            logger.log('kwargs=%s '%(kwargs))
+            if not job_id:
+                job_id=kwargs.get('job_id')
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
@@ -229,10 +191,10 @@ class AccountJobsResource(object):
                     rc = self.doGET(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     #remove job
-                    rc = self.doDELETE(acctgroup, job_id=job_id)
+                    rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     #hold/release
-                    rc = self.doPUT(acctgroup, job_id=job_id,  **kwargs)
+                    rc = util.doPUT(acctgroup, job_id=job_id,  **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
@@ -252,53 +214,3 @@ class AccountJobsResource(object):
         return rc
 
 
-    def doJobAction(self, acctgroup, job_id=None, user=None, job_action=None):
-        scheddList = []
-        if job_id:
-            #job_id is a jobsubjobid
-            constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
-            # Split the jobid to get cluster_id and proc_id
-            stuff=job_id.split('@')
-            schedd_name='@'.join(stuff[1:])
-            logger.log("schedd_name is %s"%schedd_name)
-            scheddList.append(schedd_name)
-            ids = stuff[0].split('.')
-            constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
-            if (len(ids) > 1) and (ids[1]):
-                constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
-
-        reason = """jobsub_client command %s  %s""" % (get_client_dn(), cherrypy.request.headers.get('Remote-Addr'))
-        logger.log('Performing %s -reason %s on jobs with constraints (%s)' % (job_action, reason, constraint))
-
-                            
-        child_env = os.environ.copy()
-        child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
-        out = err = ''
-        affected_jobs = 0
-        regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
-        extra_err = ""
-        for schedd_name in scheddList:
-            try:
-                cmd = [
-                    condor_bin(self.condorCommands[job_action]), '-l',
-                    '-name', schedd_name,
-                    '-constraint', constraint,
-                    '-reason', reason, 
-                ]
-                out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
-            except:
-                #TODO: We need to change the underlying library to return
-                #      stderr on failure rather than just raising exception
-                #however, as we are iterating over schedds we don't want
-                #to return error condition if one fails, we need to 
-                #continue and process the other ones
-                err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
-                logger.log(err,traceback=1)
-                extra_err = extra_err + err
-                #return {'out':out, 'err':err}
-            out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
-            for line in out:
-                if regex.match(line):
-                    affected_jobs += 1
-        retStr = "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
-        return retStr

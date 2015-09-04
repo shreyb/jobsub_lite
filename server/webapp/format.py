@@ -56,9 +56,10 @@ def format_response(func):
         content_type_response = cherrypy.response.headers['Content-Type']
         content_type = (content_type_response or content_type_accept)
         log_response = True
-        if args[0].__module__ in ('jobsub_help', 'dag_help', 'job', 'jobsub', 'dag',
-                                  'condor_commands', 'history', 'queued_jobs', 
-                                  'users_jobs','queued_long', 'queued_dag','sandboxes' ):
+        if args[0].__module__ in ('jobsub_help', 'dag_help', 'job', 'jobsub',
+                                  'dag', 'condor_commands', 'history', 
+                                  'queued_jobs', 'users_jobs','queued_long', 
+                                          'queued_dag','sandboxes','summary' ):
             log_response = False
 
         return _format_response(content_type, data, log_response=log_response)

@@ -11,12 +11,39 @@ def whereAmI(nFramesUp=1):
     return "[%s:%s:%s]" % (current_thread().ident, os.path.basename(co.co_filename), co.co_name)
     #return "[%s:%d %s]" % (os.path.basename(co.co_filename), co.co_firstlineno,co.co_name)
 
-def log(msg='', context='', severity=logging.INFO, traceback=False):
+def init_logger(logger_name, log_file, level=logging.INFO):
+    l = logging.getLogger(logger_name)
+    try:
+       foo = l.hasBeenSet
+    except:
+       formatter = logging.Formatter('%(asctime)s [%(levelname)s]  %(message)s')
+       fileHandler = logging.FileHandler(log_file, mode='a')
+       fileHandler.setFormatter(formatter)
+       l.setLevel(level)
+       l.addHandler(fileHandler)
+       l.hasBeenSet = True
+    return l
+
+def get_logger(logger_name,  level=logging.INFO):
+    log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
+    log_file = "%s/%s.log" % (log_dir,logger_name)
+    l = init_logger(logger_name, log_file, level=level)
+    l.propagate = False
+    return l
+
+    
+
+
+def log(msg='', context='', severity=logging.INFO, traceback=False,logfile=None):
     here = whereAmI()
     msg = '%s %s' % (here, msg)
-    if cherrypy.request.app is None:
-        setup_admin_logger(here)
-        log_to_admin(msg,context,severity,traceback)
+    if logfile:
+        l = get_logger(logfile)
+        l.log(severity, msg)
+    elif cherrypy.request.app is None:
+        logfile = log_file_name(here)
+        l = get_logger(logfile)
+        l.log(severity, msg)
     else:
         try:
             cherrypy.request.app.log.error(msg, context, severity, traceback)
@@ -24,18 +51,9 @@ def log(msg='', context='', severity=logging.INFO, traceback=False):
             logging.log(severity, msg)
 
 def log_file_name(whereFrom):
-    logFileName="krbrefresh.log"
+    logFileName="krbrefresh"
     if whereFrom is not None:
 	if whereFrom.find('jobsub_preen')>=0:
-		logFileName="jobsub_preen.log"
+		logFileName="jobsub_preen"
     return logFileName
 
-def setup_admin_logger(wherefrom=None):
-    log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
-    #log_dir = '/var/log/jobsub'
-    log_file = "%s/%s"%(log_dir,log_file_name(wherefrom))
-    logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
-
-
-def log_to_admin(msg='', context='', severity=logging.INFO, traceback=False):
-    logging.debug(msg)

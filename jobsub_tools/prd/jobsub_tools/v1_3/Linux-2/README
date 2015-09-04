@@ -22,6 +22,10 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
+v1_3_14 9/4/15
+=================================================
+* Bug #9713 --cpu flag doing the wrong thing
+
 v1_3_13 8/18/15
 ==================================================
 * Feature #8095: Make environment variables available in job without setting them in sub

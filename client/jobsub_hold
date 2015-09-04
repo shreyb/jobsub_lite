@@ -47,7 +47,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="""REQUIRED arguments to hold jobs are (-G AND --jobsub-server AND  (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
+                                   epilog="""REQUIRED arguments to hold jobs are (-G AND   (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
 
 
     opt_group = optparse.OptionGroup(parser, "Client Options")

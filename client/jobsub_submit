@@ -133,7 +133,7 @@ def parse_opts(argv):
                                    version=version_string(),
                                    add_help_option=False,
                                    conflict_handler="resolve",
-                                   epilog="REQUIRED arguments are (--group AND --jobsub-server and file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")
+                                   epilog="REQUIRED arguments are (--group AND  file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

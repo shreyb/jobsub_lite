@@ -48,7 +48,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="REQUIRED arguments are (--jobsub-server  OR (--jobsub-server and (--long XOR --summary)) . Please direct questions, comments, or problems to the service desk")
+                                   epilog="REQUIRED arguments are (--long XOR --summary) . Please direct questions, comments, or problems to the service desk")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

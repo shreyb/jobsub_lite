@@ -597,7 +597,11 @@ class JobSubClient:
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
         jobid=self.checkID(jobid)
-        if jobid is None and self.acctGroup is None and userid is None:
+        if self.better_analyze and jobid:
+            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % ( self.server, jobid)
+        elif self.better_analyze and not jobid:
+            raise JobSubClientError("you must specify a jobid with --better-analyze")
+        elif jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:
             tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
@@ -612,10 +616,7 @@ class JobSubClient:
                 tmpURL="%s%s/"% ( tmpURL, jobid)
             self.listURL = tmpURL
         else :
-            if self.better_analyze:
-                self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % ( self.server, jobid)
-            else:
-                self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
+            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
 
         if outFormat is not None:
             self.listURL="%s%s/"%(self.listURL,outFormat)

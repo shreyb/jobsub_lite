@@ -551,8 +551,16 @@ def _check_auth(dn, acctgroup, role):
 
 def check_auth(func):
     def check_auth_wrapper(self, acctgroup, *args, **kwargs):
-        logger.log(traceback=True)
-        #dn = cherrypy.request.headers.get('Auth-User')
+
+        #this is not the right way to turn off authentication
+        #for doGET in job.py, but the @check_auth macro can
+        #not seem to be moved 
+        if str(type(self)) == "<class 'job.AccountJobsResource'>" and\
+                cherrypy.request.method == 'GET':
+                    logger.log("returning early authentication not needed here see #8186")
+                    return func(self, acctgroup, *args, **kwargs)
+        #end ugly hack
+
         dn = get_client_dn()
         err = ''
         if dn and acctgroup:

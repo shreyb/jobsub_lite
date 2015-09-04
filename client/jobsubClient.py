@@ -72,9 +72,10 @@ class JobSubClient:
         self.serverVersion = server_version
         self.acctGroup = acct_group
         self.serverArgv = server_argv
-        self.useDag=useDag
+        self.useDag = useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
         self.verbose=extra_opts.get('debug',False)
+<<<<<<< HEAD
         self.forcex=extra_opts.get('forcex',False)
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
@@ -83,11 +84,21 @@ class JobSubClient:
             if len(serverParts)==2:
                 if serverParts[0].find('http')>=0:
                     self.server="%s:%s:%s"%(serverParts[0],serverParts[1],self.serverPort)
+=======
+        self.better_analyze = extra_opts.get('better_analyze',False)
+        serverParts = re.split(':',self.server)
+        if len(serverParts) != 3:
+            if len(serverParts) == 1:
+                self.server = "https://%s:%s"%(serverParts[0],self.serverPort)
+            if len(serverParts) == 2:
+                if serverParts[0].find('http') >= 0:
+                    self.server = "%s:%s:%s"%(serverParts[0], serverParts[1], self.serverPort)
+>>>>>>> 7102
                 else:
-                    self.server="https://%s:%s"%(serverParts[0],serverParts[1])
+                    self.server = "https://%s:%s"%(serverParts[0], serverParts[1])
         else:
-            if serverParts[2]!=self.serverPort:
-                self.serverPort=serverParts[2]
+            if serverParts[2]!= self.serverPort:
+                self.serverPort = serverParts[2]
         self.credentials = get_client_credentials()
         self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
 
@@ -602,7 +613,11 @@ class JobSubClient:
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
         jobid=self.checkID(jobid)
-        if jobid is None and self.acctGroup is None and userid is None:
+        if self.better_analyze and jobid:
+            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % ( self.server, jobid)
+        elif self.better_analyze and not jobid:
+            raise JobSubClientError("you must specify a jobid with --better-analyze")
+        elif jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:
             tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)

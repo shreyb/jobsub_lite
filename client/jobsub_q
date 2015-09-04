@@ -33,12 +33,34 @@ def print_opts(options):
 
 def required_args_present(options):
     try:
-        if options.summary and options.outFormat=='long':
-            print 'ERROR: --summary and --long options conflict. Choose one, not both.'
+        if options.summary:
+            if options.outFormat=='long':
+                err = 'ERROR: --summary and --long options conflict. Choose one, not both.'
+                print err
+                return False
+
+            if options.outFormat=='dags':
+                err = 'ERROR: --summary and --dag options conflict. Choose one, not both.'
+                print err
+                return False
+
+            if options.help or options.better_analyze or options.uid or \
+                options.jobId or options.acctRole :
+                err =  """ERROR: --summary conflicts with all of ( 
+                --better-analyze, --user --jobid --role --dag --long)."""
+                print err
+                return False
+
+        if options.better_analyze and not options.jobId:
+            err =  """ERROR --better-analyze must be used with --jobid"""
+            print err
             return False
+
         if options.jobsubServer :
             return True
-    except AttributeError:
+    except AttributeError, e:
+        print 'ERROR'
+        print e
         return False
     return False
 
@@ -122,6 +144,12 @@ def parse_opts(argv):
                          help='Print debug messages to including server contacted, http response, response time')
 
 
+    opt_group.add_option('--better-analyze',
+                         dest='better_analyze',
+                         action='store_true',
+                         default=False,
+                         help='do condor_q -better-analyze on job (must use with --jobid)')
+
     opt_group.add_option('-h', '--help',
                          dest='help',
                          action='store_true',
@@ -156,7 +184,7 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug,'better_analyze':options.better_analyze})
     try:
         if options.summary:
             http_code = js_client.summary()

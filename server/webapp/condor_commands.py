@@ -1,5 +1,6 @@
 import cherrypy
 import logger
+import logging
 import traceback
 import math
 import platform
@@ -35,17 +36,24 @@ def ui_condor_status_totaljobs():
     return all_jobs
 
 def ui_condor_queued_jobs_summary():
-    all_queued1, cmd_err = subprocessSupport.iexe_cmd(
+    try:
+        all_queued1, cmd_err = subprocessSupport.iexe_cmd(
             'condor_status -submitter -wide')
-    tmp=all_queued1.split('\n')
-    idx = [i for i, item in enumerate(tmp) \
+        tmp=all_queued1.split('\n')
+        idx = [i for i, item in enumerate(tmp) \
             if re.search('^.\s+RunningJobs', item)]
-    del tmp[idx[0]:]
-    all_queued1='\n'.join(tmp)
-    all_queued2, cmd_err = subprocessSupport.iexe_cmd(
+        del tmp[idx[0]:]
+        all_queued1='\n'.join(tmp)
+        all_queued2, cmd_err = subprocessSupport.iexe_cmd(
             '/opt/jobsub/server/webapp/ifront_q.sh')
-    all_queued="%s\n%s"%(all_queued1,all_queued2)
-    return all_queued
+        all_queued="%s\n%s"%(all_queued1,all_queued2)
+        return all_queued
+    except:
+        tb = traceback.format_exc()
+        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+        
+            
 
 
 def condor_header(inputSwitch=None):
@@ -199,6 +207,7 @@ def ui_condor_q(filter=None,format=None):
         if len(re.findall(no_jobs, tb)):
             return no_jobs
         else:
+            logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
             cherrypy.response.status = 500
             return tb
 
@@ -241,8 +250,13 @@ def classad_to_dict(classad):
     return job_dict
 
 def schedd_list():
-    schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -af name """)
-    return schedds.split()
+    try:
+        schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -af name """)
+        return schedds.split()
+    except:
+        tb = traceback.format_exc()
+        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
     
 def schedd_name(arglist=None):
     #logger.log(arglist)

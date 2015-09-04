@@ -197,8 +197,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     
     logger.log(log_msg(acctgroup, username, jobsub_args, role,
                         submit_type,jobsub_client_version,jobsub_client_krb5_principal))
-    logger.user_log(log_msg(acctgroup, username, jobsub_args, role, 
-                        submit_type,jobsub_client_version,jobsub_client_krb5_principal))
+    logger.log(log_msg(acctgroup, username, jobsub_args, role, 
+                        submit_type,jobsub_client_version,jobsub_client_krb5_principal),logfile='submit')
 
     # Convert the output to list as in case of previous version of jobsub
     if (type(out) == type('string')) and out.strip():
@@ -207,9 +207,9 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         err = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
     for line in out:
         if 'jobsubjobid' in line.lower():
-            logger.user_log(line)
+            logger.log(line,logfile='submit')
     if len(err):
-        logger.user_log(err,severity=logging.ERROR)
+        logger.log(err,severity=logging.ERROR,logfile='submit')
     result = {
         'out': out,
         'err': err

@@ -1,4 +1,5 @@
 import logger
+import logging
 import os
 import errno
 import zipfile
@@ -172,6 +173,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
         return err
 
     logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
+    logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint), logfile='condor_commands')
 
                         
     child_env = os.environ.copy()
@@ -198,6 +200,8 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
             #continue and process the other ones
             err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
             logger.log(err,traceback=1)
+            msg = "%s - %s"%(cmd,err)
+            logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
             extra_err = extra_err + err
             #return {'out':out, 'err':err}
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()

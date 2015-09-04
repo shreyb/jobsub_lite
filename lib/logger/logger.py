@@ -16,15 +16,11 @@ def init_logger(logger_name, log_file, level=logging.INFO):
     try:
        foo = l.hasBeenSet
     except:
-       formatter = logging.Formatter('[%(asctime)s] : %(message)s')
-       formatter = logging.Formatter('%(asctime)s %(thread)d [%(levelname)s]  %(message)s')
+       formatter = logging.Formatter('%(asctime)s [%(levelname)s]  %(message)s')
        fileHandler = logging.FileHandler(log_file, mode='a')
        fileHandler.setFormatter(formatter)
-       streamHandler = logging.StreamHandler()
-       streamHandler.setFormatter(formatter)
        l.setLevel(level)
        l.addHandler(fileHandler)
-       l.addHandler(streamHandler)   
        l.hasBeenSet = True
     return l
 
@@ -32,20 +28,22 @@ def get_logger(logger_name,  level=logging.INFO):
     log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
     log_file = "%s/%s.log" % (log_dir,logger_name)
     l = init_logger(logger_name, log_file, level=level)
+    l.propagate = False
     return l
 
     
 
-def user_log(msg='', context='', severity=logging.INFO, traceback=False):
-    l  = get_logger('user_action')
-    l.log(severity,msg)
 
-def log(msg='', context='', severity=logging.INFO, traceback=False):
+def log(msg='', context='', severity=logging.INFO, traceback=False,logfile=None):
     here = whereAmI()
     msg = '%s %s' % (here, msg)
-    if cherrypy.request.app is None:
-        setup_admin_logger(here)
-        log_to_admin(msg,context,severity,traceback)
+    if logfile:
+        l = get_logger(logfile)
+        l.log(severity, msg)
+    elif cherrypy.request.app is None:
+        logfile = log_file_name(here)
+        l = get_logger(logfile)
+        l.log(severity, msg)
     else:
         try:
             cherrypy.request.app.log.error(msg, context, severity, traceback)
@@ -53,17 +51,9 @@ def log(msg='', context='', severity=logging.INFO, traceback=False):
             logging.log(severity, msg)
 
 def log_file_name(whereFrom):
-    logFileName="krbrefresh.log"
+    logFileName="krbrefresh"
     if whereFrom is not None:
 	if whereFrom.find('jobsub_preen')>=0:
-		logFileName="jobsub_preen.log"
+		logFileName="jobsub_preen"
     return logFileName
 
-def setup_admin_logger(wherefrom=None):
-    log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
-    log_file = "%s/%s"%(log_dir,log_file_name(wherefrom))
-    logging.basicConfig(format='%(asctime)s %(message)s ', filename=log_file,level=logging.DEBUG)
-
-
-def log_to_admin(msg='', context='', severity=logging.INFO, traceback=False):
-    logging.debug(msg)

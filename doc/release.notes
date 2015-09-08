@@ -1,5 +1,25 @@
 
 ================================================================================
+v1.1.6
+================================================================================
+Client
+-------
+* Feature #7518 jobsub_client help listing subcommands
+* Bug #9506 make getopt scream about the missing option
+* Feature #7227 jobsub_rm --forcex
+* Feature #7102 condor_q --better-analyze
+
+Server
+--------
+* Bug #9740 jobsub_preen needs to clean up dropbox and /var/lib/jobsub
+* Bug #9713 --cpu flag doing the wrong thing
+* Bug #9711 better logging
+* Feature #8292 add tracking to job rm/hold/release
+* Bug #7864 extra @ on job name in certain circumstances
+* Feature #7518 speed up jobsub_history
+
+
+================================================================================
 v1.1.5
 ================================================================================
 

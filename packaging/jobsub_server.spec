@@ -72,6 +72,10 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/__init__.py
 /opt/jobsub/server/__init__.pyc
 /opt/jobsub/server/__init__.pyo
+/opt/jobsub/server/admin/fill_jobsub_history.py
+/opt/jobsub/server/admin/fill_jobsub_history.pyc
+/opt/jobsub/server/admin/fill_jobsub_history.pyo
+/opt/jobsub/server/admin/fill_jobsub_history.sh
 /opt/jobsub/server/admin/fix_sandbox_links.py
 /opt/jobsub/server/admin/fix_sandbox_links.pyc
 /opt/jobsub/server/admin/fix_sandbox_links.pyo
@@ -158,6 +162,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/sandboxes.py
 /opt/jobsub/server/webapp/sandboxes.pyc
 /opt/jobsub/server/webapp/sandboxes.pyo
+/opt/jobsub/server/webapp/sqlite_commands.py
+/opt/jobsub/server/webapp/sqlite_commands.pyc
+/opt/jobsub/server/webapp/sqlite_commands.pyo
 /opt/jobsub/server/webapp/scheddload.py
 /opt/jobsub/server/webapp/scheddload.pyc
 /opt/jobsub/server/webapp/scheddload.pyo

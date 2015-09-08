@@ -555,12 +555,16 @@ def check_auth(func):
         #this is not the right way to turn off authentication
         #for doGET in job.py, but the @check_auth macro can
         #not seem to be moved 
-        if str(type(self)) == "<class 'job.AccountJobsResource'>" and\
-                cherrypy.request.method == 'GET':
-                    logger.log("returning early authentication not needed here see #8186")
-                    return func(self, acctgroup, *args, **kwargs)
+        #if str(type(self)) == "<class 'job.AccountJobsResource'>" and\
+        #        cherrypy.request.method == 'GET':
+        #            logger.log("returning early authentication not needed here see #8186")
+        #            return func(self, acctgroup, *args, **kwargs)
         #end ugly hack
 
+        logger.log(traceback=True)
+        logger.log("args = %s kwargs=%s self=%s dir(self)=%s"%(args,kwargs,self,dir(self)))
+        logger.log("str(type(self))=%s"%(str(type(self))))
+        logger.log("request method=%s"%cherrypy.request.method)
         dn = get_client_dn()
         err = ''
         if dn and acctgroup:

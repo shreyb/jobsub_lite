@@ -8,6 +8,7 @@ import sys
 import subprocessSupport
 import socket
 import re
+from random import randint
 
 
 if platform.system() == 'Linux':
@@ -245,6 +246,16 @@ def classad_to_dict(classad):
         job_dict[repr(k)] = repr(v)
     return job_dict
 
+def collector_host():
+    try:
+        hosts, cmd_err = subprocessSupport.iexe_cmd("""condor_config_val COLLECTOR_HOST """)
+        host_list = ','.split(hosts)
+        return host_list[randint(0,len(host_list)-1)]
+    except:
+        tb = traceback.format_exc()
+        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+    
 def schedd_list():
     try:
         schedds, cmd_err = subprocessSupport.iexe_cmd("""condor_status -schedd -af name """)

@@ -171,7 +171,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
         err = "Failed to supply job_id or uid, cannot perform any action"
         logger.log(err)
         return err
-
+    collector_host = condor_commands.collector_host()
     logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
     logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint), logfile='condor_commands')
 
@@ -182,11 +182,13 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
     affected_jobs = 0
     regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
     extra_err = ""
+    failures = 0
     for schedd_name in scheddList:
         try:
             cmd = [
                 jobsub.condor_bin(condorCommands()[job_action]), '-l',
                 '-name', schedd_name,
+                '-pool', collector_host,
                 '-constraint', constraint
             ]
             if job_action == 'REMOVE' and kwargs.get('forcex'):
@@ -198,6 +200,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
             #however, as we are iterating over schedds we don't want
             #to return error condition if one fails, we need to 
             #continue and process the other ones
+            failures += 1
             err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
             logger.log(err,traceback=1)
             msg = "%s - %s"%(cmd,err)
@@ -209,6 +212,8 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
             if regex.match(line):
                 affected_jobs += 1
     retStr = "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
+    if failures:
+        retStr = "%s \nCONDOR_ERRORS: %s" %( retStr, extra_err )
     return retStr
 
 def doDELETE(acctgroup,  user=None, job_id=None, **kwargs):

@@ -27,6 +27,7 @@ import logger
 import jobsub
 import subprocessSupport
 
+from functools import wraps, partial
 from distutils import spawn
 from tempfile import NamedTemporaryFile
 from JobsubConfigParser import JobsubConfigParser
@@ -549,21 +550,24 @@ def _check_auth(dn, acctgroup, role):
     return create_voms_proxy(dn, acctgroup, role)
 
 
-def check_auth(func):
-    def check_auth_wrapper(self, acctgroup, *args, **kwargs):
+def check_auth(func=None, pass_through=None):
 
-        #this is not the right way to turn off authentication
-        #for doGET in job.py, but the @check_auth macro can
-        #not seem to be moved 
-        #if str(type(self)) == "<class 'job.AccountJobsResource'>" and\
-        #        cherrypy.request.method == 'GET':
-        #            logger.log("returning early authentication not needed here see #8186")
-        #            return func(self, acctgroup, *args, **kwargs)
-        #end ugly hack
+    if func is None:
+        return partial(check_auth, pass_through=pass_through)
 
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        #see #8186, we need to be able to turn off authorization for certain http
+        #requests until we can restructure the code
+        #
+        if pass_through and cherrypy.request.method in pass_through:
+            logger.log("returning without checking authorization per request for http methods %s"% pass_through)
+            return func(*args, **kwargs)
+
+        acctgroup = kwargs.get('acctgroup')
         logger.log(traceback=True)
-        logger.log("args = %s kwargs=%s self=%s dir(self)=%s"%(args,kwargs,self,dir(self)))
-        logger.log("str(type(self))=%s"%(str(type(self))))
+        logger.log("args = %s kwargs=%s "%(args,kwargs))
         logger.log("request method=%s"%cherrypy.request.method)
         dn = get_client_dn()
         err = ''
@@ -582,7 +586,7 @@ def check_auth(func):
                     kwargs['role'] = role
                     kwargs['username'] = username
                     kwargs['voms_proxy'] = voms_proxy
-                    return func(self, acctgroup, *args, **kwargs)
+                    return func(*args, **kwargs)
                 else:
                     # return error for failed auth
                     err = 'User authorization has failed: %s'%sys.exc_info()[1]
@@ -603,7 +607,7 @@ def check_auth(func):
             cherrypy.response.status = 401
         return rc
 
-    return check_auth_wrapper
+    return wrapper
 
 def needs_refresh(filepath,agelimit=3600):
     if not os.path.exists(filepath):

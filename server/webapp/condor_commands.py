@@ -248,9 +248,12 @@ def classad_to_dict(classad):
 
 def collector_host():
     try:
-        hosts, cmd_err = subprocessSupport.iexe_cmd("""condor_config_val COLLECTOR_HOST """)
-        host_list = ','.split(hosts)
-        return host_list[randint(0,len(host_list)-1)]
+        hosts, cmd_err = subprocessSupport.iexe_cmd("""condor_config_val collector_host """)
+        host_x = hosts.split('\n')
+        host_list = host_x[0].split(',')
+        host = host_list[randint(0,len(host_list)-1)]
+        logger.log('choosing %s from %s'%(host,host_list))
+        return host
     except:
         tb = traceback.format_exc()
         logger.log(tb)

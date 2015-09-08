@@ -172,6 +172,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
         logger.log(err)
         return err
     collector_host = condor_commands.collector_host()
+    logger.log('collector_host is "%s"'%collector_host)
     logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
     logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint), logfile='condor_commands')
 

@@ -17,6 +17,8 @@ Server
 * Feature #8292 add tracking to job rm/hold/release
 * Bug #7864 extra @ on job name in certain circumstances
 * Feature #7518 speed up jobsub_history
+* Bug #10028 jobsub_rm --user finds no jobs to remove
+* Bug #8186 inconsistent behavior with -G and jobsub_q
 
 
 ================================================================================

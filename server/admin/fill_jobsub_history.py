@@ -130,6 +130,7 @@ def condorHistoryFile():
 
 def keepUp():
     dir = historyDBDir()
+    history_db = "%s/jobsub_history.db" % dir
     logger.log("changing to %s"%dir, logfile="fill_jobsub_history")
     os.chdir(dir)
     try:

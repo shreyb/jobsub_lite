@@ -580,6 +580,7 @@ def check_auth(func=None, pass_through=None):
                 tokens = acctgroup.split('--ROLE--')
                 if len(tokens) > 1:
                     (acctgroup, role) = tokens[0:2]
+                    kwargs['acctgroup'] = acctgroup
                     logger.log('found ROLE %s in %s' %(role,tokens))
                 username, voms_proxy =  _check_auth(dn, acctgroup, role)
                 if username and voms_proxy:

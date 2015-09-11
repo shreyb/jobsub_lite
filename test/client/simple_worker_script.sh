@@ -46,8 +46,8 @@ function log_glexec_conf {
 #--------------
 function log_running_jobs {
   logit "##### $(date) #############################"
-  logit "##### RUNNING JOBS ###############"
-  ps -ef |egrep "condor|procd|glexec|fgtest|$PID |$PPID " |egrep -v "^daemon|grep" |sed -e's/$/\n/'
+  #logit "##### RUNNING JOBS ###############"
+  #ps -ef |egrep "condor|procd|glexec|fgtest|$PID |$PPID " |egrep -v "^daemon|grep" |sed -e's/$/\n/'
 }
 #--------------
 function log_timing_data {
@@ -165,7 +165,7 @@ rslt=`ls -la $timing`
 logit "after result of ls -la $timing is $rslt"
 logit
 #log_timing_data 
-capture_condor_logs
+#capture_condor_logs
 cleanup_files 
 job_end=$(date '+%s')
 total_elapsed=$(($job_end -$job_start))

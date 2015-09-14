@@ -4,21 +4,68 @@ v1.1.6
 ================================================================================
 Client
 -------
-* Feature #7518 jobsub_client help listing subcommands
+* Feature #7518 'jobsub' command in jobsub_client is now a help command.
+                Lists all the jobsub_client commands and thier functions and
+                a URL with further documentation
+
 * Bug #9506 make getopt scream about the missing option
-* Feature #7227 jobsub_rm --forcex
-* Feature #7102 condor_q --better-analyze
+                Client commands are more helpful when user does not supply
+                a required option
+
+* Feature #7227 jobsub_rm new option: --forcex
+                runs condor_rm --forcex, like condor_rm --forcex it will fail
+                if job has not already  been removed with jobsub_rm and placed in the 
+                'X' state 
+                
+* Feature #7102 jobsub_q new option: --better-analyze
+                runs condor_q -better-analyze on specified --jobid
 
 Server
 --------
-* Bug #9740 jobsub_preen needs to clean up dropbox and /var/lib/jobsub
-* Bug #9713 --cpu flag doing the wrong thing
-* Bug #9711 better logging
-* Feature #8292 add tracking to job rm/hold/release
-* Bug #7864 extra @ on job name in certain circumstances
 * Feature #7518 speed up jobsub_history
+                condor_history files are now parsed and exctracted into a sqlite
+                database, which is much faster and does not 'hang' the server like
+                a condor_history to to full history logs does.  The output format 
+                has changed, this will probably be tweaked.  Jobsub_history 
+                --submitted-after <date> and --submitted-before <date> should run
+                reasonably fast now but are not implemented in this release.
+
 * Bug #10028 jobsub_rm --user finds no jobs to remove
+                underlying hold/release/remove commands now use -pool flag
+                as a workaround force correct behavior reference condor bug 
+                https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=5221
+
+* Bug #9713 --cpu flag doing the wrong thing
+                --cpu <NUM> flag to require that job runs only on a worker node
+                with <NUM>  available cores had a typo that would cause the job
+                to never start.  This is fixed, and should work if the OSG site
+                that the job lands at supports it.
+
+* Feature #8292 add tracking to job rm/hold/release
+                HoldReason/ReleaseReason/RemoveReason now lists DN and ip address
+                of user that issues hold/release/rm
+
+* Bug #9711 better logging
+                Two new logs created in jobsub log area (default /var/log/jobsub/)
+
+                submit.log shows ip address uid, and jobsub_submit 
+                options of each submitted job, along with jobsubjobid if job is 
+                successful and [ERROR] (error output) if job fails.  
+    
+                condor_commands.log shows (most) condor_commands initiated
+                as a result of client commands, and and error output 
+                along with [ERROR] tag
+             
+* Bug #7864 extra @ on job name in certain circumstances
+                resulted in user jobs failing occasionally, fixed.
+
 * Bug #8186 inconsistent behavior with -G and jobsub_q
+                jobsub_q -G returned authentication errror if user
+                not in that group.  This behavior was wrong, users
+                should be able to query the state of the server.
+
+* Bug #9740 jobsub_preen needs to clean up dropbox and /var/lib/jobsub
+               added some cleanup areas to cron jobs.
 
 
 ================================================================================

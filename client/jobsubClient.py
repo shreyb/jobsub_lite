@@ -77,6 +77,7 @@ class JobSubClient:
         self.verbose=extra_opts.get('debug',False)
         self.better_analyze = extra_opts.get('better_analyze',False)
         self.forcex=extra_opts.get('forcex',False)
+        self.schedd_list=[]
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
@@ -226,7 +227,7 @@ class JobSubClient:
 
     def submit_dag(self):
         if (not self.jobDropboxURIMap) or self.dropboxServer:
-            self.bestSchedd()
+            self.probeSchedds()
         if self.acctRole:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -327,7 +328,7 @@ class JobSubClient:
 
     def submit(self):
         if (not self.jobDropboxURIMap) or self.dropboxServer:
-            self.bestSchedd()
+            self.probeSchedds()
         if self.acctRole:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -450,20 +451,26 @@ class JobSubClient:
             else:
                 self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
                         % ( self.server, self.acctGroup, item )
+            return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
         elif uid:
+            self.probeSchedds()
+            rslts = []
             item = uid
-            if self.acctRole:
-                self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
-                        % (self.server, self.acctGroup, self.acctRole, item)
-            else:
-                self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
-                        % ( self.server, self.acctGroup, item )
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                if self.acctRole:
+                    self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
+                        % (srv, self.acctGroup, self.acctRole, item)
+                else:
+                    self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
+                        % ( srv, self.acctGroup, item )
+                rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
 
 
-        return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
 
 
     def hold(self, jobid=None, uid=None):
@@ -480,19 +487,25 @@ class JobSubClient:
             else:
                 self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
                         % ( self.server, self.acctGroup, item )
+            return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
         elif uid:
-            item = uid
-            if self.acctRole:
-                self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
-                    % (self.server, self.acctGroup, self.acctRole, item )
-            else:
-                self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
-                    % ( self.server, self.acctGroup, item )
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                item = uid
+                if self.acctRole:
+                    self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
+                        % (srv, self.acctGroup, self.acctRole, item )
+                else:
+                    self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
+                        % ( srv, self.acctGroup, item )
+                rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         else:
             raise JobSubClientError("hold requires either a jobid or uid")
 
 
-        return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
 
     
     def remove(self, jobid=None, uid=None):
@@ -509,19 +522,25 @@ class JobSubClient:
             else:
                 self.removeURL = url_pattern\
                     % ( self.server, self.acctGroup, item )
+            return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
         elif uid:
             item = uid
-            if self.acctRole:
-                self.removeURL = url_pattern\
-                    % (self.server, self.acctGroup, self.acctRole, item)
-            else:
-                self.removeURL = url_pattern\
-                    % ( self.server, self.acctGroup, item )
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                if self.acctRole:
+                    self.removeURL = url_pattern\
+                        % (srv, self.acctGroup, self.acctRole, item)
+                else:
+                    self.removeURL = url_pattern\
+                        % ( srv, self.acctGroup, item )
+                rslts.append(self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False))
+            return rslts
         else:
             raise JobSubClientError("remove requires either a jobid or uid")
 
 
-        return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
 
 
     def history(self, userid=None, jobid=None,outFormat=None):
@@ -556,7 +575,10 @@ class JobSubClient:
         self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(self.listURL, 'GET')
 
-    def bestSchedd(self, ignore_secondary_schedds = True):
+    def probeSchedds(self, ignore_secondary_schedds = True):
+        """query all the schedds behind the jobsub-server.  Create a list of
+        them stored in self.schedd_list and change self.server to point to
+        the least loaded one"""
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET' )
@@ -571,6 +593,8 @@ class JobSubClient:
                   pts = line.split()
                   if len(pts[:1]) and len(pts[-1:]):
                       schedd = pts[:1][0]
+                      if schedd not in self.schedd_list:
+                          self.schedd_list.append(schedd)
                       jobload = long(pts[-1:][0])
                       if schedd.find('@') > 0 and ignore_secondary_schedds:
                           continue

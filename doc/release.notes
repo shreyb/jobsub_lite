@@ -20,6 +20,11 @@ Client
 * Feature #7102 jobsub_q new option: --better-analyze
                 runs condor_q -better-analyze on specified --jobid
 
+* Bug #9625    Error in online help said that units for --disk=<num> specified <num>MB of 
+               requested disk on worker node.  It was actually <num>KB of requested
+               disk.  Error in help has been corrected and option now accepts 
+               --disk=<num><units> where <units> can be one of 'KB','MB','GB','TB'.  
+               If <units> is not specified it defaults to 'KB' as in earlier releases. 
 Server
 --------
 * Feature #7518 speed up jobsub_history

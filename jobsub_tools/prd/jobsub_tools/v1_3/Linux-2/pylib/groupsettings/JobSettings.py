@@ -326,17 +326,20 @@ class JobSettings(object):
             each individual job will have a unique and sequential $JOBSUBJOBSECTION.
             Scripts may need modification to take this into account""") 
 
-        generic_group.add_option("--disk", dest="disk",
-            action="store",type="int",
-            help="request worker nodes have at least this many MB of disk space ")
+        generic_group.add_option("--disk", dest="disk",metavar="<num><units>",
+            action="store",type="string",
+            help="""Request worker nodes have at least <num><units> of disk space.   
+            If <units> is not specified default is 'KB' (a typo in earlier versions 
+            said that default was 'MB', this was wrong).  Allowed values for 
+            <units> are 'KB','MB','GB', and 'TB'""")
 
-        generic_group.add_option("--memory", dest="memory",
+        generic_group.add_option("--memory", dest="memory",metavar="<num>",
             action="store",type="int",
-            help="request worker nodes have at least this many MB of memory ")
+            help="request worker nodes have at least <num> MB of memory ")
 
-        generic_group.add_option("--cpu", dest="cpu",
+        generic_group.add_option("--cpu", dest="cpu",metavar="<num>",
             action="store",type="int",
-            help="request worker nodes have at least this many cpus ")
+            help="request worker nodes have at least <num> cpus ")
 
         sam_group.add_option("--dataset_definition", dest="dataset_definition",
             action="store",type="string",

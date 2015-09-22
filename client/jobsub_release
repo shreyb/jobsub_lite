@@ -148,10 +148,10 @@ def main(argv):
             rc += tmp_rc
         elif options.uid:
             print 'Releasing jobs with uid=%s' % options.uid
-            http_code = js_client.release(jobid=None,uid=options.uid)
-            tmp_rc += http_code_to_rc(http_code)
-            rc += tmp_rc
-
+            http_code_list = js_client.release(jobid=None,uid=options.uid)
+            for http_code in http_code_list:
+                tmp_rc += http_code_to_rc(http_code)
+                rc += tmp_rc
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

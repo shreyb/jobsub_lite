@@ -150,14 +150,14 @@ def main(argv):
             for jid in options.jobId.split(','):
                 print 'Removing job with jobid=%s' % jid
                 http_code = js_client.remove(jid)
-                tmp_rc += http_code_to_rc(http_code)
-            
-            rc += tmp_rc
+                tmp_rc = http_code_to_rc(http_code)
+                rc += tmp_rc
         elif options.uid:
             print 'removing jobs with uid=%s' % options.uid
-            http_code = js_client.remove(jobid=None,uid=options.uid)
-            tmp_rc += http_code_to_rc(http_code)
-            rc += tmp_rc
+            http_code_list = js_client.remove(jobid=None,uid=options.uid)
+            for http_code in http_code_list:
+                tmp_rc = http_code_to_rc(http_code)
+                rc += tmp_rc
 
     except JobSubClientError, e:
         print e

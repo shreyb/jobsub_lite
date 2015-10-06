@@ -184,6 +184,7 @@ def ui_condor_history(a_filter=None, a_format=None):
         return tb
 
 
+
 def ui_condor_q(a_filter=None,a_format=None):
     #logger.log('filter=%s format=%s'%(filter,format))
     hdr = condor_header(a_format)
@@ -203,6 +204,25 @@ def ui_condor_q(a_filter=None,a_format=None):
         no_jobs = "All queues are empty"
         if len(re.findall(no_jobs, tb)):
             return no_jobs
+        else:
+            logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+            cherrypy.response.status = 500
+            return tb
+
+def iwd_condor_q(a_filter):
+    cmd = 'condor_q -af iwd %s' % ( a_filter)
+    iwd = ''
+    try:
+        iwd , cmd_err = subprocessSupport.iexe_cmd(cmd)
+        #logger.log("cmd=%s"%cmd)
+        #logger.log("rslt=%s"%all_jobs)
+        return iwd 
+    except:
+        tb = traceback.format_exc()
+        logger.log(tb)
+        no_jobs = "All queues are empty"
+        if len(re.findall(no_jobs, tb)):
+            return iwd
         else:
             logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
             cherrypy.response.status = 500

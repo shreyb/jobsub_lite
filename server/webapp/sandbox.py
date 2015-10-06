@@ -15,15 +15,9 @@ from jobsub import run_cmd_as_user
 from format import format_response
 from datetime import datetime
 from JobsubConfigParser import JobsubConfigParser
+from condor_commands import constructFilter, iwd_condor_q
+from sqlite_commands import constructQuery, iwd_jobsub_history
 
-condor_job_status = {
-    1: 'Idle',
-    2: 'Running',
-    3: 'Removed',
-    4: 'Completed',
-    5: 'Held',
-    6: 'Transferring Output',
-}
 
 
 
@@ -76,6 +70,8 @@ class SandboxResource(object):
 
 
     def findSandbox(self, path):
+        if not path:
+            return False
         if os.path.exists(path):
             return path 
         return False
@@ -103,9 +99,28 @@ class SandboxResource(object):
         command_path_root = get_command_path_root()
         if job_id is None:
              job_id='I_am_planning_on_failing'
-        #zip_path = os.path.join(sbx_final_dir, job_id)
+        zip_path = os.path.join(sbx_final_dir, job_id)
         zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
+        if not zip_path:
+            #it might be a valid jobsubjobid that is part of a dag or non zero ProcessID
+            try:
+                query = constructFilter(jobid=job_id)
+                zip_path = iwd_condor_q(query)
+                logger.log('zip_path from condor_q:%s' % zip_path)
+            except Exception, e:
+                logger.log('%s'%e)
+        if not zip_path:
+            try:
+                query = constructQuery(jobid=job_id)
+                zip_path = iwd_jobsub_history(query)
+                logger.log('zip_path from jobsub_history:%s' % zip_path)
+            except Exception, e:
+                logger.log('%s'%e)
+        logger.log('zip_path=%s'%zip_path)
         if zip_path:
+            zip_path=zip_path.rstrip()
+            zip_path=zip_path.lstrip()
+        if zip_path and os.path.exists(zip_path):
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             format = kwargs.get('archive_format', 'tgz')
             logger.log('archive_format:%s'%format)

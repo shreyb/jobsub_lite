@@ -49,6 +49,23 @@ def constructQuery( acctgroup=None, uid=None, jobid=None):
 
 
 
+
+def iwd_jobsub_history(query):
+    hdr = sql_header()
+    hostname = socket.gethostname()
+    p = JobsubConfigParser.JobsubConfigParser()
+    history_db = p.get(hostname,'history_db') 
+    if not history_db:
+        history_db = "/fife/local/scratch/history/%s/jobsub_history.db" % hostname
+    conn = sqlite3.connect(history_db)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    rslt=[hdr]
+    rslt=None
+    for row in c.execute(query):
+        rslt = row['iwd']
+    return rslt
+
 def jobsub_history(query):
     hdr = sql_header()
     hostname = socket.gethostname()

@@ -1179,7 +1179,7 @@ class JobSettings(object):
             (settings['condor_exec'],filebase,uniquer)
             settings['parrotfile'] ="%s/%s_%s_parrot.sh" % \
             (settings['condor_exec'],filebase,uniquer)
-            settings['filebase'] ="%s/%s_%s" % \
+            settings['filebase'] ="%s/%s_%s_" % \
                 (settings['condor_tmp'],filebase,uniquer)
             settings['cmdfile'] = settings['filebase']+".cmd"
 
@@ -1189,8 +1189,9 @@ class JobSettings(object):
                 print "settings['filebase'] =",settings['filebase']
                 print "settings['cmdfile'] =",settings['cmdfile']
 
-            if settings['queuecount']>1:
-                settings['processtag'] = "_$(Process)"
+            settings['processtag']="cluster.$(Cluster).$(Process)"
+            #if settings['queuecount']>1:
+            #    settings['processtag'] = ".$(Process)"
 
             settings['logfile']=settings['filebase']+".log"
             settings['errfile']=settings['filebase']+settings['processtag']+".err"

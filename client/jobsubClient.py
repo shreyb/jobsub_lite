@@ -1077,3 +1077,8 @@ def http_code_to_rc(http_code):
     if http_code >= 200 and http_code < 300:
         return 0
     return 1
+
+def date_callback(option, opt, value, p):
+    #check that date is valid and exit if conversion can't be made
+    setattr(p.values, option.dest, value)
+    return p

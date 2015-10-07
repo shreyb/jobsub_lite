@@ -159,9 +159,10 @@ class SandboxResource(object):
                 sandbox_cluster_ids.sort()
 
             if sandbox_cluster_ids:
-                outmsg = """Information for job %s not found.  If you used jobsub_q or jobsub_history to 
+                outmsg = """
+                Information for job %s not found.  If you used jobsub_q or jobsub_history to 
                 find this job ID, you may have specified --group incorrectly.  If the job is old, it may have 
-                been already removed to save space.  For user %s, --group %s, the server can retrieve i
+                been already removed to save space.  For user %s, --group %s, the server can retrieve 
                 information for these job_ids:"""% (job_id, cherrypy.request.username, acctgroup)
                 sandbox_cluster_ids.insert(0, outmsg)
                 rc = {'out': sandbox_cluster_ids}

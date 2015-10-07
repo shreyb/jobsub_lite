@@ -90,7 +90,8 @@ def parse_opts(argv):
                          callback=date_callback,
                          metavar='<submission date>',
                          default=None,
-                         help='job submission date (qdate)  greater than or equal to <submission date>')
+                         help="""job submission date (qdate)  greater than or equal to <submission date>
+                         Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
     opt_group.add_option('--qdate-le',
                          dest='qdate_le',
@@ -99,7 +100,8 @@ def parse_opts(argv):
                          callback=date_callback,
                          metavar='<submission date>',
                          default=None,
-                         help='job submission date (qdate)  less than or equal to  <submission date>')
+                         help="""job submission date (qdate)  less than or equal to  <submission date>
+                         Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
     opt_group.add_option('--debug',
                          dest='debug',

@@ -32,6 +32,7 @@ import tarfile
 import socket
 import time
 import shutil
+from datetime import datetime 
 
 
 def version_string():
@@ -558,9 +559,11 @@ class JobSubClient:
                 self.histURL="%sjobid/%s/"%(self.histURL,jobid)
             qdate_ge=self.extra_opts.get('qdate_ge')
             if qdate_ge:
+                qdate_ge = qdate_ge.replace(' ', '%20')
                 self.histURL="%sqdate_ge/%s/"%(self.histURL,qdate_ge)
             qdate_le=self.extra_opts.get('qdate_le')
             if qdate_le:
+                qdate_le = qdate_le.replace(' ', '%20')
                 self.histURL="%sqdate_le/%s/"%(self.histURL,qdate_le)
 
             try:
@@ -1083,5 +1086,17 @@ def http_code_to_rc(http_code):
 
 def date_callback(option, opt, value, p):
     #check that date is valid and exit if conversion can't be made
-    setattr(p.values, option.dest, value)
+    dateOK = False
+    flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d' ]
+    for fmt in flist:
+        try:
+            datetime.strptime(value,fmt)
+            dateOK = True
+            break
+        except:
+            pass
+    if dateOK:
+        setattr(p.values, option.dest, value)
+    else:
+        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  ex: '2015-03-01 01:59:03'"""%value)
     return p

@@ -1,8 +1,6 @@
 import os
 import cherrypy
 import logger
-import math
-import subprocessSupport
 
 from cherrypy.lib.static import serve_file
 
@@ -10,7 +8,6 @@ from util import create_zipfile, create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup, get_command_path_root
 from jobsub import JobsubConfig
-from jobsub import move_file_as_user
 from jobsub import run_cmd_as_user
 from format import format_response
 from datetime import datetime
@@ -98,7 +95,7 @@ class SandboxResource(object):
 
         command_path_root = get_command_path_root()
         if job_id is None:
-             job_id='I_am_planning_on_failing'
+             job_id = 'I_am_planning_on_failing'
         zip_path = os.path.join(sbx_final_dir, job_id)
         zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
         if not zip_path:
@@ -143,7 +140,7 @@ class SandboxResource(object):
             make_sandbox_readable(zip_path, cherrypy.request.username)
             create_archive(zip_file, zip_path, job_id, format)
             logger.log('returning %s'%zip_file)
-            return serve_file(zip_file, 'application/x-download','attachment')
+            return serve_file(zip_file, 'application/x-download', 'attachment')
 
         else:
             # TODO: PM
@@ -162,12 +159,16 @@ class SandboxResource(object):
                 sandbox_cluster_ids.sort()
 
             if sandbox_cluster_ids:
-                outmsg = "For user %s, accounting group %s, the server can retrieve information for these job_ids:"% (cherrypy.request.username ,acctgroup)
-                sandbox_cluster_ids.insert(0,outmsg)
-                rc = {'out': sandbox_cluster_ids }
+                outmsg = """Information for job %s not found.  If you used jobsub_q or jobsub_history to 
+                find this job ID, you may have specified --group incorrectly.  If the job is old, it may have 
+                been already removed to save space.  For user %s, --group %s, the server can retrieve i
+                information for these job_ids:"""% (job_id, cherrypy.request.username, acctgroup)
+                sandbox_cluster_ids.insert(0, outmsg)
+                rc = {'out': sandbox_cluster_ids}
             else:
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' % (cherrypy.request.username , acctgroup, job_id)
-                rc = {'err':err }
+                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' %\
+                        (cherrypy.request.username , acctgroup, job_id)
+                rc = {'err':err}
 
         return rc
 

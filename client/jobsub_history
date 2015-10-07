@@ -24,6 +24,7 @@ import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
+from jobsubClient import date_callback
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -81,6 +82,24 @@ def parse_opts(argv):
                          metavar='<Job ID>',
                          default=None,
                          help='Job Id (Cluster ID)  to query')
+
+    opt_group.add_option('--submission-date-greater-than-or-equal', '--sdate-ge',
+                         dest='sdatege',
+                         type='string',
+                         action='callback',
+                         callback=date_callback,
+                         metavar='<submission date>',
+                         default=None,
+                         help='job submission date >= <submission date>')
+
+    opt_group.add_option('--submission-date-less-than-or-equal', '--sdate-le',
+                         dest='sdatele',
+                         type='string',
+                         action='callback',
+                         callback=date_callback,
+                         metavar='<submission date>',
+                         default=None,
+                         help='job submission date <= <submission date>')
 
     opt_group.add_option('--debug',
                          dest='debug',

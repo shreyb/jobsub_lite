@@ -8,6 +8,7 @@ import re
 import datetime
 import time
 from JobsubConfigParser import JobsubConfigParser
+import xml.etree.ElementTree as ET
 
 docString = """
  $Id$
@@ -152,6 +153,69 @@ wrap_file_dummy = """#!/bin/sh
 #
 exit 0
 """
+
+some_stuff = """
+dagDict = {}
+
+
+if __name__ == '__main__':
+    tree = ET.parse(sys.argv[1])
+    root = tree.getroot()
+    labelTree(root)
+    makeLists(root)
+    l2=L(dagDict.get('dag'),tag='serial')
+    expand(l2)
+    for k in sorted(nodeDict.keys()):
+        e = nodeDict[k]
+        if e.tag == 'job':
+            print "JOB %s %s"%(k,e.attrib['cmd'])
+    relationships(l2)
+
+
+"""
+
+class L(list):
+    """
+    A subclass of list that can accept additional attributes.
+    Should be able to be used just like a regular list.
+
+    The problem:
+    a = [1, 2, 4, 8]
+    a.x = "Hey!" # AttributeError: 'list' object has no attribute 'x'
+
+    The solution:
+    a = L(1, 2, 4, 8)
+    a.x = "Hey!"
+    print a       # [1, 2, 4, 8]
+    print a.x     # "Hey!"
+    print len(a)  # 4
+
+    You can also do these:
+    a = L( 1, 2, 4, 8 , x="Hey!" )                 # [1, 2, 4, 8]
+    a = L( 1, 2, 4, 8 )( x="Hey!" )                # [1, 2, 4, 8]
+    a = L( [1, 2, 4, 8] , x="Hey!" )               # [1, 2, 4, 8]
+    a = L( {1, 2, 4, 8} , x="Hey!" )               # [1, 2, 4, 8]
+    a = L( [2 ** b for b in range(4)] , x="Hey!" ) # [1, 2, 4, 8]
+    a = L( (2 ** b for b in range(4)) , x="Hey!" ) # [1, 2, 4, 8]
+    a = L( 2 ** b for b in range(4) )( x="Hey!" )  # [1, 2, 4, 8]
+    a = L( 2 )                                     # [2]
+    """
+    def __new__(self, *args, **kwargs):
+        return super(L, self).__new__(self, args, kwargs)
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1 and hasattr(args[0], '__iter__'):
+            list.__init__(self, args[0])
+        else:
+            list.__init__(self, args)
+        self.__dict__.update(kwargs)
+
+    def __call__(self, **kwargs):
+        self.__dict__.update(kwargs)
+        return self
+
+
+
 class DagParser(object):
      
     def __init__(self):
@@ -175,6 +239,12 @@ class DagParser(object):
         self.processingFinishJob = False
         self.redundancy = 0
         self.condor_tmp = os.environ.get("CONDOR_TMP")
+        self.jnum = 1
+        self.pnum = 1
+        self.snum = 1
+        self.nodeDict = {}
+        self.dagDict = {}
+
           
 
 
@@ -338,7 +408,93 @@ class DagParser(object):
                         self.macroDict[a]=val
 #######################################################################
 
-
+    
+    def nameNode(self,elem):
+        #global snum,pnum,jnum, nodeDict
+        if elem.attrib.has_key('name'):
+            self.nodeDict[elem.attrib['name']] = elem
+            return
+        if elem.tag == 'serial':
+            elem.attrib['name']='Serial_%s'% (self.snum)
+            self.snum +=1
+        if elem.tag == 'parallel':
+            elem.attrib['name']='Parallel_%s'% (self.pnum)
+            self.pnum +=1
+        if elem.tag == 'job':
+            elem.attrib['name']='Job_%s'% (self.jnum)
+            self.jnum +=1
+        if elem.tag == 'dag':
+            elem.attrib['name']='dag'
+        self.nodeDict[elem.attrib['name']] = elem
+    
+    def labelTree(self,elem):
+        self.nameNode(elem)
+        l = list(elem)
+        if len(l):
+            for i2 in range(0,len(l)):
+                x=l[i2]
+                self.nameNode(x)
+                l2=list(x)
+                if len(l2):
+                    self.labelTree(x)
+    
+    def makeLists(self,elem):
+        l = list(elem)
+        if len(l):
+            jlist = L()
+            jlist.tag = elem.tag
+            for x in l:
+                jlist.append(x.attrib['name'])
+                l2 = list(x)
+                if len(l2):
+                    self.makeLists(x)
+    
+        if len(jlist):
+            jobs = " ".join(jlist)
+            elem.attrib['joblist']=jobs
+            self.dagDict[elem.attrib['name']] = jlist
+    
+    
+    def expand(self, jlist):
+        #global dagDict
+        for n,i in enumerate(jlist):
+            if self.dagDict.get(str(i)):
+                jlist[n] = self.dagDict.get(str(i))
+        for n,i in enumerate(jlist):
+            if isinstance(i,list):
+                jlist[n] = self.expand(i)
+        return jlist
+    
+    def getJobs(self,jlist,ndx=0):
+        tag = getattr(jlist,'tag',False)
+        if tag == 'parallel':
+            j = ''
+            for j1 in jlist:
+                j += self.getJobs(j1,ndx) 
+                j += ' '
+            return j
+        elif tag == 'serial':
+            return self.getJobs(jlist[ndx],ndx)
+        else:
+            return jlist
+    
+    def relationships(self,jlist):
+        par_or_ser = getattr(jlist,'tag',False)
+        if par_or_ser:
+            for n,i in enumerate(jlist):
+                if n > 0 :
+    
+                    p = self.getJobs(jlist[n-1],ndx=-1)
+                    self.relationships(jlist[n-1])
+        
+                    c = self.getJobs(jlist[n],ndx=0)
+                    self.relationships(jlist[n])
+    
+                    if par_or_ser != 'parallel':
+                        print "parent %s child %s  "%(p,c)
+    
+    
+    
     def reportState(self):
         print "processingSerial:%s processingParallel:%s"%\
             (self.processingSerial,self.processingParallel)
@@ -347,17 +503,23 @@ class DagParser(object):
 
     def digestInputFile(self, args):
         #strip out comments starting with '#'
-        infile=args.inputFile
+        infile = args.inputFile
+        xmlfile = "%s.xml" % infile
         r =re.compile("#.*")
         plist = []
         if len(sys.argv)>1:
             f = open(infile,"r")
+            x = open(xmlfile,"w")
+            x.write("<dag>\n")
             i=0
             j=0
             for line in f:
                 line=line.strip()
                 line=r.sub('',line)
                 #print "input line " , line
+                if 'jobsub ' not in line and len(line)>0:
+                    x.write("%s\n"%line)
+
                 if self.startSerial(line):
                     pass
                 elif self.endSerial(line):
@@ -404,6 +566,7 @@ class DagParser(object):
                                 ncmds = ncmds + 1
                                 condor_cmd = word     
                                 jobName = "Jb_%d_%d"%(j, i)
+                                x.write("""<job name="%s" cmd="%s" />\n"""%(jobName,condor_cmd))
                                 self.jobNameList.append(jobName)
                                 self.jobDict[condor_cmd] = jobName
                                 self.jobNameDict[jobName] = condor_cmd
@@ -423,6 +586,13 @@ class DagParser(object):
                             self.redundancy = len(condor_cmd_list)
                           
                         #reportState()
+            x.write('</dag>\n')
+            x.close()
+            tree = ET.parse(xmlfile)
+            root = tree.getroot()
+            self.labelTree(root)
+            self. makeLists(root)
+
             cntr=0
             for line in self.beginJobList:
                 for mac in self.macroList:
@@ -441,19 +611,22 @@ class DagParser(object):
 
     def getJobName(self,jlist,i,j=0):
 
+        print 'getJobName jlist=%s i=%s j=%s'%(jlist,i,j)
+
         if isinstance(jlist[i],tuple):
             retval=self.jobDict[jlist[i][j]]
-            return retval
 
         elif isinstance(jlist[i],list):
             retval=""
             for l in jlist[i]:
+                print 'calling recursively with l=%s i ALWAYS 0 j=%s'%(l,j)
                 retval=retval+" "+ self.getJobName(l,0,j)
-            return retval
         else:
 
             retval=self.jobDict[jlist[j]]
-            return retval
+        
+        print 'getJobName retval=%s '%(retval)
+        return retval
 
 
 

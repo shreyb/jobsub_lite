@@ -74,16 +74,17 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.useDag = useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
-        self.verbose=extra_opts.get('debug',False)
+        self.extra_opts = extra_opts
+        self.verbose = extra_opts.get('debug',False)
         self.better_analyze = extra_opts.get('better_analyze',False)
-        self.forcex=extra_opts.get('forcex',False)
-        self.schedd_list=[]
+        self.forcex = extra_opts.get('forcex',False)
+        self.schedd_list = []
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
                 self.server="https://%s:%s"%(serverParts[0],self.serverPort)
-            if len(serverParts)==2:
-                if serverParts[0].find('http')>=0:
+            if len(serverParts) == 2:
+                if serverParts[0].find('http') >= 0:
                     self.server="%s:%s:%s"%(serverParts[0],serverParts[1],self.serverPort)
                 else:
                     self.server = "https://%s:%s"%(serverParts[0], serverParts[1])

@@ -84,7 +84,7 @@ def parse_opts(argv):
                          help='Job Id (Cluster ID)  to query')
 
     opt_group.add_option('--submission-date-greater-than-or-equal', '--sdate-ge',
-                         dest='sdatege',
+                         dest='sdate_ge',
                          type='string',
                          action='callback',
                          callback=date_callback,
@@ -93,7 +93,7 @@ def parse_opts(argv):
                          help='job submission date >= <submission date>')
 
     opt_group.add_option('--submission-date-less-than-or-equal', '--sdate-le',
-                         dest='sdatele',
+                         dest='sdate_le',
                          type='string',
                          action='callback',
                          callback=date_callback,
@@ -140,7 +140,8 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
+    opt_dict={'debug':options.debug, 'sdate_ge':options.sdate_ge, 'sdate_le':options.sdate_le}
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=opt_dict)
     rc = 1
     try:
         rc = js_client.history(options.histUser,options.jobId)

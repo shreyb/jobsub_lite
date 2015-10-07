@@ -1077,3 +1077,9 @@ def http_code_to_rc(http_code):
     if http_code >= 200 and http_code < 300:
         return 0
     return 1
+
+def jid_callback(option, opt, value, p):
+    if '@' not in value:
+        sys.exit("jobid (%s) is missing an '@', it must be of the form number@server, i.e. 313100.0@fifebatch.fnal.gov"%value)
+    setattr(p.values, option.dest, value)
+    return p

@@ -550,17 +550,19 @@ class JobSubClient:
 
         rc = 0
         for server in servers:
-            if jobid is None and userid is None:
-                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (
-                                   server, self.acctGroup)
-            else:
-                self.histURL = constants.JOBSUB_HISTORY_WITH_USER_PATTERN % (
-                                   server, self.acctGroup, userid)
-            if jobid is not None:
-                self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
+            self.histURL=constants.JOBSUB_HISTORY_URL_PATTERN  % (
+                                                       server, self.acctGroup)
+            if userid:
+                self.histURL="%suser/%s/"%(self.histURL,userid)
+            if jobid:
+                self.histURL="%sjobid/%s/"%(self.histURL,jobid)
+            qdate_ge=self.extra_opts.get('qdate_ge')
+            if qdate_ge:
+                self.histURL="%sqdate_ge/%s/"%(self.histURL,qdate_ge)
+            qdate_le=self.extra_opts.get('qdate_le')
+            if qdate_le:
+                self.histURL="%sqdate_le/%s/"%(self.histURL,qdate_le)
 
-            if outFormat is not None:
-                self.histURL="%s%s/"%(self.histURL,outFormat)
             try:
                 http_code = self.changeJobState(self.histURL, 'GET',
                                                 ssl_verifyhost=False)

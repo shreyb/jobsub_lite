@@ -83,23 +83,23 @@ def parse_opts(argv):
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
-    opt_group.add_option('--submission-date-greater-than-or-equal', '--sdate-ge',
-                         dest='sdate_ge',
+    opt_group.add_option('--qdate-ge',
+                         dest='qdate_ge',
                          type='string',
                          action='callback',
                          callback=date_callback,
                          metavar='<submission date>',
                          default=None,
-                         help='job submission date >= <submission date>')
+                         help='job submission date (qdate)  greater than or equal to <submission date>')
 
-    opt_group.add_option('--submission-date-less-than-or-equal', '--sdate-le',
-                         dest='sdate_le',
+    opt_group.add_option('--qdate-le',
+                         dest='qdate_le',
                          type='string',
                          action='callback',
                          callback=date_callback,
                          metavar='<submission date>',
                          default=None,
-                         help='job submission date <= <submission date>')
+                         help='job submission date (qdate)  less than or equal to  <submission date>')
 
     opt_group.add_option('--debug',
                          dest='debug',
@@ -140,7 +140,7 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    opt_dict={'debug':options.debug, 'sdate_ge':options.sdate_ge, 'sdate_le':options.sdate_le}
+    opt_dict={'debug':options.debug, 'qdate_ge':options.qdate_ge, 'qdate_le':options.qdate_le}
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=opt_dict)
     rc = 1
     try:

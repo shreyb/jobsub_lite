@@ -1,9 +1,3 @@
-import cherrypy
-import logger
-import traceback
-import os
-import sys
-import subprocessSupport
 import sqlite3
 import re
 import socket
@@ -13,12 +7,12 @@ import JobsubConfigParser
 def fmtStr():
     return "%-38s  %-19s  %-19s %-19s %-3s      %s"
 
-def sql_header(inputSwitch=None):
+def sql_header():
     hdr = fmtStr() % ("JOBSUBJOBID", "OWNER", "SUBMITTED","FINISHED","ST","CMD")
     return hdr
 
 
-def constructQuery( acctgroup=None, uid=None, jobid=None):
+def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le=None):
     if acctgroup=='None':
         acctgroup=None
     if uid=='None':
@@ -27,22 +21,34 @@ def constructQuery( acctgroup=None, uid=None, jobid=None):
         jobid=None
     cnt = 0
     flt = "select * from jobsub_history  "
-    if acctgroup is not  None:
+    if acctgroup:
         flt += 'where acctgroup="%s" ' % acctgroup
         cnt += 1
-    if uid is not None:
+    if uid:
         if cnt > 0:
             flt += " and "
         else:
             flt += " where "
         flt += ' Owner="%s" '%uid
         cnt += 1
-    if jobid is not None:
+    if jobid:
         if cnt > 0:
             flt += " and "
         else:
             flt += " where "
         flt += ' jobsubjobid = "%s" ' % jobid
+    if qdate_ge:
+        if cnt > 0:
+            flt += " and "
+        else:
+            flt += " where "
+        flt += ' qdate >= "%s" ' % qdate_ge
+    if qdate_le:
+        if cnt > 0:
+            flt += " and "
+        else:
+            flt += " where "
+        flt += ' qdate <= "%s" ' % qdate_le
     flt += ";"
     return flt
 

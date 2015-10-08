@@ -32,6 +32,7 @@ import tarfile
 import socket
 import time
 import shutil
+from datetime import datetime 
 
 
 def version_string():
@@ -74,16 +75,17 @@ class JobSubClient:
         self.serverArgv = server_argv
         self.useDag = useDag
         self.serverPort = constants.JOBSUB_SERVER_DEFAULT_PORT
-        self.verbose=extra_opts.get('debug',False)
+        self.extra_opts = extra_opts
+        self.verbose = extra_opts.get('debug',False)
         self.better_analyze = extra_opts.get('better_analyze',False)
-        self.forcex=extra_opts.get('forcex',False)
-        self.schedd_list=[]
+        self.forcex = extra_opts.get('forcex',False)
+        self.schedd_list = []
         serverParts=re.split(':',self.server)
         if len(serverParts) !=3:
             if len(serverParts)==1:
                 self.server="https://%s:%s"%(serverParts[0],self.serverPort)
-            if len(serverParts)==2:
-                if serverParts[0].find('http')>=0:
+            if len(serverParts) == 2:
+                if serverParts[0].find('http') >= 0:
                     self.server="%s:%s:%s"%(serverParts[0],serverParts[1],self.serverPort)
                 else:
                     self.server = "https://%s:%s"%(serverParts[0], serverParts[1])
@@ -549,17 +551,21 @@ class JobSubClient:
 
         rc = 0
         for server in servers:
-            if jobid is None and userid is None:
-                self.histURL = constants.JOBSUB_HISTORY_URL_PATTERN % (
-                                   server, self.acctGroup)
-            else:
-                self.histURL = constants.JOBSUB_HISTORY_WITH_USER_PATTERN % (
-                                   server, self.acctGroup, userid)
-            if jobid is not None:
-                self.histURL = "%s?job_id=%s"%(self.histURL,jobid)
+            self.histURL=constants.JOBSUB_HISTORY_URL_PATTERN  % (
+                                                       server, self.acctGroup)
+            if userid:
+                self.histURL="%suser/%s/"%(self.histURL,userid)
+            if jobid:
+                self.histURL="%sjobid/%s/"%(self.histURL,jobid)
+            qdate_ge=self.extra_opts.get('qdate_ge')
+            if qdate_ge:
+                qdate_ge = qdate_ge.replace(' ', '%20')
+                self.histURL="%sqdate_ge/%s/"%(self.histURL,qdate_ge)
+            qdate_le=self.extra_opts.get('qdate_le')
+            if qdate_le:
+                qdate_le = qdate_le.replace(' ', '%20')
+                self.histURL="%sqdate_le/%s/"%(self.histURL,qdate_le)
 
-            if outFormat is not None:
-                self.histURL="%s%s/"%(self.histURL,outFormat)
             try:
                 http_code = self.changeJobState(self.histURL, 'GET',
                                                 ssl_verifyhost=False)
@@ -1082,4 +1088,20 @@ def jid_callback(option, opt, value, p):
     if '@' not in value:
         sys.exit("jobid (%s) is missing an '@', it must be of the form number@server, i.e. 313100.0@fifebatch.fnal.gov"%value)
     setattr(p.values, option.dest, value)
+
+def date_callback(option, opt, value, p):
+    #check that date is valid and exit if conversion can't be made
+    dateOK = False
+    flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d' ]
+    for fmt in flist:
+        try:
+            datetime.strptime(value,fmt)
+            dateOK = True
+            break
+        except:
+            pass
+    if dateOK:
+        setattr(p.values, option.dest, value)
+    else:
+        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  ex: '2015-03-01 01:59:03'"""%value)
     return p

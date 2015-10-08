@@ -47,11 +47,12 @@ JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN = '%s/jobsub/jobs/jobid/%s/betteranaly
 JOBSUB_Q_WITH_GROUP_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_Q_GROUP_JOBID_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 
-JOBSUB_HISTORY_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/history/'
+JOBSUB_HISTORY_URL_PATTERN = '%s/jobsub/jobs/history/acctgroup/%s/'
 #JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/jobs/history/%s/'
 
 JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/users/%s/jobs/history/'
 
+JOBSUB_HISTORY_BYDATE_PATTERN='%s/jobsub/jobs/history/'
 
 JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
 

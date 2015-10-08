@@ -25,6 +25,7 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
 from jobsubClient import jid_callback
+from jobsubClient import date_callback
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -84,6 +85,26 @@ def parse_opts(argv):
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
+    opt_group.add_option('--qdate-ge',
+                         dest='qdate_ge',
+                         type='string',
+                         action='callback',
+                         callback=date_callback,
+                         metavar='<submission date>',
+                         default=None,
+                         help="""job submission date (qdate)  greater than or equal to <submission date>
+                         Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
+
+    opt_group.add_option('--qdate-le',
+                         dest='qdate_le',
+                         type='string',
+                         action='callback',
+                         callback=date_callback,
+                         metavar='<submission date>',
+                         default=None,
+                         help="""job submission date (qdate)  less than or equal to  <submission date>
+                         Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
+
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
@@ -123,7 +144,8 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
+    opt_dict={'debug':options.debug, 'qdate_ge':options.qdate_ge, 'qdate_le':options.qdate_le}
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=opt_dict)
     rc = 1
     try:
         rc = js_client.history(options.histUser,options.jobId)

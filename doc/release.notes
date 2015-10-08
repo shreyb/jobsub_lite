@@ -1,5 +1,44 @@
 
 ================================================================================
+v1.1.7
+================================================================================
+Client
+-------
+
+* Bug #8174    Possible race condition in proxy deletion in client.
+               If two submits happen at same time in seperate windows on same 
+               machine they could step on each others credentials and one would
+               fail.  Fixed with temp files.
+
+* Bug #10161   Check for '@' in --job specification in clients.  
+               If '@'  was not present a confusing and misleading curl error was
+               the result.  Now is caught,  clear error message and non zero exit
+               results.
+
+* Feature #10184  jobsub_history searchable by submission date.
+               Two new flags for jobsub_history:
+                  --qdate-ge  :Submission date (aka qdate) greater than or equal
+                               to
+                  --qdate-ld  :Submission date less than or equal to;
+
+               Date format is 'YYYY-MM-DD hh:mm:ss' or 'YYYY-MM-DD'
+               Padded zeros are required on dates.
+
+
+Server
+--------
+
+* Bug #10152  XML dag parsed incorrectly in some circumstances.
+              Aribitrarily complicated dag specifications submitted with
+              jobsub_submit_dag should now work.  See RITM0270806
+        
+
+* Bug #5526  fetchlog should return sandbox even if we specify a jobid for DAG nodes.
+             Another way of stating this problem is that if a jobid can be seen with 
+             jobsub_history or jobsub_q then it should work in jobsub_fetchlog to
+             retrieve its information.  Formerly the jobsub_parent_id was needed for
+             a DAG or a cluster with many processes.
+================================================================================
 v1.1.6
 ================================================================================
 Client

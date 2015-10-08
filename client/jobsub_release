@@ -25,6 +25,7 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
 from jobsubClient import http_code_to_rc
+from jobsubClient import jid_callback
 from defaultServer import defaultServer
 
 def print_opts(options):
@@ -80,7 +81,8 @@ def parse_opts(argv):
     opt_group.add_option('--jobid',
                          dest='jobId',
                          type='string',
-                         action='store',
+                         action='callback',
+                         callback=jid_callback,
                          metavar='<Job ID>',
                          help='CSV list of Job Ids to release')
 

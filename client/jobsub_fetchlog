@@ -25,6 +25,7 @@ from jobsubClient import servicing_jobsub_server
 from jobsubClient import curl_secure_context
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
+from jobsubClient import jid_callback
 from jobsubClient import get_jobsub_server_aliases
 
 
@@ -55,7 +56,8 @@ def parse_opts(argv):
     parser.add_option('-J', '--job', '--jobid',
                       dest='jobId',
                       type='string',
-                      action='store',
+                      action='callback',
+                      callback=jid_callback,
                       metavar='<Job ID>',
                       help='Job ID')
 

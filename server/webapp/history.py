@@ -69,12 +69,15 @@ class HistoryResource(object):
     @cherrypy.popargs('param8')
     @cherrypy.popargs('param9')
     @cherrypy.popargs('param10')
+    @cherrypy.popargs('param11')
+    @cherrypy.popargs('param12')
     @format_response
-    def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None, pararm7=None, param8=None, param9=None, param10=None,  **kwargs):
+    def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None, 
+                      pararm7=None, param8=None, param9=None, param10=None, param11=None, param12=None,  **kwargs):
         """ supports the following URLS
         """
         try:
-            params = [ param1, param2, param3, param4, param5, param6, pararm7, param8, param9, param10,]
+            params = [param1, param2, param3, param4, param5, param6, pararm7, param8, param9, param10, param11, param12,]
             logger.log("params %s "%(params))
             pDict={}
             for n,i in enumerate(params):
@@ -94,7 +97,7 @@ class HistoryResource(object):
 
             else:
                 cherrypy.response.status = 501
-                rc = {'out':'informational page for %s/%s/%s/%s/%s/%s not implemented' % (param1,param2,param3,param4,param5,param6)}
+                rc = {'out':'informational page for %s not implemented' % (params)}
 
         except:
             err = 'Exception on HistoryResource.default: %s'%sys.exc_info()[1]

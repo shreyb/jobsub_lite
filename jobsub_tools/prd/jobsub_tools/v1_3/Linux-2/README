@@ -22,6 +22,16 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
+
+
+v1_3_15 10/8/15
+=================================================
+* Bug #10152  XML dag parsed incorrectly in some circumstances.
+              Aribitrarily complicated dag specifications submitted with
+              jobsub_submit_dag should now work.  See RITM0270806
+
+
+
 v1_3_14 9/4/15
 =================================================
 * Bug #9713 --cpu flag doing the wrong thing

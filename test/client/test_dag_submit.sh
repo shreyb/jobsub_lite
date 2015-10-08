@@ -13,8 +13,12 @@ $EXEPATH/jobsub_submit_dag   $GROUP_SPEC \
 --debug $SERVER_SPEC  file://dagTest2  
 T2=$?
 echo T2=$T2
+$EXEPATH/jobsub_submit_dag   $GROUP_SPEC \
+--debug $SERVER_SPEC  file://dagTest3  
+T3=$?
+echo T3=$T3
 cd -
-! (( $T1 || $T2  ))
+! (( $T1 || $T2 || $T3 ))
 TFINAL=$?
 echo $0 exiting with status $TFINAL
 exit $TFINAL

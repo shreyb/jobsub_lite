@@ -12,7 +12,7 @@ def sql_header():
     return hdr
 
 
-def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le=None):
+def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le=None, limit=10000):
     if acctgroup=='None':
         acctgroup=None
     if uid=='None':
@@ -49,7 +49,7 @@ def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le
         else:
             flt += " where "
         flt += ' qdate <= "%s" ' % qdate_le
-    flt += ";"
+    flt += " limit %s ;" % limit
     return flt
 
 

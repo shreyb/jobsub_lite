@@ -108,6 +108,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/configured_sites.py
 /opt/jobsub/server/webapp/configured_sites.pyc
 /opt/jobsub/server/webapp/configured_sites.pyo
+/opt/jobsub/server/webapp/constraint.py
+/opt/jobsub/server/webapp/constraint.pyc
+/opt/jobsub/server/webapp/constraint.pyo
 /opt/jobsub/server/webapp/dag.py
 /opt/jobsub/server/webapp/dag.pyc
 /opt/jobsub/server/webapp/dag.pyo

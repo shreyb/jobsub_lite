@@ -20,11 +20,12 @@ from queued_dag import QueuedDagResource
 class QueuedJobsResource(object):
 
     def __init__(self):
-        self.history=HistoryResource()
-        self.summary=JobSummaryResource()
-        self.jobid=QueuedJobsByJobIDResource()
-        self.long=QueuedLongResource()
-        self.dags=QueuedDagResource()
+        self.history = HistoryResource()
+        self.summary = JobSummaryResource()
+        self.jobid = QueuedJobsByJobIDResource()
+        self.long = QueuedLongResource()
+        self.dags = QueuedDagResource()
+        self.constraint = JobActionByConstraintResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.

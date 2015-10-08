@@ -30,7 +30,7 @@ from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
 from by_user import AccountJobsByUserResource
 from forcex_jobid import RemoveForcexByJobIDResource
-
+from constraint import JobActionByConstraintResource
 
 
 @cherrypy.popargs('job_id')
@@ -46,7 +46,7 @@ class AccountJobsResource(object):
         self.dags = QueuedDagResource()
         self.user = AccountJobsByUserResource()
         self.forcex = RemoveForcexByJobIDResource()
-
+        self.constraint = JobActionByConstraintResource()
 
     def doGET(self, acctgroup, job_id, kwargs):
         """ Serves the following APIs:

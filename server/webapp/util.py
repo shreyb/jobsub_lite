@@ -149,10 +149,12 @@ def condorCommands():
         }
     return c
 
-def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
+def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=None, **kwargs):
 
     scheddList = []
-    if job_id:
+    if constraint:
+        scheddList = condor_commands.schedd_list()
+    elif job_id:
         #job_id is a jobsubjobid
         constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
         # Split the jobid to get cluster_id and proc_id
@@ -165,8 +167,8 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
         if (len(ids) > 1) and (ids[1]):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
     elif user:
-            constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
-            scheddList = condor_commands.schedd_list()
+        constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
+        scheddList = condor_commands.schedd_list()
     else:
         err = "Failed to supply job_id or uid, cannot perform any action"
         logger.log(err)
@@ -217,11 +219,11 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, **kwargs):
         retStr = "%s \nCONDOR_ERRORS: %s" %( retStr, extra_err )
     return retStr
 
-def doDELETE(acctgroup,  user=None, job_id=None, **kwargs):
+def doDELETE(acctgroup,  user=None, job_id=None, constraint=None, **kwargs):
     rc = {'out': None, 'err': None}
 
     rc['out'] = doJobAction(
-                        acctgroup,  user=user, 
+                        acctgroup,  user=user, constraint=constraint,
                         job_id=job_id,
                         job_action='REMOVE', 
                         **kwargs)
@@ -229,7 +231,7 @@ def doDELETE(acctgroup,  user=None, job_id=None, **kwargs):
     return rc
 
 
-def doPUT(acctgroup,  user=None,  job_id=None, **kwargs):
+def doPUT(acctgroup,  user=None,  job_id=None, constraint=None, **kwargs):
     """
     Executed to hold and release jobs
     """
@@ -239,7 +241,7 @@ def doPUT(acctgroup,  user=None,  job_id=None, **kwargs):
 
     if job_action and job_action.upper() in condorCommands():
         rc['out'] = doJobAction(
-                            acctgroup,  user=user,
+                            acctgroup,  user=user, constraint=constraint,
                             job_id=job_id,
                             job_action=job_action.upper())
     else:

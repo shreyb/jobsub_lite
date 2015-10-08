@@ -5,6 +5,7 @@ import time
 import sys
 import re
 from distutils import spawn
+from tempfile import NamedTemporaryFile
 
 import constants
 import subprocessSupport
@@ -179,15 +180,22 @@ class Krb5Ticket(Credentials):
             return False
         return True
 
+def mk_temp_fname( fname ):
+    tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=False)
+    tmp_fname = tmp_file.name
+    tmp_file.close()
+    return tmp_fname
+
 
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
     kx509_cmd = spawn.find_executable("kx509")
     if not kx509_cmd:
         raise Exception("Unable to find command 'kx509' in the PATH")
-
-    cmd = '%s -o %s' % (kx509_cmd, x509_fname)
+    tmp_x509_fname = mk_temp_fname(x509_fname)
+    cmd = '%s -o %s' % (kx509_cmd, tmp_x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+    os.rename(tmp_x509_fname,x509_fname)
 
 
 def krb5_default_principal(cache=None):

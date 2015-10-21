@@ -1,6 +1,6 @@
 #!/bin/sh 
 VERS=v1_3
-REV=_2_0
+REV=_15
 
 if [ "$1" ==  "" ]; then
 	echo "usage $0 target_machine [VER] [REV]"

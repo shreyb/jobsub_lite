@@ -116,7 +116,7 @@ class JobSubClient:
             self.serverEnvExports = get_server_env_exports(self.serverArgv)
             srv_argv = copy.copy(self.serverArgv)
             if not os.path.exists(self.jobExe):
-                err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
+                err="You must supply a job executable, preceded by the directive 'file://' which is used to find the executable in jobsub_submit's  command line.  File '%s' not found. Exiting" % self.jobExe
                 exeInTarball=False
                 try:
                     dropbox_uri=get_dropbox_uri(self.serverArgv)
@@ -1103,5 +1103,5 @@ def date_callback(option, opt, value, p):
     if dateOK:
         setattr(p.values, option.dest, value)
     else:
-        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  ex: '2015-03-01 01:59:03'"""%value)
+        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'"""%value)
     return p

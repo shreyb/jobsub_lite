@@ -27,6 +27,7 @@ from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
 from queued_long import QueuedLongResource
+from queued_hold import QueuedHoldResource
 from queued_dag import QueuedDagResource
 from by_user import AccountJobsByUserResource
 from forcex_jobid import RemoveForcexByJobIDResource
@@ -43,6 +44,7 @@ class AccountJobsResource(object):
         self.history = HistoryResource()
         self.dag = DagResource()
         self.long = QueuedLongResource()
+        self.hold = QueuedHoldResource()
         self.dags = QueuedDagResource()
         self.user = AccountJobsByUserResource()
         self.forcex = RemoveForcexByJobIDResource()

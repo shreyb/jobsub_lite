@@ -150,6 +150,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/queued_dag.py
 /opt/jobsub/server/webapp/queued_dag.pyc
 /opt/jobsub/server/webapp/queued_dag.pyo
+/opt/jobsub/server/webapp/queued_hold.py
+/opt/jobsub/server/webapp/queued_hold.pyc
+/opt/jobsub/server/webapp/queued_hold.pyo
 /opt/jobsub/server/webapp/queued_jobs.py
 /opt/jobsub/server/webapp/queued_jobs.pyc
 /opt/jobsub/server/webapp/queued_jobs.pyo

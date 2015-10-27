@@ -45,6 +45,11 @@ def required_args_present(options):
                 print err
                 return False
 
+            if options.outFormat=='hold':
+                err = 'ERROR: --summary and --hold options conflict. Choose one, not both.'
+                print err
+                return False
+
             if options.help or options.better_analyze or options.uid or \
                 options.jobId or options.acctRole :
                 err =  """ERROR: --summary conflicts with all of ( 
@@ -132,6 +137,15 @@ def parse_opts(argv):
                          default=None,
                          help='show dags (like condor_q -dag)')
 
+    opt_group.add_option('--hold',
+                         dest='outFormat',
+                         action='store_const',
+                         const='hold',
+                         metavar='<output Format>',
+                         default=None,
+                         help='show held jobs (like condor_q -hold)')
+
+
     opt_group.add_option('--summary',
                          dest='summary',
                          action='store_true',
@@ -186,7 +200,8 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug,'better_analyze':options.better_analyze})
+    jobsub_q_opts={'debug':options.debug,'better_analyze':options.better_analyze}
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=jobsub_q_opts)
     try:
         if options.summary:
             http_code = js_client.summary()

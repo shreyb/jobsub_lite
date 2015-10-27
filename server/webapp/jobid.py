@@ -5,6 +5,7 @@ from format import format_response
 from condor_commands import ui_condor_q,constructFilter
 #from not_implemented import NotImplementedResource
 from queued_long import QueuedLongResource
+from queued_hold import QueuedHoldResource
 from queued_dag import QueuedDagResource
 from better_analyze import BetterAnalyzeResource
 from auth import get_client_dn
@@ -16,6 +17,7 @@ class QueuedJobsByJobIDResource(object):
 
     def __init__(self):
         self.long = QueuedLongResource()
+        self.hold = QueuedHoldResource()
         self.dags = QueuedDagResource()
         self.betteranalyze = BetterAnalyzeResource()
 

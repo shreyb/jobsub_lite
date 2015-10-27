@@ -10,7 +10,7 @@ import socket
 import re
 from random import randint
 
-
+jobstatus_dict = {'unexpanded':0, 'idle':1, 'running':2, 'removed':3, 'completed':4,'held':5,'hold':5, 'error':6}
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
@@ -56,6 +56,8 @@ def condor_header(inputSwitch=None):
         hdr = ''
     elif inputSwitch == 'dags':
         hdr = "JOBSUBJOBID                           OWNER    DAG_INFO          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
+    elif inputSwitch == 'hold':
+        hdr = "JOBSUBJOBID                           OWNER           HELD_SINCE    HOLDREASON\n"
     else:
         hdr = "JOBSUBJOBID                           OWNER           SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     return hdr
@@ -88,6 +90,14 @@ def condor_format(inputSwitch=None):
             """ -format '%3d ' JobPrio """,
             """ -format ' %4.1f ' ImageSize/1024.0 """,
             """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            """ -format '\\n' Owner """, 
+            ]
+    elif inputSwitch == "hold":
+        fmtList = [
+            """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+            """ -format ' %-14s ' Owner """,
+            """ -format ' %-11s ' 'formatTime(EnteredCurrentStatus,"%m/%d %H:%M")'""",
+            """ -format '  %s' HoldReason""",
             """ -format '\\n' Owner """, 
             ]
     else:
@@ -125,13 +135,15 @@ def munge_jobid( theInput=None):
     return "\n".join(loutput)
 
 
-def constructFilter( acctgroup=None, uid=None, jobid=None):
+def constructFilter( acctgroup=None, uid=None, jobid=None, jobstatus=None):
     if acctgroup == 'None':
         acctgroup = None
     if uid == 'None':
         uid = None
     if jobid == 'None':
         jobid = None
+    if jobstatus == 'None':
+        jobstatus = None
     lorw = ' '
     if acctgroup is None:
         ac_cnst = 'True'
@@ -156,7 +168,11 @@ def constructFilter( acctgroup=None, uid=None, jobid=None):
     else:
         lorw = ' '
         job_cnst = 'ClusterID==%d'%(math.trunc(float(jobid)))
-    my_filter = " %s -constraint '%s && %s && %s' "%(lorw, ac_cnst, usr_cnst, job_cnst)
+    if jobstatus is None:
+        jstat_cnst = 'True'
+    else:
+        jstat_cnst = 'JobStatus==%s'%(jobstatus_dict.get(jobstatus.lower(),5))
+    my_filter = " %s -constraint '%s && %s && %s && %s' "%(lorw, ac_cnst, usr_cnst, job_cnst, jstat_cnst)
     return my_filter
 
 def contains_jobid(a_filter=""):
@@ -195,6 +211,7 @@ def ui_condor_q(a_filter=None,a_format=None):
         cmd = 'condor_q -g %s %s' % (fmt, a_filter)
     try:
         all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        logger.log(cmd, logfile='condor_commands')
         #logger.log("cmd=%s"%cmd)
         #logger.log("rslt=%s"%all_jobs)
         return hdr + all_jobs

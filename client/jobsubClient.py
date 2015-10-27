@@ -1103,5 +1103,5 @@ def date_callback(option, opt, value, p):
     if dateOK:
         setattr(p.values, option.dest, value)
     else:
-        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  ex: '2015-03-01 01:59:03'"""%value)
+        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'"""%value)
     return p

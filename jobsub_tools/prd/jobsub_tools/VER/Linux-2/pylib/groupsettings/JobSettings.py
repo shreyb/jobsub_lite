@@ -672,7 +672,8 @@ class JobSettings(object):
         log_cmd = """%s log "%s:%s "\n"""%\
                     (ifdh_cmd,settings['user'],log_msg)
         f.write(log_cmd)
-        f.write("echo %s"%log_msg)
+        f.write("echo `date` %s"%log_msg)
+        f.write(">&2 echo `date` %s"%log_msg)
         if settings['joblogfile'] != "":
             if settings['nologbuffer']==False:
                 f.write("$JOBSUB_EXE_SCRIPT %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
@@ -687,7 +688,8 @@ class JobSettings(object):
  
 
         f.write("JOB_RET_STATUS=$?\n")
-        f.write("echo $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS\n")
+        f.write("echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS\n")
+        f.write("echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2\n")
 
         log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n"""% \
             (ifdh_cmd,settings['user'],os.path.basename(exe_script))
@@ -737,7 +739,11 @@ class JobSettings(object):
             log_cmd2 = """\t%s log "%s FINISHED %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
 
         f.write(log_cmd1)
+        f.write("echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
+        f.write(">&2 echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
         f.write("%s %s\n"%(copy_cmd,append_cmd))
+        f.write("echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
+        f.write(">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
         f.write(log_cmd2)
 
 
@@ -805,9 +811,13 @@ class JobSettings(object):
                 cmd=cmd+""" %s %s ${CONDOR_DIR_INPUT}/""" % (cnt,idir)
                 cnt="\;"
         if cnt=="\;":
+            f.write("""echo `date` BEGIN WRAPFILE COPY-IN %s\n"""%(cmd))
+            f.write(""">&2 echo `date` BEGIN WRAPFILE COPY-IN %s\n"""%(cmd))
             f.write("""%s  log "%s BEGIN %s"\n"""%(ifdh_cmd,settings['user'],cmd))
             f.write("%s\n"%cmd)
             f.write("""%s  log "%s FINISHED %s"\n"""%(ifdh_cmd,settings['user'],cmd))
+            f.write("""echo `date` FINISHED WRAPFILE COPY-IN %s\n"""%(cmd))
+            f.write(""">&2 echo `date` FINISHED WRAPFILE COPY-IN %s\n"""%(cmd))
 
         f.write("\n")
 
@@ -962,6 +972,8 @@ class JobSettings(object):
         sambeginexe = "%s/%s.sambegin.sh"%(settings['condor_exec'],settings['filetag'])
         f = open(sambeginexe,'wx')
         f.write("#!/bin/sh -x\n")
+        f.write("echo `date` BEGIN executing %s\n" % sambeginexe)
+        f.write(">&2 echo `date` BEGIN executing %s\n" % sambeginexe)
         f.write("#EXPERIMENT=$1\n")
         f.write("#DEFN=$2\n")
         f.write("#PRJ_NAME=$3\n")
@@ -993,7 +1005,8 @@ class JobSettings(object):
         f.write("%s describeDefinition $SAM_DATASET\n"%settings['ifdh_cmd'])
         f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])
         f.write("EXITSTATUS=$?\n")
-        f.write("echo ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
+        f.write("echo `date` ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
+        f.write(">&2 echo `date` ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
         f.write("exit $EXITSTATUS\n")
 
         f.close()
@@ -1063,6 +1076,8 @@ class JobSettings(object):
         samendexe = "%s/%s.samend.sh"%(settings['condor_exec'],settings['filetag'])
         f = open(samendexe,'wx')
         f.write("#!/bin/sh -x\n")
+        f.write("echo `date` BEGIN executing %s\n" % samendexe)
+        f.write(">&2 echo `date` BEGIN executing %s\n" % samendexe)
         f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
         f.write("mkdir -p $JSB_TMP\n")
         f.write("PRJ_NAME=$1\n")
@@ -1076,7 +1091,8 @@ class JobSettings(object):
         f.write("CPURL=`%s findProject $PRJ_NAME ''` \n" % settings['ifdh_cmd'])
         f.write("%s  endProject $CPURL\n"%settings['ifdh_cmd'])
         f.write("EXITSTATUS=$?\n")
-        f.write("echo ifdh endProject $CPURL exited with status $EXITSTATUS\n")
+        f.write("echo `date` ifdh endProject $CPURL exited with status $EXITSTATUS\n")
+        f.write(">&2 echo `date` ifdh endProject $CPURL exited with status $EXITSTATUS\n")
         f.write("exit $EXITSTATUS\n")
         f.close()
         f = open(settings['samendfile'], 'w')

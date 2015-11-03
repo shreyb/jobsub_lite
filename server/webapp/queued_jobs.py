@@ -10,6 +10,7 @@ from jobid import QueuedJobsByJobIDResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
 from queued_hold import QueuedHoldResource
+from constraint import JobActionByConstraintResource
 
 
 

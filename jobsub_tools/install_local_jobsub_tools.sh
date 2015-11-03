@@ -1,6 +1,6 @@
 #!/bin/sh 
-VERS=v1_3
-REV=_12_cli
+VERS=v1_4
+REV=_1_cli
 
 
 if [ "$1" != "" ] ; then
@@ -12,8 +12,10 @@ if [ "$2" != "" ] ; then
 fi
 mkdir -p ups_db/jobsub_tools
 ./make_tablefile.py $VERS$REV
+HERE=`pwd`
 cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
 cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
+mv  prd/jobsub_tools/VER  prd/jobsub_tools/${VERS}
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"
 sudo -u products cp db.jobsub_tools.tar /fnal/ups/db
@@ -43,6 +45,7 @@ sudo -u products ./cmd.sh
 rm cmd.sh
 rm prd.jobsub_tools.tar
 cd ..
-
+cd $HERE
+mv  prd/jobsub_tools/${VERS}  prd/jobsub_tools/VER
 source /fnal/ups/etc/setups.sh
 ups exist jobsub_tools $VERS$REV

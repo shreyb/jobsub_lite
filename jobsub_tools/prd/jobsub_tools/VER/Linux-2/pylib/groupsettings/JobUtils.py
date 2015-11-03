@@ -42,7 +42,12 @@ if [ "$has_ifdh" -ne "0" ] ; then
      fi
    done
 fi
-ifdh "$@"
+which ifdh > /dev/null 2>&1
+if [ "$?" -ne "0" ] ; then
+    echo "Can not find ifdh version $IFDH_VERSION in cvmfs"
+else
+    ifdh "$@"
+fi
 _HEREDOC_
 chmod +x %s
             """        

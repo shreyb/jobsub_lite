@@ -27,6 +27,7 @@ class QueuedJobsResource(object):
         self.long=QueuedLongResource()
         self.dags=QueuedDagResource()
         self.hold=QueuedHoldResource()
+        self.constraint = JobActionByConstraintResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.

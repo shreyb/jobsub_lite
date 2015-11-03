@@ -64,6 +64,10 @@ JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE
 
 JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
 
+
+#JOBSUB_JOB_CONSTRAINT_URL_PATTERN = '%s/jobsub/jobs/constraint/%s/'
+JOBSUB_JOB_CONSTRAINT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/constraint/%s/'
+
 JOBSUB_JOB_REMOVE_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/%s/'
 JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/%s/'
 JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/forcex/%s/'

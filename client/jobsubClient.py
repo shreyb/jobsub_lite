@@ -633,8 +633,11 @@ class JobSubClient:
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
         jobid=self.checkID(jobid)
-        if self.better_analyze and jobid:
-            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % ( self.server, jobid)
+        constraint = self.extra_opts.get('constraint')
+        if constraint:
+            self.listURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN %(self.server, self.acctGroup, constraint)
+        elif self.better_analyze and jobid:
+            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % (self.server, jobid)
         elif self.better_analyze and not jobid:
             raise JobSubClientError("you must specify a jobid with --better-analyze")
         elif jobid is None and self.acctGroup is None and userid is None:

@@ -145,6 +145,13 @@ def parse_opts(argv):
                          default=None,
                          help='show held jobs (like condor_q -hold)')
 
+    opt_group.add_option('--constraint',
+                         dest='constraint',
+                         action='store',
+                         type='string',
+                         metavar='<constraint>',
+                         default=None,
+                         help='like condor_q -constraint <constraint>')
 
     opt_group.add_option('--summary',
                          dest='summary',
@@ -200,8 +207,8 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    jobsub_q_opts={'debug':options.debug,'better_analyze':options.better_analyze}
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=jobsub_q_opts)
+    optDict={'debug':options.debug,'better_analyze':options.better_analyze, 'constraint':options.constraint}
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=optDict)
     try:
         if options.summary:
             http_code = js_client.summary()

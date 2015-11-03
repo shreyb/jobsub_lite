@@ -15,10 +15,12 @@ fi
 if [ "$3" != "" ] ; then
     REV=$3
 fi
+HERE=`pwd`
 mkdir -p ups_db/jobsub_tools
 ./make_tablefile.py $VERS$REV
-cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
-cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
+cp ../lib/JobsubConfigParser/* prd/jobsub_tools/VER/Linux-2/pylib/JobsubConfigParser/
+cp ../server/conf/jobsub.ini prd/jobsub_tools/VER/Linux-2/bin
+mv  prd/jobsub_tools/VER  prd/jobsub_tools/${VERS}
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"
 scp db.jobsub_tools.tar products@$1.fnal.gov:/fnal/ups/db
@@ -41,5 +43,6 @@ CMD="cd /fnal/ups/prd; mkdir -p jobsub_tools/$VERS$REV; rm -rf jobsub_tools/$VER
 echo "performing $CMD on $1"
 ssh products@$1.fnal.gov $CMD 
 rm prd.jobsub_tools.tar
-cd ..
+cd $HERE
+mv  prd/jobsub_tools/${VERS}  prd/jobsub_tools/VER
 

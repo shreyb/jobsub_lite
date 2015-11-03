@@ -116,7 +116,7 @@ class JobSubClient:
             self.serverEnvExports = get_server_env_exports(self.serverArgv)
             srv_argv = copy.copy(self.serverArgv)
             if not os.path.exists(self.jobExe):
-                err="You must supply a job executable. File '%s' not found. Exiting" % self.jobExe
+                err="You must supply a job executable, preceded by the directive 'file://' which is used to find the executable in jobsub_submit's  command line.  File '%s' not found. Exiting" % self.jobExe
                 exeInTarball=False
                 try:
                     dropbox_uri=get_dropbox_uri(self.serverArgv)

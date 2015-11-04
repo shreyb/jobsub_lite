@@ -10,7 +10,7 @@ from jobid import QueuedJobsByJobIDResource
 from queued_long import QueuedLongResource
 from queued_dag import QueuedDagResource
 from queued_hold import QueuedHoldResource
-from constraint import JobActionByConstraintResource
+from queued_constraint import QueuedConstraintResource 
 
 
 
@@ -28,7 +28,7 @@ class QueuedJobsResource(object):
         self.long=QueuedLongResource()
         self.dags=QueuedDagResource()
         self.hold=QueuedHoldResource()
-        self.constraint = JobActionByConstraintResource()
+        self.constraint = QueuedConstraintResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):
         """ Query list of user_ids. Returns a JSON list object.

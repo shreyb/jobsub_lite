@@ -36,7 +36,7 @@ def print_opts(options):
 def required_args_present(options):
     try:
         if options.acctGroup and options.jobsubServer and \
-                (options.jobId or options.uid):
+                (options.jobId or options.uid or options.constraint):
             return True
     except AttributeError:
         return False
@@ -48,7 +48,7 @@ def parse_opts(argv):
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="""REQUIRED arguments to remove jobs  are (-G AND  (--jobid OR --user)).  Please direct questions, comments, or problems to the service desk""")
+                                   epilog="""REQUIRED arguments to remove jobs  are (-G AND  (--jobid OR --user OR --constraint)).  Please direct questions, comments, or problems to the service desk""")
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
@@ -106,6 +106,13 @@ def parse_opts(argv):
                          metavar='<user ID>',
                          help='remove all jobs with this uid ')
 
+    opt_group.add_option('--constraint',
+                         dest='constraint',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<constraint>',
+                         help='remove all jobs with this constraint ')
 
     opt_group.add_option('--forcex',
                          dest='forcex',
@@ -157,6 +164,12 @@ def main(argv):
         elif options.uid:
             print 'removing jobs with uid=%s' % options.uid
             http_code_list = js_client.remove(jobid=None,uid=options.uid)
+            for http_code in http_code_list:
+                tmp_rc = http_code_to_rc(http_code)
+                rc += tmp_rc
+        elif options.constraint:
+            print 'removing jobs with constraint=%s' % options.constraint
+            http_code_list = js_client.remove(constraint=options.constraint)
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
                 rc += tmp_rc

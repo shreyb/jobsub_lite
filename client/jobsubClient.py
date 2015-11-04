@@ -439,7 +439,7 @@ class JobSubClient:
             raise JobSubClientError("ERROR: jobid must be of the form 'jobnumber@server' example: 123099.0@fifebatch.fnal.gov")
 
 
-    def release(self, jobid=None, uid=None):
+    def release(self, jobid=None, uid=None, constraint=None):
         jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'RELEASE')
@@ -468,6 +468,15 @@ class JobSubClient:
                         % ( srv, self.acctGroup, item )
                 rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
+        elif constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.releaseURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
+                        % ( srv, self.acctGroup, constraint )
+                rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -475,7 +484,7 @@ class JobSubClient:
 
 
 
-    def hold(self, jobid=None, uid=None):
+    def hold(self, jobid=None, uid=None, constraint=None):
         jobid=self.checkID(jobid)
         post_data = [
             ('job_action', 'HOLD')
@@ -504,13 +513,22 @@ class JobSubClient:
                         % ( srv, self.acctGroup, item )
                 rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
+        elif constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.holdURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
+                        % ( srv, self.acctGroup, constraint )
+                rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         else:
-            raise JobSubClientError("hold requires either a jobid or uid")
+            raise JobSubClientError("hold requires one of a jobid or uid or constraint")
 
 
 
     
-    def remove(self, jobid=None, uid=None):
+    def remove(self, jobid=None, uid=None, constraint=None):
         url_pattern = constants.remove_url_dict.get( (jobid is not None, 
                                                      uid is not None, 
                                                      self.acctRole is not None, 
@@ -539,8 +557,17 @@ class JobSubClient:
                         % ( srv, self.acctGroup, item )
                 rslts.append(self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False))
             return rslts
+        elif constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.removeURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
+                        % ( srv, self.acctGroup, constraint )
+                rslts.append(self.changeJobState(self.removeURL, 'DELETE',  ssl_verifyhost=False))
+            return rslts
         else:
-            raise JobSubClientError("remove requires either a jobid or uid")
+            raise JobSubClientError("remove requires either a jobid or uid or constraint")
 
 
 

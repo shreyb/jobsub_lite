@@ -10,6 +10,7 @@ import util
 from auth import check_auth, get_client_dn
 from jobsub import is_supported_accountinggroup
 from format import format_response
+from condor_commands import ui_condor_q
 
 
 

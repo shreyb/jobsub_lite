@@ -32,7 +32,9 @@ import tarfile
 import socket
 import time
 import shutil
+import urllib
 from datetime import datetime 
+
 
 
 def version_string():
@@ -474,7 +476,7 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 self.releaseURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, constraint )
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
                 rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
         else:
@@ -519,7 +521,7 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 self.holdURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, constraint )
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
                 rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
         else:
@@ -563,7 +565,7 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 self.removeURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, constraint )
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
                 rslts.append(self.changeJobState(self.removeURL, 'DELETE',  ssl_verifyhost=False))
             return rslts
         else:
@@ -655,16 +657,19 @@ class JobSubClient:
 
 
     def listConfiguredSites(self):
-        self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%(self.server,self.acctGroup)
+        self.listURL=constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN%\
+                (self.server,self.acctGroup)
         return self.changeJobState(self.listURL,'GET')
 
     def listJobs(self, jobid=None, userid=None,outFormat=None):
         jobid=self.checkID(jobid)
         constraint = self.extra_opts.get('constraint')
         if constraint:
-            self.listURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN %(self.server, self.acctGroup, constraint)
+            self.listURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN %\
+                    (self.server, self.acctGroup, urllib.quote(constraint))
         elif self.better_analyze and jobid:
-            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN  % (self.server, jobid)
+            self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN%\
+                    (self.server, jobid)
         elif self.better_analyze and not jobid:
             raise JobSubClientError("you must specify a jobid with --better-analyze")
         elif jobid is None and self.acctGroup is None and userid is None:

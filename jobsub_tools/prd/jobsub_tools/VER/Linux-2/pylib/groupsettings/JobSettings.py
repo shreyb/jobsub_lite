@@ -1476,6 +1476,7 @@ class JobSettings(object):
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
                     (settings['accountinggroup'],settings['user']))
         self.addToLineSetting("+Jobsub_Group=\"%s\""%settings['group'])
+        self.addToLineSetting("+JobsubJobId=\"%s\""%settings['jobsubjobid'])
         if settings['subgroup']:
             self.addToLineSetting("+Jobsub_SubGroup=\"%s\""%settings['subgroup'])
 

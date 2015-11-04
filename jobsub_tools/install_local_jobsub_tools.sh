@@ -10,11 +10,11 @@ fi
 if [ "$2" != "" ] ; then
     REV=$2
 fi
+HERE=`pwd`
 mkdir -p ups_db/jobsub_tools
 ./make_tablefile.py $VERS$REV
-HERE=`pwd`
-cp ../lib/JobsubConfigParser/* prd/jobsub_tools/${VERS}/Linux-2/pylib/JobsubConfigParser/
-cp ../server/conf/jobsub.ini prd/jobsub_tools/${VERS}/Linux-2/bin
+cp ../lib/JobsubConfigParser/* prd/jobsub_tools/VER/Linux-2/pylib/JobsubConfigParser/
+cp ../server/conf/jobsub.ini prd/jobsub_tools/VER/Linux-2/bin
 mv  prd/jobsub_tools/VER  prd/jobsub_tools/${VERS}
 cd ups_db
 tar cvf db.jobsub_tools.tar jobsub_tools --exclude  ".svn" --exclude "jobsub_tools/.svn/"

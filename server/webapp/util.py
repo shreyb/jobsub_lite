@@ -183,13 +183,18 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
     out = err = ''
     affected_jobs = 0
-    regex = re.compile('^job_[0-9]+_[0-9]+[ ]*=[ ]*[0-9]+$')
+    expr='(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
+    #not needed now but if we ever want them.....
+    #expr+='(\d+)(\s+Not\s+Found,\s+)(\d+)(\s+Bad\s+Status,\s+)'
+    #expr+='(\d+)(\s+Already\s+Done,\s+)(\d+)(\s+Permission\s+Denied\s+)*'
+    regex=re.compile(expr)
     extra_err = ""
     failures = 0
+    retStr = ""
     for schedd_name in scheddList:
         try:
             cmd = [
-                jobsub.condor_bin(condorCommands()[job_action]), '-l',
+                jobsub.condor_bin(condorCommands()[job_action]), '-totals',
                 '-name', schedd_name,
                 '-pool', collector_host,
                 '-constraint', constraint
@@ -213,8 +218,10 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
         for line in out:
             if regex.match(line):
-                affected_jobs += 1
-    retStr = "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
+                grps=regex.match(line)
+                affected_jobs += int(grps.group(1))
+                retStr = line
+    retStr += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
     if failures:
         retStr = "%s \nCONDOR_ERRORS: %s" %( retStr, extra_err )
     return retStr

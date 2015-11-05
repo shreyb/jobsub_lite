@@ -226,8 +226,8 @@ def ui_condor_q(a_filter=None,a_format=None):
             cherrypy.response.status = 500
             return tb
 
-def iwd_condor_q(a_filter):
-    cmd = 'condor_q -af iwd %s' % ( a_filter)
+def iwd_condor_q(a_filter, a_part='iwd'):
+    cmd = 'condor_q -af %s  %s' % ( a_part, a_filter)
     iwd = ''
     try:
         iwd , cmd_err = subprocessSupport.iexe_cmd(cmd)

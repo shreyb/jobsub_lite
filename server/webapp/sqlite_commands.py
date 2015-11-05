@@ -56,7 +56,7 @@ def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le
 
 
 
-def iwd_jobsub_history(query):
+def iwd_jobsub_history(query, a_col='iwd'):
     hdr = sql_header()
     hostname = socket.gethostname()
     p = JobsubConfigParser.JobsubConfigParser()
@@ -69,7 +69,7 @@ def iwd_jobsub_history(query):
     rslt=[hdr]
     rslt=None
     for row in c.execute(query):
-        rslt = row['iwd']
+        rslt = row[a_col]
     return rslt
 
 def jobsub_history(query):

@@ -108,7 +108,7 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
         f1=os.path.join(f0,file)
         try:
             if partial:
-                if jnum in file:
+                if jnum in file or partial in file:
                     tar.add(f1,file)
             else:
                     tar.add(f1,file)

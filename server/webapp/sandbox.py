@@ -1,6 +1,7 @@
 import os
 import cherrypy
 import logger
+import re
 
 from cherrypy.lib.static import serve_file
 
@@ -100,15 +101,20 @@ class SandboxResource(object):
              job_id = 'I_am_planning_on_failing'
         zip_path = os.path.join(sbx_final_dir, job_id)
         zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
-        if not zip_path:
+        if partial or not zip_path:
             #it might be a valid jobsubjobid that is part of a dag or non zero ProcessID
+            zip_path = None
             try:
                 query = constructFilter(jobid=job_id)
                 zip_path = iwd_condor_q(query)
                 if partial:
-                    #cmd = cmd_condor_q(query)
-                    #regex cmd into partial to use for matching
-                    pass
+                    cmd = iwd_condor_q(query,'cmd')
+                    logger.log('cmd=%s'%cmd)
+                    expr = '^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
+                    regex = re.compile(expr)
+                    g = regex.match(cmd)
+                    partial = g.group(2) 
+                    logger.log('partial=%s'%partial)
 
                 logger.log('zip_path from condor_q:%s' % zip_path)
             except Exception, e:
@@ -119,9 +125,14 @@ class SandboxResource(object):
                 zip_path = iwd_jobsub_history(query)
                 logger.log('zip_path from jobsub_history:%s' % zip_path)
                 if partial:
-                    #cmd = cmd_jobsub_history(query)
-                    #regex to get pattern into partial for matching
-                    pass
+                    cmd = iwd_jobsub_history(query,'ownerjob')
+                    logger.log('cmd=%s'%cmd)
+                    expr = '^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
+                    regex = re.compile(expr)
+                    g = regex.match(cmd)
+                    partial = g.group(2) 
+                    logger.log('partial=%s'%partial)
+
 
             except Exception, e:
                 logger.log('%s'%e)

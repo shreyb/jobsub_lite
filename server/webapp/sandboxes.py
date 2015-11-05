@@ -11,7 +11,7 @@ from format import format_response
 
 
 
-@cherrypy.popargs('user_id')
+@cherrypy.popargs('user_id','cn')
 
 class SandboxesResource(object):
 

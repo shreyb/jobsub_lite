@@ -1,5 +1,39 @@
 
 ================================================================================
+v1.1.8
+================================================================================
+Client
+-------
+* Feature #6641  jobsub_fetchlog --partial downloads only files
+                 associated with  supplied --jobid.  Useful for
+                 looking at interior node of a DAG without downloading
+                 and wading through all the other log files for
+                 other jobs in the DAG.
+
+* Feature #8651  jobsub_q --hold lists held jobs and holdreason
+
+* Feature #10027 jobsub_hold, jobsub_release, jobsub_rm, and jobsub_q
+                 now support --constraint , which acts like -constraint
+                 does on the analogous condor_ commands
+
+* Bug     #10445 jobsub_submit fails with unhelpful error message 
+
+* Bug     #10471 jobsub_fetchlog --list fails when used with proxy
+
+Server
+------
+
+* Feature #10493 timestamps added to stderr and stdout logs when:
+                 * ifdh filecopy in with -f begins
+                 * ifdh filecopy in with -f finishes
+                 * user job starts
+                 * user job finishes
+                 * ifdh filecopy out with -D begins
+                 * ifdh filecopy out with -D finishes
+
+* Bug #10617     changed ifdh configuration setup scripts in job wrapper
+
+================================================================================
 v1.1.7
 ================================================================================
 Client

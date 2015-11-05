@@ -22,6 +22,18 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 RELEASE NOTES
 --------------------------
 
+v1_4_1 11/5/15
+================================================
+
+* Feature #10493 timestamps added to stderr and stdout logs when:
+                 * ifdh filecopy in with -f begins
+                 * ifdh filecopy in with -f finishes
+                 * user job starts
+                 * user job finishes
+                 * ifdh filecopy out with -D begins
+                 * ifdh filecopy out with -D finishes
+
+* Bug #10617     changed ifdh configuration setup scripts in job wrapper
 
 
 v1_3_15 10/8/15

@@ -47,14 +47,15 @@ def make_sandbox_readable(workdir, username):
     out, err = run_cmd_as_user(cmd, username, child_env=os.environ.copy())
 
 
-def create_archive(zip_file, zip_path, job_id, format):
-    if format=='tgz':
-        create_tarfile(zip_file, zip_path, job_id)
+def create_archive(zip_file, zip_path, job_id, out_format, partial=None):
+    if out_format=='tgz':
+        create_tarfile(zip_file, zip_path, job_id, partial=partial)
     else:
-        create_zipfile(zip_file, zip_path, job_id)
+        create_zipfile(zip_file, zip_path, job_id, partial=partial)
         
 
 
+@cherrypy.popargs('partial')
 class SandboxResource(object):
     """ Download compressed output sandbox for a given job
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
@@ -76,7 +77,7 @@ class SandboxResource(object):
 
 
     #@format_response
-    def doGET(self, acctgroup, job_id, kwargs):
+    def doGET(self, acctgroup, job_id, partial=None,  **kwargs):
         # set cherrypy.response.timeout to something bigger than 300 seconds
         timeout = 60*15
         try:
@@ -89,6 +90,7 @@ class SandboxResource(object):
 
         cherrypy.response.timeout = timeout
         logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
+        logger.log('partial=%s' % partial)
         jobsubConfig = JobsubConfig()
         sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
         sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, cherrypy.request.username)
@@ -103,6 +105,11 @@ class SandboxResource(object):
             try:
                 query = constructFilter(jobid=job_id)
                 zip_path = iwd_condor_q(query)
+                if partial:
+                    #cmd = cmd_condor_q(query)
+                    #regex cmd into partial to use for matching
+                    pass
+
                 logger.log('zip_path from condor_q:%s' % zip_path)
             except Exception, e:
                 logger.log('%s'%e)
@@ -111,6 +118,11 @@ class SandboxResource(object):
                 query = constructQuery(jobid=job_id)
                 zip_path = iwd_jobsub_history(query)
                 logger.log('zip_path from jobsub_history:%s' % zip_path)
+                if partial:
+                    #cmd = cmd_jobsub_history(query)
+                    #regex to get pattern into partial for matching
+                    pass
+
             except Exception, e:
                 logger.log('%s'%e)
         logger.log('zip_path=%s'%zip_path)
@@ -119,17 +131,17 @@ class SandboxResource(object):
             zip_path=zip_path.lstrip()
         if zip_path and os.path.exists(zip_path):
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
-            format = kwargs.get('archive_format', 'tgz')
-            logger.log('archive_format:%s'%format)
+            out_format = kwargs.get('archive_out_format', 'tgz')
+            logger.log('archive_out_format:%s'%out_format)
             zip_file_tmp = None
-            if format not in ('zip', 'tgz'):
-                format = 'tgz'
+            if out_format not in ('zip', 'tgz'):
+                out_format = 'tgz'
 
             # Moving the file to user dir and changing the ownership
             # prevents cherrypy from doing the cleanup. Keep the files in
             # in acctgroup area to allow for cleanup
             zip_file = os.path.join(sbx_create_dir,
-                                        '%s.%s.%s' % (job_id, ts, format))
+                                        '%s.%s.%s' % (job_id, ts, out_format))
             rc = {'out': zip_file}
 
             cherrypy.request.hooks.attach('on_end_request', cleanup,
@@ -138,7 +150,7 @@ class SandboxResource(object):
                                           zip_file=zip_file)
 
             make_sandbox_readable(zip_path, cherrypy.request.username)
-            create_archive(zip_file, zip_path, job_id, format)
+            create_archive(zip_file, zip_path, job_id, out_format, partial=partial)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download', 'attachment')
 
@@ -176,8 +188,9 @@ class SandboxResource(object):
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup, job_id, **kwargs):
+    def index(self, acctgroup, job_id, partial=None, **kwargs):
         logger.log('job_id:%s'%job_id)
+        logger.log('partial:%s'%partial)
         cherrypy.request.role = kwargs.get('role')
         cherrypy.request.username = kwargs.get('username')
         cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
@@ -188,7 +201,7 @@ class SandboxResource(object):
 
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(acctgroup, job_id, kwargs)
+                    rc = self.doGET(acctgroup, job_id, partial, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

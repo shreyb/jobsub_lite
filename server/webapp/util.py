@@ -86,23 +86,33 @@ def zipdir(path, zip, job_id):
                 zip.write(os.path.join(root, file))
 
 
-def create_zipfile(zip_file, zip_path, job_id=None):
+def create_zipfile(zip_file, zip_path, job_id=None, partial=None):
     zip = zipfile.ZipFile(zip_file, 'w')
     zipdir(zip_path, zip, job_id)
     zip.close()
 
-def create_tarfile(tar_file, tar_path, job_id=None):
-    logger.log('tar_file=%s tar_path=%s job_id=%s'%(tar_file, tar_path, job_id))
+def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
+    logger.log('tar_file=%s tar_path=%s job_id=%s partial=%s'%(tar_file, tar_path, job_id, partial))
     tar = tarfile.open(tar_file,'w:gz')
     os.chdir(tar_path)
     logger.log('creating tar of %s'%tar_path)
     failed_file_list=[]
     f0 = os.path.realpath(tar_path)
     files=os.listdir(tar_path)
+    if job_id and partial:
+        job_parts = job_id.split('@')
+        jnum = job_parts[0]
+        logger.log('jnum=%s'%jnum)
+
     for file in files:
         f1=os.path.join(f0,file)
         try:
-            tar.add(f1,file)
+            if partial:
+                if jnum in file:
+                    tar.add(f1,file)
+            else:
+                    tar.add(f1,file)
+
         except:
             logger.log('failed to add %s to %s '%(file,tar_file))
             failed_file_list.append(file)

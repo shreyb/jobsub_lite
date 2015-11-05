@@ -101,6 +101,13 @@ def parse_opts(argv):
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
+    parser.add_option('--partial',
+                      dest='partial',
+                      action='store_true',
+                      metavar='<partial>',
+                      default=False,
+                      help='download only the stdout and stderr for this jobid, not the entire sandbox')
+
     parser.add_option('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
@@ -188,6 +195,9 @@ def get_sandbox(options):
         sandboxURL = constants.JOBSUB_JOB_SANDBOX_URL_PATTERN % (
                  options.jobsubServer, options.acctGroup, options.jobId)
 
+
+    if options.partial:
+        sandboxURL = "%spartial/" % sandboxURL
     if options.format=='zip':
         sandboxURL="%s?archive_format=zip"%(sandboxURL)
 

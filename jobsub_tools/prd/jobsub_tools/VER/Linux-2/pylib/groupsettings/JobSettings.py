@@ -183,8 +183,6 @@ class JobSettings(object):
         self.settings['needs_appending'] = True
         self.settings['ifdh_cmd'] = '${JSB_TMP}/ifdh.sh'
         self.settings['jobsub_max_joblog_size'] = 5000000
-        #self.settings['jobsub_max_joblog_head_size']=1000000
-        #self.settings['jobsub_max_joblog_tail_size']=4000000
         self.settings['drain'] = False
         self.settings['mail_domain'] = 'fnal.gov'
         self.settings['jobsubjobid'] = "$(CLUSTER).$(PROCESS)@%s"%self.settings['submit_host']
@@ -194,7 +192,6 @@ class JobSettings(object):
         self.settings['summary_script'] = "%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
-        #self.settings['job_count'] = 0
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -210,7 +207,7 @@ class JobSettings(object):
             print "new_settings = ",new_settings
         for x in new_settings.keys():
             if new_settings[x] is not None:
-                self.settings[x]=new_settings[x]
+                self.settings[x] = new_settings[x]
         settings=self.settings
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -308,6 +305,12 @@ class JobSettings(object):
             submission (.cmd) file, typically as a classad attribute.  
             See the HTCondor documentation  for more.""")
 
+        generic_group.add_option("--timeout", dest="timeout",action="store",
+            type="string",metavar='<NUMBER[UNITS]>',
+            help="""kill user job if still running after NUMBER[UNITS] of time .
+            UNITS may be `s' for seconds (the default), `m' for minutes,
+            `h' for hours or `d' h for days.""")
+
 
         generic_group.add_option("--maxConcurrent", 
             dest="maxConcurrent", action="store",type="string", 
@@ -326,16 +329,18 @@ class JobSettings(object):
             each individual job will have a unique and sequential $JOBSUBJOBSECTION.
             Scripts may need modification to take this into account""") 
 
-        generic_group.add_option("--disk", dest="disk",metavar="<num><units>",
+        generic_group.add_option("--disk", dest="disk",metavar="<NUMBER[UNITS]>",
             action="store",type="string",
-            help="""Request worker nodes have at least <num><units> of disk space.   
-            If <units> is not specified default is 'KB' (a typo in earlier versions 
+            help="""Request worker nodes have at least <NUMBER[UNITS]> of disk space.   
+            If UNITS is not specified default is 'KB' (a typo in earlier versions 
             said that default was 'MB', this was wrong).  Allowed values for 
-            <units> are 'KB','MB','GB', and 'TB'""")
+            UNITS are 'KB','MB','GB', and 'TB'""")
 
-        generic_group.add_option("--memory", dest="memory",metavar="<num>",
+        generic_group.add_option("--memory", dest="memory",metavar="<NUMBER[UNITS]>",
             action="store",type="int",
-            help="request worker nodes have at least <num> MB of memory ")
+            help="""Request worker nodes have at least <NUMBER[UNITS]>  of memory. 
+            If UNITS is not specified default is 'MB'.   Allowed values for 
+            UNITS are 'KB','MB','GB', and 'TB' """)
 
         generic_group.add_option("--cpu", dest="cpu",metavar="<num>",
             action="store",type="int",
@@ -504,7 +509,33 @@ class JobSettings(object):
         generic_group.add_option("-x","--X509_USER_PROXY", dest="x509_user_proxy",action="store",type="string",
             help="location of X509_USER_PROXY (expert mode)")
 
+    def timeFormatOK(self,a_str):
+        try:
+            i = int(a_str)
+            return True
+        except ValueError:
+            try:
+                units = a_str[-1]
+                if units in ['s','m','h','d']:
+                    return True
+                else:
+                    return False
+            except:
+                return False
 
+    def memFormatOK(self,a_str):
+        try:
+            i = int(a_str)
+            return True
+        except ValueError:
+            try:
+                units = a_str[-2:].upper()
+                if units in ['KB','MB','GB','TB']:
+                    return True
+                else:
+                    return False
+            except:
+                return False
 
     def checkSanity(self):
         settings = self.settings
@@ -526,6 +557,18 @@ class JobSettings(object):
                 else:
                     err = 'error setting up running environment' 
                     raise InitializationError(err)
+
+        if settings.get('memory') and not self.memFormatOK(settings['memory']):
+            err = "--memory '%s' format incorrect" % settings['memory']
+            raise InitializationError(err)
+    
+        if settings.get('disk') and not self.memFormatOK(settings['disk']):
+            err = "--disk '%s' format incorrect" % settings['disk']
+            raise InitializationError(err)
+
+        if settings.get('timeout') and not self.timeFormatOK(settings['timeout']):
+            err = "--timeout '%s' format incorrect" % settings['timeout']
+            raise InitializationError(err)
 
         if settings['queuecount'] < 1:
             err = "-N  must be a positive number"
@@ -657,6 +700,10 @@ class JobSettings(object):
  
         settings=self.settings
         f = open(settings['wrapfile'], 'a')
+        tlimit=''
+        if settings['timeout']:
+            tlimit = "timeout %s " % settings['timeout']
+            
         ifdh_cmd=settings['ifdh_cmd']
         exe_script=settings['exe_script']
         if settings['transfer_executable']:
@@ -676,15 +723,15 @@ class JobSettings(object):
         f.write(">&2 echo `date` %s"%log_msg)
         if settings['joblogfile'] != "":
             if settings['nologbuffer']==False:
-                f.write("$JOBSUB_EXE_SCRIPT %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
-                    (script_args))
+                f.write("%s$JOBSUB_EXE_SCRIPT %s > $_CONDOR_SCRATCH_DIR/tmp_job_log_file 2>&1\n" % \
+                    (tlimit,script_args))
             else:
-                f.write("$JOBSUB_EXE_SCRIPT %s > %s  2>&1\n" % \
-                    (script_args,settings['joblogfile']))
+                f.write("%s$JOBSUB_EXE_SCRIPT %s > %s  2>&1\n" % \
+                    (tlimit,script_args,settings['joblogfile']))
 
         else:
-            f.write("$JOBSUB_EXE_SCRIPT %s  \n" % \
-                (script_args))
+            f.write("%s$JOBSUB_EXE_SCRIPT %s  \n" % \
+                (tlimit,script_args))
  
 
         f.write("JOB_RET_STATUS=$?\n")
@@ -737,10 +784,10 @@ class JobSettings(object):
 
             log_cmd1 = """\t%s log "%s BEGIN %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
             log_cmd2 = """\t%s log "%s FINISHED %s "\n"""%(ifdh_cmd,my_tag,copy_cmd)
+            f.write("echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
+            f.write(">&2 echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
 
         f.write(log_cmd1)
-        f.write("echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
-        f.write(">&2 echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
         f.write("%s %s\n"%(copy_cmd,append_cmd))
         f.write("echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
         f.write(">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)

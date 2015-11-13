@@ -20,6 +20,8 @@ Client
 
 * Bug     #10471 jobsub_fetchlog --list fails when used with proxy
 
+* Bug     #10932: jobsub_q --summary hiccup with condor 8.3.6
+
 Server
 ------
 

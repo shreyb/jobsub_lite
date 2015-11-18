@@ -43,7 +43,12 @@ class AccountingGroupsResource(object):
                 out.append(rel_link(grp))
             return {'out': out}
         else:
-            out = ['Accounting group %s'%acctgroup,['<a href=jobs/>running jobs</a>','<a href=sandboxes/>sandboxes for completed jobs</a>']]
+            out = ['Accounting group %s'%acctgroup,
+                    ['<a href=jobs/>running jobs</a>',
+                     '<a href=sandboxes/>sandboxes for completed jobs</a>',
+                     '<a href=help/>jobsub_submit help options for this group</a>',
+                    ]
+                ]
 
             rc = {'out':out}
             return rc

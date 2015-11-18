@@ -180,28 +180,9 @@ class SandboxResource(object):
             # cleaner option --list-sandboxes
             # return error for no data found
             cherrypy.response.status = 404
-            sandbox_cluster_ids = list()
-            if os.path.exists(sbx_final_dir):
-                logger.log('Looking for available sandboxes %s'%sbx_final_dir)
-                dirs = os.listdir(sbx_final_dir)
-                for dir in dirs:
-                    if os.path.islink(os.path.join(sbx_final_dir, dir)) and dir.find('@')>0:
-                        frag="""%s"""%(dir)
-                        sandbox_cluster_ids.append(frag)
-                sandbox_cluster_ids.sort()
-
-            if sandbox_cluster_ids:
-                outmsg = """
-                Information for job %s not found.  If you used jobsub_q or jobsub_history to 
-                find this job ID, you may have specified --group incorrectly.  If the job is old, it may have 
-                been already removed to save space.  For user %s, --group %s, the server can retrieve 
-                information for these job_ids:"""% (job_id, cherrypy.request.username, acctgroup)
-                sandbox_cluster_ids.insert(0, outmsg)
-                rc = {'out': sandbox_cluster_ids}
-            else:
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' %\
-                        (cherrypy.request.username , acctgroup, job_id)
-                rc = {'err':err}
+            outmsg = """
+                Information for job %s not found.  If you used jobsub_q or jobsub_history to find this job ID, double check that you specified --group incorrectly.  If the job is more than a few weeks old, it was probably removed to save space. Jobsub_fetchlog --list will show the  sandboxes that are still on the server."""  %job_id
+            rc = {'err': outmsg}
 
         return rc
 
@@ -211,7 +192,7 @@ class SandboxResource(object):
     def index(self, acctgroup, job_id, partial=None, **kwargs):
         logger.log('job_id:%s'%job_id)
         logger.log('partial:%s'%partial)
-        #logger.log('kwargs:%s'%kwargs)
+        logger.log('kwargs:%s'%kwargs)
         cherrypy.request.role = kwargs.get('role')
         cherrypy.request.username = kwargs.get('username')
         cherrypy.request.vomsProxy = kwargs.get('voms_proxy')

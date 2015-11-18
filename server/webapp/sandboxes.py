@@ -29,6 +29,7 @@ class SandboxesResource(object):
                 make_sandbox_readable(sandbox_dir,user_id)
 
         if file_id:
+            cherrypy.request.output_format = 'pre'
             cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
             (command_path_root,cherrypy.request.acctgroup,user_id,job_id, file_id)
         elif job_id:
@@ -42,7 +43,7 @@ class SandboxesResource(object):
             (command_path_root,cherrypy.request.acctgroup)
         try:
             logger.log(cmd)
-            sandbox_dirs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
         except:
             err="No sandboxes found for user %s accounting group %s" %\
@@ -55,19 +56,19 @@ class SandboxesResource(object):
 
         filelist = []
         outlist = []
-        for dir in sandbox_dirs.split('\n'):
+        for line in cmd_out.split('\n'):
             if file_id:
-                outlist.append(dir)
+                outlist.append(line)
             elif job_id:
-                parts = dir.split()
+                parts = line.split()
                 if len(parts):
                    file = os.path.basename(parts[-1])
                    p2 = parts[-5:-1]
                    p2.insert(0,rel_link(file))
                    outlist.append(' '.join(p2))
             elif user_id:
-                fp = dir
-                f = os.path.basename(dir)
+                fp = line
+                f = os.path.basename(line)
                 if f.find('@') > 0:
                     try:
                         t = os.path.getmtime(fp)
@@ -76,12 +77,12 @@ class SandboxesResource(object):
                     except:
                         logger.log("%s"%sys.exc_info()[1])
             else:
-                d = os.path.basename(dir)
+                d = os.path.basename(line)
                 outlist.append(rel_link(d))
 
         if filelist:
             filelist.sort(key = lambda itm: itm[1])
-            acctgroup=os.path.basename(os.path.dirname(dir))
+            acctgroup=os.path.basename(os.path.dirname(line))
             outlist.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
             for itm in filelist:
                 outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
@@ -108,7 +109,7 @@ class SandboxesResource(object):
             job_id = kwargs.get('job_id')
             file_id = kwargs.get('file_id')
             if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
-                rc  = {'out': ['%s is not configured to read other users output for group %s. Please open a service desk ticket if you want this configuration changed'%(requestor,acctgroup), [ rel_link(requestor) ] ] }
+                rc  = {'out': ['%s may only look at thier own output for group %s. This is configurable, please open a service desk ticket if you want this changed'%(requestor,acctgroup), [ rel_link(requestor) ] ] }
                 return rc
 
             if subject_dn is not None:

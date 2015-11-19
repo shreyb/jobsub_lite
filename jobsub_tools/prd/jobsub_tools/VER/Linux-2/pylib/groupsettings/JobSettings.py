@@ -300,51 +300,51 @@ class JobSettings(object):
 
 
         file_group.add_option("-l", "--lines", dest="lines",action="append",
-            type="string",metavar='<line>',
-            help="""[Expert option]  Add  <line> to the Condor 
-            submission (.cmd) file, typically as a classad attribute.  
-            See the HTCondor documentation  for more.""")
+            type="string",metavar='"line"',
+            help=' '.join(["""[Expert option]  Add  "line" to the Condor """,
+            """submission (.cmd) file, typically as a classad attribute.  """,
+            """See the HTCondor documentation  for more."""]))
 
         generic_group.add_option("--timeout", dest="timeout",action="store",
-            type="string",metavar='<NUMBER[UNITS]>',
-            help="""kill user job if still running after NUMBER[UNITS] of time .
-            UNITS may be `s' for seconds (the default), `m' for minutes,
-            `h' for hours or `d' h for days.""")
+            type="string",metavar='NUMBER[UNITS]',
+            help=' '.join(["""kill user job if still running after NUMBER[UNITS] of time .""",
+            """UNITS may be `s' for seconds (the default), `m' for minutes,""",
+            """`h' for hours or `d' h for days."""]))
 
 
         generic_group.add_option("--maxConcurrent", 
             dest="maxConcurrent", action="store",type="string", 
-            help="""max number of jobs running concurrently at given time. Use in 
-            conjunction with -N option to protect a shared resource.  
-            Example: jobsub -N 1000 -maxConcurrent 20 will 
-            only run 20 jobs at a time until all 1000 have completed.  
-            This is implemented by running the jobs in a DAG. Normally when 
-            jobs are run with the -N option, they all have the same $CLUSTER
-            number and differing, sequential $PROCESS numbers, and many submission
-            scripts take advantage of this.  When jobs are run with this 
-            option in a DAG each job has a different $CLUSTER number and a 
-            $PROCESS number of 0, which may break scripts that rely on the 
-            normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of 
-            jobs run with this option will have the same $JOBSUBPARENTJOBID,  
-            each individual job will have a unique and sequential $JOBSUBJOBSECTION.
-            Scripts may need modification to take this into account""") 
+            help=' '.join(["""max number of jobs running concurrently at given time. Use in """,
+            """conjunction with -N option to protect a shared resource.  """,
+            """Example: jobsub -N 1000 -maxConcurrent 20 will """,
+            """only run 20 jobs at a time until all 1000 have completed.  """,
+            """This is implemented by running the jobs in a DAG. Normally when """,
+            """jobs are run with the -N option, they all have the same $CLUSTER""",
+            """number and differing, sequential $PROCESS numbers, and many submission""",
+            """scripts take advantage of this.  When jobs are run with this """,
+            """option in a DAG each job has a different $CLUSTER number and a """,
+            """$PROCESS number of 0, which may break scripts that rely on the """,
+            """normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of """,
+            """jobs run with this option will have the same $JOBSUBPARENTJOBID,  """,
+            """each individual job will have a unique and sequential $JOBSUBJOBSECTION.""",
+            """Scripts may need modification to take this into account"""]))
 
-        generic_group.add_option("--disk", dest="disk",metavar="<NUMBER[UNITS]>",
+        generic_group.add_option("--disk", dest="disk",metavar="NUMBER[UNITS]",
             action="store",type="string",
-            help="""Request worker nodes have at least <NUMBER[UNITS]> of disk space.   
-            If UNITS is not specified default is 'KB' (a typo in earlier versions 
-            said that default was 'MB', this was wrong).  Allowed values for 
-            UNITS are 'KB','MB','GB', and 'TB'""")
+            help=' '.join(["""Request worker nodes have at least NUMBER[UNITS] of disk space.   """,
+            """If UNITS is not specified default is 'KB' (a typo in earlier versions """,
+            """said that default was 'MB', this was wrong).  Allowed values for """,
+            """UNITS are 'KB','MB','GB', and 'TB'"""]))
 
-        generic_group.add_option("--memory", dest="memory",metavar="<NUMBER[UNITS]>",
+        generic_group.add_option("--memory", dest="memory",metavar="NUMBER[UNITS]",
             action="store",type="int",
-            help="""Request worker nodes have at least <NUMBER[UNITS]>  of memory. 
+            help="""Request worker nodes have at least NUMBER[UNITS]  of memory. 
             If UNITS is not specified default is 'MB'.   Allowed values for 
             UNITS are 'KB','MB','GB', and 'TB' """)
 
-        generic_group.add_option("--cpu", dest="cpu",metavar="<num>",
+        generic_group.add_option("--cpu", dest="cpu",metavar="NUMBER",
             action="store",type="int",
-            help="request worker nodes have at least <num> cpus ")
+            help="request worker nodes have at least NUMBER cpus ")
 
         sam_group.add_option("--dataset_definition", dest="dataset_definition",
             action="store",type="string",
@@ -364,13 +364,15 @@ class JobSettings(object):
                 
         generic_group.add_option("--OS", dest="os",
             action="store",type="string",
-            help="""specify OS version of worker node. Example --OS=SL5  Comma seperated list 
-            '--OS=SL4,SL5,SL6' works as well . Default is any available OS""")
+            help=' '.join(["""specify OS version of worker node. Example """,
+            """--OS=SL5  Comma seperated list """,
+            """'--OS=SL4,SL5,SL6' works as well . Default is any available OS"""]))
 
         generic_group.add_option("--show-parsing", dest="show_parsing",
             action="store_true",default=False,
-            help="""print out how command line was parsed into argv list and exit.
-                    Useful for seeing how quotes in options are parsed)""")
+            help=' '.join(["""print out how command line was parsed into argv""",
+            """ list and exit.""",
+            """Useful for seeing how quotes in options are parsed)"""]))
 
 
         generic_group.add_option("--generate-email-summary", dest="mail_summary",
@@ -478,25 +480,27 @@ class JobSettings(object):
                     to the user job on the worker node via the environment 
                     variable  $INPUT_TAR_FILE.  """)
 
-        generic_group.add_option("-n","--no_submit", dest="submit",action="store_false",default=True,
-            help="generate condor_command file but do not submit")
+        generic_group.add_option("-n","--no_submit", dest="submit",
+                action="store_false",default=True,
+                help="generate condor_command file but do not submit")
 
 
-        generic_group.add_option("-N", dest="queuecount",action="store",default=1,type="int",
-            help="""submit N copies of this job. Each job will
-            have access to the environment variable
-            $PROCESS that provides the job number (0 to
-            <num>-1), equivalent to the decimal point in
-            the job ID (the '2' in 134567.2). """)
+        generic_group.add_option("-N", dest="queuecount", metavar='NUM', action="store",
+                default=1, type="int",
+            help=' '.join(["""submit N copies of this job. Each job will""",
+            """have access to the environment variable""",
+            """ $PROCESS that provides the job number (0 to """,
+            """NUM-1), equivalent to the number following the decimal point in""",
+            """the job ID (the '2' in 134567.2). """]))
 
 
         file_group.add_option("-f", dest="input_dir_array",action="append",
-            type="string", metavar='<input_file>                         ',
-            help=""" <input_file> will be copied to directory  
+            type="string", metavar='INPUT_FILE',
+            help="""INPUT_FILE will be copied to directory  
             $CONDOR_DIR_INPUT on the execution node.  
             Example :-f /grid/data/minerva/my/input/file.xxx  
             will be copied to $CONDOR_DIR_INPUT/file.xxx 
-            Specify as many -f <input_file1> -f <input_file2>
+            Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2
             args as you need.""")
 
         file_group.add_option("-d", dest="output_dir_array",action="append",type="string",
@@ -787,11 +791,11 @@ class JobSettings(object):
             f.write("echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
             f.write(">&2 echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
 
-        f.write(log_cmd1)
-        f.write("%s %s\n"%(copy_cmd,append_cmd))
-        f.write("echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
-        f.write(">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
-        f.write(log_cmd2)
+            f.write(log_cmd1)
+            f.write("%s %s\n"%(copy_cmd,append_cmd))
+            f.write("echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
+            f.write(">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
+            f.write(log_cmd2)
 
 
         if settings['joblogfile'] != "" and not settings['nologbuffer']:
@@ -1337,7 +1341,7 @@ class JobSettings(object):
                 settings['lines']=[]
             settings['lines'].append(thingy)
 
-    def handleResourceProvides(self,f,job_iter=0):
+    def handleResourceProvides(self,f):
         settings=self.settings 
         submit_host=settings['submit_host'] 
         fp=self.fileParser 
@@ -1354,15 +1358,15 @@ class JobSettings(object):
                 f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
         f.write("+GeneratedBy =\"%s\"\n"%settings['generated_by'])
         for res in settings['resource_list']: 
-            parts=res.split('=')
-            if len(parts)>1: 
+            parts = res.split('=')
+            if len(parts) > 1: 
                 opt=parts[0]
                 val=parts[1]
                 has_opt=opt
                 if 'has_' not in opt.lower():
-                    has_opt="has_%s"%opt
+                    has_opt = "has_%s"%opt
                 if not fp.has_option(submit_host,has_opt): 
-                    optlist=fp.options(submit_host)
+                    optlist = fp.options(submit_host)
                     supported=[]
                     for itm in optlist:
                         if 'has_' in itm.lower():
@@ -1371,18 +1375,19 @@ class JobSettings(object):
                     err=" --resource-provides=%s is not configured on %s . Try --resource-provides=(one of %s) "%(opt,submit_host,supported)
                     raise InitializationError(err)
                 else: 
-                    allowed_vals=fp.get(submit_host,has_opt)
-                    allowed_vals=allowed_vals.replace(', ',',')
-                    allowed_vals=allowed_vals.replace(' ,',',')
-                    allowed_vals=allowed_vals.upper()
-                    allowed_list=allowed_vals.split(',')
-                    vals_ok=False
-                    val_list=val.split(',')
+                    allowed_vals = fp.get(submit_host,has_opt)
+                    allowed_vals = allowed_vals.replace(', ',',')
+                    allowed_vals = allowed_vals.replace(' ,',',')
+                    allowed_vals = allowed_vals.upper()
+                    allowed_list = allowed_vals.split(',')
+                    vals_ok = False
+                    val_list = val.split(',')
                     for check_val in val_list:
                         if check_val.strip().upper() in allowed_list:
-                            vals_ok=True
+                            vals_ok = True
                     if not vals_ok: 
-                        err=" --resource-provides=%s=%s is not configured on %s .  Legal values are --resource-provides=%s=(one of %s)"%(opt,val,submit_host,opt,allowed_vals.upper())
+                        err=" --resource-provides=%s=%s is not configured on %s .  Legal values are --resource-provides=%s=(one of %s)"%\
+                                (opt, val, submit_host, opt, allowed_vals.upper())
                         raise InitializationError(err)
                     else:
                         f.write("""+DESIRED_%s = "%s"\n"""%(opt,val))
@@ -1436,7 +1441,6 @@ class JobSettings(object):
         if not settings['needs_appending']:
             return settings['requirements']
         settings['needs_appending']=False
-        requirements=settings['requirements']
         if 'overwriterequirements' in settings:
             settings['requirements']=settings['overwriterequirements']
             return settings['requirements']
@@ -1527,7 +1531,7 @@ class JobSettings(object):
         if settings['subgroup']:
             self.addToLineSetting("+Jobsub_SubGroup=\"%s\""%settings['subgroup'])
 
-        self.handleResourceProvides(f,job_iter)
+        self.handleResourceProvides(f)
 
         if 'disk' in settings:
             f.write("request_disk = %s\n"%settings['disk'])
@@ -1542,4 +1546,4 @@ class JobSettings(object):
         f.write("\n")
         f.write("queue %s"%settings['queuecount'])
 
-        f.close
+        f.close()

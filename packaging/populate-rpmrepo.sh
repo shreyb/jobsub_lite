@@ -22,7 +22,7 @@ versionlist='6'
 #For now only 64bit support
 archlist='x86_64'
 # Create repo for dev (developers) and one for production (operations)
-flavors='dev'
+flavors="dev $repo"
 
 #make changes where appropiate (eg: scp new rpms)
 for flavor in $flavors; do

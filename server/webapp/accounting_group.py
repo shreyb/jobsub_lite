@@ -5,14 +5,13 @@ import os
 import sys
 import socket
 
-from util import get_uid
+from format import rel_link
 from auth import check_auth, get_client_dn
 from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups
 from jobsub import get_dropbox_path_root
-from util import mkdir_p
-from util import digest_for_file
+from util import mkdir_p, digest_for_file, get_uid
 from users import UsersResource
 from dropbox import DropboxResource
 from jobsub_help import JobsubHelpResource
@@ -39,10 +38,20 @@ class AccountingGroupsResource(object):
             API is /jobsub/acctgroups/
         """
         if acctgroup is None:
-            return {'out': get_supported_accountinggroups()}
+            out=[]
+            for grp in get_supported_accountinggroups():
+                out.append(rel_link(grp))
+            return {'out': out}
         else:
-            # No action at this time
-            pass
+            out = ['Accounting group %s'%acctgroup,
+                    ['<a href=jobs/>running jobs</a>',
+                     '<a href=sandboxes/>sandboxes for completed jobs</a>',
+                     '<a href=help/>jobsub_submit help options for this group</a>',
+                    ]
+                ]
+
+            rc = {'out':out}
+            return rc
 
     @cherrypy.expose
     @format_response

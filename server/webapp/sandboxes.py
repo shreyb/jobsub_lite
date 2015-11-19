@@ -6,25 +6,44 @@ import socket
 import sys
 import subprocessSupport
 from auth import check_auth, get_client_dn
-from jobsub import is_supported_accountinggroup, get_command_path_root
-from format import format_response
+from jobsub import is_supported_accountinggroup, get_command_path_root, sandbox_readable_by_group
+from sandbox import make_sandbox_readable
+from format import format_response, rel_link
 
 
 
-@cherrypy.popargs('user_id','cn')
+@cherrypy.popargs('user_id','job_id','file_id')
 
 class SandboxesResource(object):
 
 
-    def doGET(self,user_id=None,kwargs=None):
+    def doGET(self,user_id=None,job_id=None,file_id=None,kwargs=None):
         """ Query for valid sandboxes for given user/acctgroup.  Returns a JSON list object.
         API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
         """
         command_path_root = get_command_path_root()
-        cmd= "find  %s/%s -maxdepth 1 -name %s"%\
+        if file_id or job_id:
+            if user_id != cherrypy.request.username:
+                sandbox_dir = "%s/%s/%s/%s" %\
+                        (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
+                make_sandbox_readable(sandbox_dir,user_id)
+
+        if file_id:
+            cherrypy.request.output_format = 'pre'
+            cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
+            (command_path_root,cherrypy.request.acctgroup,user_id,job_id, file_id)
+        elif job_id:
+            cmd = "find  %s/%s/%s/%s/ -maxdepth 1 -mindepth 1 -ls" %\
+            (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
+        elif user_id:
+            cmd = "find  %s/%s/%s -maxdepth 1 -mindepth 1 -type l" %\
             (command_path_root,cherrypy.request.acctgroup,user_id)
+        else:
+            cmd = "find  %s/%s -maxdepth 1 -mindepth 1 -type d" %\
+            (command_path_root,cherrypy.request.acctgroup)
         try:
-            sandbox_dirs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+            logger.log(cmd)
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
         except:
             err="No sandboxes found for user %s accounting group %s" %\
@@ -37,31 +56,43 @@ class SandboxesResource(object):
 
         filelist = []
         outlist = []
-        for dir in sandbox_dirs.split('\n'):
-            acctgroup=os.path.basename(os.path.dirname(dir))
-            try:
-                for f in os.listdir(dir):
-                    if f.find('@') > 0:
-                        try:
-                            fp=os.path.join(dir,f)
-                            t=os.path.getmtime(fp)
-                            itm=(f, t)
-                            filelist.append(itm)
-                        except:
-                            logger.log("%s"%sys.exc_info()[1])
-                if filelist:
-                    filelist.sort(key = lambda itm: itm[1])
-                    outlist.append("JobsubJobID, \t\t   CreationDate for user %s in Accounting Group %s"%(user_id,acctgroup))
-                    for itm in filelist:
-                        outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
-            except:
-                logger.log("%s"%sys.exc_info()[1])
-
-            if outlist:
-                return {'out': outlist}
+        for line in cmd_out.split('\n'):
+            if file_id:
+                outlist.append(line)
+            elif job_id:
+                parts = line.split()
+                if len(parts):
+                   file = os.path.basename(parts[-1])
+                   p2 = parts[-5:-1]
+                   p2.insert(0,rel_link(file))
+                   outlist.append(' '.join(p2))
+            elif user_id:
+                fp = line
+                f = os.path.basename(line)
+                if f.find('@') > 0:
+                    try:
+                        t = os.path.getmtime(fp)
+                        itm = (rel_link(f), t)
+                        filelist.append(itm)
+                    except:
+                        logger.log("%s"%sys.exc_info()[1])
             else:
-                host = socket.gethostname()
-                return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
+                d = os.path.basename(line)
+                outlist.append(rel_link(d))
+
+        if filelist:
+            filelist.sort(key = lambda itm: itm[1])
+            acctgroup=os.path.basename(os.path.dirname(line))
+            if kwargs.get('group_read_info'):
+                outlist.append(kwargs.get('group_read_info'))
+            outlist.append("JobsubJobID                        CreationDate for user %s in Accounting Group %s"%(user_id,cherrypy.request.acctgroup))
+            for itm in filelist:
+                outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
+        if outlist:
+            return {'out': outlist}
+        else:
+            host = socket.gethostname()
+            return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
 
 
     @cherrypy.expose
@@ -72,18 +103,23 @@ class SandboxesResource(object):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
+            requestor = cherrypy.request.username
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             cherrypy.request.acctgroup = acctgroup
             subject_dn = get_client_dn()
             user_id = kwargs.get('user_id')
-            logger.log("user_id %s"%user_id)
-            logger.log("kwargs %s"%kwargs)
-            user_id = cherrypy.request.username
+            job_id = kwargs.get('job_id')
+            file_id = kwargs.get('file_id')
+            if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
+                if not user_id:
+                    user_id = 'other user'
+                kwargs['group_read_info'] = "%s may not look at  %s's output in  group %s. This is configurable, please open a service desk ticket if you want this changed"%(requestor, user_id, acctgroup)
+                user_id = requestor
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(user_id,kwargs)
+                    rc = self.doGET(user_id,job_id,file_id,kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

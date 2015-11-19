@@ -33,6 +33,22 @@ def is_supported_accountinggroup(accountinggroup):
 
     return rc
 
+def sandbox_readable_by_group(acctgroup):
+    rc = False
+    try:
+        p = JobsubConfigParser()
+        if p.has_section(acctgroup):
+            if p.has_option(acctgroup, 'sandbox_readable_by_group'):
+                rc =  p.get(acctgroup, 'sandbox_readable_by_group')
+                if rc == 'False':
+                    rc = False
+                logger.log('sandbox_readable_by_group:%s is %s'%(acctgroup,rc))
+                return rc
+    except:
+        logger.log('Failed to get accounting groups: ', traceback=True)
+
+    return rc
+
 
 def get_supported_accountinggroups():
     rc = list()

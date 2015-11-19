@@ -2,7 +2,7 @@
 
 
 TMPFILE=/tmp/condor_q_`date +%Y%m%d_%H%M%S`_$$
-condor_q -g | sed '/Schedd:/d' | sed '/ID.*OWNER/d' | sed '/^$/d' > ${TMPFILE}
+condor_q -g | sed '/Schedd:/d' | sed '/ID.*OWNER/d' | sed '/^$/d'| sed '/jobs;/d' > ${TMPFILE}
 
 
 OWNERLIST="`cat ${TMPFILE} | awk '{print $2}' | sort | uniq `"

@@ -192,11 +192,8 @@ class JobSettings(object):
         self.settings['summary_script'] = "%s/summary.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
-<<<<<<< HEAD
-=======
         self.settings['jobsub_max_cluster_procs']=10000
         #self.settings['job_count'] = 0
->>>>>>> 6954
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])

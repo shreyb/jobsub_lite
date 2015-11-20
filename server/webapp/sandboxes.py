@@ -83,8 +83,6 @@ class SandboxesResource(object):
         if filelist:
             filelist.sort(key = lambda itm: itm[1])
             acctgroup=os.path.basename(os.path.dirname(line))
-            if kwargs.get('group_read_info'):
-                outlist.append(kwargs.get('group_read_info'))
             outlist.append("JobsubJobID                        CreationDate for user %s in Accounting Group %s"%(user_id,cherrypy.request.acctgroup))
             for itm in filelist:
                 outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
@@ -113,8 +111,10 @@ class SandboxesResource(object):
             if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
                 if not user_id:
                     user_id = 'other user'
-                kwargs['group_read_info'] = "%s may not look at  %s's output in  group %s. This is configurable, please open a service desk ticket if you want this changed"%(requestor, user_id, acctgroup)
+                grinfo = "%s may only look at  thier own output for group %s. This is configurable, please open a service desk ticket if you want this changed"%(rel_link(requestor), acctgroup)
                 user_id = requestor
+                rc = {'out':  grinfo }
+                return rc
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

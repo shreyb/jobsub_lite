@@ -193,7 +193,9 @@ class JobSettings(object):
         self.settings['dummy_script'] = "%s/returnOK.sh"%(os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs']=10000
-        #self.settings['job_count'] = 0
+        self.settings['job_expected_max_lifetime'] = 21600
+        self.settings['set_expected_max_lifetime'] = None
+
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -312,6 +314,20 @@ class JobSettings(object):
             help=' '.join(["""kill user job if still running after NUMBER[UNITS] of time .""",
             """UNITS may be `s' for seconds (the default), `m' for minutes,""",
             """`h' for hours or `d' h for days."""]))
+
+        generic_group.add_option("--expected-lifetime", dest="set_expected_max_lifetime",action="store",
+            type="string",metavar='EXPECTED_LIFETIME',
+            help=' '.join(["""Expected lifetime of the job.  Used to match against""",
+            """resources advertising that they have REMAINING_LIFETIME seconds left.  The shorter your""",
+            """EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially""",
+            """match against and the quicker it should start.  If your job runs longer than """,
+            """EXPECTED_LIFETIME it *may* be killed by the batch system.  If your specified """,
+            """EXPECTED_LIFETIME is too long your job may take a long time to match against """,
+            """a resource a sufficiently long REMAINING_LIFETIME.  Valid inputs for this parameter""",
+            """are 'short', 'medium', 'long', or an integer which represents EXPECTED_LIFETIME in seconds.""",
+            """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
+            """are '6 hours' , '12 hours' , and '24 hours' but this may change in the future.""",
+            """Default value of  EXPECTED_LIFETIME is 6 hours."""]))
 
 
         generic_group.add_option("--maxConcurrent", 
@@ -515,6 +531,29 @@ class JobSettings(object):
         generic_group.add_option("-x","--X509_USER_PROXY", dest="x509_user_proxy",action="store",type="string",
             help="location of X509_USER_PROXY (expert mode)")
 
+    def expectedLifetimeOK(self, a_str):
+        try:
+            i = int(a_str)
+            self.settings['job_expected_max_lifetime'] = i
+            self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%i)
+            return True
+        except ValueError:
+            try:
+                units = a_str.lower()
+                if units in ['short','medium','long']:
+                    key = 'job_expected_max_lifetime_%s'% units
+                    val = self.settings.get(key,None)
+                    if val:
+                        self.settings['job_expected_max_lifetime'] = val
+                        self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
+                        return True
+                    else:
+                        return False
+                else:
+                    return False
+            except:
+                return False
+
     def timeFormatOK(self,a_str):
         try:
             i = int(a_str)
@@ -575,6 +614,12 @@ class JobSettings(object):
         if settings.get('timeout') and not self.timeFormatOK(settings['timeout']):
             err = "--timeout '%s' format incorrect" % settings['timeout']
             raise InitializationError(err)
+
+        if settings.get('set_expected_max_lifetime') and \
+           not self.expectedLifetimeOK(settings['set_expected_max_lifetime']):
+           err = "--expected-lifetime '%s' format incorrect" % settings['set_expected_max_lifetime']
+           raise InitializationError(err)
+       
 
         if int(settings['queuecount']) < 1:
             err = "-N  must be a positive number"
@@ -711,7 +756,7 @@ class JobSettings(object):
         settings=self.settings
         f = open(settings['wrapfile'], 'a')
         tlimit=''
-        if settings['timeout']:
+        if settings.get('timeout'):
             tlimit = "timeout %s " % settings['timeout']
             
         ifdh_cmd=settings['ifdh_cmd']
@@ -1345,7 +1390,8 @@ class JobSettings(object):
         if settings['needs_appending']:
             if 'lines' not in settings:
                 settings['lines']=[]
-            settings['lines'].append(thingy)
+            if thingy not in settings['lines']:
+                settings['lines'].append(thingy)
 
     def handleResourceProvides(self,f):
         settings=self.settings 

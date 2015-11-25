@@ -141,6 +141,12 @@ def parse_opts(argv):
         parser.print_help()
         sys.exit(1)
 
+    p=re.compile('^[1-9]+[0-9]+\.[0-9]+\@\w+.fnal.gov$')
+    if not p.match(options.jobId):
+        print "ERROR: --jobid '%s' is malformed" % options.jobId
+        sys.exit(1)
+
+
     return options
 
 def checkDestDir(destDir):

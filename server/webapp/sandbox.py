@@ -175,13 +175,13 @@ class SandboxResource(object):
             return serve_file(zip_file, 'application/x-download', 'attachment')
 
         else:
-            # TODO: PM
+            # TO:DO: PM
             # Do we need this logic anymore? fetchlog now supports a much
             # cleaner option --list-sandboxes
             # return error for no data found
             cherrypy.response.status = 404
             outmsg = """
-                Information for job %s not found.  If you used jobsub_q or jobsub_history to find this job ID, double check that you specified --group incorrectly.  If the job is more than a few weeks old, it was probably removed to save space. Jobsub_fetchlog --list will show the  sandboxes that are still on the server."""  %job_id
+                Information for job %s not found.  Make sure that you specified the appropriate Role for this job. The role must be the same as what it was for submission.  If you used jobsub_q or jobsub_history to find this job ID, double check that you specified --group incorrectly.  If the job is more than a few weeks old, it was probably removed to save space. Jobsub_fetchlog --list will show the  sandboxes that are still on the server."""  %job_id
             rc = {'err': outmsg}
 
         return rc

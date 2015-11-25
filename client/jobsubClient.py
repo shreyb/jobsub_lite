@@ -435,10 +435,12 @@ class JobSubClient:
     def checkID(self,jobid):
         if jobid is None:
             return jobid
-        elif '@' in jobid:
-            return jobid
         else:
-            raise JobSubClientError("ERROR: jobid must be of the form 'jobnumber@server' example: 123099.0@fifebatch.fnal.gov")
+            p=re.compile('^[1-9]+[0-9]+\.[0-9]+\@\w+.fnal.gov$')
+            if not p.match(jobid):
+                err = "ERROR: --jobid '%s' is malformed" % jobid
+                raise JobSubClientError(err)
+            return jobid
 
 
     def release(self, jobid=None, uid=None, constraint=None):
@@ -536,6 +538,7 @@ class JobSubClient:
                                                      self.acctRole is not None, 
                                                      self.forcex) )
         if jobid:
+            jobid=self.checkID(jobid)
             self.server="https://%s:8443"%jobid.split('@')[-1]
             item = jobid
             if self.acctRole:

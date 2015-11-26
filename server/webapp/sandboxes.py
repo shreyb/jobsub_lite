@@ -6,7 +6,8 @@ import socket
 import sys
 import subprocessSupport
 from auth import check_auth, get_client_dn
-from jobsub import is_supported_accountinggroup, get_command_path_root, sandbox_readable_by_group
+from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import sandbox_readable_by_group, sandbox_allowed_browsable_file_types
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 
@@ -23,15 +24,20 @@ class SandboxesResource(object):
         """
         command_path_root = get_command_path_root()
         if file_id or job_id:
+            allowed_list = sandbox_allowed_browsable_file_types()
             if user_id != cherrypy.request.username:
                 sandbox_dir = "%s/%s/%s/%s" %\
                         (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
                 make_sandbox_readable(sandbox_dir,user_id)
 
         if file_id:
-            cherrypy.request.output_format = 'pre'
-            cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
-            (command_path_root,cherrypy.request.acctgroup,user_id,job_id, file_id)
+            suffix = ".%s" % file_id.split('.')[-1]
+            if suffix in allowed_list:
+                cherrypy.request.output_format = 'pre'
+                cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
+                (command_path_root,cherrypy.request.acctgroup,user_id,job_id, file_id)
+            else:
+                return {'out':'you do not have permission to browse %s'%file_id}
         elif job_id:
             cmd = "find  %s/%s/%s/%s/ -maxdepth 1 -mindepth 1 -ls" %\
             (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
@@ -62,10 +68,14 @@ class SandboxesResource(object):
             elif job_id:
                 parts = line.split()
                 if len(parts):
-                   file = os.path.basename(parts[-1])
-                   p2 = parts[-5:-1]
-                   p2.insert(0,rel_link(file))
-                   outlist.append(' '.join(p2))
+                    filename = os.path.basename(parts[-1])
+                    p2 = parts[-5:-1]
+                    suffix = ".%s" % filename.split('.')[-1]
+                    if suffix in allowed_list:
+                        p2.insert(0,rel_link(filename))
+                    else:
+                        p2.insert(0,filename)
+                    outlist.append(' '.join(p2))
             elif user_id:
                 fp = line
                 f = os.path.basename(line)

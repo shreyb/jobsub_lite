@@ -227,6 +227,7 @@ class DagParser(object):
         self.snum = 1
         self.nodeDict = {}
         self.dagDict = {}
+        self.pcList = []
 
 #######################################################################
 
@@ -445,25 +446,35 @@ class DagParser(object):
         else:
             return jlist
     
-    def generateJobRelationships(self, outFile, jlist):
+    def generateParentChildList(self, jlist):
         par_or_ser = getattr(jlist, 'tag', False)
         if par_or_ser:
             for n,i in enumerate(jlist):
-                if n > 0 :
+
+                if n == 0:
+                    self.generateParentChildList(jlist[n])
+
+                elif n > 0 :
     
                     p = self.getJobs(jlist[n-1], ndx=-1)
-                    self.generateJobRelationships(outFile, jlist[n-1])
+                    self.generateParentChildList(jlist[n-1])
         
                     c = self.getJobs(jlist[n], ndx=0)
-                    self.generateJobRelationships(outFile, jlist[n])
+                    self.generateParentChildList(jlist[n])
     
-                    if par_or_ser != 'parallel':
-                        with open(outFile,"a") as f:
-                            f.write("parent %s child %s  \n"%(p, c))
-                            f.close()
+                    if par_or_ser == 'serial':
+                        pc = "parent %s child %s" % (p,c)
+                        if pc not in self.pcList:
+                            self.pcList.append(pc)
     
     
     
+    def printJobRelationships(self, outFile):
+        with open(outFile,"a") as f:
+            for line in self.pcList:
+                f.write("%s\n"%line)
+        f.close()
+
     def reportState(self):
         print "processingSerial:%s processingParallel:%s"%\
             (self.processingSerial, self.processingParallel)
@@ -690,7 +701,8 @@ class DagParser(object):
         #self.generateDependencies(outputFile,self.jobList)
         jobList=L(self.dagDict.get('dag'), tag='serial')
         self.expand(jobList)
-        self.generateJobRelationships(outputFile, jobList)
+        self.generateParentChildList(jobList)
+        self.printJobRelationships(outputFile)
 
 
 #this should really use optparse but too many of the input

@@ -12,5 +12,5 @@ cd -
 export SERVER=https://${MACH}:8443
 mkdir -p $GROUP
 cd $GROUP
-$EXEPATH/jobsub_fetchlog.py --group THIS_GROUP_MUST_FAIL $SERVER_SPEC --jobid 1.0@${MACH} 
+$EXEPATH/jobsub_fetchlog.py --group THIS_GROUP_MUST_FAIL $SERVER_SPEC --jobid 10.0@${MACH} 
 cd -

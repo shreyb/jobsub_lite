@@ -83,9 +83,9 @@ echo
 echo 
 echo quick and dirty report of which pages are implemented or not
 echo
-grep 'HTTP/1.1' ${MACH}.*out
-grep 'HTTP/1.1' ${MACH}.*out | cut -d ' ' -f2-4 | sort | uniq -c
-grep Exception ${MACH}*out
+grep 'HTTP/1.1' ${MACH}*${GROUP}*.out
+grep 'HTTP/1.1' ${MACH}*${GROUP}*.out | cut -d ' ' -f2-4 | sort | uniq -c
+grep Exception ${MACH}*${GROUP}*.out
 if [ $? = 0 ] ; then
     echo 'FAILED'
     exit 1

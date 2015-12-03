@@ -774,6 +774,8 @@ class JobSettings(object):
         log_cmd = """%s log "%s:%s "\n"""%\
                     (ifdh_cmd,settings['user'],log_msg)
         f.write(log_cmd)
+        f.write(JobUtils().poms_info())
+        f.write("""%s log poms_data=$poms_data\n""" % ifdh_cmd)
         f.write("echo `date` %s"%log_msg)
         f.write(">&2 echo `date` %s"%log_msg)
         if settings['joblogfile'] != "":

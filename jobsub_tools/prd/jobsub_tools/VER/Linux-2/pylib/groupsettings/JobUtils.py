@@ -161,7 +161,18 @@ __TARFILE_FOLLOWS__
         return xtrct
 
         
-        
+    def poms_info(self):
+        poms_str="""
+
+export NODE_NAME=`hostname`
+export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
+export VENDOR_ID=`grep vendor_id /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
+export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_DEFINITION_ID'","task_id":"'$POMS_TASK_ID'","job_id":"'$POMS_JOB_ID'","batch_id":"'$JOBSUBJOBID'","host_site":"'$HOST_SITE'","bogomips":"'$BOGOMIPS'","node_name":"'$NODE_NAME'","vendor_id":"'$VENDOR_ID'"}'
+echo poms_data:$poms_data
+
+        """
+        return poms_str
+
     def print_usage(self):
         usage = """
                 This method should never be called.  Please open a service desk ticket

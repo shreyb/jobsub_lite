@@ -33,6 +33,32 @@ def is_supported_accountinggroup(accountinggroup):
 
     return rc
 
+def sandbox_readable_by_group(acctgroup):
+    rc = False
+    try:
+        p = JobsubConfigParser()
+        rc =  p.get(acctgroup,'sandbox_readable_by_group')
+        logger.log('sandbox_readable_by_group:%s is %s'%(acctgroup,rc))
+        return rc
+    except:
+        logger.log('Failed to get sandbox_readable_by_group: ', traceback=True)
+
+    return rc
+
+def sandbox_allowed_browsable_file_types():
+    rc = []
+    try:
+        p = JobsubConfigParser()
+        s =  p.get(p.submit_host,'output_files_web_browsable_allowed_types')
+        if type(s) is str:
+            rc = s.split()
+        logger.log('sandbox_allowed_browsable_file_types is %s'%(rc))
+        return rc
+    except:
+        logger.log('Failed to get sandbox_readable_by_group: ', traceback=True)
+
+    return rc
+
 
 def get_supported_accountinggroups():
     rc = list()

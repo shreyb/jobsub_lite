@@ -93,6 +93,14 @@ def parse_opts(argv):
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
+    parser.add_option('--user',
+                      dest='user',
+                      type='string',
+                      action='store',
+                      metavar='<user>',
+                      default=None,
+                      help='VOMS Role for priorities and accounting')
+
     parser.add_option('--archive-format',
                       dest='format',
                       type='string',
@@ -141,6 +149,12 @@ def parse_opts(argv):
         parser.print_help()
         sys.exit(1)
 
+    p=re.compile('^[1-9]+[0-9]+\.[0-9]+\@\w+.fnal.gov$')
+    if not p.match(options.jobId):
+        print "ERROR: --jobid '%s' is malformed" % options.jobId
+        sys.exit(1)
+
+
     return options
 
 def checkDestDir(destDir):
@@ -153,16 +167,20 @@ def checkDestDir(destDir):
             raise
 
 def list_sandboxes(options):
+    
     creds = get_client_credentials()
     cert = creds['cert']
     cmd = "openssl x509 -in %s -noout -subject"%cert
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    userlist = re.findall('^.*/CN=UID:(.*$)',cmd_out)
-    if len(userlist)>0 and len(userlist[0])>0:
-        user=userlist[0]
+    if options.user:
+        user = options.user
     else:
-        err = "cannot extract user information from %s"%cert 
-        sys.exit(err)
+        userlist = re.findall('^.*/CN=UID:(.*$)',cmd_out)
+        if len(userlist)>0 and len(userlist[0])>0:
+            user=userlist[0]
+        else:
+            err = "cannot extract user information from %s"%cert 
+            sys.exit(err)
 
     client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [], extra_opts={'debug':options.debug})
 
@@ -176,6 +194,9 @@ def list_sandboxes(options):
         http_code = client.changeJobState(submitURL, 'GET',
                                           ssl_verifyhost=False)
         rc += http_code_to_rc(http_code)
+        if options.debug:
+            print('CREDENTIALS    : %s\n' % creds)
+            print('ACTION URL     : %s\n' % submitURL)
     return rc
 
 
@@ -203,7 +224,7 @@ def get_sandbox(options):
 
     if options.debug:
         print('CREDENTIALS    : %s\n' % creds)
-        print('SANDBOX_URL    : %s\n' % sandboxURL)
+        print('ACTION URL     : %s\n' % sandboxURL)
 
     try:
         checkDestDir(options.destdir)

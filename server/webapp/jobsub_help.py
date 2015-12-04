@@ -26,7 +26,8 @@ class JobsubHelpResource(object):
 
 
     @cherrypy.expose
-    @format_response
+    @format_response(output_format='pre')
+    #@format_response
     def index(self, acctgroup, **kwargs):
         try:
             subject_dn = get_client_dn()

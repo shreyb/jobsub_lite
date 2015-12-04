@@ -1,5 +1,111 @@
 
 ================================================================================
+v1.1.9
+================================================================================
+
+Client
+-------
+
+* Feature #4926  Add a self-destruct timer to jobsub-submit.
+                 --timeout=NUMBER[UNITS]
+                         kill user job if still running after NUMBER[UNITS] of
+                         time . UNITS may be `s' for seconds (the default), `m'
+                          for minutes, `h' for hours or `d' h for days.
+
+* Bug    #10448  check jobsub_submit for proper units , exit with helpful
+                 error message if following is not adhered to:
+
+                 --disk=NUMBER[UNITS]
+                          Request worker nodes have at least NUMBER[UNITS] of
+                          disk space.    If UNITS is not specified default is
+                          'KB' (a typo in earlier versions  said that default
+                          was 'MB', this was wrong).  Allowed values for  UNITS
+                          are 'KB','MB','GB', and 'TB'
+                  --memory=NUMBER[UNITS]
+                          Request worker nodes have at least NUMBER[UNITS]  of
+                          memory.              If UNITS is not specified default
+                          is 'MB'.   Allowed values for              UNITS are
+                          'KB','MB','GB', and 'TB'
+                  --cpu=NUMBER        
+                           request worker nodes have at least NUMBER cpus
+
+* Feature #10715 new jobsub_submit server option --expected-lifetime
+
+                 Expected lifetime of the job. Used to match against
+                 resources advertising that they have
+                 REMAINING_LIFETIME seconds left. The shorter your
+                 EXPECTED_LIFTIME is, the more resources (aka slots,
+                 cpus) your job can potentially match against and the
+                 quicker it should start. If your job runs longer than
+                 EXPECTED_LIFETIME it may be killed by the batch
+                 system. If your specified EXPECTED_LIFETIME is too
+                 long your job may take a long time to match against a
+                 resource a sufficiently long REMAINING_LIFETIME.
+                 Valid inputs for this parameter are 'short', 'medium',
+                 'long', or an integer which represents
+                 EXPECTED_LIFETIME in seconds. The values for
+                 'short','medium',and 'long' are configurable by Grid
+                 Operations, they currently are '6 hours' , '12 hours'
+                 , and '24 hours' but this may change in the future.
+                 Default value of EXPECTED_LIFETIME is 6 hours.)
+
+* Feature #10727 Validate jobid on client commands
+                 jobids sent to clients via --job or --jobid now are checked
+                 for extra characters that do not belong and exit with useful
+                 error message if detected.
+
+Server
+-----------
+
+* Feature #6954  Add configurable option to server for maximum number
+                 of processes in one cluster.  To protect server resources
+                 jobsub_submit -N is now limited to the value 
+
+                 jobsub_max_cluster_procs = 10000
+         
+                 in the jobsub.ini file.  
+
+* Feature #9671  add a Role reminder to jobsub_fetchlog error message
+
+* Feature #10643 poms_data json data structure sent to ifdh log 
+
+* Feature #10819 Web interface to job logs.
+
+                 To test: load your pkcs12 cert (typically generated with
+                 get-cert) into your browser.  In your browser, go to
+
+                 https://jobsub-server-host.fnal.gov:8443/jobsub/acctgroups/
+
+                 After the 'really grant an exception to this servers certificate'
+                 hoops are passed through, A list of links to supported groups on 
+                 the server will appear in the browser.  Click on the group you
+                 are a member of in VOMS, other groups will give you authentication
+                 errors.  Click on the 'sandboxes for completed jobs' link.
+                 You will then either be able to browse your own sandbox directory
+                 or all users sandbox directories depending on the setting allowing
+                 this documented in Feature #10822 below.  A list of jobsub jobid
+                 links should appear.  Click on one of these and a list of files
+                 in the sandbox should appear.  Most of these files are now directly
+                 readable in the browser.  File types that are readable are configured
+                 in the jobsub.ini configuration file with the setting
+
+                 output_files_web_browsable_allowed_types = '.list .of .extensions .out .err .etc'
+             
+* Feature #10822 Make it possible for all members of a group to do
+                 jobsub_fetchlog of other members of the group. This is
+                 a configurable option.  For all supported groups, setting
+                 the jobsub.ini parameter to
+
+                 sandbox_readable_by_group = True                 
+               
+                 turns this feature on.  It is 'off' by default.
+
+* Bug     #10918 Bug in Dag generation
+
+* Bug     #11051 server doing too many kinits for user jobs
+
+
+================================================================================
 v1.1.8
 ================================================================================
 Client

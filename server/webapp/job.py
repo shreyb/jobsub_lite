@@ -172,7 +172,7 @@ class AccountJobsResource(object):
    
 
     @cherrypy.expose
-    @format_response
+    @format_response(output_format='pre')
     @check_auth(pass_through='GET')
 
     def index(self, acctgroup, job_id=None,  **kwargs):

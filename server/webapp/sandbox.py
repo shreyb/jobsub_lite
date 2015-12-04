@@ -7,7 +7,7 @@ from cherrypy.lib.static import serve_file
 
 from util import create_zipfile, create_tarfile
 from auth import check_auth
-from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import is_supported_accountinggroup, get_command_path_root, sandbox_readable_by_group
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
@@ -159,40 +159,30 @@ class SandboxResource(object):
                                           zip_file=zip_file)
             cherrypy.request.hooks.attach('after_error_response', cleanup,
                                           zip_file=zip_file)
+            owner = os.path.basename(os.path.dirname(zip_path))
+            if owner != cherrypy.request.username:
+                if sandbox_readable_by_group(acctgroup):
+                    make_sandbox_readable(zip_path, owner)
+                else:
+                    err = "User %s is not allowed  to read %s, owned by %s on this server.  "%(cherrypy.request.username,job_id,owner)
+                    err += "This is configurable, if you believe this to be in error please open a service desk ticket."
+                    cherrypy.response.status = 500
+                    rc = {'err':err}
+                    return rc
 
-            make_sandbox_readable(zip_path, cherrypy.request.username)
             create_archive(zip_file, zip_path, job_id, out_format, partial=partial)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download', 'attachment')
 
         else:
-            # TODO: PM
+            # TO:DO: PM
             # Do we need this logic anymore? fetchlog now supports a much
             # cleaner option --list-sandboxes
             # return error for no data found
             cherrypy.response.status = 404
-            sandbox_cluster_ids = list()
-            if os.path.exists(sbx_final_dir):
-                logger.log('Looking for available sandboxes %s'%sbx_final_dir)
-                dirs = os.listdir(sbx_final_dir)
-                for dir in dirs:
-                    if os.path.islink(os.path.join(sbx_final_dir, dir)) and dir.find('@')>0:
-                        frag="""%s"""%(dir)
-                        sandbox_cluster_ids.append(frag)
-                sandbox_cluster_ids.sort()
-
-            if sandbox_cluster_ids:
-                outmsg = """
-                Information for job %s not found.  If you used jobsub_q or jobsub_history to 
-                find this job ID, you may have specified --group incorrectly.  If the job is old, it may have 
-                been already removed to save space.  For user %s, --group %s, the server can retrieve 
-                information for these job_ids:"""% (job_id, cherrypy.request.username, acctgroup)
-                sandbox_cluster_ids.insert(0, outmsg)
-                rc = {'out': sandbox_cluster_ids}
-            else:
-                err = 'No sandbox data found for user: %s, acctgroup: %s, job_id %s' %\
-                        (cherrypy.request.username , acctgroup, job_id)
-                rc = {'err':err}
+            outmsg = """
+                Information for job %s not found.  Make sure that you specified the appropriate Role for this job. The role must be the same as what it was for submission.  If you used jobsub_q or jobsub_history to find this job ID, double check that you specified --group incorrectly.  If the job is more than a few weeks old, it was probably removed to save space. Jobsub_fetchlog --list will show the  sandboxes that are still on the server."""  %job_id
+            rc = {'err': outmsg}
 
         return rc
 
@@ -202,6 +192,7 @@ class SandboxResource(object):
     def index(self, acctgroup, job_id, partial=None, **kwargs):
         logger.log('job_id:%s'%job_id)
         logger.log('partial:%s'%partial)
+        logger.log('kwargs:%s'%kwargs)
         cherrypy.request.role = kwargs.get('role')
         cherrypy.request.username = kwargs.get('username')
         cherrypy.request.vomsProxy = kwargs.get('voms_proxy')

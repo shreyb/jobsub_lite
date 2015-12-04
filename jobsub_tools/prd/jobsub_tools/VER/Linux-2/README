@@ -21,6 +21,69 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+v1_4_2 12/3/15
+===============================================
+
+* Feature #4926  Add a self-destruct timer to jobsub-submit.
+                 --timeout=NUMBER[UNITS]
+                         kill user job if still running after NUMBER[UNITS] of
+                         time . UNITS may be `s' for seconds (the default), `m'
+                         for minutes, `h' for hours or `d' h for days.
+
+
+* Bug    #10448  check jobsub_submit for proper units , exit with helpful
+                 error message if following is not adhered to:
+
+                 --disk=NUMBER[UNITS]
+                          Request worker nodes have at least NUMBER[UNITS] of
+                          disk space.    If UNITS is not specified default is
+                          'KB' (a typo in earlier versions  said that default
+                          was 'MB', this was wrong).  Allowed values for  UNITS
+                          are 'KB','MB','GB', and 'TB'
+                  --memory=NUMBER[UNITS]
+                          Request worker nodes have at least NUMBER[UNITS]  of
+                          memory.              If UNITS is not specified default
+                          is 'MB'.   Allowed values for              UNITS are
+                          'KB','MB','GB', and 'TB'
+                  --cpu=NUMBER
+                           request worker nodes have at least NUMBER cpus
+
+
+
+* Feature #10715 new jobsub_submit server option --expected-lifetime
+
+                 Expected lifetime of the job. Used to match against
+                 resources advertising that they have
+                 REMAINING_LIFETIME seconds left. The shorter your
+                 EXPECTED_LIFTIME is, the more resources (aka slots,
+                 cpus) your job can potentially match against and the
+                 quicker it should start. If your job runs longer than
+                 EXPECTED_LIFETIME it may be killed by the batch
+                 system. If your specified EXPECTED_LIFETIME is too
+                 long your job may take a long time to match against a
+                 resource a sufficiently long REMAINING_LIFETIME.
+                 Valid inputs for this parameter are 'short', 'medium',
+                 'long', or an integer which represents
+                 EXPECTED_LIFETIME in seconds. The values for
+                 'short','medium',and 'long' are configurable by Grid
+                 Operations, they currently are '6 hours' , '12 hours'
+                 , and '24 hours' but this may change in the future.
+                 Default value of EXPECTED_LIFETIME is 6 hours.)
+
+ 
+
+* Feature #6954  Add configurable option to server for maximum number
+                 of processes in one cluster.  To protect server resources
+                 jobsub_submit -N is now limited to the value
+
+                 jobsub_max_cluster_procs = 10000
+
+                 in the jobsub.ini file.
+
+* Feature #10643 poms_data json data structure sent to ifdh log
+* Bug     #10918 Bug in Dag generation
+
+
 
 v1_4_1 11/5/15
 ================================================

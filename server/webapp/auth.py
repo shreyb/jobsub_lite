@@ -21,6 +21,7 @@
 import os
 import sys
 import re
+import time
 import traceback
 import cherrypy
 import logger
@@ -611,7 +612,9 @@ def check_auth(func=None, pass_through=None):
     return wrapper
 
 def needs_refresh(filepath,agelimit=3600):
+    logger.log("%s %s"%(filepath,agelimit))
     if not os.path.exists(filepath):
+        logger.log("%s does not exist, need to refresh"%filepath)
         return True
     if agelimit == sys.maxint:
         return False
@@ -622,7 +625,10 @@ def needs_refresh(filepath,agelimit=3600):
         st=os.stat(filepath)
         age=(time.time()-st.st_mtime)
     except:
+        err = '%s'% sys.exc_info()[1]
+        logger.log(err)
         pass
+    logger.log('age of %s is %s, compare to agelimit=%s'%(filepath,age,agelimit))
     if age>agelimit:
         rslt=True
     return rslt

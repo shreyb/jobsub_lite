@@ -436,7 +436,7 @@ class JobSubClient:
         if jobid is None:
             return jobid
         else:
-            p=re.compile('^[1-9]+[0-9]+\.[0-9]+\@\w+.fnal.gov$')
+            p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
             if not p.match(jobid):
                 err = "ERROR: --jobid '%s' is malformed" % jobid
                 raise JobSubClientError(err)

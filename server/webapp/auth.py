@@ -153,6 +153,7 @@ def mk_temp_fname( fname ):
 
 def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=None):
 
+    logger.log('cmd=%s proxy_fname=%s tmp_proxy_fname=%s role=%s '%(cmd, proxy_fname, tmp_proxy_fname, role))
     voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_info_exe:
         raise OtherAuthError("Unable to find command 'voms-proxy-init' in the PATH.")
@@ -162,11 +163,18 @@ def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=N
     except:
         # Catch and ignore warnings
         proxy_created_pattern = 'Creating proxy  Done'
+        proxy_pattern_2 = 'Warning: your certificate and proxy will expire'
         tb = traceback.format_exc()
-        if len(re.findall(proxy_created_pattern, tb)):
+        if len(re.findall(proxy_created_pattern, tb)) :
+            logger.log('Proxy was created. Ignoring warnings.')
+            logger.log('Output from running voms-proxy-init:\n%s' % tb) 
+        elif len(re.findall(proxy_pattern_2, tb)):
             logger.log('Proxy was created. Ignoring warnings.')
             logger.log('Output from running voms-proxy-init:\n%s' % tb) 
         else:
+            logger.log('failed tb=%s'%tb)
+            logger.log('removing %s'%tmp_proxy_fname)
+
             # Anything else we should just raise
             os.remove(tmp_proxy_fname)
             raise
@@ -311,6 +319,8 @@ def authenticate(dn, acctgroup, acctrole):
         try:
             if method.lower() == 'gums':
                 return authenticate_gums(dn, acctgroup, acctrole)
+            elif method.lower() == 'myproxy':
+                return authenticate_gums(dn, acctgroup, acctrole)
             elif method.lower() == 'kca-dn':
                 return authenticate_kca_dn(dn)
             else:
@@ -350,15 +360,38 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
     logger.log('Using x509_proxy_name=%s'%x509_cache_fname)
     return x509_cache_fname
 
+
+def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
+    methods = jobsub.get_authentication_methods(acctgroup)
+    logger.log("Authorizing method precedence: %s" % methods)
+    for method in methods:
+        cherrypy.response.status = 200
+        logger.log("Authorizing using method: %s" % method)
+        try:
+            if method.lower() == 'gums':
+                return authorize_kca(dn, username, acctgroup, acctrole, age_limit)
+            elif method.lower() == 'myproxy':
+                return authorize_myproxy(dn, username, acctgroup, acctrole, age_limit)
+            elif method.lower() == 'kca-dn':
+                return authorize_kca(dn, username, acctgroup, acctrole, age_limit)
+            else:
+                logger.log("Unknown authorization method: %s" % method)
+        except:
+            logger.log("Failed to authorize using method: %s" % method)
+
+    logger.log("Failed to authorize dn '%s' for group '%s' with role '%s' using known authentication methods" % (dn, acctgroup, acctrole))
+    raise AuthenticationError(dn, acctgroup)
+
+
 #for stress testing,add as second parameter to needs_refresh()
 # these times are in seconds, not hours so refresh every 24 seconds for daily
 #REFRESH_DAILY=24
 #REFRESH_EVERY_4_HOURS=4
 
-def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
+def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     # TODO: Break this into smaller functions. Krb5 related code 
     #       should be split out
-
+    logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
     jobsubConfig = jobsub.JobsubConfig()
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     krb5cc_dir = jobsubConfig.krb5ccDir
@@ -433,6 +466,49 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
         if os.path.exists(new_cache_fname):
             os.remove(new_cache_fname)
             logger.log("cleanup:rm %s"% new_cache_fname)
+
+    return x509_cache_fname
+
+
+def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
+    logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
+    jobsubConfig = jobsub.JobsubConfig()
+
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
+    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
+    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
+                                   os.path.basename(x509_cache_fname))
+    x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
+                                       delete=False)
+    x509_tmp_fname = x509_tmp_file.name
+    x509_tmp_file.close()
+    try:
+        if needs_refresh(x509_cache_fname, age_limit):
+            p = JobsubConfigParser()
+            myproxy_exe=spawn.find_executable("myproy-logon")
+            vomsproxy_exe=spawn.find_executable("voms-proxy-init")
+            myproxy_server = p.get('default','myproxy_server')
+            child_env = os.environ.copy()
+            child_env['X509_USER_CERT']=child_env['JOBSUB_SERVER_X509_USER_CERT']
+            child_env['X509_USER_KEY']=child_env['JOBSUB_SERVER_X509_USER_KEY']
+            cmd = "%s -n -l %s -s %s -o %s"%('myproxy-logon',username,myproxy_server,x509_tmp_fname)
+            logger.log('%s'%cmd)
+            out, err = subprocessSupport.iexe_cmd(cmd,child_env=child_env)
+            logger.log('out= %s'%out)
+            logger.log('err= %s'%err)
+            voms_str = get_voms(acctgroup)
+            cmd2 = "%s -cert %s -valid 24:00 -rfc -ignorewarn -dont-verify-ac -noregen -debug -voms %s -userconf /dev/null -out %s" %(vomsproxy_exe, x509_tmp_fname, voms_str, x509_tmp_fname)
+            logger.log(cmd2)
+
+    except:
+        logger.log(traceback.format_exc())
+        raise AuthorizationError(dn, acctgroup)
+    child_env={'X509_USER_PROXY':x509_tmp_fname}
+    make_proxy_from_cmd(cmd2, x509_cache_fname, x509_tmp_fname, role=acctrole, env_dict=child_env )
+    if os.path.exists(x509_tmp_fname):
+        os.remove(x509_tmp_fname)
+        logger.log("cleanup:rm %s"%x509_tmp_fname)
 
     return x509_cache_fname
 

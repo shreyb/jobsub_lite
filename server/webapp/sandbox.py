@@ -169,7 +169,8 @@ class SandboxResource(object):
                     cherrypy.response.status = 500
                     rc = {'err':err}
                     return rc
-
+            else:
+                 make_sandbox_readable(zip_path, owner)
             create_archive(zip_file, zip_path, job_id, out_format, partial=partial)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download', 'attachment')

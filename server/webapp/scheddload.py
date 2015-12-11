@@ -2,7 +2,7 @@ import cherrypy
 import logger
 import sys
 import os
-from condor_commands import ui_condor_status_totaljobs
+from condor_commands import ui_condor_status_totalrunningjobs
 
 from auth import check_auth
 from format import format_response
@@ -13,7 +13,7 @@ from format import format_response
 class ScheddLoadResource(object):
 
     def doGET(self, kwargs):
-	jobs = ui_condor_status_totaljobs()
+	jobs = ui_condor_status_totalrunningjobs()
 	return {'out':jobs.split('\n')}
 
     @cherrypy.expose

@@ -487,7 +487,7 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
         if needs_refresh(x509_cache_fname, age_limit):
             p = JobsubConfigParser()
             myproxy_exe=spawn.find_executable("myproy-logon")
-            vomsproxy_exe=spawn.find_executable("voms-proxy-init")
+            vomsproxy_exe=spawn.find_executable("voms-proxy-info")
             myproxy_server = p.get('default','myproxy_server')
             child_env = os.environ.copy()
             child_env['X509_USER_CERT']=child_env['JOBSUB_SERVER_X509_USER_CERT']
@@ -498,14 +498,27 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             logger.log('out= %s'%out)
             logger.log('err= %s'%err)
             voms_str = get_voms(acctgroup)
-            cmd2 = "%s -cert %s -valid 24:00 -rfc -ignorewarn -dont-verify-ac -noregen -debug -voms %s -userconf /dev/null -out %s" %(vomsproxy_exe, x509_tmp_fname, voms_str, x509_tmp_fname)
+            cmd2 = "%s  -all -file %s " %(vomsproxy_exe, x509_tmp_fname)
             logger.log(cmd2)
+            out2, err2 = subprocessSupport.iexe_cmd(cmd2)
+            if not acctrole:
+                acctrole="Analysis"
+            search_pat = "%s/Role=%s/Capability"%(acctgroup,acctrole)
 
+            if (search_pat in out2) and ('VO' in out2):
+                logger.log('found  %s , authenticated successfully'% (search_pat))
+                jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
+            else:
+                logger.log('failed to find %s in %s'%(search_pat,out2))
+                t1=search_pat in out2
+                t2='VO' in out2
+                logger.log('test (%s in out2)=%s test(VO in out2)=%s'%(search_pat,t1,t2) )
+                os.remove(x509_tmp_fname)
+                raise OtherAuthError("unable to authenticate with role='%s'.  Is this a typo?" % acctrole)
+    
     except:
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
-    child_env={'X509_USER_PROXY':x509_tmp_fname}
-    make_proxy_from_cmd(cmd2, x509_cache_fname, x509_tmp_fname, role=acctrole, env_dict=child_env )
     if os.path.exists(x509_tmp_fname):
         os.remove(x509_tmp_fname)
         logger.log("cleanup:rm %s"%x509_tmp_fname)

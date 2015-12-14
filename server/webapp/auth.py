@@ -334,6 +334,16 @@ def authenticate(dn, acctgroup, acctrole):
 
 def get_gums_mapping(dn, fqan):
     exe = jobsub.get_jobsub_priv_exe()
+    #get rid of all the /CN=133990 and /CN=proxy for gums mapping
+    #is this kosher?  how would a bad guy defeat this?  
+    #
+    cn_pat = re.compile('/CN=[0-9]+')
+    for p in cn_pat.findall(dn):
+        dn = dn.replace(p,'')
+    p_pat = re.compile('/CN=proxy')
+    for p in p_pat.findall(dn):
+        dn = dn.replace(p,'')
+
     cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
@@ -471,11 +481,10 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 
 
 def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
-    logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
+    #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
     jobsubConfig = jobsub.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
     x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
@@ -492,12 +501,13 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             child_env = os.environ.copy()
             child_env['X509_USER_CERT']=child_env['JOBSUB_SERVER_X509_USER_CERT']
             child_env['X509_USER_KEY']=child_env['JOBSUB_SERVER_X509_USER_KEY']
-            cmd = "%s -n -l %s -s %s -o %s"%('myproxy-logon',username,myproxy_server,x509_tmp_fname)
+            cmd = "%s -n -l %s -s %s -o %s"%\
+                    (myproxy_exe, username, myproxy_server, x509_tmp_fname)
             logger.log('%s'%cmd)
             out, err = subprocessSupport.iexe_cmd(cmd,child_env=child_env)
             logger.log('out= %s'%out)
-            logger.log('err= %s'%err)
-            voms_str = get_voms(acctgroup)
+            if err:
+                logger.log('err= %s'%err)
             cmd2 = "%s  -all -file %s " %(vomsproxy_exe, x509_tmp_fname)
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)

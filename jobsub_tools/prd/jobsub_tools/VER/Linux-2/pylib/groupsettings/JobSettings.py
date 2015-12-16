@@ -327,7 +327,7 @@ class JobSettings(object):
             """are 'short', 'medium', 'long', or an integer which represents EXPECTED_LIFETIME in seconds.""",
             """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
             """are '6 hours' , '12 hours' , and '24 hours' but this may change in the future.""",
-            """Default value of  EXPECTED_LIFETIME is 6 hours."""]))
+            """Default value of  EXPECTED_LIFETIME is currently 24 hours."""]))
 
 
         generic_group.add_option("--maxConcurrent", 
@@ -619,6 +619,13 @@ class JobSettings(object):
            not self.expectedLifetimeOK(settings['set_expected_max_lifetime']):
            err = "--expected-lifetime '%s' format incorrect" % settings['set_expected_max_lifetime']
            raise InitializationError(err)
+        else:
+           default_lifetime = settings.get('job_expected_max_lifetime_default')
+           if not default_lifetime:
+               default_lifetime = 86400
+           if not self.expectedLifetimeOK(default_lifetime):
+               err = 'default lifetime="%s" is not allowed'%default_lifetime
+               raise InitializationError(err)
        
 
         if int(settings['queuecount']) < 1:

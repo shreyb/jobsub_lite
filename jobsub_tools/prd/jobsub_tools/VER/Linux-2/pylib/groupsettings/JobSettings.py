@@ -532,21 +532,17 @@ class JobSettings(object):
             help="location of X509_USER_PROXY (expert mode)")
 
     def expectedLifetimeOK(self, a_str):
-        print 'checking lifetime "%s"'%a_str
         try:
             i = int(a_str)
             self.settings['job_expected_max_lifetime'] = i
             self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%i)
-            print 'OK'
             return True
         except ValueError:
             try:
                 units = a_str.lower()
                 if units in ['short','medium','long']:
                     key = 'job_expected_max_lifetime_%s'% units
-                    print 'key=%s'%key
                     val = self.settings.get(key,None)
-                    print 'val=%s'%val
                     if val:
                         self.settings['job_expected_max_lifetime'] = val
                         self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)

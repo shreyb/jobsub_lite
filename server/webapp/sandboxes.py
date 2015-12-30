@@ -25,10 +25,10 @@ class SandboxesResource(object):
         command_path_root = get_command_path_root()
         if file_id or job_id:
             allowed_list = sandbox_allowed_browsable_file_types()
-            if user_id != cherrypy.request.username:
-                sandbox_dir = "%s/%s/%s/%s" %\
-                        (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
-                make_sandbox_readable(sandbox_dir,user_id)
+            #if user_id != cherrypy.request.username:
+            sandbox_dir = "%s/%s/%s/%s" %\
+                    (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
+            make_sandbox_readable(sandbox_dir,user_id)
 
         if file_id:
             suffix = ".%s" % file_id.split('.')[-1]

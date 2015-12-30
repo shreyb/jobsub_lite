@@ -54,6 +54,10 @@ Client
                  for extra characters that do not belong and exit with useful
                  error message if detected.
 
+* Bug #11132     Problem with jobsub_fetchlog found during testing 
+* Bug #11134     Problem with jobsub_fetchlog --list found during testing
+
+
 Server
 -----------
 
@@ -104,6 +108,8 @@ Server
 
 * Bug     #11051 server doing too many kinits for user jobs
 
+* Bug     #11133 change load balancing algorithm to check running jobs instead
+                 of all jobs
 
 ================================================================================
 v1.1.8

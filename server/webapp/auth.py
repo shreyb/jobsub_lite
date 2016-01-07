@@ -495,7 +495,7 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     try:
         if needs_refresh(x509_cache_fname, age_limit):
             p = JobsubConfigParser()
-            myproxy_exe=spawn.find_executable("myproy-logon")
+            myproxy_exe=spawn.find_executable("myproxy-logon")
             vomsproxy_exe=spawn.find_executable("voms-proxy-info")
             myproxy_server = p.get('default','myproxy_server')
             child_env = os.environ.copy()

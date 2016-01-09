@@ -882,7 +882,8 @@ def print_msg(msg):
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):
-        print '%s' % '\n'.join(msg)
+        for itm in msg:
+            print itm
         report_counts(msg)
     elif isinstance(msg, (dict)):
         pp = pprint.PrettyPrinter(indent=4)

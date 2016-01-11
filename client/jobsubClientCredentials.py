@@ -72,7 +72,7 @@ class X509Credentials(Credentials):
     def expired(self):
         if not self.exists():
             raise CredentialsNotFoundError()
-        now = time.time()
+        now = time.mktime(time.gmtime())
         stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
         etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
         if (stime < now) and (now < etime):

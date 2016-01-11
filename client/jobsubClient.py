@@ -34,6 +34,7 @@ import time
 import shutil
 import urllib
 from datetime import datetime 
+from signal import signal, SIGPIPE, SIG_DFL
 
 
 
@@ -879,6 +880,7 @@ def report_counts(msg):
         print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" %( jobs, completed, removed, idle, running, held, suspended) 
 
 def print_msg(msg):
+    signal(SIGPIPE,SIG_DFL)
     if isinstance(msg, (str, int, float, unicode)):
         print '%s' % (msg)
     elif isinstance(msg, (list, tuple)):

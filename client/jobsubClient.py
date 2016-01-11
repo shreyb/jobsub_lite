@@ -944,7 +944,11 @@ def get_client_credentials():
 
     1. $X509_USER_PROXY
     2. $X509_USER_CERT & $X509_USER_KEY
-    3. Default proxy location: /tmp/x509up_u<UID>
+    3. Default JOBSUB proxy location: /tmp/jobsub_x509up_u<UID> 
+       (we have been using a distinct JOBSUB proxy instead of the
+       default /tmp/x509up_u<UID> since v0.4 , the default 
+       was causing user side effects. We overlooked updating this
+       comment.  )
     4. Kerberos ticket in $KRB5CCNAME. Convert it to proxy.
     5. Report failure
     """
@@ -957,13 +961,25 @@ def get_client_credentials():
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         env_cert = os.environ.get('X509_USER_CERT')
         env_key = os.environ.get('X509_USER_KEY')
-    #elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
-    #    cred_dict['proxy'] = env_cert = env_key = constants.X509_PROXY_DEFAULT_FILE
+    elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
+        cred_dict['proxy'] =  constants.X509_PROXY_DEFAULT_FILE
+        cred_dict['cert'] =  constants.X509_PROXY_DEFAULT_FILE
+        cred_dict['key'] =  constants.X509_PROXY_DEFAULT_FILE
     if env_cert is not None:
         cred_dict['env_cert'] = cred_dict['cert'] = env_cert
         cred_dict['env_key'] = cred_dict['key'] = env_key
-    else:
-        # Look for credentials in form of kerberoes ticket
+
+    if cred_dict:
+        x509 = jobsubClientCredentials.X509Credentials(cred_dict['cert'],cred_dict['key'])
+        if x509.expired():
+            print "WARNING: %s has expired.  Attempting to regenerate valid proxy" % cred_dict['cert']
+            cred_dict = {}
+        elif not x509.isValid():
+            print "WARNING: %s appears not to be valid.  Attempting to generate valid proxy " % cred_dict['cert']
+            cred_dict = {}
+
+    if not cred_dict:
+        # Look for credentials in form of kerberos ticket
         krb5_creds = jobsubClientCredentials.Krb5Ticket()
         if krb5_creds.isValid():
             jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)

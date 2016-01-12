@@ -4,8 +4,12 @@ export SERVER=https://${MACH}:8443
 $EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --jobsub-server $SERVER  --list
 T1=$?
 echo T1=$T1
-$EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --role Production --jobsub-server $SERVER  --list
-T2=$?
+if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
+    $EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --role Production --jobsub-server $SERVER  --list
+    T2=$?
+else
+    T2=0
+fi
 echo T2=$T2
 $EXEPATH/jobsub_fetchlog.py -G GROUP_DOESNT_EXIST --jobsub-server $SERVER  --list
 if [ "$?" = "0" ]; then

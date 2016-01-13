@@ -179,8 +179,7 @@ def list_sandboxes(options):
         if len(userlist)>0 and len(userlist[0])>0:
             user=userlist[0]
         else:
-            err = "cannot extract user information from %s"%cert 
-            sys.exit(err)
+            user = os.environ.get('USER')
 
     client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [], extra_opts={'debug':options.debug})
 

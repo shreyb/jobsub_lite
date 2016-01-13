@@ -206,26 +206,33 @@ def ui_condor_q(a_filter=None,a_format=None):
     #logger.log('filter=%s format=%s'%(filter,format))
     hdr = condor_header(a_format)
     fmt = condor_format(a_format)
-    if a_filter is None:
-        cmd = 'condor_q -g %s ' % fmt
-    else:
-        cmd = 'condor_q -g %s %s' % (fmt, a_filter)
-    try:
-        all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        logger.log(cmd, logfile='condor_commands')
-        #logger.log("cmd=%s"%cmd)
-        #logger.log("rslt=%s"%all_jobs)
-        return hdr + all_jobs
-    except:
-        tb = traceback.format_exc()
-        logger.log(tb)
-        no_jobs = "All queues are empty"
-        if len(re.findall(no_jobs, tb)):
-            return no_jobs
-        else:
-            logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
-            cherrypy.response.status = 500
-            return tb
+    s_list = schedd_list()
+    all_jobs = hdr
+    for schedd in s_list:
+        try:
+            if a_filter is None:
+                cmd = 'condor_q -name %s  %s ' % (schedd, fmt)
+            else:
+                cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
+            jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+            logger.log(cmd, logfile='condor_commands')
+            all_jobs += jobs
+            #logger.log("cmd=%s"%cmd)
+            #logger.log("rslt=%s"%all_jobs)
+            #return hdr + all_jobs
+        except:
+            tb = traceback.format_exc()
+            logger.log(tb)
+            no_jobs = "All queues are empty"
+            if len(re.findall(no_jobs, tb)):
+                #return no_jobs
+                empty = schedd + ": " + no_jobs + "\n"
+                all_jobs += empty
+            else:
+                logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+                cherrypy.response.status = 500
+                return tb
+    return all_jobs
 
 def iwd_condor_q(a_filter, a_part='iwd'):
     cmd = 'condor_q -af %s  %s' % ( a_part, a_filter)

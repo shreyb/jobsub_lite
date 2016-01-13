@@ -1,5 +1,47 @@
 
 ================================================================================
+v1.1.9.1
+================================================================================
+Client
+------
+
+* Bug 8664          Ungraceful handling of SIGPIPE
+
+                    Piping longish client output through a secondary command like
+                    head or more can throw ugly and difficult to understand python 
+                    exception - fixed.
+
+* Bug 9856          Clients do not look for cert in documented location
+
+                    Inline documentation for client library incorrectly stated that
+                    a default cert location /tmp/x509up_(UID) was checked for a cert.
+                    The actual default location is /tmp/jobsub_x509up_(UID) and has
+                    been so since jobsub v0.4.   Updated documentation and changed
+                    client code to check cert for validity prior to submission.
+
+* Bug 10263         Jobsub_q --long runs out of memory
+                    
+                    Output from server was handled inneficiently, causing long enough
+                    return results to throw an out of memory exception - fixed.
+
+* Bug 10269         Jobsub_fetchlog only works with KCA certs
+                    Now works with any cert that resolves to a user in VOMS.
+
+Server
+-----
+
+* Bug 9976          Jobsub_q not detecting server errors 
+ 
+                    Jobsub_q called condor_q -g on the servers.  Condor_q -g may 
+                    or may not exit with non-zero status if a schedd is not responding,
+                    this appears to be a function of the order that it contacts the
+                    schedds in - it returns the exit status for the  last schedd contacted.
+                    Server code now contacts all of the schedds individually and exits
+                    non-zero if one of the schedds does.
+
+                    
+
+================================================================================
 v1.1.9
 ================================================================================
 

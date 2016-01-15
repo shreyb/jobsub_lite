@@ -331,19 +331,22 @@ def authenticate(dn, acctgroup, acctrole):
     logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" % (dn, acctgroup, acctrole))
     raise AuthenticationError(dn, acctgroup)
 
-
-def get_gums_mapping(dn, fqan):
-    exe = jobsub.get_jobsub_priv_exe()
-    #get rid of all the /CN=133990 and /CN=proxy for gums mapping
-    #is this kosher?  how would a bad guy defeat this?  
-    #
+def clean_proxy_dn(dn):
     cn_pat = re.compile('/CN=[0-9]+')
     for p in cn_pat.findall(dn):
         dn = dn.replace(p,'')
     p_pat = re.compile('/CN=proxy')
     for p in p_pat.findall(dn):
         dn = dn.replace(p,'')
+    return dn
 
+
+def get_gums_mapping(dn, fqan):
+    exe = jobsub.get_jobsub_priv_exe()
+    #get rid of all the /CN=133990 and /CN=proxy for gums mapping
+    #is this kosher?  how would a bad guy defeat this?  
+    #
+    dn = clean_proxy_dn(dn)
     cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
@@ -501,13 +504,16 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             child_env = os.environ.copy()
             child_env['X509_USER_CERT']=child_env['JOBSUB_SERVER_X509_USER_CERT']
             child_env['X509_USER_KEY']=child_env['JOBSUB_SERVER_X509_USER_KEY']
-            cmd = "%s -n -l %s -s %s -o %s"%\
-                    (myproxy_exe, username, myproxy_server, x509_tmp_fname)
+            dn = clean_proxy_dn(dn)
+            cmd = "%s -n -l '%s' -s %s -o %s"%\
+                    (myproxy_exe, dn, myproxy_server, x509_tmp_fname)
             logger.log('%s'%cmd)
             out, err = subprocessSupport.iexe_cmd(cmd,child_env=child_env)
             logger.log('out= %s'%out)
             if err:
                 logger.log('err= %s'%err)
+            x509pair_to_vomsproxy(x509_tmp_fname, x509_tmp_fname, x509_tmp_fname, acctgroup, acctrole)
+
             cmd2 = "%s  -all -file %s " %(vomsproxy_exe, x509_tmp_fname)
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)

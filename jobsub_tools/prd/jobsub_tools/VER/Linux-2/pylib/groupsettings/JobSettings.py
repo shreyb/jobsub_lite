@@ -316,7 +316,7 @@ class JobSettings(object):
             """`h' for hours or `d' h for days."""]))
 
         generic_group.add_option("--expected-lifetime", dest="set_expected_max_lifetime",action="store",
-            type="string",metavar='EXPECTED_LIFETIME',
+            type="string",metavar="'short'|'medium'|'long'|NUMBER[UNITS]",
             help=' '.join(["""Expected lifetime of the job.  Used to match against""",
             """resources advertising that they have REMAINING_LIFETIME seconds left.  The shorter your""",
             """EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially""",
@@ -324,7 +324,7 @@ class JobSettings(object):
             """EXPECTED_LIFETIME it *may* be killed by the batch system.  If your specified """,
             """EXPECTED_LIFETIME is too long your job may take a long time to match against """,
             """a resource a sufficiently long REMAINING_LIFETIME.  Valid inputs for this parameter""",
-            """are 'short', 'medium', 'long', or an integer which represents EXPECTED_LIFETIME in seconds.""",
+            """are 'short', 'medium', 'long', or NUMBER[UNITS] of time.  IF [UNITS] is omitted, value is NUMBER  seconds.""",
             """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
             """are '6 hours' , '12 hours' , and '24 hours' but this may change in the future.""",
             """Default value of  EXPECTED_LIFETIME is currently 24 hours."""]))
@@ -532,10 +532,15 @@ class JobSettings(object):
             help="location of X509_USER_PROXY (expert mode)")
 
     def expectedLifetimeOK(self, a_str):
+        if 'lines' in self.settings:
+            for line in self.settings['lines']:
+                if line.startswith("+JOB_EXPECTED_MAX_LIFETIME"):
+                    return True
         try:
             i = int(a_str)
             self.settings['job_expected_max_lifetime'] = i
             self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%i)
+            print "Warning: --expected-lifetime=%s had no units! Valid units are 's','m','h','d'. Assuming seconds" % a_str
             return True
         except ValueError:
             try:
@@ -543,20 +548,37 @@ class JobSettings(object):
                 if units in ['short','medium','long']:
                     key = 'job_expected_max_lifetime_%s'% units
                     val = self.settings.get(key,None)
-                    if val:
-                        self.settings['job_expected_max_lifetime'] = val
-                        self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
-                        return True
-                    else:
+                    #if val:
+                    #    self.settings['job_expected_max_lifetime'] = val
+                    #    self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
+                    #    return True
+                    return self.expectedLifetimeOK(val)
+
+                elif units[-1] in ['s','m','h','d']:
+                    try:
+                        i=int(units[:-1])
+                    except ValueError:
+                        print " --expected-lifetime='%s' not valid input" %a_str
                         return False
+                    if units[-1] == 's':
+                        val = i
+                    elif units[-1] == 'm':
+                        val = i*60
+                    elif units[-1] == 'h':
+                        val = i*60*60
+                    elif units[-1] == 'd':
+                        val = i*60*60*24
+                    self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
+                    return True
                 else:
-                    return False
+                   return False
             except:
                 return False
 
     def timeFormatOK(self,a_str):
         try:
             i = int(a_str)
+            print "Warning: --timeout=%s had no units! Valid units are 's','m','h','d'. Assuming seconds" % a_str
             return True
         except ValueError:
             try:
@@ -568,9 +590,25 @@ class JobSettings(object):
             except:
                 return False
 
+    def diskFormatOK(self,a_str):
+        try:
+            i = int(a_str)
+            print "Warning: --disk=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming KB"
+            return True
+        except ValueError:
+            try:
+                units = a_str[-2:].upper()
+                if units in ['KB','MB','GB','TB']:
+                    return True
+                else:
+                    return False
+            except:
+                return False
+
     def memFormatOK(self,a_str):
         try:
             i = int(a_str)
+            print "Warning: --memory=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming MB"
             return True
         except ValueError:
             try:
@@ -597,7 +635,7 @@ class JobSettings(object):
                         os.environ[a] = b
                         settings['added_environment'].pop(i)
                         settings['added_environment'].insert(i,a)
-                    except Exception, e:
+                    except:
                         raise InitializationError("error processing -e %s" % arg)
                 else:
                     err = 'error setting up running environment' 
@@ -607,7 +645,7 @@ class JobSettings(object):
             err = "--memory '%s' format incorrect" % settings['memory']
             raise InitializationError(err)
     
-        if settings.get('disk') and not self.memFormatOK(settings['disk']):
+        if settings.get('disk') and not self.diskFormatOK(settings['disk']):
             err = "--disk '%s' format incorrect" % settings['disk']
             raise InitializationError(err)
 
@@ -622,7 +660,7 @@ class JobSettings(object):
         else:
            default_lifetime = settings.get('job_expected_max_lifetime_default')
            if not default_lifetime:
-               default_lifetime = 86400
+               default_lifetime = 6*60*60 
            if not self.expectedLifetimeOK(default_lifetime):
                err = 'default lifetime="%s" is not allowed'%default_lifetime
                raise InitializationError(err)
@@ -1534,14 +1572,15 @@ class JobSettings(object):
         args = ""
         for arg in settings['script_args']:
             args = args+" "+arg+" "
-        if job_iter <=1:
+        if job_iter <= 1:
             for arg in settings['added_environment']:
-                settings['environment'] = settings['environment']+";"+\
-                    arg+'='+os.environ.get(arg,'NOT_SET')
+                settings['environment'] = settings['environment'] + ";" +\
+                    arg + '=' + os.environ.get(arg, 'NOT_SET')
             self.completeEnvList()
         env_list = settings['environment']
-        if settings['usedagman'] and 'JOBSUBJOBSECTION' not in settings['added_environment']:
-            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
+        if settings['usedagman'] and 'JOBSUBJOBSECTION' \
+                not in settings['added_environment']:
+            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'], job_iter)
             self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n"%args)
         f.write("output                = %s\n"%settings['outfile'])
@@ -1551,9 +1590,9 @@ class JobSettings(object):
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = 21600\n")
 
-        if settings['notify']==0:
+        if settings['notify'] == 0:
             f.write("notification  = Never\n")
-        elif settings['notify']==1:
+        elif settings['notify'] == 1:
             f.write("notification  = Error\n")
         else:
             f.write("notification  = Always\n")
@@ -1561,20 +1600,22 @@ class JobSettings(object):
         f.write("transfer_output                 = True\n")
         f.write("transfer_output_files = .empty_file\n")
         f.write("transfer_error                  = True\n")
-        tval=self.shouldTransferInput()
+        tval = self.shouldTransferInput()
         f.write(tval)
 
         if 'notify_user' not in settings:
-            settings['notify_user']="%s@%s"%(settings['user'],settings['mail_domain'])
+            settings['notify_user'] = "%s@%s"%(settings['user'],\
+                    settings['mail_domain'])
 
         self.addToLineSetting("notify_user = %s"%settings['notify_user'])
         if settings['grid']:
-            self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
+            self.addToLineSetting("x509userproxy = %s" %\
+                    settings['x509_user_proxy'])
             self.addToLineSetting("+RunOnGrid                          = True")
 
             if not settings['site']: 
                 if settings['default_grid_site']:
-                    settings['site']=settings['default_grid_site']
+                    settings['site'] = settings['default_grid_site']
 
 
         if settings['istestjob'] == True:
@@ -1583,10 +1624,11 @@ class JobSettings(object):
         if settings['group'] != "" and settings['istestjob'] == False:
             if settings['subgroup']:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s.%s\""%\
-                    (settings['accountinggroup'],settings['subgroup'],settings['user']))
+                    (settings['accountinggroup'], settings['subgroup'],\
+                    settings['user']))
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
-                    (settings['accountinggroup'],settings['user']))
+                    (settings['accountinggroup'], settings['user']))
         self.addToLineSetting("+Jobsub_Group=\"%s\""%settings['group'])
         self.addToLineSetting("+JobsubJobId=\"%s\""%settings['jobsubjobid'])
         if settings['subgroup']:

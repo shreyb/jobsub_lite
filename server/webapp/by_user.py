@@ -14,13 +14,13 @@ from format import format_response
 
 
 
-@cherrypy.popargs('action_user','forcex')
+@cherrypy.popargs('action_user','job_id')
 class AccountJobsByUserResource(object):
 
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup,  action_user=None, **kwargs):
+    def index(self, acctgroup,  action_user=None, job_id=None, **kwargs):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
@@ -30,10 +30,10 @@ class AccountJobsByUserResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
                     #remove job
-                    rc = util.doDELETE(acctgroup, user=action_user, **kwargs )
+                    rc = util.doDELETE(acctgroup, user=action_user, job_id=job_id,  **kwargs )
                 elif cherrypy.request.method == 'PUT':
                     #hold/release
-                    rc = util.doPUT(acctgroup,  user=action_user, **kwargs)
+                    rc = util.doPUT(acctgroup,  user=action_user, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

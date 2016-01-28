@@ -84,6 +84,7 @@ def parse_opts(argv):
                          action='callback',
                          callback=jid_callback,
                          metavar='<Job ID>',
+                         default=None,
                          help='CSV list of Job Ids to hold')
 
     opt_group.add_option('--debug',
@@ -151,19 +152,16 @@ def main(argv):
         if options.jobId:
             for jid in options.jobId.split(','):
                 print 'Holding job with jobid=%s' % jid
-                http_code = js_client.hold(jid)
+                http_code = js_client.hold(jid, uid=options.uid)
                 tmp_rc += http_code_to_rc(http_code)
             
             rc += tmp_rc
-        elif options.uid:
-            print 'Holding jobs with uid=%s' % options.uid
-            http_code_list = js_client.hold(jobid=None,uid=options.uid)
-            for http_code in http_code_list: 
-                tmp_rc += http_code_to_rc(http_code)
-                rc += tmp_rc
-        elif options.constraint:
-            print 'Holding jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.hold(constraint=options.constraint)
+        else:
+            if options.uid:
+                print 'Holding jobs owned by %s' % options.uid
+            if options.constraint:
+                print 'Holding jobs with constraint=%s' % options.constraint
+            http_code_list = js_client.hold(uid=options.uid, constraint=options.constraint)
             for http_code in http_code_list: 
                 tmp_rc += http_code_to_rc(http_code)
                 rc += tmp_rc

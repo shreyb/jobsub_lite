@@ -3,6 +3,7 @@
 import os
 import sys
 import datetime
+import re
 from JobUtils import JobUtils
 from optparse import OptionParser
 from optparse import OptionGroup
@@ -316,7 +317,7 @@ class JobSettings(object):
             """`h' for hours or `d' h for days."""]))
 
         generic_group.add_option("--expected-lifetime", dest="set_expected_max_lifetime",action="store",
-            type="string",metavar='EXPECTED_LIFETIME',
+            type="string",metavar="'short'|'medium'|'long'|NUMBER[UNITS]",
             help=' '.join(["""Expected lifetime of the job.  Used to match against""",
             """resources advertising that they have REMAINING_LIFETIME seconds left.  The shorter your""",
             """EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially""",
@@ -324,10 +325,11 @@ class JobSettings(object):
             """EXPECTED_LIFETIME it *may* be killed by the batch system.  If your specified """,
             """EXPECTED_LIFETIME is too long your job may take a long time to match against """,
             """a resource a sufficiently long REMAINING_LIFETIME.  Valid inputs for this parameter""",
-            """are 'short', 'medium', 'long', or an integer which represents EXPECTED_LIFETIME in seconds.""",
+            """are 'short', 'medium', 'long', or NUMBER[UNITS] of time.  IF [UNITS] is omitted, value is NUMBER  seconds.""",
+            """Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc."""
             """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
-            """are '6 hours' , '12 hours' , and '24 hours' but this may change in the future.""",
-            """Default value of  EXPECTED_LIFETIME is currently 24 hours."""]))
+            """are '6 hours' , '12 hours' , and '23 hours' but this may change in the future.""",
+            """Default value of  EXPECTED_LIFETIME is currently 23 hours."""]))
 
 
         generic_group.add_option("--maxConcurrent", 
@@ -356,9 +358,9 @@ class JobSettings(object):
 
         generic_group.add_option("--memory", dest="memory",metavar="NUMBER[UNITS]",
             action="store",type="string",
-            help="""Request worker nodes have at least NUMBER[UNITS]  of memory. 
-            If UNITS is not specified default is 'MB'.   Allowed values for 
-            UNITS are 'KB','MB','GB', and 'TB' """)
+            help=' '.join(["""Request worker nodes have at least NUMBER[UNITS]  of memory. """,
+            """If UNITS is not specified default is 'MB'.   Allowed values for """,
+            """UNITS are 'KB','MB','GB', and 'TB' """]))
 
         generic_group.add_option("--cpu", dest="cpu",metavar="NUMBER",
             action="store",type="int",
@@ -407,18 +409,18 @@ class JobSettings(object):
 
         generic_group.add_option("--subgroup", dest="subgroup",
             action="store",type="string",
-            help="""Subgroup for priorities and accounting. See 
-            https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Jobsub_submit#Groups-Subgroups-Quotas-Priorities 
-            for more documentation on using --subgroup to set job quotas and priorities""")
+            help=' '.join(["""Subgroup for priorities and accounting. See """,
+            """https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Jobsub_submit#Groups-Subgroups-Quotas-Priorities""", 
+            """for more documentation on using --subgroup to set job quotas and priorities"""]))
 
         generic_group.add_option("-v", "--verbose", dest="verbose",action="store_true",default=False,
             help="dump internal state of program (useful for debugging)")
 
         generic_group.add_option("--resource-provides", type="string", action="callback",
             callback=self.resource_callback,
-            help="""request specific resources by changing condor jdf file.  
-            For example: --resource-provides=CVMFS=OSG will add +CVMFS=\"OSG\" to the job classad attributes 
-            and '&&(CVMFS==\"OSG\")' to the job requirements""")
+            help=' '.join(["""request specific resources by changing condor jdf file. """, 
+            """For example: --resource-provides=CVMFS=OSG will add +CVMFS=\"OSG\" to the job classad attributes""", 
+            """and '&&(CVMFS==\"OSG\")' to the job requirements"""]))
 
         generic_group.add_option("-M","--mail_always", dest="notify",
             action="store_const",const=2,
@@ -442,18 +444,18 @@ class JobSettings(object):
             help="Log file to hold log output from job.")
 
         file_group.add_option("--no_log_buffer", dest="nologbuffer",action="store_true",
-            help="""write log file directly to disk. Default is to copy it back after job is completed.  
+            help=re.sub('  \s+',' ',"""write log file directly to disk. Default is to copy it back after job is completed.  
             This option is useful for debugging but can be VERY DANGEROUS as joblogfile typically is sent 
             to bluearc.  Using this option incorrectly can cause all grid submission systems at FNAL to 
-            become overwhelmed resulting in angry admins hunting you down, so USE SPARINGLY. """)
+            become overwhelmed resulting in angry admins hunting you down, so USE SPARINGLY. """))
 
         generic_group.add_option("-g","--grid", dest="grid",action="store_true",
-            help="""run job on the FNAL GP  grid. Other flags can modify target sites to include other 
-            areas of the Open Science Grid""")
+            help=re.sub('  \s+',' ',"""run job on the FNAL GP  grid. Other flags can modify target sites to include other 
+            areas of the Open Science Grid"""))
 
         generic_group.add_option("--nowrapfile", dest="nowrapfilex",action="store_true",
-            help="""DISABLED: formerly was 'do not generate shell wrapper, disabled per request from fermigrid 
-            operations.  The wrapfiles used to not  work off site, now they do.""") 
+            help=re.sub('  \s+',' ',"""DISABLED: formerly was 'do not generate shell wrapper, disabled per request from fermigrid 
+            operations.  The wrapfiles used to not  work off site, now they do.""") )
 
 
         file_group.add_option("--use_gftp", dest="use_gftp",action="store_true",default=False,
@@ -466,9 +468,9 @@ class JobSettings(object):
             help="overwrite default condor requirements with supplied requirements")
 
         generic_group.add_option("--override", dest="override",nargs=2, action="store",default=(1,1),
-            help="""override some other value: --override 'requirements' 'gack==TRUE' would produce 
+            help=re.sub('  \s+',' ',"""override some other value: --override 'requirements' 'gack==TRUE' would produce 
             the same condor command file as --overwrite_condor_requirements 'gack==TRUE' if you want 
-            to use this option, test it first with -n to see what you get as output """)
+            to use this option, test it first with -n to see what you get as output """))
 
         generic_group.add_option("-C",dest="usepwd",action="store_true",default=False,
             help="execute on grid from directory you are currently in")
@@ -492,11 +494,11 @@ class JobSettings(object):
 
         file_group.add_option("--tar_file_name", dest="tar_file_name",
             action="store", metavar="dropbox://PATH/TO/TAR_FILE",
-            help="""specify tarball to transfer to worker node. TAR_FILE 
+            help=re.sub('  \s+',' ',"""specify tarball to transfer to worker node. TAR_FILE 
                     will be copied to the jobsub server and added to the 
                     transfer_input_files list. TAR_FILE will be accessible
                     to the user job on the worker node via the environment 
-                    variable  $INPUT_TAR_FILE.  """)
+                    variable  $INPUT_TAR_FILE.  """))
 
         generic_group.add_option("-n","--no_submit", dest="submit",
                 action="store_false",default=True,
@@ -514,28 +516,33 @@ class JobSettings(object):
 
         file_group.add_option("-f", dest="input_dir_array",action="append",
             type="string", metavar='INPUT_FILE',
-            help="""INPUT_FILE will be copied to directory  
+            help=re.sub('  \s+',' ',"""INPUT_FILE will be copied to directory  
             $CONDOR_DIR_INPUT on the execution node.  
             Example :-f /grid/data/minerva/my/input/file.xxx  
             will be copied to $CONDOR_DIR_INPUT/file.xxx 
             Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2
-            args as you need.""")
+            args as you need."""))
 
         file_group.add_option("-d", dest="output_dir_array",action="append",type="string",
             nargs=2,
-            help=""" -d<tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
+            help=re.sub('  \s+',' ',""" -d<tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
             exist on the execution node.  After job completion,
             its contents will be moved to <dir> automatically
-            Specify as many <tag>/<dir> pairs as you need. """)
+            Specify as many <tag>/<dir> pairs as you need. """))
 
         generic_group.add_option("-x","--X509_USER_PROXY", dest="x509_user_proxy",action="store",type="string",
             help="location of X509_USER_PROXY (expert mode)")
 
     def expectedLifetimeOK(self, a_str):
+        if 'lines' in self.settings:
+            for line in self.settings['lines']:
+                if line.startswith("+JOB_EXPECTED_MAX_LIFETIME"):
+                    return True
         try:
             i = int(a_str)
             self.settings['job_expected_max_lifetime'] = i
             self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%i)
+            print "Warning: --expected-lifetime=%s had no units! Valid units are 's','m','h','d'. Assuming seconds" % a_str
             return True
         except ValueError:
             try:
@@ -543,20 +550,37 @@ class JobSettings(object):
                 if units in ['short','medium','long']:
                     key = 'job_expected_max_lifetime_%s'% units
                     val = self.settings.get(key,None)
-                    if val:
-                        self.settings['job_expected_max_lifetime'] = val
-                        self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
-                        return True
-                    else:
+                    #if val:
+                    #    self.settings['job_expected_max_lifetime'] = val
+                    #    self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
+                    #    return True
+                    return self.expectedLifetimeOK(val)
+
+                elif units[-1] in ['s','m','h','d']:
+                    try:
+                        i=int(units[:-1])
+                    except ValueError:
+                        print " --expected-lifetime='%s' not valid input" %a_str
                         return False
+                    if units[-1] == 's':
+                        val = i
+                    elif units[-1] == 'm':
+                        val = i*60
+                    elif units[-1] == 'h':
+                        val = i*60*60
+                    elif units[-1] == 'd':
+                        val = i*60*60*24
+                    self.addToLineSetting("+JOB_EXPECTED_MAX_LIFETIME = %s"%val)
+                    return True
                 else:
-                    return False
+                   return False
             except:
                 return False
 
     def timeFormatOK(self,a_str):
         try:
             i = int(a_str)
+            print "Warning: --timeout=%s had no units! Valid units are 's','m','h','d'. Assuming seconds" % a_str
             return True
         except ValueError:
             try:
@@ -568,9 +592,25 @@ class JobSettings(object):
             except:
                 return False
 
+    def diskFormatOK(self,a_str):
+        try:
+            i = int(a_str)
+            print "Warning: --disk=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming KB" % a_str
+            return True
+        except ValueError:
+            try:
+                units = a_str[-2:].upper()
+                if units in ['KB','MB','GB','TB']:
+                    return True
+                else:
+                    return False
+            except:
+                return False
+
     def memFormatOK(self,a_str):
         try:
             i = int(a_str)
+            print "Warning: --memory=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming MB" % a_str
             return True
         except ValueError:
             try:
@@ -597,7 +637,7 @@ class JobSettings(object):
                         os.environ[a] = b
                         settings['added_environment'].pop(i)
                         settings['added_environment'].insert(i,a)
-                    except Exception, e:
+                    except:
                         raise InitializationError("error processing -e %s" % arg)
                 else:
                     err = 'error setting up running environment' 
@@ -607,7 +647,7 @@ class JobSettings(object):
             err = "--memory '%s' format incorrect" % settings['memory']
             raise InitializationError(err)
     
-        if settings.get('disk') and not self.memFormatOK(settings['disk']):
+        if settings.get('disk') and not self.diskFormatOK(settings['disk']):
             err = "--disk '%s' format incorrect" % settings['disk']
             raise InitializationError(err)
 
@@ -622,7 +662,7 @@ class JobSettings(object):
         else:
            default_lifetime = settings.get('job_expected_max_lifetime_default')
            if not default_lifetime:
-               default_lifetime = 86400
+               default_lifetime = 6*60*60 
            if not self.expectedLifetimeOK(default_lifetime):
                err = 'default lifetime="%s" is not allowed'%default_lifetime
                raise InitializationError(err)
@@ -1534,14 +1574,15 @@ class JobSettings(object):
         args = ""
         for arg in settings['script_args']:
             args = args+" "+arg+" "
-        if job_iter <=1:
+        if job_iter <= 1:
             for arg in settings['added_environment']:
-                settings['environment'] = settings['environment']+";"+\
-                    arg+'='+os.environ.get(arg,'NOT_SET')
+                settings['environment'] = settings['environment'] + ";" +\
+                    arg + '=' + os.environ.get(arg, 'NOT_SET')
             self.completeEnvList()
         env_list = settings['environment']
-        if settings['usedagman'] and 'JOBSUBJOBSECTION' not in settings['added_environment']:
-            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'],job_iter)
+        if settings['usedagman'] and 'JOBSUBJOBSECTION' \
+                not in settings['added_environment']:
+            env_list = "%s;JOBSUBJOBSECTION=%s"%(settings['environment'], job_iter)
             self.replaceLineSetting("""+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n"%args)
         f.write("output                = %s\n"%settings['outfile'])
@@ -1551,9 +1592,9 @@ class JobSettings(object):
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = 21600\n")
 
-        if settings['notify']==0:
+        if settings['notify'] == 0:
             f.write("notification  = Never\n")
-        elif settings['notify']==1:
+        elif settings['notify'] == 1:
             f.write("notification  = Error\n")
         else:
             f.write("notification  = Always\n")
@@ -1561,20 +1602,22 @@ class JobSettings(object):
         f.write("transfer_output                 = True\n")
         f.write("transfer_output_files = .empty_file\n")
         f.write("transfer_error                  = True\n")
-        tval=self.shouldTransferInput()
+        tval = self.shouldTransferInput()
         f.write(tval)
 
         if 'notify_user' not in settings:
-            settings['notify_user']="%s@%s"%(settings['user'],settings['mail_domain'])
+            settings['notify_user'] = "%s@%s"%(settings['user'],\
+                    settings['mail_domain'])
 
         self.addToLineSetting("notify_user = %s"%settings['notify_user'])
         if settings['grid']:
-            self.addToLineSetting("x509userproxy = %s" % settings['x509_user_proxy'])
+            self.addToLineSetting("x509userproxy = %s" %\
+                    settings['x509_user_proxy'])
             self.addToLineSetting("+RunOnGrid                          = True")
 
             if not settings['site']: 
                 if settings['default_grid_site']:
-                    settings['site']=settings['default_grid_site']
+                    settings['site'] = settings['default_grid_site']
 
 
         if settings['istestjob'] == True:
@@ -1583,10 +1626,11 @@ class JobSettings(object):
         if settings['group'] != "" and settings['istestjob'] == False:
             if settings['subgroup']:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s.%s\""%\
-                    (settings['accountinggroup'],settings['subgroup'],settings['user']))
+                    (settings['accountinggroup'], settings['subgroup'],\
+                    settings['user']))
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\""%\
-                    (settings['accountinggroup'],settings['user']))
+                    (settings['accountinggroup'], settings['user']))
         self.addToLineSetting("+Jobsub_Group=\"%s\""%settings['group'])
         self.addToLineSetting("+JobsubJobId=\"%s\""%settings['jobsubjobid'])
         if settings['subgroup']:

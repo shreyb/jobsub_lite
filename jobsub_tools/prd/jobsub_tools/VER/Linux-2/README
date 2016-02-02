@@ -21,6 +21,13 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
+v1_4_4 1/20/16
+==============================================
+
+* Feature 11437     add units to --expected-lifetime , add warning to any input that accepts
+                    bare number wihout units. --timeout  --disk --memory do this now
+                    as well
+
 v1_4_3 12/28/15
 ==============================================
 

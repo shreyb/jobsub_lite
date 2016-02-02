@@ -128,7 +128,7 @@ if __name__ == "__main__":
     except Exception, e:
         print str(e)
         sys.exit(1)
-    settings.checkSanity()
+    #settings.checkSanity()
     settings.makeCondorFiles()
     if settings.settings['verbose'] == True:
         pp = pprint.PrettyPrinter(indent=4)

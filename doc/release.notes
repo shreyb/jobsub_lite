@@ -39,7 +39,9 @@ Server
                     Server code now contacts all of the schedds individually and exits
                     non-zero if one of the schedds does.
 
-                    
+* Feature 11437     add units to --expected-lifetime , add warning to any input that accepts 
+                    bare number wihout units. --timeout  --disk --memory do this now
+                    as well                   
 
 ================================================================================
 v1.1.9

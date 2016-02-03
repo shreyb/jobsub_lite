@@ -96,6 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/auth.py
 /opt/jobsub/server/webapp/auth.pyc
 /opt/jobsub/server/webapp/auth.pyo
+/opt/jobsub/server/webapp/auth_methods.py
+/opt/jobsub/server/webapp/auth_methods.pyc
+/opt/jobsub/server/webapp/auth_methods.pyo
 /opt/jobsub/server/webapp/better_analyze.py
 /opt/jobsub/server/webapp/better_analyze.pyc
 /opt/jobsub/server/webapp/better_analyze.pyo

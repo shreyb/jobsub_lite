@@ -83,6 +83,7 @@ def parse_opts(argv):
                          type='string',
                          action='callback',
                          callback=jid_callback,
+                         default=None,
                          metavar='<Job ID>',
                          help='CSV list of Job Ids to release')
 
@@ -151,22 +152,20 @@ def main(argv):
         if options.jobId:
             for jid in options.jobId.split(','):
                 print 'Releasing job with jobid=%s' % jid
-                http_code = js_client.release(jid)
+                http_code = js_client.release(jid,uid=options.uid)
                 tmp_rc += http_code_to_rc(http_code)
             
             rc += tmp_rc
-        elif options.uid:
-            print 'Releasing jobs with uid=%s' % options.uid
-            http_code_list = js_client.release(jobid=None,uid=options.uid)
+        else:
+            if options.uid:
+                print 'Releasing jobs owned by %s' % options.uid
+            if options.constraint:
+                print 'Releasing jobs with constraint=%s' % options.constraint
+            http_code_list = js_client.release(uid=options.uid, constraint=options.constraint)
             for http_code in http_code_list:
                 tmp_rc += http_code_to_rc(http_code)
                 rc += tmp_rc
-        elif options.constraint:
-            print 'Releasing jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.release(constraint=options.constraint)
-            for http_code in http_code_list:
-                tmp_rc += http_code_to_rc(http_code)
-                rc += tmp_rc
+
     except JobSubClientError, e:
         print e
         logSupport.dprint(traceback.format_exc())

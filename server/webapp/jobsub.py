@@ -33,6 +33,22 @@ def is_supported_accountinggroup(accountinggroup):
 
     return rc
 
+
+def group_superusers(acctgroup):
+    p = JobsubConfigParser()
+    susers = p.get(acctgroup,'group_superusers')
+    if susers:
+        return susers.split()
+    else:
+        return []
+
+def is_superuser_for_group(acctgroup, user):
+    logger.log('checking if %s in %s is group_superuser' % (acctgroup, user))
+    su_list = group_superusers(acctgroup)
+    logger.log('sulist is %s for %s'%(su_list,acctgroup))
+    return user in su_list
+
+
 def sandbox_readable_by_group(acctgroup):
     rc = False
     try:

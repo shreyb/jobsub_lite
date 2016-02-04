@@ -449,16 +449,17 @@ class JobSubClient:
         post_data = [
             ('job_action', 'RELEASE')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-            if self.acctRole:
-                self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
-                        % (self.server, self.acctGroup, self.acctRole, item)
-            else:
-                self.releaseURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
-                        % ( self.server, self.acctGroup, item )
-            return self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False)
+        if constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.actionURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
+                if uid:
+                    self.actionURL = "%s%s/" % (self.actionURL, uid)
+                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         elif uid:
             self.probeSchedds()
             rslts = []
@@ -466,22 +467,25 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 if self.acctRole:
-                    self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
+                    self.actionURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
                         % (srv, self.acctGroup, self.acctRole, item)
                 else:
-                    self.releaseURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
+                    self.actionURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
                         % ( srv, self.acctGroup, item )
-                rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
+                if jobid:
+                    self.actionURL = "%s%s/" % (self.actionURL, jobid)
+                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
-        elif constraint:
-            self.probeSchedds()
-            rslts = []
-            for schedd in self.schedd_list:
-                srv = "https://%s:8443"%schedd
-                self.releaseURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, urllib.quote(constraint) )
-                rslts.append(self.changeJobState(self.releaseURL, 'PUT', post_data, ssl_verifyhost=False))
-            return rslts
+        elif jobid:
+            self.server="https://%s:8443"%jobid.split('@')[-1]
+            item = jobid
+            if self.acctRole:
+                self.actionURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
+                        % (self.server, self.acctGroup, self.acctRole, item)
+            else:
+                self.actionURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
+                        % ( self.server, self.acctGroup, item )
+            return self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False)
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -494,16 +498,17 @@ class JobSubClient:
         post_data = [
             ('job_action', 'HOLD')
         ]
-        if jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-            if self.acctRole:
-                self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
-                        % (self.server, self.acctGroup, self.acctRole, item )
-            else:
-                self.holdURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
-                        % ( self.server, self.acctGroup, item )
-            return self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False)
+        if constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.actionURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
+                if uid:
+                    self.actionURL = "%s%s/" % (self.actionURL, uid)
+                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+            return rslts
         elif uid:
             self.probeSchedds()
             rslts = []
@@ -511,22 +516,25 @@ class JobSubClient:
                 srv = "https://%s:8443"%schedd
                 item = uid
                 if self.acctRole:
-                    self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
+                    self.actionURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
                         % (srv, self.acctGroup, self.acctRole, item )
                 else:
-                    self.holdURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
+                    self.actionURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
                         % ( srv, self.acctGroup, item )
-                rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
+                if jobid:
+                    self.actionURL = "%s%s/" % (self.actionURL, jobid)
+                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
             return rslts
-        elif constraint:
-            self.probeSchedds()
-            rslts = []
-            for schedd in self.schedd_list:
-                srv = "https://%s:8443"%schedd
-                self.holdURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, urllib.quote(constraint) )
-                rslts.append(self.changeJobState(self.holdURL, 'PUT', post_data, ssl_verifyhost=False))
-            return rslts
+        elif jobid:
+            self.server="https://%s:8443"%jobid.split('@')[-1]
+            item = jobid
+            if self.acctRole:
+                self.actionURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
+                        % (self.server, self.acctGroup, self.acctRole, item )
+            else:
+                self.actionURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
+                        % ( self.server, self.acctGroup, item )
+            return self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False)
         else:
             raise JobSubClientError("hold requires one of a jobid or uid or constraint")
 
@@ -538,17 +546,17 @@ class JobSubClient:
                                                      uid is not None, 
                                                      self.acctRole is not None, 
                                                      self.forcex) )
-        if jobid:
-            jobid=self.checkID(jobid)
-            self.server="https://%s:8443"%jobid.split('@')[-1]
-            item = jobid
-            if self.acctRole:
-                self.removeURL = url_pattern\
-                    % (self.server, self.acctGroup, self.acctRole, item)
-            else:
-                self.removeURL = url_pattern\
-                    % ( self.server, self.acctGroup, item )
-            return self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False)
+        if constraint:
+            self.probeSchedds()
+            rslts = []
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443"%schedd
+                self.actionURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN\
+                        % ( srv, self.acctGroup, urllib.quote(constraint) )
+                if uid:
+                    self.actionURL = "%s%s/" % (self.actionURL, uid)
+                rslts.append(self.changeJobState(self.actionURL, 'DELETE',  ssl_verifyhost=False))
+            return rslts
         elif uid:
             item = uid
             self.probeSchedds()
@@ -556,22 +564,30 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 if self.acctRole:
-                    self.removeURL = url_pattern\
+                    self.actionURL = constants.JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE\
                         % (srv, self.acctGroup, self.acctRole, item)
                 else:
-                    self.removeURL = url_pattern\
+                    self.actionURL = constants.JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN\
                         % ( srv, self.acctGroup, item )
-                rslts.append(self.changeJobState(self.removeURL, 'DELETE', ssl_verifyhost=False))
+                if jobid:
+                    self.actionURL = "%s%s/" % (self.actionURL, jobid)
+                    if self.forcex:
+                        self.actionURL = "%sforcex/" % (self.actionURL)
+                rslts.append(self.changeJobState(self.actionURL, 'DELETE', ssl_verifyhost=False))
             return rslts
-        elif constraint:
-            self.probeSchedds()
-            rslts = []
-            for schedd in self.schedd_list:
-                srv = "https://%s:8443"%schedd
-                self.removeURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, urllib.quote(constraint) )
-                rslts.append(self.changeJobState(self.removeURL, 'DELETE',  ssl_verifyhost=False))
-            return rslts
+        elif jobid:
+            jobid=self.checkID(jobid)
+            self.server="https://%s:8443"%jobid.split('@')[-1]
+            item = jobid
+            if self.acctRole:
+                self.actionURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE\
+                    % (self.server, self.acctGroup, self.acctRole, item)
+            else:
+                self.actionURL = constants.JOBSUB_JOB_REMOVE_URL_PATTERN\
+                    % ( self.server, self.acctGroup, item )
+            if self.forcex:
+                self.actionURL = "%sforcex/" % (self.actionURL)
+            return self.changeJobState(self.actionURL, 'DELETE', ssl_verifyhost=False)
         else:
             raise JobSubClientError("remove requires either a jobid or uid or constraint")
 

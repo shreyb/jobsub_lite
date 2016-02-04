@@ -15,6 +15,7 @@ import jobsub
 import condor_commands 
 import re
 import cherrypy
+import auth
 
 
 
@@ -185,14 +186,37 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
         err = "Failed to supply job_id or uid, cannot perform any action"
         logger.log(err)
         return err
-    collector_host = condor_commands.collector_host()
-    logger.log('collector_host is "%s"'%collector_host)
-    logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint))
-    logger.log('Performing %s on jobs with constraints (%s)' % (job_action, constraint), logfile='condor_commands')
+
+    cmd_user = cherrypy.request.username
+    cmd_proxy = cherrypy.request.vomsProxy
+
+    if user and user != cherrypy.request.username and \
+            not jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
+        err = '%s is not allowed to perform this action on jobs owned by %s ' % (cherrypy.request.username,user)
+        logger.log(err)
+        return err
+
+    if user and user != cherrypy.request.username and \
+            jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
+        cmd_user = user
+        acctrole = 'Analysis'
+        if acctgroup in user and 'pro' in user:
+            acctrole = 'Production'
+        cmd_proxy = auth.x509_proxy_fname(cmd_user,acctgroup,acctrole)
+        logger.log('proxy for %s is %s'%(cmd_user,cmd_proxy))
+        msg = '%s Performing %s on user %s jobs with constraints (%s)' % \
+                (cherrypy.request.username, job_action, cmd_user, constraint)
+        logger.log(msg)
+        logger.log(msg, logfile='condor_commands')
+        logger.log(msg, logfile='condor_superuser')
+    else:
+        msg = 'Performing %s on jobs with constraints (%s)' % (job_action, constraint)
+        logger.log(msg)
+        logger.log(msg, logfile='condor_commands')
 
                         
     child_env = os.environ.copy()
-    child_env['X509_USER_PROXY'] = cherrypy.request.vomsProxy
+    child_env['X509_USER_PROXY'] = cmd_proxy
     out = err = ''
     affected_jobs = 0
     expr='(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
@@ -203,6 +227,10 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     extra_err = ""
     failures = 0
     retStr = ""
+
+    collector_host = condor_commands.collector_host()
+    logger.log('collector_host is "%s"' % collector_host)
+
     for schedd_name in scheddList:
         try:
             cmd = [
@@ -213,7 +241,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             ]
             if job_action == 'REMOVE' and kwargs.get('forcex'):
                 cmd.append('-forcex')
-            out, err = jobsub.run_cmd_as_user(cmd, cherrypy.request.username, child_env=child_env)
+            out, err = jobsub.run_cmd_as_user(cmd, cmd_user, child_env=child_env)
         except:
             #TODO: We need to change the underlying library to return
             #      stderr on failure rather than just raising exception

@@ -158,18 +158,15 @@ def main(argv):
         if options.jobId:
             for jid in options.jobId.split(','):
                 print 'Removing job with jobid=%s' % jid
-                http_code = js_client.remove(jid)
+                http_code = js_client.remove(jid, uid=options.uid)
                 tmp_rc = http_code_to_rc(http_code)
                 rc += tmp_rc
-        elif options.uid:
-            print 'removing jobs with uid=%s' % options.uid
-            http_code_list = js_client.remove(jobid=None,uid=options.uid)
-            for http_code in http_code_list:
-                tmp_rc = http_code_to_rc(http_code)
-                rc += tmp_rc
-        elif options.constraint:
-            print 'removing jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.remove(constraint=options.constraint)
+        else:
+            if options.uid:
+                print 'removing jobs owned by %s' % options.uid
+            if options.constraint:
+                print 'removing jobs with constraint=%s' % options.constraint
+            http_code_list = js_client.remove(uid=options.uid, constraint=options.constraint)
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
                 rc += tmp_rc

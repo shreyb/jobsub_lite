@@ -14,7 +14,7 @@ from condor_commands import ui_condor_q
 
 
 
-@cherrypy.popargs('constraint')
+@cherrypy.popargs('constraint','job_owner')
 class JobActionByConstraintResource(object):
 
     @cherrypy.expose
@@ -30,10 +30,10 @@ class JobActionByConstraintResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
                     #remove job
-                    rc = util.doDELETE(acctgroup, constraint=constraint, **kwargs )
+                    rc = util.doDELETE(acctgroup, constraint=constraint, user=kwargs.get('job_owner'),  **kwargs )
                 elif cherrypy.request.method == 'PUT':
                     #hold/release
-                    rc = util.doPUT(acctgroup,  constraint=constraint, **kwargs)
+                    rc = util.doPUT(acctgroup,  constraint=constraint, user=kwargs.get('job_owner'), **kwargs)
                 elif cherrypy.request.method == 'GET':
                     #query
                     rc = self.doGET( constraint=constraint, **kwargs)

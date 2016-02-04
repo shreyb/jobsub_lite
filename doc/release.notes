@@ -1,5 +1,31 @@
 
 ================================================================================
+v1.2
+================================================================================
+Client
+------
+
+* Feature 10815     New jobsub_q options:
+                            --run to see running jobs
+                            --idle to see idle jobs
+                    works additively with --group --user --jobid
+              
+
+
+Server
+-----
+
+* Feature  6698     Jobsub group admin superuser capability to 
+                    hold/release/remove jobs
+
+* Feature  9277     Better pre-staging of SAM jobs
+
+
+* Feature 11571     Add myproxy authentication to server
+
+
+
+================================================================================
 v1.1.9.1
 ================================================================================
 Client

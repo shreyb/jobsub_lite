@@ -77,6 +77,8 @@ def application(environ, start_response):
     os.environ['KADMIN_PASSWD_FILE'] = \
             os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
     os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
+    os.environ['JOBSUB_SERVER_X509_USER_CERT'] = environ['X509_USER_CERT']
+    os.environ['JOBSUB_SERVER_X509_USER_KEY'] = environ['X509_USER_KEY']
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')
     if appname is not None:

@@ -14,7 +14,7 @@ rm -f *_sub.log
 export GROUP=nova
 ./repeat_submit_with_role.sh $1 &
 nova_pid=$!
-export GROUP=minos
+export GROUP=lbne
 ./repeat_submit_with_role.sh $1 &
 minos_pid=$!
 export GROUP=minerva

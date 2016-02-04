@@ -17,7 +17,9 @@ class QueuedJobsByJobIDResource(object):
 
     def __init__(self):
         self.long = QueuedLongResource()
-        self.hold = QueuedHoldResource()
+        self.hold = QueuedHoldResource('hold')
+        self.run = QueuedHoldResource('run')
+        self.idle = QueuedHoldResource('idle')
         self.dags = QueuedDagResource()
         self.betteranalyze = BetterAnalyzeResource()
 

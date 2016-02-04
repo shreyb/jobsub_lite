@@ -24,10 +24,12 @@ class QueuedJobsResource(object):
     def __init__(self):
         self.history=HistoryResource()
         self.summary=JobSummaryResource()
-        self.jobid=QueuedJobsByJobIDResource()
-        self.long=QueuedLongResource()
-        self.dags=QueuedDagResource()
-        self.hold=QueuedHoldResource()
+        self.jobid = QueuedJobsByJobIDResource()
+        self.long = QueuedLongResource()
+        self.dags = QueuedDagResource()
+        self.hold = QueuedHoldResource('hold')
+        self.run = QueuedHoldResource('run')
+        self.idle = QueuedHoldResource('idle')
         self.constraint = QueuedConstraintResource()
 
     def doGET(self, user_id,job_id=None, kwargs=None):

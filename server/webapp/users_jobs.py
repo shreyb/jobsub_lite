@@ -71,9 +71,9 @@ class UsersJobsResource(object):
                     jobStatus = None
 
                     for p in [ param3, param4, param5, param6 ]:
-                        if p in ['long','dags','hold']:
+                        if p in ['long','dags','hold','run','idle']:
                             fmt = p
-                            if p == 'hold':
+                            if p in [ 'hold','run','idle']:
                                 jobStatus = p
                         elif p in ['acctgroup']:
                             nextIsAcctGroup = True

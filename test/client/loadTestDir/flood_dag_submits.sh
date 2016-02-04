@@ -18,7 +18,7 @@ nova_pid=$!
 export GROUP=minos
 ./repeat_dag_submit_with_role.sh $1 &
 minos_pid=$!
-export GROUP=minerva
+export GROUP=nova
 ./repeat_dag_submit_with_role.sh $1 &
 minerva_pid=$!
 export GROUP=lbne

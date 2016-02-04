@@ -145,6 +145,22 @@ def parse_opts(argv):
                          default=None,
                          help='show held jobs (like condor_q -hold)')
 
+    opt_group.add_option('--run',
+                         dest='outFormat',
+                         action='store_const',
+                         const='run',
+                         metavar='<output Format>',
+                         default=None,
+                         help='show running jobs (like condor_q -run)')
+
+    opt_group.add_option('--idle',
+                         dest='outFormat',
+                         action='store_const',
+                         const='idle',
+                         metavar='<output Format>',
+                         default=None,
+                         help='show idle jobs ')
+
     opt_group.add_option('--constraint',
                          dest='constraint',
                          action='store',

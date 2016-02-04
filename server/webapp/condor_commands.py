@@ -10,7 +10,7 @@ import socket
 import re
 from random import randint
 
-jobstatus_dict = {'unexpanded':0, 'idle':1, 'running':2, 'removed':3, 'completed':4,'held':5,'hold':5, 'error':6}
+jobstatus_dict = {'unexpanded':0, 'idle':1, 'run':2, 'running':2, 'removed':3, 'completed':4,'held':5,'hold':5, 'error':6}
 if platform.system() == 'Linux':
     try:
         import htcondor as condor

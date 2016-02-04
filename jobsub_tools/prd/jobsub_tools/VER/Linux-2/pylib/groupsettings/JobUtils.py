@@ -173,6 +173,42 @@ echo poms_data:$poms_data
         """
         return poms_str
 
+    def sam_start(self):
+        sam_start_str="""
+
+${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
+SPSTATUS=$?
+while true; do
+    STATION_STATE=$SAM_STATION.`date '+%s'`
+    PROJECT_STATE=$SAM_DATASET.`date '+%s'`
+    ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
+    grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
+
+    TOTAL_FILES=`cat $PROJECT_STATE | sed "s/^.* contains //" | sed "s/ total files:.*$//"`
+    CACHE_MIN=$TOTAL_FILES
+
+    PROJECT_PREFETCH=`grep 'Per-project prefetched files' $STATION_STATE | sed "s/^.* files: //"`
+    SCALED_PREFETCH=$[$PROJECT_PREFETCH/2]
+    if [ $SCALED_PREFETCH -lt $CACHE_MIN ]; then
+        CACHE_MIN=$SCALED_PREFETCH
+    fi
+    IN_CACHE=`cat $PROJECT_STATE | sed "s/^.*of these //" | sed "s/ in cache.*$//"`
+    rm $PROJECT_STATE $STATION_STATE
+    if [ $TOTAL_FILES -le 0 ]; then
+        echo there are no files in $SAM_DATASET! exiting....
+        break
+    fi
+    if [ $IN_CACHE -ge $CACHE_MIN  ]; then
+        echo $IN_CACHE files of $TOTAL_FILES are staged, exiting
+        break
+    fi
+    sleep 60
+
+done
+
+        """
+        return sam_start_str
+
     def print_usage(self):
         usage = """
                 This method should never be called.  Please open a service desk ticket

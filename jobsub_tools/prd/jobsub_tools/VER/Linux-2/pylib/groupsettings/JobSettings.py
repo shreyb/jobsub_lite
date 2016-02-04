@@ -1154,11 +1154,8 @@ class JobSettings(object):
         f.write("fi\n")
         f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
         f.write("%s describeDefinition $SAM_DATASET\n"%settings['ifdh_cmd'])
-        f.write("%s startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP\n"%settings['ifdh_cmd'])
-        f.write("EXITSTATUS=$?\n")
-        f.write("echo `date` ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
-        f.write(">&2 echo `date` ifdh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP exited with status $EXITSTATUS\n")
-        f.write("exit $EXITSTATUS\n")
+        f.write("%s"%JobUtils().sam_start())
+        f.write("exit $SPSTATUS\n")
 
         f.close()
         cmd = "chmod +x %s" % sambeginexe

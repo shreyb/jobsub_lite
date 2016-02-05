@@ -79,8 +79,9 @@ def condor_format(inputSwitch=None):
     elif inputSwitch == "dags":
         #don't try this at home folks
         fmtList = [
+            """ -dag """,    
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
-            """ -format ' %-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("|-"))'""",
+            """ -format ' %-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("  "))'""",
             """ -format ' %-16s '""", dagStatusStr,  
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""",runTimeStr,"""/(3600*24))'""",

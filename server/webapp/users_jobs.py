@@ -16,7 +16,7 @@ class UsersJobsResource(object):
         return {'out': 'this url is not yet implemented'}
 
     @cherrypy.expose
-    @format_response
+    @format_response(output_format='pre')
     def index(self, **kwargs):
         cherrypy.response.status = 501
         try:
@@ -41,7 +41,7 @@ class UsersJobsResource(object):
     @cherrypy.popargs('param4')
     @cherrypy.popargs('param5')
     @cherrypy.popargs('param6')
-    @format_response
+    @format_response(output_format='pre')
     def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None, **kwargs):
         """ supports the following URLS
             users/<user>/jobs/

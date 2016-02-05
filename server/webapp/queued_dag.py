@@ -25,7 +25,7 @@ class QueuedDagResource(object):
 
 
     @cherrypy.expose
-    @format_response
+    @format_response(output_format='pre')
     def index(self,  **kwargs):
         cherrypy.response.status = 501
         try:

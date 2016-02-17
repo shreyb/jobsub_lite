@@ -1587,7 +1587,7 @@ class JobSettings(object):
         f.write("log                   = %s\n"%settings['logfile'])
         f.write("environment   = %s\n" % env_list)
         f.write("rank                  = Mips / 2 + Memory\n")
-        f.write("job_lease_duration = 21600\n")
+        f.write("job_lease_duration = %s\n"%settings.get('job_lease_duration','7200'))
 
         if settings['notify'] == 0:
             f.write("notification  = Never\n")

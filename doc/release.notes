@@ -51,6 +51,8 @@ Server
                     get access to cigetcert.  
 
 
+* Feature 11717     job_lease_duration is now a configurable item in the jobsub.ini
+                    file, and will end up in the submission JDF.
 
 ================================================================================
 v1.1.9.1

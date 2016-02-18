@@ -237,10 +237,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         out, err = subprocessSupport.iexe_cmd('%s' % ' '.join(command),
                                               child_env=child_env)
     
-    logger.log(log_msg(acctgroup, username, jobsub_args, role,
-                        submit_type,jobsub_client_version,jobsub_client_krb5_principal))
-    logger.log(log_msg(acctgroup, username, jobsub_args, role, 
-                        submit_type,jobsub_client_version,jobsub_client_krb5_principal),logfile='submit')
+    sub_msg = log_msg(acctgroup, username, jobsub_args, role,
+                        submit_type,jobsub_client_version,jobsub_client_krb5_principal)
 
     # Convert the output to list as in case of previous version of jobsub
     if (type(out) == type('string')) and out.strip():
@@ -249,9 +247,13 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         err = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
     for line in out:
         if 'jobsubjobid' in line.lower():
-            logger.log(line,logfile='submit')
+            sub_msg += line
+            logger.log(sub_msg, logfile='submit')
+            logger.log(sub_msg)
     if len(err):
-        logger.log(err,severity=logging.ERROR,logfile='submit')
+        sub_msg += err
+        logger.log(sub_msg, severity=logging.ERROR, logfile='submit')
+        logger.log(sub_msg, severity=logging.ERROR)
     result = {
         'out': out,
         'err': err

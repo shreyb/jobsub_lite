@@ -54,6 +54,9 @@ Server
 * Feature 11717     job_lease_duration is now a configurable item in the jobsub.ini
                     file, and will end up in the submission JDF.
 
+* Feature 11652     reformat submit.log so that jobsub_submit command and resulting
+                    jobsubjobid are on the same output line.
+
 ================================================================================
 v1.1.9.1
 ================================================================================

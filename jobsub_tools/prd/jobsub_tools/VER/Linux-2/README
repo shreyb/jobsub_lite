@@ -21,7 +21,27 @@ $JOBSUB_TOOLS_DIR/test contains unit tests and usage examples
 --------------------------
 RELEASE NOTES
 --------------------------
-v1_4_4 1/20/16
+v1_4_5 2/25/16
+===============================================
+
+* Feature  9277     Better pre-staging of SAM jobs
+                    When --dataset_definition is specified during a jobsub_submit, a diamond
+                    shaped DAG is submitted.  The top node of the dag starts a SAM project.
+                    Prior to this release, the top node then exited and condor started the middle
+                    nodes of the dag.  If the files requested in the dataset_definition happen
+                    to be on tape and not on disk, the middle node jobs would set idle waiting
+                    for the data to be staged to disk.  Starting with this release, the top
+                    node starts the project and waits until a sufficient number of files are
+                    staged to disk, then exits.  The purpose is to keep one node idle waiting
+                    for files instead of many.
+
+
+* Feature 11717     job_lease_duration is now a configurable item in the jobsub.ini
+                    file, and will end up in the submission JDF.
+
+
+
+1_4_4 1/20/16
 ==============================================
 
 * Feature 11437     add units to --expected-lifetime , add warning to any input that accepts

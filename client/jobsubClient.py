@@ -233,6 +233,7 @@ class JobSubClient:
     def submit_dag(self):
         if (not self.jobDropboxURIMap) or self.dropboxServer:
             self.probeSchedds()
+        self.serverAuthMethods()
         if self.acctRole:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -334,6 +335,8 @@ class JobSubClient:
     def submit(self):
         if (not self.jobDropboxURIMap) or self.dropboxServer:
             self.probeSchedds()
+        self.serverAuthMethods()
+        
         if self.acctRole:
             self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         else:
@@ -630,6 +633,47 @@ class JobSubClient:
         self.listURL = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(self.listURL, 'GET')
 
+    def serverAuthMethods(self, acct_group=None):
+        
+        if not acct_group:
+            acct_group = self.acctGroup
+        authMethodsURL = constants.JOBSUB_AUTHMETHODS_URL_PATTERN % (self.server, acct_group)
+        curl, response = curl_secure_context(authMethodsURL, self.credentials)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
+        curl.setopt(curl.CUSTOMREQUEST, 'GET' )
+        try:
+            curl.perform()
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r = response.getvalue()
+            method_list = json.loads(response.getvalue())
+            methods = []
+            for m in method_list.get('out'):
+                methods.append(str(m))
+            print 'http_code = %s list=%s'%(http_code, methods)
+            if 'myproxy' in methods:
+                print 'asking for myproxy for %s'%self.server
+                jobsubClientCredentials.cigetcert_to_x509(self.server)
+            return methods
+
+
+        except pycurl.error, error:
+            errno, errstr = error
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
+            #logSupport.dprint(traceback.format_exc(limit=10))
+            traceback.print_stack()
+            raise JobSubClientError(err)
+        except:
+            #probably called a server that doesnt support this URL, just continue
+            #and let round robin do its thing
+            logSupport.dprint( "Error: %s "% sys.exc_info()[0])
+            pass
+
+        curl.close()
+        response.close()
+
+
+ 
     def probeSchedds(self, ignore_secondary_schedds = True):
         """query all the schedds behind the jobsub-server.  Create a list of
         them stored in self.schedd_list and change self.server to point to

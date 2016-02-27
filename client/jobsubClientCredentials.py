@@ -213,6 +213,30 @@ def krb5_default_principal(cache=None):
         prn = "UNKNOWN"
     return prn
             
+def cigetcert_to_x509(server):
+    print 'cigetcert server = %s'%server
+    serverParts = server.split(':')
+
+    if len(serverParts)==1:
+        pass
+    elif len(serverParts)>1:
+        if serverParts[0].startswith('http'):
+            server = serverParts[1]
+        else:
+            server = serverParts[0]
+    server = server.replace('/','')        
+    print 'server is %s'%server    
+    cigetcert_cmd = spawn.find_executable("cigetcert")
+    if not cigetcert_cmd:
+        raise Exception("Unable to find command 'cigetcert' in the PATH")
+    cmd = "%s -s %s -kv -o /tmp/jobsub_x509up_u8531" % (cigetcert_cmd,server)
+    print 'cmd is %s'%cmd
+    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    print 'output is %s'% cmd_out
+    if len(cmd_err):
+        print 'error: %s' % cmd_err
+        return False
+    return True
 
 def krb5_ticket_lifetime(cache):
     klist_cmd = spawn.find_executable("klist")

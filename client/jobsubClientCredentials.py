@@ -214,7 +214,10 @@ def krb5_default_principal(cache=None):
     return prn
             
 def cigetcert_to_x509(server):
-    print 'cigetcert server = %s'%server
+
+    proxy_file = os.environ.get('X509_USER_PROXY',
+            constants.X509_PROXY_DEFAULT_FILE)
+
     serverParts = server.split(':')
 
     if len(serverParts)==1:
@@ -225,18 +228,20 @@ def cigetcert_to_x509(server):
         else:
             server = serverParts[0]
     server = server.replace('/','')        
-    print 'server is %s'%server    
     cigetcert_cmd = spawn.find_executable("cigetcert")
     if not cigetcert_cmd:
-        raise Exception("Unable to find command 'cigetcert' in the PATH")
-    cmd = "%s -s %s -kv -o /tmp/jobsub_x509up_u8531" % (cigetcert_cmd,server)
-    print 'cmd is %s'%cmd
-    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    print 'output is %s'% cmd_out
+        print "ERROR: Server %s wants to use cigetcert to authenticate, but Unable to find command 'cigetcert' in the PATH" % server
+        sys.exit(1)
+    cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
+    try:
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    except:
+        raise
+    print cmd_out
     if len(cmd_err):
         print 'error: %s' % cmd_err
-        return False
-    return True
+        return ""
+    return proxy_file
 
 def krb5_ticket_lifetime(cache):
     klist_cmd = spawn.find_executable("klist")

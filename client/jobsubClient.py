@@ -637,7 +637,8 @@ class JobSubClient:
         
         if not acct_group:
             acct_group = self.acctGroup
-        authMethodsURL = constants.JOBSUB_AUTHMETHODS_URL_PATTERN % (self.server, acct_group)
+        authMethodsURL = constants.JOBSUB_AUTHMETHODS_URL_PATTERN %\
+                (self.server, acct_group)
         curl, response = curl_secure_context(authMethodsURL, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET' )
@@ -649,10 +650,12 @@ class JobSubClient:
             methods = []
             for m in method_list.get('out'):
                 methods.append(str(m))
-            print 'http_code = %s list=%s'%(http_code, methods)
             if 'myproxy' in methods:
-                print 'asking for myproxy for %s'%self.server
-                jobsubClientCredentials.cigetcert_to_x509(self.server)
+                cred = jobsubClientCredentials.cigetcert_to_x509(self.server)
+                if cred:
+                    self.credentials['cert'] = cred
+                    self.credentials['key'] = cred
+                    self.credentials['proxy'] = cred
             return methods
 
 

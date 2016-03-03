@@ -57,6 +57,8 @@ Server
 * Feature 11652     reformat submit.log so that jobsub_submit command and resulting
                     jobsubjobid are on the same output line.
 
+* Feature 11875    voms_proxy_lifetime is now a configurable item in jobsub.ini
+
 ================================================================================
 v1.1.9.1
 ================================================================================

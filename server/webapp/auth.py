@@ -69,10 +69,12 @@ class Krb5Ticket:
         except:
             raise OtherAuthError("Unable to find command 'kinit' in the PATH.")
 
-        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' % (kinit_exe, cherrypy.request.keytab,
-                                                      self.createLifetimeHours,
-                                                      self.renewableLifetimeHours,
-                                                      cherrypy.request.krb5cc, cherrypy.request.principal)
+        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' %\
+                (kinit_exe, cherrypy.request.keytab, 
+                        self.createLifetimeHours, 
+                        self.renewableLifetimeHours, 
+                        cherrypy.request.krb5cc, 
+                        cherrypy.request.principal)
         logger.log(cmd)
         try:
             kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
@@ -119,7 +121,14 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
         logger.log("%s"%e) 
         raise
 
-    cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s -out %s -cert %s -key %s" % (voms_proxy_init_exe, voms_attrs, tmp_proxy_fname, cert, key)
+    p = JobsubConfigParser()
+    voms_proxy_lifetime = p.get('default','voms_proxy_lifetime')
+    if not voms_proxy_lifetime:
+        voms_proxy_lifetime = '168:0'
+    cmd = "%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s -out\
+            %s -cert %s -key %s" %\
+            (voms_proxy_init_exe, voms_proxy_lifetime, 
+                    voms_attrs, tmp_proxy_fname, cert, key)
     logger.log(cmd)
     make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=acctrole )
 
@@ -139,7 +148,12 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         logger.log("%s"%e) 
         raise
 
-    cmd = "%s -noregen -rfc -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
+    p = JobsubConfigParser()
+    voms_proxy_lifetime = p.get('default','voms_proxy_lifetime')
+    if not voms_proxy_lifetime:
+        voms_proxy_lifetime = '168:0'
+    cmd = "%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s" %\
+            (voms_proxy_init_exe, voms_proxy_lifetime, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
     make_proxy_from_cmd(cmd, proxy_fname, new_proxy_fname, role=acctrole, env_dict=cmd_env)
@@ -716,26 +730,26 @@ def check_auth(func=None, pass_through=None):
 
     return wrapper
 
-def needs_refresh(filepath,agelimit=3600):
-    logger.log("%s %s"%(filepath,agelimit))
+def needs_refresh(filepath, agelimit=3600):
+    logger.log("%s %s"%(filepath, agelimit))
     if not os.path.exists(filepath):
-        logger.log("%s does not exist, need to refresh"%filepath)
+        logger.log("%s does not exist, need to refresh" % filepath)
         return True
     if agelimit == sys.maxint:
         return False
-    rslt=False
-    agelimit=int(agelimit)
-    age=sys.maxint
+    rslt = False
+    agelimit = int(agelimit)
+    age = sys.maxint
     try:
-        st=os.stat(filepath)
-        age=(time.time()-st.st_mtime)
+        st = os.stat(filepath)
+        age = (time.time() - st.st_mtime)
     except:
         err = '%s'% sys.exc_info()[1]
         logger.log(err)
-        pass
-    logger.log('age of %s is %s, compare to agelimit=%s'%(filepath,age,agelimit))
-    if age>agelimit:
-        rslt=True
+    logger.log('age of %s is %s, compare to agelimit=%s'%\
+            (filepath, age, agelimit))
+    if age > agelimit:
+        rslt = True
     return rslt
 
 

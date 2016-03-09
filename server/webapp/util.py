@@ -165,6 +165,7 @@ def condorCommands():
 def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=None, **kwargs):
 
     scheddList = []
+    rc = {'out':None, 'err':None}
     if constraint:
         scheddList = condor_commands.schedd_list()
     elif job_id:
@@ -185,7 +186,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     else:
         err = "Failed to supply job_id or uid, cannot perform any action"
         logger.log(err)
-        return err
+        return {'err':err}
 
     cmd_user = cherrypy.request.username
     cmd_proxy = cherrypy.request.vomsProxy
@@ -194,7 +195,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             not jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
         err = '%s is not allowed to perform this action on jobs owned by %s ' % (cherrypy.request.username,user)
         logger.log(err)
-        return err
+        return {'err':err}
 
     if user and user != cherrypy.request.username and \
             jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
@@ -242,6 +243,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             if job_action == 'REMOVE' and kwargs.get('forcex'):
                 cmd.append('-forcex')
             out, err = jobsub.run_cmd_as_user(cmd, cmd_user, child_env=child_env)
+            extra_err = err
         except:
             #TODO: We need to change the underlying library to return
             #      stderr on failure rather than just raising exception
@@ -254,7 +256,7 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             msg = "%s - %s"%(cmd,err)
             logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
             extra_err = extra_err + err
-            #return {'out':out, 'err':err}
+            return {'out':out, 'err':extra_err}
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
         for line in out:
             if regex.match(line):
@@ -264,12 +266,11 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     retStr += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
     if failures:
         retStr = "%s \nCONDOR_ERRORS: %s" %( retStr, extra_err )
-    return retStr
+    return {'out':retStr, 'err':extra_err}
 
 def doDELETE(acctgroup,  user=None, job_id=None, constraint=None, **kwargs):
-    rc = {'out': None, 'err': None}
 
-    rc['out'] = doJobAction(
+    rc = doJobAction(
                         acctgroup,  user=user, constraint=constraint,
                         job_id=job_id,
                         job_action='REMOVE', 

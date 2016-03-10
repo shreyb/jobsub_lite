@@ -220,14 +220,19 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     child_env['X509_USER_PROXY'] = cmd_proxy
     out = err = ''
     affected_jobs = 0
-    expr='(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
+    expr='.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
+    expr2 = '.*ailed to connect*'
+    expr3 = '.*all jobs matching constraint*'
     #not needed now but if we ever want them.....
     #expr+='(\d+)(\s+Not\s+Found,\s+)(\d+)(\s+Bad\s+Status,\s+)'
     #expr+='(\d+)(\s+Already\s+Done,\s+)(\d+)(\s+Permission\s+Denied\s+)*'
     regex=re.compile(expr)
+    regex2=re.compile(expr2)
+    regex3=re.compile(expr3)
     extra_err = ""
     failures = 0
-    retStr = ""
+    retOut = ""
+    retErr = ""
 
     collector_host = condor_commands.collector_host()
     logger.log('collector_host is "%s"' % collector_host)
@@ -257,16 +262,26 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
             extra_err = extra_err + err
             return {'out':out, 'err':extra_err}
-        out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
-        for line in out:
+        out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+        for line in out2:
             if regex.match(line):
                 grps=regex.match(line)
                 affected_jobs += int(grps.group(1))
-                retStr = line
-    retStr += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
-    if failures:
-        retStr = "%s \nCONDOR_ERRORS: %s" %( retStr, extra_err )
-    return {'out':retStr, 'err':extra_err}
+                retOut += line
+        err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
+        for line in err2:
+            if regex.match(line):
+                retOut += line.replace('STDOUT:','')
+            if regex2.match(line):
+                retErr += line
+            if regex3.match(line):
+                retErr += line
+    #retOut += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
+    #if failures:
+    #    retOut = "%s \nCONDOR_ERRORS: %s" %( retOut, extra_err )
+    if err and not retErr:
+        retErr = err
+    return {'out':retOut, 'err':retErr}
 
 def doDELETE(acctgroup,  user=None, job_id=None, constraint=None, **kwargs):
 
@@ -288,7 +303,7 @@ def doPUT(acctgroup,  user=None,  job_id=None, constraint=None, **kwargs):
     job_action = kwargs.get('job_action')
 
     if job_action and job_action.upper() in condorCommands():
-        rc['out'] = doJobAction(
+        rc = doJobAction(
                             acctgroup,  user=user, constraint=constraint,
                             job_id=job_id,
                             job_action=job_action.upper())

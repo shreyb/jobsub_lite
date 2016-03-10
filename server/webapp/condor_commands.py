@@ -232,7 +232,10 @@ def ui_condor_q(a_filter=None,a_format=None):
             else:
                 logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
                 cherrypy.response.status = 500
-                return tb
+                if 'ailed to connect' in tb:
+                    return 'Failed to connect to condor schedd'
+                else:
+                    return tb
     return all_jobs
 
 def iwd_condor_q(a_filter, a_part='iwd'):

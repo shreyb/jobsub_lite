@@ -177,7 +177,8 @@ def list_sandboxes(options):
     else:
         userlist = re.findall('^.*/CN=UID:(.*$)',cmd_out)
         if len(userlist)>0 and len(userlist[0])>0:
-            user=userlist[0]
+            user1=userlist[0]
+            user=user1.split('/')[0]
         else:
             user = os.environ.get('USER')
 

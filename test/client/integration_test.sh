@@ -83,13 +83,13 @@ else
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
-lg_echo testing holding and releasing
-OUTFILE=$1.holdrelease.$OUTGROUP.log
-sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
-pass_or_fail
 lg_echo testing holding and releasing $GROUP jobs owned by $USER
 OUTFILE=$1.holdrelease.byuser.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release_byuser.sh $SERVER $GOTJID >$OUTFILE 2>&1
+pass_or_fail
+lg_echo testing holding and releasing
+OUTFILE=$1.holdrelease.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test submission with role

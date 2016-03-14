@@ -22,7 +22,10 @@ T4=$?
 echo after release
 $EXEPATH/jobsub_q $GROUP_SPEC $SERVER_SPEC  
 T5=$?
-! (( $T1 || $T2 || $T3 || $T4 || $T5 ))
+echo holding joblist=${JOBLIST}
+$EXEPATH/jobsub_hold $GROUP_SPEC $SERVER_SPEC  --jobid $JOBLIST --debug
+T6=$?
+! (( $T1 || $T2 || $T3 || $T4 || $T5 || $T6 ))
 TFINAL=$?
 
 echo $0 exiting with status $TFINAL

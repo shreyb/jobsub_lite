@@ -1,7 +1,7 @@
 #!/bin/sh
 source ./setup_env.sh
 export SERVER=https://${MACH}:8443
-$EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --jobsub-server $SERVER  --list
+$EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --debug --jobsub-server $SERVER  --list
 T1=$?
 echo T1=$T1
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then

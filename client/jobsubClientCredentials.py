@@ -71,7 +71,7 @@ class X509Credentials(Credentials):
 
     def expired(self):
         if not self.exists():
-            raise CredentialsNotFoundError()
+            raise CredentialsNotFoundError('%s or %s do not exist'%(self.cert,self.key))
         now = time.mktime(time.gmtime())
         stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
         etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
@@ -95,8 +95,8 @@ class X509Proxy(X509Credentials):
         proxy_file = os.environ.get('X509_USER_PROXY',
                                     constants.X509_PROXY_DEFAULT_FILE)
 
-        if proxy_file and os.path.exists(proxy_file):
-            raise CredentialsNotFoundError()
+        if proxy_file and not os.path.exists(proxy_file):
+            raise CredentialsNotFoundError('%s not found'%proxy_file)
 
         return proxy_file
 
@@ -159,7 +159,7 @@ class Krb5Ticket(Credentials):
         cache_file = krb5_cc.split(':')[-1]
 
         if not os.path.exists(cache_file):
-            raise CredentialsNotFoundError()
+            raise CredentialsNotFoundError('%s not found'%cache_file)
 
         return cache_file
 
@@ -171,8 +171,8 @@ class Krb5Ticket(Credentials):
 
 
     def expired(self):
-        if not self.krb5CredCache:
-            raise CredentialsNotFoundError()
+        if not self.exists():
+            raise CredentialsNotFoundError('%s not found'%self.krb5CredCache)
         now = time.time()
         stime = time.mktime(time.strptime(self.validFrom, '%m/%d/%y %H:%M:%S'))
         etime = time.mktime(time.strptime(self.validTo, '%m/%d/%y %H:%M:%S'))
@@ -213,10 +213,14 @@ def krb5_default_principal(cache=None):
         prn = "UNKNOWN"
     return prn
             
-def cigetcert_to_x509(server):
+def cigetcert_to_x509(server, acctGroup=None):
 
-    proxy_file = os.environ.get('X509_USER_PROXY',
-            constants.X509_PROXY_DEFAULT_FILE)
+    default_proxy_file = default_proxy_filename(acctGroup)
+    proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
+    issuer = proxy_issuer(proxy_file)
+    if "Kerberized CA HSM" in issuer:
+        print 'cigetcert_to_x509: %s has issuer %s, removing'%(proxy_file,issuer)
+        os.remove(proxy_file)
 
     serverParts = server.split(':')
 
@@ -254,6 +258,8 @@ def krb5_ticket_lifetime(cache):
             'etime': ' '.join(lt.split()[2:4])}
 
 def x509_lifetime(cert):
+    if not os.path.exists(cert):
+        raise CredentialsNotFoundError('%s not found'% cert)
     openssl_cmd = spawn.find_executable("openssl")
     if not openssl_cmd:
         raise Exception("Unable to find command 'openssl' in the PATH")
@@ -267,6 +273,28 @@ def x509_lifetime(cert):
             lt['etime'] = line[9:]
     return lt
 
+def default_proxy_filename(acctGroup=None):
+    if acctGroup:
+        default_proxy_file = "%s_%s" %\
+                (constants.X509_PROXY_DEFAULT_FILE, acctGroup)
+    else:
+        default_proxy_file = constants.X509_PROXY_DEFAULT_FILE
+    return default_proxy_file
+
+
+def proxy_issuer(proxy_fname):
+    voms_cmd = spawn.find_executable("voms-proxy-info")
+    issuer = ""
+    if not voms_cmd:
+        raise Exception("Unable to find command 'voms-proxy-info' in the PATH.")
+
+    cmd = '%s -file %s -issuer' % (voms_cmd, proxy_fname)
+    try:
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        issuer = cmd_out.strip()
+    except:
+        pass
+    return issuer
 
 # Simple tests that work on Linux
 #k = Krb5Ticket()

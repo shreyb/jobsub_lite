@@ -1,4 +1,25 @@
 
+
+================================================================================
+v1.2.1
+================================================================================
+Client
+------
+
+* Feature  11738  Make client aware of cigetcert and expected server authentication
+                  method
+
+Server
+------
+
+* Bug      11734  Propagate schedd errors from condor_q back to client without 
+                  python exception traceback noise
+
+* Maint.   11734  Update documentation from help
+
+* Bug      11865  Propagate schedd errors from hold,release,rm back to client
+                  without python exception traceback noise
+ 
 ================================================================================
 v1.2
 ================================================================================

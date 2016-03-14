@@ -95,8 +95,10 @@ class JobSubClient:
         else:
             if serverParts[2]!= self.serverPort:
                 self.serverPort = serverParts[2]
-        self.credentials = get_client_credentials()
-        self.acctRole = get_acct_role(acct_role, self.credentials.get('env_cert', self.credentials.get('cert')))
+        self.credentials = get_client_credentials(self.acctGroup)
+        cert = self.credentials.get('env_cert', self.credentials.get('cert'))
+        self.issuer = jobsubClientCredentials.proxy_issuer(cert)
+        self.acctRole = get_acct_role(acct_role, cert)
 
         # Help URL
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (
@@ -651,11 +653,20 @@ class JobSubClient:
             for m in method_list.get('out'):
                 methods.append(str(m))
             if 'myproxy' in methods:
-                cred = jobsubClientCredentials.cigetcert_to_x509(self.server)
+                
+                cred = jobsubClientCredentials.cigetcert_to_x509(
+                        self.server,
+                        acct_group)
                 if cred:
                     self.credentials['cert'] = cred
                     self.credentials['key'] = cred
                     self.credentials['proxy'] = cred
+            else:
+                issuer = jobsubClientCredentials.proxy_issuer(
+                        self.credentials['proxy'])
+                if "DC=cilogon" in issuer:
+                    self.credentials = {}
+                    self.credentials = get_client_credentials(acctGroup)
             return methods
 
 
@@ -1000,7 +1011,7 @@ def print_formatted_response(msg, response_code, server, serving_server,
         print_server_details(response_code, server, serving_server, response_time)
 
 
-def get_client_credentials():
+def get_client_credentials(acctGroup=None):
     """
     Client credentials lookup follows following order until it finds them
 
@@ -1022,35 +1033,46 @@ def get_client_credentials():
     env_cert = None
     env_key = None
     cred_dict={}
-    if os.environ.get('X509_USER_PROXY'):
-        cred_dict['proxy'] = env_cert = env_key = os.environ.get('X509_USER_PROXY')
+
+    default_proxy_file = jobsubClientCredentials.default_proxy_filename(acctGroup)
+    #print 'get_client_credentials default_proxy=%s' % default_proxy_file
+    env_proxy = os.environ.get('X509_USER_PROXY')
+    #print 'get_client_credentials env_proxy=%s' % env_proxy
+    if env_proxy:
+        cred_dict['proxy'] = env_cert = env_key = env_proxy
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         env_cert = os.environ.get('X509_USER_CERT')
         env_key = os.environ.get('X509_USER_KEY')
-    elif os.path.exists(constants.X509_PROXY_DEFAULT_FILE):
-        cred_dict['proxy'] =  constants.X509_PROXY_DEFAULT_FILE
-        cred_dict['cert'] =  constants.X509_PROXY_DEFAULT_FILE
-        cred_dict['key'] =  constants.X509_PROXY_DEFAULT_FILE
+    elif os.path.exists(default_proxy_file):
+        cred_dict['proxy'] = default_proxy_file
+        cred_dict['cert'] = default_proxy_file
+        cred_dict['key'] = default_proxy_file
     if env_cert is not None:
-        cred_dict['env_cert'] = cred_dict['cert'] = env_cert
-        cred_dict['env_key'] = cred_dict['key'] = env_key
+        cred_dict['cert'] = cred_dict['env_cert'] = env_cert
+        cred_dict['key'] = cred_dict['env_key'] = env_key
 
     if cred_dict:
-        x509 = jobsubClientCredentials.X509Credentials(cred_dict['cert'],cred_dict['key'])
-        if x509.expired():
-            print "WARNING: %s has expired.  Attempting to regenerate valid proxy" % cred_dict['cert']
-            cred_dict = {}
-        elif not x509.isValid():
-            print "WARNING: %s appears not to be valid.  Attempting to generate valid proxy " % cred_dict['cert']
+        x509 = jobsubClientCredentials.X509Credentials(
+                cred_dict['cert'],
+                cred_dict['key'])
+        #if x509.expired():
+        #    print "WARNING: %s has expired.  Attempting to regenerate " % \
+        #            cred_dict['cert']
+        #    cred_dict = {}
+        if not x509.isValid():
+            print "WARNING: %s is not valid.  Attempting to regenerate " %\
+                    cred_dict['cert']
             cred_dict = {}
 
     if not cred_dict:
         # Look for credentials in form of kerberos ticket
         krb5_creds = jobsubClientCredentials.Krb5Ticket()
         if krb5_creds.isValid():
-            jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache)
-            cred_dict['cert'] = constants.X509_PROXY_DEFAULT_FILE
-            cred_dict['key'] = constants.X509_PROXY_DEFAULT_FILE
+            jobsubClientCredentials.krb5cc_to_x509(
+                    krb5_creds.krb5CredCache,
+                    default_proxy_file)
+            cred_dict['cert'] = default_proxy_file
+            cred_dict['key'] = default_proxy_file
         else:
             raise JobSubClientError("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
 

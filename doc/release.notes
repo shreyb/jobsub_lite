@@ -17,9 +17,17 @@ Server
 
 * Maint.   11734  Update documentation from help
 
+* Bug      11783  Server returning out of date documentation for 
+                  jobsub_submit --help
+
 * Bug      11865  Propagate schedd errors from hold,release,rm back to client
                   without python exception traceback noise
- 
+
+* Bug      11927  krbrefresh not working with myproxy 
+
+* Bug      11964  Logfile bloat.  Rename /var/log/jobsub/error.log to
+                  debug log
+* Bug      11989  josub_history.db getting large
 ================================================================================
 v1.2
 ================================================================================

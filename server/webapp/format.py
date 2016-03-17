@@ -74,8 +74,8 @@ def styleSheets():
     return style
 
 def _format_response(content_type, data, output_format=None):
-    logger.log('Response Content-Type: %s' % content_type)
-    logger.log('data: %s' % data)
+    #logger.log('Response Content-Type: %s' % content_type)
+    #logger.log('data: %s' % data)
 
     content_type_list = content_type.split(',')
     if 'application/json' in content_type_list:

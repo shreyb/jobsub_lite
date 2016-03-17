@@ -75,8 +75,8 @@ class JobSettings(object):
             self.cmdParser.add_option_group(self.sam_group)
 
 
-        self.initCmdParser()
         self.initFileParser()
+        self.initCmdParser()
         self.settings = {}
         commands=JobUtils()
         (retVal,rslt)=commands.getstatusoutput("/bin/hostname")
@@ -196,7 +196,7 @@ class JobSettings(object):
         self.settings['jobsub_max_cluster_procs']=10000
         self.settings['job_expected_max_lifetime'] = 21600
         self.settings['set_expected_max_lifetime'] = None
-
+        
 
         #for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -316,6 +316,13 @@ class JobSettings(object):
             """UNITS may be `s' for seconds (the default), `m' for minutes,""",
             """`h' for hours or `d' h for days."""]))
 
+        submit_host = os.environ.get('SUBMIT_HOST')
+        ex_short = self.fileParser.get(submit_host,'job_expected_max_lifetime_short')
+        ex_med = self.fileParser.get(submit_host,'job_expected_max_lifetime_medium')
+        ex_long = self.fileParser.get(submit_host,'job_expected_max_lifetime_long')
+        ex_default = self.fileParser.get(submit_host,'job_expected_max_lifetime_default')
+
+
         generic_group.add_option("--expected-lifetime", dest="set_expected_max_lifetime",action="store",
             type="string",metavar="'short'|'medium'|'long'|NUMBER[UNITS]",
             help=' '.join(["""Expected lifetime of the job.  Used to match against""",
@@ -328,8 +335,8 @@ class JobSettings(object):
             """are 'short', 'medium', 'long', or NUMBER[UNITS] of time.  IF [UNITS] is omitted, value is NUMBER  seconds.""",
             """Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc."""
             """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
-            """are '6 hours' , '12 hours' , and '23 hours' but this may change in the future.""",
-            """Default value of  EXPECTED_LIFETIME is currently 23 hours."""]))
+            """are '%s' , '%s' , and '%s' but this may change in the future.""" % (ex_short,ex_med,ex_long),
+            """Default value of  EXPECTED_LIFETIME is currently '%s' ."""% (ex_default) ]))
 
 
         generic_group.add_option("--maxConcurrent", 

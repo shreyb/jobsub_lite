@@ -192,9 +192,12 @@ def pruneDB( ndays, dbname=None):
     sql2="""DELETE from jobsub_history WHERE 
                    completiondate < datetime('now', '-%s days') AND 
                    jobstatus = 'C';""" % ndays
+
+    sql3="vacuum;"
+
     conn = sqlite3.connect('jobsub_history.db')
     c = conn.cursor()
-    for sql in [ sql1, sql2 ]:
+    for sql in [ sql1, sql2, sql3 ]:
 
         try:
             logger.log(sql,logfile="fill_jobsub_history")

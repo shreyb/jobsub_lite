@@ -8,7 +8,9 @@ import sys
 import subprocessSupport
 import socket
 import re
+import auth
 from random import randint
+
 
 jobstatus_dict = {'unexpanded':0, 'idle':1, 'run':2, 'running':2, 'removed':3, 'completed':4,'held':5,'hold':5, 'error':6}
 if platform.system() == 'Linux':
@@ -216,7 +218,13 @@ def ui_condor_q(a_filter=None,a_format=None):
             else:
                 cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-            logger.log(cmd, logfile='condor_commands')
+            dn = auth.get_client_dn()
+            pts = dn.split(':')
+            user = pts[-1]
+            log_cmd = "[user:%s] condor_q -name %s %s" %(user, schedd, a_filter)
+
+
+            logger.log(log_cmd, logfile='condor_commands')
             all_jobs += jobs
             #logger.log("cmd=%s"%cmd)
             #logger.log("rslt=%s"%all_jobs)
@@ -230,11 +238,13 @@ def ui_condor_q(a_filter=None,a_format=None):
                 empty = schedd + ": " + no_jobs + "\n"
                 all_jobs += empty
             else:
-                logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
                 cherrypy.response.status = 500
                 if 'ailed to connect' in tb:
-                    return 'Failed to connect to condor schedd'
+                    err = 'Failed to connect to condor schedd %s'% schedd
+                    logger.log(err, severity=logging.ERROR, logfile='condor_commands')
+                    return err
                 else:
+                    logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
                     return tb
     return all_jobs
 
@@ -251,11 +261,16 @@ def iwd_condor_q(a_filter, a_part='iwd'):
         logger.log(tb)
         no_jobs = "All queues are empty"
         if len(re.findall(no_jobs, tb)):
-            return iwd
+            return no_jobs 
         else:
-            logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
             cherrypy.response.status = 500
-            return tb
+            if 'ailed to connect' in tb:
+                err = 'Failed to connect to condor schedd %s'% schedd
+                logger.log(err, severity=logging.ERROR, logfile='condor_commands')
+                return err
+            else:
+                logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+                return tb
 
 
 def all_known_jobs(acct_group,uid=None,jobid=None):

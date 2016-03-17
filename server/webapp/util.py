@@ -12,7 +12,7 @@ import json
 import hashlib
 import StringIO
 import jobsub
-import condor_commands 
+import condor_commands
 import re
 import cherrypy
 import auth
@@ -22,14 +22,16 @@ import auth
 def encode_multipart_formdata(fields, files, outfile):
     """
     fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    files is a sequence of (name, filename, value) elements for data to be
+    uploaded as files
     Return (content_type, body) ready for httplib.HTTP instance
     """
     MAINBOUNDARY = 'cbsms-main-boundary'
     SUBBOUNDARY = 'cbsms-sub-boundary'
     CRLF = '\r\n'
     main_content_type = 'multipart/alternative'
-    outfile.write('Content-Type: %s; boundary=%s%s' % (main_content_type, MAINBOUNDARY, CRLF))
+    outfile.write('Content-Type: %s; boundary=%s%s' %\
+            (main_content_type, MAINBOUNDARY, CRLF))
     outfile.write('--' + MAINBOUNDARY + CRLF)
 
     sub_content_type = 'multipart/mixed; boundary=%s' % SUBBOUNDARY
@@ -41,7 +43,8 @@ def encode_multipart_formdata(fields, files, outfile):
         outfile.write(json.dumps(value) + CRLF)
     for (key, filename, value) in files:
         outfile.write('--' + SUBBOUNDARY + CRLF)
-        outfile.write('Content-Type: %s; name=%s%s' % (get_content_type(filename), filename, CRLF))
+        outfile.write('Content-Type: %s; name=%s%s' %\
+                (get_content_type(filename), filename, CRLF))
         outfile.write('Content-Location: %s%s' % (filename, CRLF))
         outfile.write('content-transfer-encoding: Base64%s' % CRLF)
         outfile.write(CRLF)
@@ -95,34 +98,35 @@ def create_zipfile(zip_file, zip_path, job_id=None, partial=None):
     zip.close()
 
 def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
-    logger.log('tar_file=%s tar_path=%s job_id=%s partial=%s'%(tar_file, tar_path, job_id, partial))
-    tar = tarfile.open(tar_file,'w:gz')
+    logger.log('tar_file=%s tar_path=%s job_id=%s partial=%s'%\
+            (tar_file, tar_path, job_id, partial))
+    tar = tarfile.open(tar_file, 'w:gz')
     os.chdir(tar_path)
-    logger.log('creating tar of %s'%tar_path)
-    failed_file_list=[]
+    logger.log('creating tar of %s'% tar_path)
+    failed_file_list = []
     f0 = os.path.realpath(tar_path)
-    files=os.listdir(tar_path)
+    files = os.listdir(tar_path)
     if job_id and partial:
         job_parts = job_id.split('@')
         jnum = job_parts[0]
-        logger.log('jnum=%s'%jnum)
+        logger.log('jnum=%s' % jnum)
 
     for file in files:
-        f1=os.path.join(f0,file)
+        f1 = os.path.join(f0, file)
         try:
             if partial:
                 if jnum in file or partial in file:
-                    tar.add(f1,file)
+                    tar.add(f1, file)
             else:
-                    tar.add(f1,file)
+                tar.add(f1, file)
 
         except:
-            logger.log('failed to add %s to %s '%(file,tar_file))
+            logger.log('failed to add %s to %s '%(file, tar_file))
             failed_file_list.append(file)
-    if len(failed_file_list)>0:
+    if len(failed_file_list) > 0:
         failed_fname = "/tmp/%s.MISSING_FILES" % \
             os.path.basename(tar_file)
-        f=open(failed_fname,"w")
+        f = open(failed_fname, "w")
         f.write("""
                 The following files were present in the log directory
                 but were not downloaded.  The most likely reason is that 
@@ -130,13 +134,12 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
                 completed.  If you repeat the jobsub_fetchlog command that
                 retrieved this tarball  after the jobs that caused the
                 problem have completed they will probably download:
-                \n"""
-                )
+                \n""")
+
         for fname in failed_file_list:
             f.write("%s\n" % fname)
-        f.close() 
-        tar.add(failed_fname , 
-            os.path.basename(failed_fname))
+        f.close()
+        tar.add(failed_fname, os.path.basename(failed_fname))
         os.remove(failed_fname)
     tar.close()
 
@@ -144,14 +147,14 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
 
 def digest_for_file(fileName, block_size=2**20):
     dig = hashlib.sha1()
-    f=open(fileName,'r')
+    f = open(fileName, 'r')
     while True:
         data = f.read(block_size)
         if not data:
             break
         dig.update(data)
     f.close()
-    x=dig.hexdigest()
+    x = dig.hexdigest()
     return x
 
 def condorCommands():
@@ -162,7 +165,12 @@ def condorCommands():
         }
     return c
 
-def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=None, **kwargs):
+def doJobAction(acctgroup,
+                job_id=None,
+                user=None,
+                job_action=None,
+                constraint=None,
+                **kwargs):
 
     scheddList = []
     rc = {'out':None, 'err':None}
@@ -172,8 +180,8 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
         #job_id is a jobsubjobid
         constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
         # Split the jobid to get cluster_id and proc_id
-        stuff=job_id.split('@')
-        schedd_name='@'.join(stuff[1:])
+        stuff = job_id.split('@')
+        schedd_name = '@'.join(stuff[1:])
         logger.log("schedd_name is %s"%schedd_name)
         scheddList.append(schedd_name)
         ids = stuff[0].split('.')
@@ -181,7 +189,8 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
         if (len(ids) > 1) and (ids[1]):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
     elif user:
-        constraint = '(Owner =?= "%s") && regexp("group_%s.*",AccountingGroup)' % (user,acctgroup)
+        constraint = '(Owner =?= "%s")&&regexp("group_%s.*",AccountingGroup)'%\
+                (user, acctgroup)
         scheddList = condor_commands.schedd_list()
     else:
         err = "Failed to supply job_id or uid, cannot perform any action"
@@ -192,30 +201,35 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
     cmd_proxy = cherrypy.request.vomsProxy
 
     if user and user != cherrypy.request.username and \
-            not jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
-        err = '%s is not allowed to perform this action on jobs owned by %s ' % (cherrypy.request.username,user)
+            not jobsub.is_superuser_for_group(acctgroup,
+                                              cherrypy.request.username):
+        err = '%s is not allowed to perform %s on jobs owned by %s ' %\
+                (cherrypy.request.username, job_action, user)
         logger.log(err)
+        logger.log(err, logfile='condor_superuser')
+        logger.log(err, logfile='condor_commands')
         return {'err':err}
 
     if user and user != cherrypy.request.username and \
-            jobsub.is_superuser_for_group(acctgroup,cherrypy.request.username):
+            jobsub.is_superuser_for_group(acctgroup,
+                                          cherrypy.request.username):
         cmd_user = user
         acctrole = 'Analysis'
         if acctgroup in user and 'pro' in user:
             acctrole = 'Production'
-        cmd_proxy = auth.x509_proxy_fname(cmd_user,acctgroup,acctrole)
-        logger.log('proxy for %s is %s'%(cmd_user,cmd_proxy))
-        msg = '%s Performing %s on user %s jobs with constraints (%s)' % \
+        cmd_proxy = auth.x509_proxy_fname(cmd_user, acctgroup, acctrole)
+        logger.log('proxy for %s is %s'%(cmd_user, cmd_proxy))
+        msg = '[user: %s] %s jobs owned by %s with constraints (%s) '%\
                 (cherrypy.request.username, job_action, cmd_user, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
         logger.log(msg, logfile='condor_superuser')
     else:
-        msg = 'Performing %s on jobs with constraints (%s)' % (job_action, constraint)
+        msg = '[user: %s] %s  jobs with constraint (%s)' %\
+                (cherrypy.request.username, job_action, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
 
-                        
     child_env = os.environ.copy()
     child_env['X509_USER_PROXY'] = cmd_proxy
     out = err = ''
@@ -259,7 +273,10 @@ def doJobAction(acctgroup, job_id=None, user=None, job_action=None, constraint=N
             err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
             logger.log(err,traceback=1)
             msg = "%s - %s"%(cmd,err)
+            logger.log(msg, severity=logging.ERROR)
             logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
+            if user and user != cherrypy.request.username:
+                logger.log(msg, severity=logging.ERROR, logfile='condor_superuser')
             extra_err = extra_err + err
             return {'out':out, 'err':extra_err}
         out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()

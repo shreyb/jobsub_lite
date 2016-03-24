@@ -21,7 +21,14 @@ class JobUtils(object):
         return(retVal,val)
 
     def ifdhString(self):
-        fs="""cat << '_HEREDOC_' > %s
+        fs="""
+setup_ifdh_env(){
+#
+# create ifdh.sh which runs
+# ifdh in a seperate environment to
+# keep it from interfering with users ifdh set up
+#
+cat << '_HEREDOC_' > %s
 #!/bin/sh
 #
 which ifdh > /dev/null 2>&1
@@ -50,6 +57,7 @@ else
 fi
 _HEREDOC_
 chmod +x %s
+}
             """        
         return fs
 
@@ -68,13 +76,27 @@ fi
 
     def logTruncateString(self):
         lts = """
-function is_set {
+set_jobsub_debug(){
+    export PS4='$LINENO:'
+    set -xv
+}
+[[ "$JOBSUB_DEBUG" ]] && set_jobsub_debug
+
+
+cleanup_condor_dirs(){
+if [[ -d "$_CONDOR_JOB_IWD" ]]; then
+   find $_CONDOR_JOB_IWD -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} \;
+fi
+}
+
+
+is_set() {
   [ "$1" != "" ]
   RSLT=$?
   return $RSLT
 }
     
-function get_log_sizes {
+get_log_sizes() {
     total=$JOBSUB_MAX_JOBLOG_SIZE
     head=$JOBSUB_MAX_JOBLOG_HEAD_SIZE
     tail=$JOBSUB_MAX_JOBLOG_TAIL_SIZE
@@ -103,7 +125,7 @@ function get_log_sizes {
 
 }
         
-function jobsub_truncate {
+jobsub_truncate() {
     get_log_sizes 
     JOBSUB_LOG_SIZE=`wc -c $1 | awk '{print $1}'`
     if ( ! is_set $JSB_TMP );then
@@ -122,6 +144,47 @@ function jobsub_truncate {
     cat $JSB_OUT
     rm $JSB_OUT
 }
+
+
+redirect_output_start(){
+    exec 7>&1
+    exec >${JSB_TMP}/JOBSUB_LOG_FILE
+    exec 8>&2
+    exec 2>${JSB_TMP}/JOBSUB_ERR_FILE
+}
+
+redirect_output_finish(){
+    exec 1>&7
+    exec 7>&-
+    exec 2>&8
+    exec 8>&-
+    jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2
+    jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE
+}
+
+
+normal_exit(){
+    redirect_output_finish
+    cleanup_condor_dirs
+}
+
+signal_exit(){
+    echo "$@ "
+    echo "$@ " 1>&2
+    exit 255
+}
+
+
+trap normal_exit EXIT
+trap "signal_exit received signal TERM"  TERM
+trap "signal_exit received signal KILL" KILL
+trap "signal_exit received signal ABRT" ABRT
+trap "signal_exit received signal QUIT" QUIT
+trap "signal_exit received signal ALRM" ALRM
+trap "signal_exit received signal INT" INT
+trap "signal_exit received signal BUS" BUS
+trap "signal_exit received signal PIPE" PIPE
+
         """
         return lts
 
@@ -168,7 +231,6 @@ export NODE_NAME=`hostname`
 export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
 export VENDOR_ID=`grep vendor_id /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
 export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_DEFINITION_ID'","task_id":"'$POMS_TASK_ID'","job_id":"'$POMS_JOB_ID'","batch_id":"'$JOBSUBJOBID'","host_site":"'$HOST_SITE'","bogomips":"'$BOGOMIPS'","node_name":"'$NODE_NAME'","vendor_id":"'$VENDOR_ID'"}'
-echo poms_data:$poms_data
 
         """
         return poms_str

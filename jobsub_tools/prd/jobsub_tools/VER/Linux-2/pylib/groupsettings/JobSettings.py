@@ -753,6 +753,9 @@ class JobSettings(object):
 
         f.write("\n")
         f.write("%s\n"%JobUtils().logTruncateString())
+        ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
+        f.write(ifdh_pgm_text)
+        f.write("\n")
         f.write("\n#########################################################################\n")
         f.write("# main ()                                                               #\n")
         f.write("#########################################################################\n")
@@ -769,6 +772,7 @@ class JobSettings(object):
         f.write("# Hold and clear arg list\n")
         f.write("args=\"$@\"\n")
         f.write("set - \"\"\n")
+        f.write("""[[ "$JOBSUB_DEBUG" ]] && set_jobsub_debug\n""")
         f.write("\n")
         f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
         f.write("mkdir -p $JSB_TMP\n")
@@ -777,19 +781,17 @@ class JobSettings(object):
         f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
         f.write("export TMPDIR=$_CONDOR_SCRATCH_DIR\n")
         f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
-        f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
-        if settings.has_key('jobsub_max_joblog_tail_size'):
-            f.write("""JOBSUB_MAX_JOBLOG_TAIL_SIZE=%s\n"""%settings['jobsub_max_joblog_tail_size'])
-        if settings.has_key('jobsub_max_joblog_head_size'):
-            f.write("""JOBSUB_MAX_JOBLOG_HEAD_SIZE=%s\n"""%settings['jobsub_max_joblog_head_size'])
-        f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
+        #f.write("""if [ "${JOBSUB_MAX_JOBLOG_SIZE}" = "" ] ; then JOBSUB_MAX_JOBLOG_SIZE=%s ; fi \n"""%settings['jobsub_max_joblog_size'])
+        #if settings.has_key('jobsub_max_joblog_tail_size'):
+            #f.write("""JOBSUB_MAX_JOBLOG_TAIL_SIZE=%s\n"""%settings['jobsub_max_joblog_tail_size'])
+        #if settings.has_key('jobsub_max_joblog_head_size'):
+            #f.write("""JOBSUB_MAX_JOBLOG_HEAD_SIZE=%s\n"""%settings['jobsub_max_joblog_head_size'])
+        f.write("""redirect_output_start\n""")
 
         f.write("\n")
         f.write(JobUtils().krb5ccNameString())
         f.write("\n")
-        ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
-        f.write(ifdh_pgm_text)
-        f.write("\n")
+        f.write("setup_ifdh_env\n")
         if settings.has_key('set_up_ifdh') and settings['set_up_ifdh']:
             f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
 
@@ -828,7 +830,7 @@ class JobSettings(object):
         log_cmd = """%s log "%s:%s "\n"""%\
                     (ifdh_cmd,settings['user'],log_msg)
         f.write(log_cmd)
-        f.write(JobUtils().poms_info())
+        f.write("%s\n"%JobUtils().poms_info())
         f.write("""%s log poms_data=$poms_data\n""" % ifdh_cmd)
         f.write("echo `date` %s"%log_msg)
         f.write(">&2 echo `date` %s"%log_msg)
@@ -910,8 +912,6 @@ class JobSettings(object):
             if settings['use_gftp']:
                 use_gftp = "--force=expgridftp"
             f.write("%s cp %s $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,use_gftp,settings['joblogfile']))
-        f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
-        f.write("""find $_CONDOR_JOB_IWD -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} \;\n""")
         
 
         f.write("exit $JOB_RET_STATUS\n")

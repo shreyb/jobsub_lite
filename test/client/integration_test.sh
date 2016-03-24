@@ -63,6 +63,23 @@ echo "minos nova minerva lbne" | grep $GROUP > /dev/null 2>&1
 if [ "$?" != "0" ]; then
    export SKIP_PRODUCTION_TEST="YES"
 fi
+lg_echo test a verbose job to test output file truncation
+OUTFILE=$1.noisy.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_noisy_job.sh $SERVER >$OUTFILE 2>&1
+T1=$?
+JID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
+T2=$?
+NOISYJID=`echo $JID| grep '[0-9].0@'`
+T3=$?
+test $T1 -eq 0 -a $T2 -eq 0 -a $T3 -eq 0
+SUBMIT_WORKED=$?
+if [ "$SUBMIT_WORKED" = "0" ]; then
+     lg_echo "successfully submitted job $NOISYJID"
+else
+    lg_echo "submission problem, please see file $OUTFILE"
+fi 
+test $SUBMIT_WORKED -eq 0
+pass_or_fail
 
 lg_echo test simple submission
 OUTFILE=$1.submit.$OUTGROUP.log
@@ -79,7 +96,7 @@ SUBMIT_WORKED=$?
 if [ "$SUBMIT_WORKED" = "0" ]; then
      lg_echo "successfully submitted job $GOTJID"
 else
-    lg_echo "submission problem, please see file $1.submit.$OUTGROUP.log"
+    lg_echo "submission problem, please see file $OUTFILE"
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
@@ -105,7 +122,7 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     if [ "$SUBMIT_WORKED2" = "0" ]; then
          lg_echo "PASSED successfully submitted job $GOTJID2"
     else
-         lg_echo "FAILED submission problem, please see file $1.submit_role.$OUTGROUP.log"
+         lg_echo "FAILED submission problem, please see file $OUTFILE"
     fi 
     test $SUBMIT_WORKED2 -eq 0
     pass_or_fail
@@ -224,9 +241,17 @@ for JOB in $DAGJID  $MAXCONCURRENTJID ; do
     pass_or_fail
 done
 
+OUTFILE=$1.cdfjobsubjobsections.$OUTGROUP.log
 for JOB in $CDFJID ; do
     lg_echo checking cdf $JOB for JobsubJobSections
     ./test_cdf_jobsubjobsection.sh $SERVER $JOB >> $OUTFILE  2>&1
+    pass_or_fail
+done
+
+OUTFILE=$1.checklogfiletruncations.$OUTGROUP.log
+for JOB in $NOISYJID ; do
+    lg_echo checking  $JOB for expected output file truncations
+    ./test_for_logfile_truncation.sh $SERVER $JOB >> $OUTFILE  2>&1
     pass_or_fail
 done
 

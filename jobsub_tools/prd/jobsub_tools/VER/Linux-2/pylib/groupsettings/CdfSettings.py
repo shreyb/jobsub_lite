@@ -97,6 +97,7 @@ class CdfSettings(JobSettings):
         super(CdfSettings,self).makeWrapFilePreamble()
         settings=self.settings
         preWrapCommands = [ 
+            "setup_ifdh_env",    
             "export USER=$GRID_USER",
             "export CAF_JID=${DAGMANJOBID}",
             "export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
@@ -154,18 +155,31 @@ class CdfSettings(JobSettings):
             "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
             "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
             "tar cvzf ${OUTPUT_TAR_FILE} * ",
-            """CPY_OUT="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
-            "echo executing:$CPY_OUT",
+            """cpy_out="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
+            """rnd=$((($RANDOM % 300)+1))""",
+            """sleep_val=$rnd""",
             """
-            NTRIES=3
-            LSTAT=1
-            for ITRY in `seq $NTRIES`
+            num_tries=8
+            cpy_stat=1
+            for itr in `seq $num_tries`
             do
-              $CPY_OUT
-              LSTAT=$?
-              if [ $LSTAT -eq 0 ]; then break; fi
-              sleep 600
+              date
+              echo sleeping $sleep_val seconds prior to copying to ${OUTPUT_DESTINATION}
+              sleep $sleep_val
+              date
+              echo executing:$cpy_out
+              $cpy_out
+              cpy_stat=$?
+              if [ $cpy_stat -eq 0 ]; then break; fi
+              rnd=$((($RANDOM % 3600)+1))
+              sleep_val=$rnd
+              date
+              echo "$cpy_out failed on try $itr of $num_tries"
             done
+            if [ "$cpy_stat" != "0" ]; then 
+              echo "$cpy_out failed, exiting with status $cpy_stat"
+              exit $cpy_stat
+            fi
             """,
         ]
         f = open(settings['wrapfile'], 'a')
@@ -201,7 +215,7 @@ class CdfSettings(JobSettings):
     def checkSanity(self):
         settings=self.settings
         if not settings.has_key('outLocation'):
-            settings['outLocation']="%s@fcdficaf2.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
+            settings['outLocation']="%s@fcdflnxgpvm01.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
         if not settings.has_key('tar_file_name'):
             raise Exception ('you must supply an input tar ball using --tarFile')
         if settings.has_key('sectionList'):
@@ -255,6 +269,7 @@ class CdfSettings(JobSettings):
             settings['firstSection']=1
         if not settings.has_key('lastSection'):
             settings['lastSection']=settings['queuecount']
+
         if not settings.has_key('job_count'):
             settings['job_count']=settings['queuecount']
 

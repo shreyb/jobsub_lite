@@ -154,10 +154,8 @@ redirect_output_start(){
 }
 
 redirect_output_finish(){
-    exec 1>&7
-    exec 7>&-
-    exec 2>&8
-    exec 8>&-
+    exec 1>&7 7>&-
+    exec 2>&8 8>&-
     jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2
     jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE
 }
@@ -241,8 +239,8 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
 ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
 SPSTATUS=$?
 while true; do
-    STATION_STATE=$SAM_STATION.`date '+%s'`
-    PROJECT_STATE=$SAM_DATASET.`date '+%s'`
+    STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
+    PROJECT_STATE=${JSB_TMP}/$SAM_DATASET.`date '+%s'`
     ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
     grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
 
@@ -254,15 +252,24 @@ while true; do
     if [ $SCALED_PREFETCH -lt $CACHE_MIN ]; then
         CACHE_MIN=$SCALED_PREFETCH
     fi
+
     IN_CACHE=`cat $PROJECT_STATE | sed "s/^.*of these //" | sed "s/ in cache.*$//"`
-    rm $PROJECT_STATE $STATION_STATE
+
+    echo "$IN_CACHE files of $TOTAL_FILES are staged, waiting for $CACHE_MIN to stage" 
+
     if [ $TOTAL_FILES -le 0 ]; then
-        echo there are no files in $SAM_DATASET! exiting....
-        break
+        echo there are no files in $SAM_PROJECT! exiting....
+        cat $STATION_STATE
+        exit 1
+    fi
+    if [ ! -s "$PROJECT_STATE" ]; then
+        echo "$SAM_PROJECT" not found in  "$SAM_STATION" ! exiting....
+        cat $STATION_STATE
+        exit 1
     fi
     if [ $IN_CACHE -ge $CACHE_MIN  ]; then
         echo $IN_CACHE files of $TOTAL_FILES are staged, exiting
-        break
+        exit 0 
     fi
     sleep 60
 

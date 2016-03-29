@@ -22,6 +22,7 @@ def createDB(dir=None):
     logger.log(cmd_out,logfile="fill_jobsub_history")
     if cmd_err:
         logger.log(cmd_err,severity=logging.ERROR,logfile="fill_jobsub_history")
+        logger.log(cmd_err,severity=logging.ERROR,logfile="error")
 
 def createHistoryDump(historyFileName='history'):
     cmd = """condor_history -file %s -af globaljobid iwd  
@@ -100,6 +101,7 @@ def loadArchive(afile,cleanup=False):
         loadDatabase(f,cleanup)
     except:
         logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
+        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
 
 
 def loadNewestArchive(cleanup=False):
@@ -118,6 +120,7 @@ def loadNewestArchive(cleanup=False):
                     fp = fpx
             except:
                 logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
+                logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
     if fp:
         loadArchive(fp,cleanup)
 
@@ -126,6 +129,7 @@ def condorHistoryFile():
     histfile , cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
         logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
+        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
     return histfile
 
 def keepUp():
@@ -145,7 +149,9 @@ def keepUp():
         logger.log(cmd, logfile="fill_jobsub_history")
         cmd_out , cmd_err = subprocessSupport.iexe_cmd(cmd)
         logger.log(cmd_out, logfile="fill_jobsub_history")
-        logger.log(cmd_err, logfile="fill_jobsub_history")
+        if cmd_err:
+            logger.log(cmd_err, severity=logging.ERROR, logfile="fill_jobsub_history")
+            logger.log(cmd_err, severity=logging.ERROR, logfile="error")
         num_lines = open('history').read().count('\n')
         logger.log("history file has %s lines" % num_lines, logfile="fill_jobsub_history")
         if os.path.exists('history~'):
@@ -170,6 +176,7 @@ def keepUp():
 
     except:
         logger.log(sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
+        logger.log(sys.exc_info()[1],severity=logging.ERROR, logfile="error")
 
 def pruneDB( ndays, dbname=None):
 
@@ -204,9 +211,9 @@ def pruneDB( ndays, dbname=None):
             c.execute(sql)
             conn.commit()
         except sqlite3.Error as e:
-            msg = "%s " %(str(e))
-            logger.log(sql , severity=logging.ERROR, logfile="fill_jobsub_history")
+            msg = "%s:%s " %(sql, str(e))
             logger.log(msg , severity=logging.ERROR, logfile="fill_jobsub_history")
+            logger.log(msg , severity=logging.ERROR, logfile="error")
     conn.close()
     if not dbname:
         shutil.copy('jobsub_history.db', history_db)
@@ -233,9 +240,9 @@ def loadDatabase(filebase,cleanup=False):
                 conn.commit()
                 num_good += 1
             except sqlite3.Error as e:
-                msg = "%s " %(str(e))
-                logger.log(line , severity=logging.ERROR, logfile="fill_jobsub_history")
-                logger.log(msg , severity=logging.ERROR, logfile="fill_jobsub_history")
+                msg = "%s:%s " %(line, str(e))
+                logger.log(msg, severity=logging.ERROR, logfile="fill_jobsub_history")
+                logger.log(msg, severity=logging.ERROR, logfile="error")
                 num_bad += 1
    
     totals = "%s lines in upload  %s successfully loaded  %s failed " % (num_total, num_good, num_bad)
@@ -256,6 +263,7 @@ def loadDatabase(filebase,cleanup=False):
                 os.remove(f)
         except:
             logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
+            logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
 
 
 

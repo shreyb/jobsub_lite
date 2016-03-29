@@ -1,9 +1,10 @@
 import cherrypy
 import logger
+import logging
 
-from auth import check_auth, get_client_dn
+from auth import get_client_dn
 from format import format_response
-from sqlite_commands import jobsub_history,constructQuery
+from sqlite_commands import jobsub_history, constructQuery
 import sys
 
 
@@ -42,17 +43,20 @@ class HistoryResource(object):
                     rc = self.doGET(user_id,job_id,**kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on HistoryResouce.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc
@@ -101,7 +105,8 @@ class HistoryResource(object):
 
         except:
             err = 'Exception on HistoryResource.default: %s'%sys.exc_info()[1]
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

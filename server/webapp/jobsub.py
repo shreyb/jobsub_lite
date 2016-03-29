@@ -1,4 +1,3 @@
-from subprocess import Popen, PIPE
 from condor_commands import schedd_name
 import logger
 import logging
@@ -18,7 +17,7 @@ from JobsubConfigParser import JobsubConfigParser
 class AcctGroupNotConfiguredError(Exception):
     def __init__(self, acctgroup):
         self.acctgroup = acctgroup
-        Exception.__init__(self, "AcctGroup='%s' not configured on this server" % (self.acctgroup))
+        Exception.__init__(self, "AcctGroup='%s' not configured "% (self.acctgroup))
 
 
 def is_supported_accountinggroup(accountinggroup):
@@ -26,17 +25,21 @@ def is_supported_accountinggroup(accountinggroup):
     try:
         p = JobsubConfigParser()
         groups = p.supportedGroups()
-        logger.log("supported groups:%s accountinggroup:%s"%(groups,accountinggroup))
+        logger.log("supported groups:%s accountinggroup:%s"%(groups, accountinggroup))
         rc = (accountinggroup in groups)
     except:
-        logger.log('Failed to get accounting groups: ', traceback=True)
+        logger.log('Failed to get accounting groups: ', traceback=True, severity=logging.ERROR)
+        logger.log('Failed to get accounting groups: ',
+                   traceback=True,
+                   severity=logging.ERROR,
+                   logfile='error')
 
     return rc
 
 
 def group_superusers(acctgroup):
     p = JobsubConfigParser()
-    susers = p.get(acctgroup,'group_superusers')
+    susers = p.get(acctgroup, 'group_superusers')
     if susers:
         return susers.split()
     else:
@@ -45,7 +48,7 @@ def group_superusers(acctgroup):
 def is_superuser_for_group(acctgroup, user):
     logger.log('checking if %s in %s is group_superuser' % (acctgroup, user))
     su_list = group_superusers(acctgroup)
-    logger.log('sulist is %s for %s'%(su_list,acctgroup))
+    logger.log('sulist is %s for %s'%(su_list, acctgroup))
     return user in su_list
 
 
@@ -54,10 +57,16 @@ def sandbox_readable_by_group(acctgroup):
     try:
         p = JobsubConfigParser()
         rc =  p.get(acctgroup,'sandbox_readable_by_group')
-        logger.log('sandbox_readable_by_group:%s is %s'%(acctgroup,rc))
+        logger.log('sandbox_readable_by_group:%s is %s'%(acctgroup, rc))
         return rc
     except:
-        logger.log('Failed to get sandbox_readable_by_group: ', traceback=True)
+        logger.log('Failed to get sandbox_readable_by_group: ',
+                traceback=True,
+                severity=logging.ERROR)
+        logger.log('Failed to get sandbox_readable_by_group: ',
+                traceback=True,
+                severity=logging.ERROR,
+                logfile='error')
 
     return rc
 
@@ -68,10 +77,16 @@ def sandbox_allowed_browsable_file_types():
         s =  p.get(p.submit_host,'output_files_web_browsable_allowed_types')
         if type(s) is str:
             rc = s.split()
-        logger.log('sandbox_allowed_browsable_file_types is %s'%(rc))
+        logger.log('output_files_web_browsable_allowed_types %s'%(rc))
         return rc
     except:
-        logger.log('Failed to get sandbox_readable_by_group: ', traceback=True)
+        logger.log('Failed to get output_files_web_browsable_allowed_types: ',
+                traceback=True,
+                severity=logging.ERROR)
+        logger.log('Failed to get output_files_web_browsable_allowed_types: ',
+                traceback=True,
+                severity=logging.ERROR,
+                logfile='error')
 
     return rc
 
@@ -82,7 +97,13 @@ def get_supported_accountinggroups():
         p = JobsubConfigParser()
         rc = p.supportedGroups()
     except:
-        logger.log('Failed to get accounting groups: ', traceback=True)
+        logger.log('Failed to get accounting groups: ',
+                traceback=True,
+                severity=logging.ERROR)
+        logger.log('Failed to get accounting groups: ',
+                traceback=True,
+                severity=logging.ERROR,
+                logfile='error')
 
     return rc
 
@@ -94,7 +115,13 @@ def default_voms_role(acctgroup="default"):
         rc = p.get(acctgroup,'default_voms_role')
         logger.log('default voms role for %s : %s'%(acctgroup,rc))
     except:
-        logger.log('exception fetching voms role for acctgroup :%s'%acctgroup)
+        logger.log('exception fetching voms role for acctgroup :%s'%acctgroup,
+                   severity=logging.ERROR,
+                   traceback=True)
+        logger.log('exception fetching voms role for acctgroup :%s'%acctgroup,
+                   severity=logging.ERROR,
+                   traceback=True,
+                   logfile='error')
     return rc
 
 def get_authentication_methods(acctgroup):
@@ -105,7 +132,13 @@ def get_authentication_methods(acctgroup):
             if p.has_option(acctgroup, 'authentication_methods'):
                 rc = p.get(acctgroup, 'authentication_methods')
     except:
-        logger.log('Failed to get accounting groups: ', traceback=True)
+        logger.log('Failed to get authentication_methods: ',
+                traceback=True,
+                severity=logging.ERROR)
+        logger.log('Failed to get authentication_methods: ',
+                traceback=True,
+                severity=logging.ERROR,
+                logfile='error')
 
     methods = list()
     for m in rc.split(','):
@@ -253,6 +286,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     if len(err):
         sub_msg += err
         logger.log(sub_msg, severity=logging.ERROR, logfile='submit')
+        logger.log(sub_msg, severity=logging.ERROR, logfile='error')
         logger.log(sub_msg, severity=logging.ERROR)
     result = {
         'out': out,
@@ -396,7 +430,9 @@ def run_cmd_as_user(command, username, child_env={}):
                                                    username=username)
     except Exception, e:
         err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'% (username, cmd, out, err, e)
-        logger.log(err_str)
+        logger.log(err_str, severity=logging.ERROR)
+        logger.log(err_str, severity=logging.ERROR, logfile='submit')
+        logger.log(err_str, severity=logging.ERROR, logfile='error')
         err = err_str
         #raise RuntimeError, err_str % (username, cmd, out, err, e)
         pass

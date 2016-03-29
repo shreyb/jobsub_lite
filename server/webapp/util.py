@@ -79,7 +79,11 @@ def get_uid(subject_dn):
     try:
         uid = subject_dn.split(':')[1]
     except:
-        logger.log('Exception getting uid: ', traceback=True)
+        logger.log('Exception getting uid: ', traceback=True, severity=logging.ERROR)
+        logger.log('Exception getting uid: ',
+                   traceback=True,
+                   severity=logging.ERROR,
+                   logfile='error')
     return uid
 
 
@@ -121,7 +125,10 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
                 tar.add(f1, file)
 
         except:
-            logger.log('failed to add %s to %s '%(file, tar_file))
+            logger.log('failed to add %s to %s '%(file, tar_file), severity=logging.ERROR)
+            logger.log('failed to add %s to %s '%(file, tar_file),
+                       severity=logging.ERROR,
+                       logfile='error')
             failed_file_list.append(file)
     if len(failed_file_list) > 0:
         failed_fname = "/tmp/%s.MISSING_FILES" % \
@@ -194,7 +201,8 @@ def doJobAction(acctgroup,
         scheddList = condor_commands.schedd_list()
     else:
         err = "Failed to supply job_id or uid, cannot perform any action"
-        logger.log(err)
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         return {'err':err}
 
     cmd_user = cherrypy.request.username
@@ -208,6 +216,7 @@ def doJobAction(acctgroup,
         logger.log(err)
         logger.log(err, logfile='condor_superuser')
         logger.log(err, logfile='condor_commands')
+        logger.log(err, logfile='error', severity=logging.ERROR)
         return {'err':err}
 
     if user and user != cherrypy.request.username and \
@@ -275,6 +284,7 @@ def doJobAction(acctgroup,
             msg = "%s - %s"%(cmd,err)
             logger.log(msg, severity=logging.ERROR)
             logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
+            logger.log(msg, severity=logging.ERROR, logfile='error')
             if user and user != cherrypy.request.username:
                 logger.log(msg, severity=logging.ERROR, logfile='condor_superuser')
             extra_err = extra_err + err

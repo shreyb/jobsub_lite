@@ -1,14 +1,9 @@
-import base64
-import random
-import os
-import re
 import cherrypy
 import logger
-import sys
+import logging
 import util
-from shutil import copyfileobj
 
-from auth import check_auth, get_client_dn
+from auth import check_auth
 from jobsub import is_supported_accountinggroup
 from format import format_response
 
@@ -36,17 +31,20 @@ class AccountJobsByUserResource(object):
                     rc = util.doPUT(acctgroup,  user=action_user, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsByUserResource.index'
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500

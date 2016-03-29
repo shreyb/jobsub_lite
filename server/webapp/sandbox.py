@@ -1,13 +1,15 @@
 import os
 import cherrypy
 import logger
+import logging
 import re
 
 from cherrypy.lib.static import serve_file
 
 from util import create_zipfile, create_tarfile
 from auth import check_auth
-from jobsub import is_supported_accountinggroup, get_command_path_root, sandbox_readable_by_group
+from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import sandbox_readable_by_group
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
@@ -30,11 +32,13 @@ def cleanup(zip_file, outfilename=None):
         except:
             err = 'Failed to remove encoded file at %s' % outfilename
             logger.log(err)
+            logger.log(err, serverity=logging.ERROR, logfile='error')
     try:
         os.remove(zip_file)
     except:
         err = 'Failed to remove zip file at %s' % zip_file
         logger.log(err)
+        logger.log(err, serverity=logging.ERROR, logfile='error')
 
 
 def make_sandbox_readable(workdir, username):
@@ -88,13 +92,17 @@ class SandboxResource(object):
                 timeout = t
         except Exception, e:
             logger.log('caught %s  setting default timeout'%e)
+            logger.log('caught %s  setting default timeout'%e,
+                       severity=logging.ERROR,
+                       logfile='error')
 
         cherrypy.response.timeout = timeout
         logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
         logger.log('partial=%s' % partial)
         jobsubConfig = JobsubConfig()
         sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
-        sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, cherrypy.request.username)
+        sbx_final_dir = jobsubConfig.commandPathUser(acctgroup,
+                                                     cherrypy.request.username)
 
         command_path_root = get_command_path_root()
         if job_id is None:
@@ -119,6 +127,9 @@ class SandboxResource(object):
                 logger.log('zip_path from condor_q:%s' % zip_path)
             except Exception, e:
                 logger.log('%s'%e)
+                logger.log('%s'%e,
+                           severity=logging.ERROR,
+                           logfile='error')
         if not zip_path:
             try:
                 query = constructQuery(jobid=job_id)
@@ -136,6 +147,9 @@ class SandboxResource(object):
 
             except Exception, e:
                 logger.log('%s'%e)
+                logger.log('%s'%e,
+                           severity=logging.ERROR,
+                           logfile='error')
         logger.log('zip_path=%s'%zip_path)
         if zip_path:
             zip_path=zip_path.rstrip()
@@ -208,18 +222,24 @@ class SandboxResource(object):
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
                     cherrypy.response.status = 500
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
                 cherrypy.response.status = 500
         except:
             err = 'Exception on SandboxResource.index'
             cherrypy.response.status = 500
             logger.log(err, traceback=True)
+            logger.log(err,
+                       traceback=True,
+                       severity=logging.ERROR,
+                       logfile='error')
             rc = {'err': err}
             cherrypy.response.status = 500
   

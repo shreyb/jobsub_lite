@@ -25,6 +25,7 @@ import time
 import traceback
 import cherrypy
 import logger
+import logging
 import jobsub
 import subprocessSupport
 
@@ -111,14 +112,18 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     logger.log("tmp_proxy_fname=%s"%tmp_proxy_fname)
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
-        raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
+        err = "Unable to find command 'voms-proxy-init' in the PATH."
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
+        raise Exception(err)
 
 
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
     except jobsub.AcctGroupNotConfiguredError, e: 
-        logger.log("%s"%e) 
+        logger.log("%s"%e, severity=logging.ERROR) 
+        logger.log("%s"%e, severity=logging.ERROR, logfile='error') 
         raise
 
     p = JobsubConfigParser()
@@ -145,7 +150,8 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
     except jobsub.AcctGroupNotConfiguredError, e: 
         os.remove(new_proxy_fname)
-        logger.log("%s"%e) 
+        logger.log("%s"%e, severity=logging.ERROR) 
+        logger.log("%s"%e, severity=logging.ERROR, logfile='error') 
         raise
 
     p = JobsubConfigParser()
@@ -186,7 +192,8 @@ def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=N
             logger.log('Proxy was created. Ignoring warnings.')
             logger.log('Output from running voms-proxy-init:\n%s' % tb) 
         else:
-            logger.log('failed tb=%s'%tb)
+            logger.log('failed tb=%s'%tb, severity=logging.ERROR)
+            logger.log('failed tb=%s'%tb, severity=logging.ERROR, logfile='error')
             logger.log('removing %s'%tmp_proxy_fname)
 
             # Anything else we should just raise
@@ -208,18 +215,26 @@ def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=None, env_dict=N
                 t2='VO' in cmd_out
                 logger.log('test (%s in cmd_out)=%s test(VO in cmd_out)=%s'%(role_pattern,t1,t2) )
                 os.remove(tmp_proxy_fname)
-                raise OtherAuthError("unable to authenticate with role='%s'.  Is this a typo?" % role)
+                err = "unable to authenticate with role='%s'.  Is this a typo?" % role
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
+                raise OtherAuthError(err)
     
         else:
             if ('VO' in cmd_out):
                 os.rename(tmp_proxy_fname,proxy_fname)
             else:
                 os.remove(tmp_proxy_fname)
-                logger.log("result:%s:%s does not appear to contain valid VO information. Failed to authenticate"%(cmd_out,cmd_err))
+                err = "result:%s:%s does not appear to contain valid VO information. Failed to authenticate"%\
+                        (cmd_out, cmd_err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 raise OtherAuthError("Your certificate is not valid. Please contact the service desk")
     except:
-        logger.log("%s"%sys.exc_info()[1])
-        raise OtherAuthError("%s"%sys.exc_info()[1])
+        err = "%s"%sys.exc_info()[1]
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
+        raise OtherAuthError(err)
     finally:
         if os.path.exists(tmp_proxy_fname):
             os.remove(tmp_proxy_fname)
@@ -238,10 +253,12 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
     try:
         klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     except:
-        logger.log("%s"%sys.exc_info()[1])
+        err = "%s"%sys.exc_info()[1]
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         if os.path.exists(x509_fname):
             os.remove(x509_fname)
-        raise OtherAuthError("%s"%sys.exc_info()[1])
+        raise OtherAuthError(err)
 
 
 
@@ -253,7 +270,9 @@ def kadmin_password():
         fd = open(passwd_file, 'r')
         password = ''.join(fd.readlines()).strip()
     except:
-        logger.log("ERROR: Reading kadmin password from %s" % passwd_file)
+        err = "error reading kadmin password from %s" % passwd_file
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         raise
 
     fd.close()
@@ -276,7 +295,9 @@ def kadmin_command(command):
     logger.log('Executing: %s' % cmd)
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
-        logger.log("Error output from command: %s\n%s" % (cmd, cmd_err))
+        stat = "Error output from command: %s\n%s" % (cmd, cmd_err)
+        logger.log(stat, severity=logging.ERROR)
+        logger.log(stat, severity=logging.ERROR, logfile='error')
         return 1
     return 0
 
@@ -289,8 +310,10 @@ def authenticate_kca_dn(dn):
         username = re.findall(pattern, dn)
         if len(username) >= 1 and username[0] != '':
             return username[0]
-
-    raise AuthenticationError(dn)
+    err = 'failed to authenticate:%s'%dn
+    logger.log(err, severity=logging.ERROR)
+    logger.log(err, severity=logging.ERROR, logfile='error')
+    raise AuthenticationError(err)
 
 
 def authenticate_gums(dn, acctgroup, acctrole):
@@ -301,27 +324,12 @@ def authenticate_gums(dn, acctgroup, acctrole):
         logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" % (dn, fqan, username))
         return username
     except:
-        logger.log("GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan), traceback=True)
+        err = "GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan)
+        logger.log(err, traceback=True, severity=logging.ERROR)
+        logger.log(err, traceback=True, severity=logging.ERROR, logfile='error')
     raise AuthenticationError(dn, acctgroup)
 
 
-def authenticate_old(dn, acctgroup, acctrole):
-    try:
-        return authenticate_gums(dn, acctgroup, acctrole)
-    except:
-        logger.log("Failed to authenticate using GUMS. Checking for KCA DN based authentication")
-
-    #raise AuthenticationError(dn, acctgroup)
-    logger.log("Authenticating using KCA DN Pattern.")
-    try:
-        username = authenticate_kca_dn(dn)
-        cherrypy.response.status = 200
-        return username
-    except:
-        logger.log("Failed to authenticate using KCA DN Pattern.")
-
-    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods." % (dn, acctgroup, acctrole))
-    raise AuthenticationError(dn, acctgroup)
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -342,7 +350,10 @@ def authenticate(dn, acctgroup, acctrole):
         except:
             logger.log("Failed to authenticate using method: %s" % method)
 
-    logger.log("Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" % (dn, acctgroup, acctrole))
+    err = "Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" %\
+            (dn, acctgroup, acctrole)
+    logger.log(err, severity=logging.ERROR)
+    logger.log(err, severity=logging.ERROR, logfile='error')
     raise AuthenticationError(dn, acctgroup)
 
 def clean_proxy_dn(dn):
@@ -367,7 +378,9 @@ def get_gums_mapping(dn, fqan):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except:
-        logger.log('Error running command %s: %s' % (cmd, err))
+        err = 'Error running command %s: %s' % (cmd, err)
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         raise 
     return out
 
@@ -406,7 +419,10 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
         except:
             logger.log("Failed to authorize using method: %s" % method)
 
-    logger.log("Failed to authorize dn '%s' for group '%s' with role '%s' using known authentication methods" % (dn, acctgroup, acctrole))
+    err = "Failed to authorize dn '%s' for group '%s' with role '%s' using known authentication methods" %\
+            (dn, acctgroup, acctrole)
+    logger.log(err, severity=logging.ERROR)
+    logger.log(err, severity=logging.ERROR, logfile='error')
     raise AuthenticationError(dn, acctgroup)
 
 
@@ -481,10 +497,13 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
 
     except OtherAuthError, e:
+        logger.log(e, severity=logging.ERROR)
+        logger.log(e, severity=logging.ERROR, logfile='error')
         raise
     except:
-        logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
-        logger.log(traceback.format_exc())
+        err = traceback.format_exc()
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         raise AuthorizationError(dn, acctgroup)
     finally:
         if os.path.exists(x509_tmp_fname):
@@ -525,7 +544,8 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             out, err = subprocessSupport.iexe_cmd(cmd,child_env=child_env)
             logger.log('out= %s'%out)
             if err:
-                logger.log('err= %s'%err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
             x509pair_to_vomsproxy(x509_tmp_fname, x509_tmp_fname, x509_tmp_fname, acctgroup, acctrole)
 
             cmd2 = "%s  -all -file %s " %(vomsproxy_exe, x509_tmp_fname)
@@ -544,10 +564,17 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
                 t2='VO' in out2
                 logger.log('test (%s in out2)=%s test(VO in out2)=%s'%(search_pat,t1,t2) )
                 os.remove(x509_tmp_fname)
-                raise OtherAuthError("unable to authenticate with role='%s'.  Is this a typo?" % acctrole)
+
+                err = "unable to authenticate with role='%s'.  Is this a typo?" % acctrole
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
+
+                raise OtherAuthError(err)
     
     except:
-        logger.log(traceback.format_exc())
+        err = traceback.format_exc()
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         raise AuthorizationError(dn, acctgroup)
     if os.path.exists(x509_tmp_fname):
         os.remove(x509_tmp_fname)
@@ -569,7 +596,9 @@ def is_valid_cache(cache_name):
         logger.log("%s is still valid"%cache_name)
         return True
     except:
-        logger.log("%s is expired,invalid, or does not exist"%cache_name)
+        err = "%s is expired,invalid, or does not exist"%cache_name
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
         return False
 
 def create_voms_proxy(dn, acctgroup, role):
@@ -585,13 +614,19 @@ def refresh_proxies(agelimit=3600):
    
     cmd = spawn.find_executable('condor_q')
     if not cmd:
-        raise Exception('Unable to find condor_q in the PATH')
+        err = 'Unable to find condor_q in the PATH'
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
+        raise Exception(err)
     cmd += ' -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
-        raise Exception("command %s returned %s"%(cmd,cmd_err))
+        err = "command %s returned %s"%(cmd,cmd_err)
+        logger.log(err, severity=logging.ERROR)
+        logger.log(err, severity=logging.ERROR, logfile='error')
+        raise Exception(err)
     lines = cmd_out.split("\n")
     for line in lines:
         if line not in already_processed:
@@ -610,8 +645,9 @@ def refresh_proxies(agelimit=3600):
                     print "checking proxy %s %s %s %s"%(dn,user,grp,role)
                     authorize(dn,user,grp,role,agelimit)
                 except:
-                    logger.log("Error processing %s"%line)
-                    logger.log("%s"%sys.exc_info()[1])
+                    err = "Error processing %s:%s"%(line, sys.exc_info()[1])
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \

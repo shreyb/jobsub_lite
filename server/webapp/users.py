@@ -1,7 +1,7 @@
 import cherrypy
 import logger
-
-from auth import check_auth, get_client_dn
+import logging
+from auth import get_client_dn
 from format import format_response
 from condor_commands import ui_condor_q, constructFilter
 #from history import HistoryResource
@@ -13,19 +13,19 @@ from queued_jobs import QueuedJobsResource
 @cherrypy.popargs('user_id')
 class UsersResource(object):
     def __init__(self):
-        self.jobs=QueuedJobsResource()
+        self.jobs = QueuedJobsResource()
 
-    def doGET(self, user_id,kwargs):
+    def doGET(self, user_id, kwargs):
         """ Query list of user_ids. Returns a JSON list object.
-	    API is /acctgroups/<group>/users
-	    API is /acctgroups/<group>/users/<user_id>
-	    API is /acctgroups/<group>/users/<user_id>?job_id=<number>
+        API is /acctgroups/<group>/users
+        API is /acctgroups/<group>/users/<user_id>
+        API is /acctgroups/<group>/users/<user_id>?job_id=<number>
         """
-        acctgroup=kwargs.get('acctgroup')
-        job_id=kwargs.get('job_id')
-        filter = constructFilter(acctgroup,user_id,job_id)
+        acctgroup = kwargs.get('acctgroup')
+        job_id = kwargs.get('job_id')
+        filter = constructFilter(acctgroup, user_id, job_id)
         logger.log("filter=%s"%filter)
-        all_jobs = ui_condor_q( filter  )
+        all_jobs = ui_condor_q(filter)
         return {'out': all_jobs.split("\n")}
 
     @cherrypy.expose
@@ -43,16 +43,22 @@ class UsersResource(object):
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
                 logger.log(err)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on UsersResource.index'
             cherrypy.response.status = 500
             logger.log(err, traceback=True)
+            logger.log(err,
+                       severity=logging.ERROR,
+                       logfile='error',
+                       traceback=True)
             rc = {'err': err}
 
         return rc

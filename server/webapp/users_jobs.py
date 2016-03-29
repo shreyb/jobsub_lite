@@ -1,5 +1,6 @@
 import cherrypy
 import logger
+import logging
 import sys
 
 from format import format_response
@@ -24,12 +25,14 @@ class UsersJobsResource(object):
                 rc = self.doGET(kwargs)
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on UsersJobsResource.index: %s'%sys.exc_info()[1]
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR)
+            logger.log(err, severity=logging.ERROR, logfile='error')
             rc = {'err': err}
 
         return rc
@@ -97,11 +100,13 @@ class UsersJobsResource(object):
                     rc = {'out':'informational page for %s/%s/%s/%s/%s/%s not implemented' % (param1, param2, param3, param4, param5, param6)}
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on UsersJobsResource.default: %s'%sys.exc_info()[1]
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

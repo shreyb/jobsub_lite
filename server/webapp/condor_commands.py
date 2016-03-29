@@ -49,6 +49,7 @@ def ui_condor_queued_jobs_summary():
         tb = traceback.format_exc()
         logger.log(tb)
         logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tb, severity=logging.ERROR, logfile='error')
         
             
 
@@ -200,7 +201,9 @@ def ui_condor_history(a_filter=None, a_format=None):
     except:
         cherrypy.response.status = 500
         tb = traceback.format_exc()
-        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR)
+        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tb, severity=logging.ERROR, logfile='error')
         return tb
 
 
@@ -231,7 +234,7 @@ def ui_condor_q(a_filter=None,a_format=None):
             #return hdr + all_jobs
         except:
             tb = traceback.format_exc()
-            logger.log(tb)
+            logger.log(tb, severity=logging.ERROR)
             no_jobs = "All queues are empty"
             if len(re.findall(no_jobs, tb)):
                 #return no_jobs
@@ -242,9 +245,11 @@ def ui_condor_q(a_filter=None,a_format=None):
                 if 'ailed to connect' in tb:
                     err = 'Failed to connect to condor schedd %s'% schedd
                     logger.log(err, severity=logging.ERROR, logfile='condor_commands')
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     return err
                 else:
                     logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+                    logger.log(tb, severity=logging.ERROR, logfile='error')
                     return tb
     return all_jobs
 
@@ -258,7 +263,7 @@ def iwd_condor_q(a_filter, a_part='iwd'):
         return iwd 
     except:
         tb = traceback.format_exc()
-        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR)
         no_jobs = "All queues are empty"
         if len(re.findall(no_jobs, tb)):
             return no_jobs 
@@ -267,9 +272,11 @@ def iwd_condor_q(a_filter, a_part='iwd'):
             if 'ailed to connect' in tb:
                 err = 'Failed to connect to condor schedd %s'% schedd
                 logger.log(err, severity=logging.ERROR, logfile='condor_commands')
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 return err
             else:
                 logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+                logger.log(tb, severity=logging.ERROR, logfile='error')
                 return tb
 
 
@@ -322,6 +329,7 @@ def collector_host():
         tb = traceback.format_exc()
         logger.log(tb)
         logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tb, severity=logging.ERROR, logfile='error')
     
 def schedd_list():
     try:
@@ -329,8 +337,9 @@ def schedd_list():
         return schedds.split()
     except:
         tb = traceback.format_exc()
-        logger.log(tb)
+        logger.log(tb, severity=logging.ERROR)
         logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tb, severity=logging.ERROR, logfile='error')
     
 def schedd_name(arglist=None):
     #logger.log(arglist)

@@ -1,5 +1,6 @@
 import cherrypy
 import logger
+import logging
 import jobsub
 from format import format_response
 
@@ -36,12 +37,14 @@ class AuthMethodsResource(object):
                 rc = self.doGET(auth_method,kwargs)
             else:
                 err = 'Unsupported method: %s' % cherrypy.request.method
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on AuthMethodsResource.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

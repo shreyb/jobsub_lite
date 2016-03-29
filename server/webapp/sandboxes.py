@@ -1,12 +1,13 @@
 import cherrypy
 import logger
+import logging
 import os
 import time
 import socket
 import sys
 import subprocessSupport
 from auth import check_auth, get_client_dn
-from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import get_command_path_root
 from jobsub import sandbox_readable_by_group, sandbox_allowed_browsable_file_types
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
@@ -57,7 +58,10 @@ class SandboxesResource(object):
             logger.log(err)
             rc = {'out': err}
             cherrypy.response.status = 404 
-            logger.log("%s"%sys.exc_info()[1])
+            logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR)
+            logger.log("%s"%sys.exc_info()[1],
+                       severity=logging.ERROR,
+                       logfile='error')
             return rc
 
         filelist = []
@@ -74,7 +78,7 @@ class SandboxesResource(object):
                     if suffix in allowed_list:
                         p2.insert(0,rel_link(filename))
                     else:
-                        p2.insert(0,filename)
+                        p2.insert(0, filename)
                     outlist.append(' '.join(p2))
             elif user_id:
                 fp = line
@@ -85,22 +89,29 @@ class SandboxesResource(object):
                         itm = (rel_link(f), t)
                         filelist.append(itm)
                     except:
-                        logger.log("%s"%sys.exc_info()[1])
+
+                        logger.log("%s"%sys.exc_info()[1],
+                                   severity=logging.ERROR)
+
+                        logger.log("%s"%sys.exc_info()[1],
+                                   severity=logging.ERROR,
+                                   logfile='error')
             else:
                 d = os.path.basename(line)
                 outlist.append(rel_link(d))
 
         if filelist:
-            filelist.sort(key = lambda itm: itm[1])
-            acctgroup=os.path.basename(os.path.dirname(line))
-            outlist.append("JobsubJobID                        CreationDate for user %s in Accounting Group %s"%(user_id,cherrypy.request.acctgroup))
+            filelist.sort(key=lambda itm: itm[1])
+            #acctgroup = os.path.basename(os.path.dirname(line))
+            outlist.append("JobsubJobID CreationDate for user %s in Accounting Group %s"%\
+                    (user_id, cherrypy.request.acctgroup))
             for itm in filelist:
-                outlist.append("%s   %s" % (itm[0],time.ctime(itm[1])))
+                outlist.append("%s   %s" % (itm[0], time.ctime(itm[1])))
         if outlist:
             return {'out': outlist}
         else:
             host = socket.gethostname()
-            return {'out':'no sandbox information found on %s for user %s '%(host,user_id)}
+            return {'out':'no sandbox information found on %s for user %s '%(host, user_id)}
 
 
     @cherrypy.expose
@@ -121,28 +132,36 @@ class SandboxesResource(object):
             if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
                 if not user_id:
                     user_id = 'other user'
-                grinfo = "%s may only look at  thier own output for group %s. This is configurable, please open a service desk ticket if you want this changed"%(rel_link(requestor), acctgroup)
+                grinfo = "%s may only look at  thier own output for group %s."%\
+                            (rel_link(requestor), acctgroup)
+                grinfo += "This is configurable, please open a service desk "
+                grinfo += "ticket if you want this changed"
                 user_id = requestor
-                rc = {'out':  grinfo }
+                rc = {'out': grinfo}
                 return rc
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(user_id,job_id,file_id,kwargs)
+                    rc = self.doGET(user_id, job_id, file_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on SandboxesResource.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, traceback=True, severity=logging.ERROR)
+            logger.log(err, traceback=True,
+                       severity=logging.ERROR,
+                       logfile='error')
             rc = {'err': err}
 
         return rc

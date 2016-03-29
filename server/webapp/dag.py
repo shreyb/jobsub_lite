@@ -4,6 +4,7 @@ import os
 import re
 import cherrypy
 import logger
+import logging
 
 from datetime import datetime
 from shutil import copyfileobj
@@ -125,17 +126,20 @@ class DagResource(object):
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
                 if rc.get('err'):
-                    logger.log(rc['err'])
+                    logger.log(rc['err'], severity=logging.ERROR)
+                    logger.log(rc['err'], severity=logging.ERROR, logfile='error')
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         else:
             # return an error because job_id has been supplied
             # but POST is for creating new jobs
             err = 'User has supplied job_id but POST is for creating new jobs'
-            logger.log(err)
+            logger.log(err, severity=logging.ERROR)
+            logger.log(err, severity=logging.ERROR, logfile='error')
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500
@@ -161,17 +165,20 @@ class DagResource(object):
                     rc = self.doPOST(acctgroup, job_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on DagResource.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

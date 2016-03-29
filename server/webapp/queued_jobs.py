@@ -1,7 +1,8 @@
 import cherrypy
 import logger
+import logging
 
-from auth import check_auth, get_client_dn
+from auth import get_client_dn
 from format import format_response
 from condor_commands import ui_condor_q,constructFilter
 from history import HistoryResource
@@ -47,7 +48,7 @@ class QueuedJobsResource(object):
 
     @cherrypy.expose
     @format_response
-    def index(self, user_id=None,job_id=None, **kwargs):
+    def index(self, user_id=None, job_id=None, **kwargs):
         try:
             subject_dn = get_client_dn()
             logger.log("user_id %s"%user_id)
@@ -60,17 +61,20 @@ class QueuedJobsResource(object):
                     rc = self.doGET(user_id,job_id,kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on QueuedJobsResouce.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

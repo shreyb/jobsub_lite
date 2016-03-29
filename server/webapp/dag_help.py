@@ -1,11 +1,9 @@
 import cherrypy
 import logger
-import uuid
-import os
+import logging
 import sys
-import socket
 
-from auth import check_auth, get_client_dn
+from auth import get_client_dn
 from format import format_response
 from jobsub import execute_job_submit_wrapper
 
@@ -36,16 +34,19 @@ class DAGHelpResource(object):
                     rc = self.doGET(acctgroup)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except :
             err = 'Exception on DAGHelpResource.index %s'% sys.exc_info()[1]
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

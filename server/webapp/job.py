@@ -4,8 +4,7 @@ import os
 import re
 import cherrypy
 import logger
-import sys
-import StringIO
+import logging
 import util
 
 from datetime import datetime
@@ -18,11 +17,8 @@ from jobsub import execute_job_submit_wrapper
 from jobsub import JobsubConfig
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
-from jobsub import condor_bin
-from jobsub import run_cmd_as_user
 from format import format_response
-from condor_commands import condor
-from condor_commands import constructFilter, ui_condor_q, schedd_list
+from condor_commands import constructFilter, ui_condor_q
 from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
@@ -158,16 +154,19 @@ class AccountJobsResource(object):
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
                 if rc.get('err'):
-                    logger.log(rc['err'])
+                    logger.log(rc['err'], severity=logging.ERROR)
+                    logger.log(rc['err'], severity=logging.ERROR, logfile='error')
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         else:
             # return an error because job_id has been supplied but POST is for creating new jobs
             err = 'User has supplied job_id but POST is for creating new jobs'
-            logger.log(err)
+            logger.log(err, severity=logging.ERROR)
+            logger.log(err, severity=logging.ERROR, logfile='error')
             rc = {'err': err}
 
         return rc
@@ -182,7 +181,7 @@ class AccountJobsResource(object):
             logger.log('job_id=%s '%(job_id))
             logger.log('kwargs=%s '%(kwargs))
             if not job_id:
-                job_id=kwargs.get('job_id')
+                job_id = kwargs.get('job_id')
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
@@ -201,17 +200,20 @@ class AccountJobsResource(object):
                     rc = util.doPUT(acctgroup, job_id=job_id,  **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500

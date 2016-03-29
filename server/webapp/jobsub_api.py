@@ -11,6 +11,7 @@ from version import VersionResource
 from scheddload import ScheddLoadResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
+from threading import current_thread
 import jobsub
 
 
@@ -100,8 +101,8 @@ def application(environ, start_response):
         'log.access_file': access_log
     })
 
-    app.log.error('jobsub_api.py: starting api: JOBSUB_INI_FILE: %s' % \
-            os.environ.get('JOBSUB_INI_FILE'))
+    app.log.error('[%s:jobsub_api.py:application]: starting api: JOBSUB_INI_FILE: %s' % \
+            (current_thread().ident, os.environ.get('JOBSUB_INI_FILE')))
 
     initialize(app.log)
 

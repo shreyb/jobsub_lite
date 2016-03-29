@@ -1,5 +1,6 @@
 import cherrypy
 import logger
+import logging
 
 from format import format_response
 from condor_commands import ui_condor_q,constructFilter
@@ -29,9 +30,9 @@ class QueuedJobsByJobIDResource(object):
         """
         filter = constructFilter(None,None,job_id)
         logger.log("filter=%s"%filter)
-        history = ui_condor_q( filter  )
-        logger.log('ui_condor_q result: %s'%history)
-        return {'out': history.split('\n')}
+        queued_jobs = ui_condor_q(filter)
+        logger.log('ui_condor_q result: %s'%queued_jobs)
+        return {'out': queued_jobs.split('\n')}
 
     @cherrypy.expose
     @format_response
@@ -44,20 +45,24 @@ class QueuedJobsByJobIDResource(object):
 
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(job_id,kwargs)
+                    rc = self.doGET(job_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             err = 'Exception on QueuedJobsByJobIDResource.index'
             cherrypy.response.status = 500
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

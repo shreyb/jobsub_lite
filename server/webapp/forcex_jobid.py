@@ -4,6 +4,7 @@ import os
 import re
 import cherrypy
 import logger
+import logging
 import sys
 import util
 from shutil import copyfileobj
@@ -35,17 +36,20 @@ class RemoveForcexByJobIDResource(object):
                     rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs )
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
-                    logger.log(err)
+                    logger.log(err, severity=logging.ERROR)
+                    logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
-                logger.log(err)
+                logger.log(err, severity=logging.ERROR)
+                logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
             cherrypy.response.status = 500
             err = 'Exception on RemoveForcexByJobIDResource.index'
-            logger.log(err, traceback=True)
+            logger.log(err, severity=logging.ERROR, traceback=True)
+            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500

@@ -496,15 +496,10 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 
             jobsub.move_file_as_user(x509_tmp_fname, x509_cache_fname, username)
 
-    except OtherAuthError, e:
-        logger.log(e, severity=logging.ERROR)
-        logger.log(e, severity=logging.ERROR, logfile='error')
-        raise
-    except:
-        err = traceback.format_exc()
-        logger.log(err, severity=logging.ERROR)
-        logger.log(err, severity=logging.ERROR, logfile='error')
-        raise AuthorizationError(dn, acctgroup)
+    except Exception, e:
+        logger.log(str(e), severity=logging.ERROR)
+        logger.log(str(e), severity=logging.ERROR, logfile='error')
+        raise 
     finally:
         if os.path.exists(x509_tmp_fname):
             os.remove(x509_tmp_fname)

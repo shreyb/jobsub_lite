@@ -150,8 +150,7 @@ def print_help():
     print help
 
 
-
-if __name__ == '__main__':
+def run_prog():
     if len(sys.argv) == 3:
         findRmUserJobDirs(sys.argv[1], sys.argv[2])
     elif len(sys.argv) == 4:
@@ -170,3 +169,17 @@ if __name__ == '__main__':
         print_help()
 
 
+if __name__ == '__main__':
+    try:
+        run_prog()
+    except:
+
+        logger.log("%s"%sys.exc_info()[1],
+                   severity=logging.ERROR,
+                   traceback=True,
+                   logfile="krbrefresh")
+
+        logger.log("%s"%sys.exc_info()[1],
+                   severity=logging.ERROR,
+                   traceback=True,
+                   logfile="error")

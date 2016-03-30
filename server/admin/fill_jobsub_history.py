@@ -9,6 +9,7 @@ import sqlite3
 import socket
 import shutil
 import optparse
+import time
 import JobsubConfigParser
 
 def createDB(dir=None):
@@ -42,11 +43,13 @@ def createSqlFile(historyFileName, serverName=None):
     f_outname = "%s.sql" % historyFileName
     f_inname = "%s.dat" % historyFileName
     f_out = open(f_outname ,'w')
-    if historyFileName != 'partial.history':
-        load_hist = """insert into load_history values """
-        load_hist += """('%s','%s',datetime('now'));""" %\
-                        (historyFileName, serverName)
-        f_out.write('%s\n' % load_hist)
+    if historyFileName == 'partial_history':
+        now = time.time()
+        historyFileName = "%s.%s" % (historyFileName, now)
+    load_hist = """insert into load_history values """
+    load_hist += """('%s','%s',datetime('now'));""" %\
+            (historyFileName, serverName)
+    f_out.write('%s\n' % load_hist)
     with open(f_inname, 'r') as f_in:
         for line in f_in:
             line = line.replace('undefined','0')
@@ -144,6 +147,7 @@ def keepUp():
     try:
         shutil.copy('jobsub_history.db', 'work')
         os.chdir('work')
+        shutil.copy('partial_history.sql', 'partial_history.sql.old')
         histfile = condorHistoryFile()
         cmd = "rsync %s . --size-only --backup --times" % histfile
         logger.log(cmd, logfile="fill_jobsub_history")
@@ -166,6 +170,8 @@ def keepUp():
                     for line in cmd_out.split('\n'):
                         f.write("%s\n" % line)
                 f.close()
+            else:
+                fname = 'history'
         else:
             fname='history'
             loadNewestArchive()
@@ -187,8 +193,9 @@ def pruneDB( ndays, dbname=None):
     else:
         dir = historyDBDir()
         history_db = "%s/jobsub_history.db"%dir
+        logger.log("history_db is '%s'"% history_db, logfile="fill_jobsub_history")
         os.chdir(dir)
-        shutil.copy('jobsub_history.db',work)
+        shutil.copy('jobsub_history.db','work')
         os.chdir('work')
 
     logger.log('in dir %s db= %s'%(dir, history_db),logfile="fill_jobsub_history")
@@ -241,9 +248,10 @@ def loadDatabase(filebase,cleanup=False):
                 num_good += 1
             except sqlite3.Error as e:
                 msg = "%s:%s " %(line, str(e))
-                logger.log(msg, severity=logging.ERROR, logfile="fill_jobsub_history")
-                logger.log(msg, severity=logging.ERROR, logfile="error")
-                num_bad += 1
+                if 'is not unique' not in msg:
+                    logger.log(msg, severity=logging.ERROR, logfile="fill_jobsub_history")
+                    logger.log(msg, severity=logging.ERROR, logfile="error")
+                    num_bad += 1
    
     totals = "%s lines in upload  %s successfully loaded  %s failed " % (num_total, num_good, num_bad)
     logger.log(totals, logfile="fill_jobsub_history")
@@ -267,34 +275,37 @@ def loadDatabase(filebase,cleanup=False):
 
 
 
-if __name__ == '__main__':
+def run_prog():
     usage = '%prog [ Options]'
 
     parser = optparse.OptionParser(usage = usage, 
-            description = 'parse htcondor history logs into jobsub_history database')
+                                   description = \
+                                   'parse htcondor history logs into jobsub_history database')
 
     parser.add_option('-v', 
-            dest='verbose',
-            action = 'store_true', 
-            help='verbose mode')
+                      dest = 'verbose',
+                      action = 'store_true',
+                      help='verbose mode')
 
-    parser.add_option('--keepUp', 
-            dest='keepUp', 
-            action = 'store_true', 
-            help='incrementally parse and load history file from last run')
+    parser.add_option('--keepUp',
+                      dest = 'keepUp',
+                      action = 'store_true',
+                      help = \
+                      'incrementally parse and load history file from last run')
 
-    parser.add_option('--pruneDB', 
-            dest='pruneDB', 
-            metavar='<number of days>',
-            default=None, 
-            type='string' , 
-            help='remove history records older than <number of days> from jobsub_history.db')
+    parser.add_option('--pruneDB',
+                      dest = 'pruneDB',
+                      metavar = '<number of days>',
+                      default = None,
+                      type = 'string',
+                      help = 'remove history records older than '+\
+                              '<number of days> from jobsub_history.db')
 
-    parser.add_option('--pruneDBName', 
-            dest='pruneDBName', 
+    parser.add_option('--pruneDBName',
+            dest='pruneDBName',
             metavar='<db name>',
-            default=None, 
-            type='string' , 
+            default=None,
+            type='string',
             help='prune records from <db name>'+\
                  'the default is to prune the master db configured for server on this host')
     parser.add_option('--loadDBFromSQL', 
@@ -365,3 +376,17 @@ if __name__ == '__main__':
     else:
         parser.print_help()
 
+if __name__ == '__main__':
+    try:
+        run_prog()
+    except:
+
+        logger.log("%s"%sys.exc_info()[1],
+                   severity=logging.ERROR,
+                   traceback=True,
+                   logfile="fill_jobsub_history")
+
+        logger.log("%s"%sys.exc_info()[1],
+                   severity=logging.ERROR,
+                   traceback=True,
+                   logfile="error")

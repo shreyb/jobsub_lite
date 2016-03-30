@@ -27,8 +27,9 @@ RDIR=/var/tmp/$USER
 
 #tag and push to origin
 if [  "$TAG_AND_PUSH" != "" ]; then 
-   $EXE git tag -a -m ${RVER} ${RVER}
-   $EXE git push origin ${RVER}
+   TVER="v${RVER}"  
+   $EXE git tag -a -m ${TVER} ${TVER}
+   $EXE git push origin ${TVER}
    $EXE git tag -a -m jobsub_tools_${JTVER} jobsub_tools_${JTVER}
    $EXE git push origin jobsub_tools_${JTVER}
 fi

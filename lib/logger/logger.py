@@ -16,7 +16,7 @@ def init_logger(logger_name, log_file, level=logging.INFO):
     try:
        foo = l.hasBeenSet
     except:
-       formatter = logging.Formatter('%(asctime)s [%(levelname)s]  %(message)s')
+       formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]  %(message)s')
        fileHandler = logging.FileHandler(log_file, mode='a')
        fileHandler.setFormatter(formatter)
        l.setLevel(level)
@@ -39,11 +39,11 @@ def log(msg='', context='', severity=logging.INFO, traceback=False,logfile=None)
     msg = '%s %s' % (here, msg)
     if logfile:
         l = get_logger(logfile)
-        l.log(severity, msg)
+        l.log(severity, msg, exc_info=traceback)
     elif cherrypy.request.app is None:
         logfile = log_file_name(here)
         l = get_logger(logfile)
-        l.log(severity, msg)
+        l.log(severity, msg, exc_info=traceback)
     else:
         try:
             cherrypy.request.app.log.error(msg, context, severity, traceback)

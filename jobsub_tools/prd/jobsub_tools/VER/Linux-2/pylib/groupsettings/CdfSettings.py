@@ -97,7 +97,6 @@ class CdfSettings(JobSettings):
         super(CdfSettings,self).makeWrapFilePreamble()
         settings=self.settings
         preWrapCommands = [ 
-            "setup_ifdh_env",    
             "export USER=$GRID_USER",
             "export CAF_JID=${DAGMANJOBID}",
             "export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
@@ -151,36 +150,38 @@ class CdfSettings(JobSettings):
 
     def makeWrapFilePostamble(self):
         settings=self.settings
+        num_transfer_tries = settings.get('num_transfer_tries','8')
+        sleep_random = settings.get('sleep_random','1800')
         postWrapCommands = [ 
             "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
             "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
             "tar cvzf ${OUTPUT_TAR_FILE} * ",
             """cpy_out="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
-            """rnd=$((($RANDOM % 300)+1))""",
-            """sleep_val=$rnd""",
+            """#num_tries and sleep_random are configurable in the jobsub.ini file""",
+            """num_tries=%s"""%(num_transfer_tries),
+            """sleep_random=%s"""%(sleep_random),
+            """sleep_val=${CAF_SECTION}""",
+            """cpy_stat=1""",
+            """for itr in `seq $num_tries`""",
+            """do""",
             """
-            num_tries=8
-            cpy_stat=1
-            for itr in `seq $num_tries`
-            do
-              date
-              echo sleeping $sleep_val seconds prior to copying to ${OUTPUT_DESTINATION}
-              sleep $sleep_val
-              date
-              echo executing:$cpy_out
-              $cpy_out
-              cpy_stat=$?
-              if [ $cpy_stat -eq 0 ]; then break; fi
-              rnd=$((($RANDOM % 3600)+1))
-              sleep_val=$rnd
-              date
-              echo "$cpy_out failed on try $itr of $num_tries"
-            done
-            if [ "$cpy_stat" != "0" ]; then 
-              echo "$cpy_out failed, exiting with status $cpy_stat"
-              exit $cpy_stat
-            fi
+            date
+            echo sleeping $sleep_val seconds prior to copying to ${OUTPUT_DESTINATION}
+            sleep $sleep_val
+            date
+            echo executing:$cpy_out
+            $cpy_out
+            cpy_stat=$?
+            if [ $cpy_stat -eq 0 ]; then break; fi
+            sleep_val=$((($RANDOM % $sleep_random)+1))
+            date
+            echo "$cpy_out failed on try $itr of $num_tries"
             """,
+            """done""",
+            """if [ "$cpy_stat" != "0" ]; then """,
+            """  echo "$cpy_out failed, exiting with status $cpy_stat""",
+            """  exit $cpy_stat""",
+            """fi """
         ]
         f = open(settings['wrapfile'], 'a')
         if settings['verbose']:
@@ -214,24 +215,30 @@ class CdfSettings(JobSettings):
 
     def checkSanity(self):
         settings=self.settings
+        default_output_host = settings.get('default_output_host',
+                                           'fcdflnxgpvm01.fnal.gov')
         if not settings.has_key('outLocation'):
-            settings['outLocation']="%s@fcdflnxgpvm01.fnal.gov:%s_$.tgz"%(settings['user'],settings['local_host'])
+            settings['outLocation'] = "%s@%s:%s_$.tgz"%\
+                                      (settings['user'],
+                                       default_output_host,
+                                       settings['local_host'])
         if not settings.has_key('tar_file_name'):
             raise Exception ('you must supply an input tar ball using --tarFile')
         if settings.has_key('sectionList'):
             try:
                 #print 'sectionList %s'%settings['sectionList']
-                firstSection,lastSection=settings['sectionList'].split('-')
+                firstSection,lastSectioni = settings['sectionList'].split('-')
                 #print 'first: %s last:%s'%(firstSection,lastSection)
-                firstSection=int(firstSection)
-                lastSection=int(lastSection)
-                settings['firstSection']=firstSection
-                settings['lastSection']=lastSection
-                settings['queuecount']=lastSection-firstSection+1
-                settings['job_count']=lastSection-firstSection+1
+                firstSection = int(firstSection)
+                lastSection = int(lastSection)
+                settings['firstSection'] = firstSection
+                settings['lastSection'] = lastSection
+                settings['queuecount'] = lastSection - firstSection + 1
+                settings['job_count'] = lastSection - firstSection + 1
             except:
-                err="error, --sections='%s' must be of the form 'i-j' "%settings['sectionList']
-                err=err+"where both i and j are positive integers"
+                err = "error, --sections='%s' must be of the form 'i-j' "%\
+                       settings['sectionList']
+                err += "where both i and j are positive integers"
                 raise InitializationError(err)
 
         if settings.has_key('lastSection'):

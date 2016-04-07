@@ -213,14 +213,11 @@ def krb5_default_principal(cache=None):
         prn = "UNKNOWN"
     return prn
             
-def cigetcert_to_x509(server, acctGroup=None):
+def cigetcert_to_x509(server, acctGroup=None, debug=None):
 
     default_proxy_file = default_proxy_filename(acctGroup)
     proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
     issuer = proxy_issuer(proxy_file)
-    if "Kerberized CA HSM" in issuer:
-        print 'cigetcert_to_x509: %s has issuer %s, removing'%(proxy_file,issuer)
-        os.remove(proxy_file)
 
     serverParts = server.split(':')
 
@@ -237,11 +234,17 @@ def cigetcert_to_x509(server, acctGroup=None):
         print "ERROR: Server %s wants to use cigetcert to authenticate, but Unable to find command 'cigetcert' in the PATH" % server
         sys.exit(1)
     cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
+    if debug:
+        print cmd
+    cmd_out = cmd_err = ""
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     except:
-        raise
-    print cmd_out
+        err = "%s returned error:%s%s"%(cmd,cmd_err,sys.exc_info()[1])
+        raise(err)
+    if debug:
+        print "stdout: %s"% cmd_out
+        print "stderr: %s"% cmd_err
     if len(cmd_err):
         print 'error: %s' % cmd_err
         return ""

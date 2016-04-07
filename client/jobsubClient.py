@@ -71,6 +71,7 @@ class JobSubClient:
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, useDag=False, server_version='current', extra_opts={}):
         self.server = server
+        self.initial_server = server
         actual_server = server
         self.dropboxServer = dropboxServer
         self.serverVersion = server_version
@@ -655,18 +656,13 @@ class JobSubClient:
             if 'myproxy' in methods:
                 
                 cred = jobsubClientCredentials.cigetcert_to_x509(
-                        self.server,
-                        acct_group)
+                        self.initial_server,
+                        acct_group,
+                        self.verbose)
                 if cred:
                     self.credentials['cert'] = cred
                     self.credentials['key'] = cred
                     self.credentials['proxy'] = cred
-            else:
-                issuer = jobsubClientCredentials.proxy_issuer(
-                        self.credentials['proxy'])
-                if "DC=cilogon" in issuer:
-                    self.credentials = {}
-                    self.credentials = get_client_credentials(acctGroup)
             return methods
 
 

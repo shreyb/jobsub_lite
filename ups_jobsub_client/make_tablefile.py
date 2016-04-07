@@ -37,6 +37,7 @@ Action=setup
     envPrepend(PATH, ${UPS_PROD_DIR},':' )
     envSet(JOBSUB_CLIENT_DIR, ${UPS_PROD_DIR})
     SourceRequired(`ups setup cigetcert`, NO_UPS_ENV )
+    SourceRequired(`ups setup kx509`, NO_UPS_ENV )
     Execute( "grep ' 5\.' /etc/redhat-release " , NO_UPS_ENV, IS_SL5 )
     envSetIfNotSet(IS_SL5,"ItsNotSL5") 
     If( test "$IS_SL5" = "" )
@@ -80,6 +81,7 @@ Action=setup
 
 Action=unsetup
     sourceRequired( `ups unsetup cigetcert `, NO_UPS_ENV )
+    sourceRequired( `ups unsetup kx509 `, NO_UPS_ENV )
     envSetIfNotSet(JOBSUB_CLIENT_SET_PYTHON,"False") 
     If( test "$JOBSUB_CLIENT_SET_PYTHON" = "True" )
         #Execute( echo "unsetting up python" , NO_UPS_ENV )

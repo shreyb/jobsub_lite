@@ -27,7 +27,24 @@ Server
 
 * Bug      11964  Logfile bloat.  Rename /var/log/jobsub/error.log to
                   debug log
-* Bug      11989  josub_history.db getting large
+
+* Bug      11989  josub_history.db getting large.  Fix cron script
+                  that deletes old entries
+
+* Bug      12048  trap exit errors in job wrapper script, do cleanup and 
+                  log truncation
+
+                  NEW JOBSUB.INI PARAMETERS FOR CDF as part of this fix, lots 
+                  of non trapped errors came from cdf wrapper script.  These
+                  may give operations a chance to tune the behavior:
+
+                  #number of times cdf job will try transferring back data before quitting
+                  num_transfer_tries = 10
+                  #randomly sleep between one and sleep_random seconds between data transfer tries
+                  sleep_random = 1200
+                  #default host that cdf jobs try to scp data back to
+                  default_output_host = fcdflnxgpvm01.fnal.gov
+
 ================================================================================
 v1.2
 ================================================================================

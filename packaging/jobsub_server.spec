@@ -20,7 +20,8 @@ Requires:       condor-python
 Requires:       openssl
 Requires:       mod_ssl
 Requires:       mod_wsgi
-Requires:       osg-ca-certs
+#Requires:       osg-ca-certs
+Requires:       osg-ca-scripts
 Requires:       fetch-crl
 
 
@@ -202,6 +203,9 @@ rm -rf $RPM_BUILD_ROOT
 /scratch/uploads/
 
 %changelog
+
+* Mon Apr 18 2016 Parag Mhashilkar <parag@fnal.gov> - 1.0.2-2
+- Changed the dependency from osg-ca-certs to osg-ca-scripts on operations request
 
 * Wed Dec 10 2014 Parag Mhashilkar <parag@fnal.gov> - 1.0.4-1
 - Jobsub version v1.0.4

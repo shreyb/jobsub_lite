@@ -16,21 +16,33 @@ else
 fi
 
 if [ "$RC" = "" ]; then
+    if [ "$RPMR" = "" ]; then
+        echo " RC or RPMR (release cand number) OR (rpm number) must be set"
+        echo " edit release-all.env.sh and try again"
+        exit 1
+    fi
     RVER=${VER}
+    RPMVER=${VER}-${RPMR}
     JTMVER=${TOOL_MVER}
     JTVER=${TOOL_VER}_${JTMVER}
+    RC_CMD=" --rpm-release=${RPMR} "
 else
     RVER=${VER}.rc${RC}
+    RPMVER=${RVER}
     JTMVER=${TOOL_MVER}_rc${RC}
     JTVER=${TOOL_VER}_${JTMVER}
     RC_CMD="--rc $RC"
 fi
 CVER=`echo v${RVER} | sed 's/\./_/g'`
+test "$RPMR" && test $RPMR -gt 1
+if [ $? -eq 0 ]; then
+    CVER="${CVER}_${RPMR}"
+fi
 RDIR=/var/tmp/$USER
 
 #tag and push to origin
 if [  "$TAG_AND_PUSH" != "" ]; then 
-   TVER="v${RVER}"  
+   TVER="v${RPMVER}"  
    $EXE git tag  -m ${TVER} -a ${TVER}
    $EXE git push origin ${TVER}
    $EXE git tag  -m jobsub_tools_${JTVER} -a jobsub_tools_${JTVER}
@@ -41,7 +53,7 @@ fi
 try cd packaging
 try test -e release.py
 $EXE ./release.py  --version ${VER} --source-dir $HOME/jobsub --release-dir ${RDIR}  ${RC_CMD} 
-RPM=`ls ${RDIR}/${RVER}/*.rpm 2>/dev/null`
+RPM=`ls ${RDIR}/${RPMVER}/*.rpm 2>/dev/null`
 if [ "$RPM" = "" ]; then
     RPM=${RDIR}/${RVER}/jobsub.${RVER}.rpm
 fi

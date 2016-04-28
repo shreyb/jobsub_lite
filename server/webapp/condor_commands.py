@@ -28,7 +28,7 @@ def ui_condor_userprio():
 
 def ui_condor_status_totalrunningjobs():
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(
-            'condor_status -schedd -af name totalrunningjobs')
+            """condor_status -schedd   -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")' -af name totalrunningjobs""")
     return all_jobs
 
 def ui_condor_queued_jobs_summary():

@@ -12,18 +12,53 @@ import optparse
 import time
 import JobsubConfigParser
 
+
 def createDB(dir=None):
     if dir:
         os.chdir(dir)
-        logger.log('in directory %s'%dir, logfile="fill_jobsub_history")
-    hdir = historyDBDir()
-    sql = "%s/work/create_jobsub_history_db.sql" % hdir
-    cmd = "sqlite3 -init %s jobsub_history.db " % sql
-    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-    logger.log(cmd_out,logfile="fill_jobsub_history")
-    if cmd_err:
-        logger.log(cmd_err,severity=logging.ERROR,logfile="fill_jobsub_history")
-        logger.log(cmd_err,severity=logging.ERROR,logfile="error")
+    else:
+        dir = os.getcwd()
+    logger.log('in directory %s'%dir, logfile="fill_jobsub_history")
+    sql1 = """
+        create table if not exists load_history(
+        history_file text PRIMARY KEY,
+        jobsub server text,
+        loaded datetime
+        );
+    """
+    sql2="""    
+        create table if not exists jobsub_history( 
+        jobsubjobid text PRIMARY KEY ,
+        acctgroup text,  
+        owner text, 
+        ownerjob text, 
+        iwd text, 
+        qdate datetime, 
+        jobcurrentstartdate datetime, 
+        completiondate datetime, 
+        jobstatus datetime, 
+        numjobstarts integer
+        );
+     """
+    executeSQLCmds([sql1, sql2])
+
+def checkHistoryDB():
+    conn = sqlite3.connect('jobsub_history.db')
+    c = conn.cursor()
+    try:
+        sql = "select count(*) from jobsub_history"
+        c.execute(sql)
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.log('jobsub_history.db not found, attempting to create',
+                   severity=logging.ERROR,
+                   logfile="fill_jobsub_history")
+        logger.log('jobsub_history.db not found, attempting to create',
+                   severity=logging.ERROR,
+                   logfile="error")
+        createDB()
+    conn.close()
+
 
 def createHistoryDump(historyFileName='history'):
     cmd = """condor_history -file %s -af globaljobid iwd  
@@ -109,21 +144,21 @@ def loadArchive(afile,cleanup=False):
 
 def loadNewestArchive(cleanup=False):
     dir = os.path.dirname(condorHistoryFile())
-    fp=""
-    t=0
+    fp = ""
+    t = 0
     for f in os.listdir(dir):
         if 'history.20' in f:
             try:
                 logger.log('looking at %s'%f,logfile="fill_jobsub_history")
-                fpx=os.path.join(dir,f)
-                tx=os.path.getmtime(fpx)
+                fpx = os.path.join(dir,f)
+                tx = os.path.getmtime(fpx)
                 if tx > t:
                     logger.log('%s wins'%fpx,logfile="fill_jobsub_history")
                     t = tx
                     fp = fpx
             except:
-                logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
-                logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
+                logger.log("%s"%sys.exc_info()[1], severity=logging.ERROR, logfile="fill_jobsub_history")
+                logger.log("%s"%sys.exc_info()[1], severity=logging.ERROR, logfile="error")
     if fp:
         loadArchive(fp,cleanup)
 
@@ -140,6 +175,7 @@ def keepUp():
     history_db = "%s/jobsub_history.db" % dir
     logger.log("changing to %s"%dir, logfile="fill_jobsub_history")
     os.chdir(dir)
+    checkHistoryDB()
     try:
         os.makedirs('work')
     except:
@@ -147,7 +183,8 @@ def keepUp():
     try:
         shutil.copy('jobsub_history.db', 'work')
         os.chdir('work')
-        shutil.copy('partial_history.sql', 'partial_history.sql.old')
+        if os.path.exists('partial_history.sql'):
+            shutil.copy('partial_history.sql', 'partial_history.sql.old')
         histfile = condorHistoryFile()
         cmd = "rsync %s . --size-only --backup --times" % histfile
         logger.log(cmd, logfile="fill_jobsub_history")
@@ -199,6 +236,7 @@ def pruneDB( ndays, dbname=None):
         os.chdir('work')
 
     logger.log('in dir %s db= %s'%(dir, history_db),logfile="fill_jobsub_history")
+
     sql1="""DELETE from jobsub_history WHERE 
                  qdate < datetime('now', '-%s days') AND 
                  jobstatus = 'X';""" % ndays
@@ -209,9 +247,15 @@ def pruneDB( ndays, dbname=None):
 
     sql3="vacuum;"
 
+    executeSQLCmds([sql1, sql2, sql3])
+
+    if not dbname:
+        shutil.copy('jobsub_history.db', history_db)
+
+def executeSQLCmds(sql_list):
     conn = sqlite3.connect('jobsub_history.db')
     c = conn.cursor()
-    for sql in [ sql1, sql2, sql3 ]:
+    for sql in sql_list:
 
         try:
             logger.log(sql,logfile="fill_jobsub_history")
@@ -222,10 +266,6 @@ def pruneDB( ndays, dbname=None):
             logger.log(msg , severity=logging.ERROR, logfile="fill_jobsub_history")
             logger.log(msg , severity=logging.ERROR, logfile="error")
     conn.close()
-    if not dbname:
-        shutil.copy('jobsub_history.db', history_db)
-
-
 
 def loadDatabase(filebase,cleanup=False):
     dir = os.path.dirname(filebase)
@@ -283,74 +323,77 @@ def run_prog():
                                    'parse htcondor history logs into jobsub_history database')
 
     parser.add_option('-v', 
-                      dest = 'verbose',
-                      action = 'store_true',
+                      dest='verbose',
+                      action='store_true',
                       help='verbose mode')
 
     parser.add_option('--keepUp',
-                      dest = 'keepUp',
-                      action = 'store_true',
-                      help = \
+                      dest='keepUp',
+                      action='store_true',
+                      help=\
                       'incrementally parse and load history file from last run')
 
     parser.add_option('--pruneDB',
-                      dest = 'pruneDB',
-                      metavar = '<number of days>',
-                      default = None,
-                      type = 'string',
-                      help = 'remove history records older than '+\
-                              '<number of days> from jobsub_history.db')
+                      dest='pruneDB',
+                      metavar='<number of days>',
+                      default=None,
+                      type='string',
+                      help='remove history records older than '+\
+                           '<number of days> from jobsub_history.db')
 
     parser.add_option('--pruneDBName',
-            dest='pruneDBName',
-            metavar='<db name>',
-            default=None,
-            type='string',
-            help='prune records from <db name>'+\
-                 'the default is to prune the master db configured for server on this host')
-    parser.add_option('--loadDBFromSQL', 
-            dest='loadDBFromSQL', 
-            metavar='<history_file>',
-            default=None, 
-            type='string' , 
-            help='load history db from <history_file>.sql ')
+                      dest='pruneDBName',
+                      metavar='<db name>',
+                      default=None,
+                      type='string',
+                      help='prune records from <db name>'+\
+                           'the default is to prune the master db configured for server on this host')
 
-    parser.add_option('--createHistoryDump', 
-            dest='createHistoryDump', 
-            metavar='<history_file>',
-            default=None, type='string' , 
-            help='parse htcondor history log into intermediate <history_file>.dat ')
+    parser.add_option('--loadDBFromSQL',
+                      dest='loadDBFromSQL',
+                      metavar='<history_file>',
+                      default=None,
+                      type='string',
+                      help='load history db from <history_file>.sql ')
+
+    parser.add_option('--createHistoryDump',
+                      dest='createHistoryDump',
+                      metavar='<history_file>',
+                      default=None,
+                      type='string',
+                      help='parse htcondor history log into intermediate <history_file>.dat ')
 
     parser.add_option('--createSqlFile', 
-            dest='createSqlFile', 
-            metavar='<history_file>',
-            default=None, 
-            type='string' , 
-            help='load history db from <history_file>.sql')
+                      dest='createSqlFile', 
+                      metavar='<history_file>',
+                      default=None, 
+                      type='string' , 
+                      help='load history db from <history_file>.sql')
 
     parser.add_option('--loadArchive', 
-            dest='loadArchive', 
-            metavar='<archived_history_file>',
-            default=None, 
-            type='string' , 
-            help='load history db from <archived_history_file> (typically named history.YYYYMMDDhhmmss (a date)')
+                      dest='loadArchive', 
+                      metavar='<archived_history_file>',
+                      default=None, 
+                      type='string' , 
+                      help='load history db from <archived_history_file> (typically named history.YYYYMMDDhhmmss (a date)')
 
     parser.add_option('--createDB',
-            dest='createDB', 
-            metavar='<db_dir>',
-            default=None, 
-            type='string' , 
-            help='create jobsub_history.db <db_dir> if it does not already exist')
+                      dest='createDB', 
+                      metavar='<db_dir>',
+                      default=None, 
+                      type='string' , 
+                      help='create jobsub_history.db <db_dir> if it does not already exist')
 
     parser.add_option('--loadNewestArchive',
-            dest='loadNewestArchive', 
-            action = 'store_true', 
-            help='populate jobsub_history.db with newest htcondor history archive ')
+                      dest='loadNewestArchive', 
+                      action = 'store_true', 
+                      help='populate jobsub_history.db with newest htcondor history archive ')
 
     parser.add_option('--cleanup',
-            dest='cleanup', 
-            action = 'store_true', 
-            help='clean up the intermediate sql and dat files')
+                      dest='cleanup', 
+                      action = 'store_true', 
+                      help='clean up the intermediate sql and dat files')
+
     options, remainder = parser.parse_args(sys.argv)
 
     if options.verbose:

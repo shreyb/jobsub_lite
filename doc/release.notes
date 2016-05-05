@@ -57,6 +57,10 @@ Server
                   #default host that cdf jobs try to scp data back to
                   default_output_host = fcdflnxgpvm01.fnal.gov
 
+================================================================================
+v1.2-4
+================================================================================
+* Maint    12402   Change client communication from SSLv3 to TLS
 
 ================================================================================
 v1.2-3

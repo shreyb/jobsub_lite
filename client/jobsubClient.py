@@ -864,6 +864,7 @@ def curl_context(url):
     curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
     curl.setopt(curl.WRITEFUNCTION, response.write)
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
+    curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
 
     return (curl, response)
 

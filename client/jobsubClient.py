@@ -192,12 +192,16 @@ class JobSubClient:
     def dropbox_upload(self):
         result = dict()
         post_data = list()
+        orig_server = self.server
+        self.probeSchedds()
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
 
         # Create curl object and set curl options to use
         curl, response = curl_secure_context(dropboxURL, self.credentials)
         curl.setopt(curl.POST, True)
+        if self.server != orig_server:
+            curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         # If it is a local file upload the file
         for file, key in self.jobDropboxURIMap.items():

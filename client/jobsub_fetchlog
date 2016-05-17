@@ -185,6 +185,8 @@ def list_sandboxes(options):
     client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [], extra_opts={'debug':options.debug})
 
     rc = 0
+    rc_err = 0
+    rc_arr = []
     for server in get_jobsub_server_aliases(options.jobsubServer):
         if options.acctRole is not None :
             submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE % \
@@ -193,11 +195,15 @@ def list_sandboxes(options):
             submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN % (server, options.acctGroup, user)
         http_code = client.changeJobState(submitURL, 'GET',
                                           ssl_verifyhost=False)
-        rc += http_code_to_rc(http_code)
+        rc = http_code_to_rc(http_code)
+        rc_arr.append(rc)
+        
         if options.debug:
             print('CREDENTIALS    : %s\n' % creds)
             print('ACTION URL     : %s\n' % submitURL)
-    return rc
+    if 0 in rc_arr:
+        return 0
+    return 1
 
 
 def get_sandbox(options):

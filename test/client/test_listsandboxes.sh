@@ -18,7 +18,7 @@ else
     T3=0
 fi
 echo T3=$T3
-$EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --user dbox --jobsub-server $SERVER  --list-sandboxes
+$EXEPATH/jobsub_fetchlog.py $GROUP_SPEC --user $USER --jobsub-server $SERVER  --list-sandboxes
 T4=$?
 echo T4=$T4
 

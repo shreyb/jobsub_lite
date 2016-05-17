@@ -114,7 +114,9 @@ class VOMSProxy(X509Proxy):
     def getFQAN(self):
         voms_cmd = spawn.find_executable("voms-proxy-info")
         if not voms_cmd:
-            raise Exception("Unable to find command 'voms-proxy-info' in the PATH.")
+            err = "Unable to find command 'voms-proxy-info' in the PATH, and hence cannot verify your accounting role(s)."
+            print err
+            return []
 
         cmd = '%s -file %s -fqan' % (voms_cmd, self.proxyFile)
         fqan = []
@@ -286,12 +288,11 @@ def default_proxy_filename(acctGroup=None):
 
 
 def proxy_issuer(proxy_fname):
-    voms_cmd = spawn.find_executable("voms-proxy-info")
+    openssl_cmd = spawn.find_executable("openssl")
     issuer = ""
-    if not voms_cmd:
-        raise Exception("Unable to find command 'voms-proxy-info' in the PATH.")
-
-    cmd = '%s -file %s -issuer' % (voms_cmd, proxy_fname)
+    if not openssl_cmd:
+        raise Exception("Unable to find command 'openssl' in the PATH.")
+    cmd = '%s x509 -in %s -nooout -issuer' % (openssl_cmd, proxy_fname)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         issuer = cmd_out.strip()

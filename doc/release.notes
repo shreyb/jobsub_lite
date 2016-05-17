@@ -8,6 +8,9 @@ Client
                  Specifically, submissions that create a dropbox
                  tar file were still using round-robin DNS lookup
                  for load balancing, ignoring INDOWNTIME.  Fixed.
+* Bug     12698  Unnecessary voms-proxy-info usage
+* Bug     12699  Change return code for jobsub_fetchlog --list
+
 
 ================================================================================
 v1.2.1-3

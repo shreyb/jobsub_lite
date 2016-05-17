@@ -114,8 +114,8 @@ class VOMSProxy(X509Proxy):
     def getFQAN(self):
         voms_cmd = spawn.find_executable("voms-proxy-info")
         if not voms_cmd:
-            err = "Unable to find command 'voms-proxy-info' in the PATH, and hence cannot verify your accounting role(s)."
-            print err
+            wrn = "Unable to find command 'voms-proxy-info' in the PATH, used to verify  accounting role(s). Continuing."
+            print wrn
             return []
 
         cmd = '%s -file %s -fqan' % (voms_cmd, self.proxyFile)

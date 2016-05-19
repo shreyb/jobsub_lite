@@ -12,8 +12,8 @@ import subprocessSupport
 import jobsubUtils
 
 class CredentialsNotFoundError(Exception):
-    def __init__(self,errMsg="Credentials not found. Try running kinit first."):
-       sys.exit(errMsg)
+    def __init__(self,errMsg="Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables"):
+       #sys.exit(errMsg)
        Exception.__init__(self, errMsg)
 
 
@@ -71,7 +71,7 @@ class X509Credentials(Credentials):
 
     def expired(self):
         if not self.exists():
-            raise CredentialsNotFoundError('%s or %s do not exist'%(self.cert,self.key))
+            raise CredentialsNotFoundError
         now = time.mktime(time.gmtime())
         stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
         etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
@@ -96,7 +96,7 @@ class X509Proxy(X509Credentials):
                                     constants.X509_PROXY_DEFAULT_FILE)
 
         if proxy_file and not os.path.exists(proxy_file):
-            raise CredentialsNotFoundError('%s not found'%proxy_file)
+            raise CredentialsNotFoundError("Proxy file %s not found. Try running cigetcert or setting X509 credentials related environment variables" % proxy_file)
 
         return proxy_file
 
@@ -143,7 +143,7 @@ class Krb5Ticket(Credentials):
             self.validFrom = None
             self.validTo = None
             self.principal = None
-            raise
+            raise CredentialsNotFoundError
 
 
     def __str__(self):
@@ -161,7 +161,7 @@ class Krb5Ticket(Credentials):
         cache_file = krb5_cc.split(':')[-1]
 
         if not os.path.exists(cache_file):
-            raise CredentialsNotFoundError('%s not found'%cache_file)
+            raise CredentialsNotFoundError
 
         return cache_file
 
@@ -174,7 +174,7 @@ class Krb5Ticket(Credentials):
 
     def expired(self):
         if not self.exists():
-            raise CredentialsNotFoundError('%s not found'%self.krb5CredCache)
+            raise CredentialsNotFoundError
         now = time.time()
         stime = time.mktime(time.strptime(self.validFrom, '%m/%d/%y %H:%M:%S'))
         etime = time.mktime(time.strptime(self.validTo, '%m/%d/%y %H:%M:%S'))
@@ -215,7 +215,7 @@ def krb5_default_principal(cache=None):
         prn = "UNKNOWN"
     return prn
             
-def cigetcert_to_x509(server, acctGroup=None, debug=None):
+def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
 
     default_proxy_file = default_proxy_filename(acctGroup)
     proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
@@ -238,12 +238,23 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
     if debug:
         print cmd
+    return cmd
+
+def cigetcert_to_x509(server, acctGroup=None, debug=None):
+
+    cmd = cigetcert_to_x509_cmd(server,acctGroup,debug)
+    default_proxy_file = default_proxy_filename(acctGroup)
+    proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
     cmd_out = cmd_err = ""
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     except:
-        err = "%s returned error:%s%s"%(cmd,cmd_err,sys.exc_info()[1])
-        raise(err)
+        err = "%s %s"%(cmd_err,sys.exc_info()[1])
+        try:
+            os.remove(proxy_file)
+        except:
+            pass
+        raise CredentialsNotFoundError(err)
     if debug:
         print "stdout: %s"% cmd_out
         print "stderr: %s"% cmd_err
@@ -264,7 +275,7 @@ def krb5_ticket_lifetime(cache):
 
 def x509_lifetime(cert):
     if not os.path.exists(cert):
-        raise CredentialsNotFoundError('%s not found'% cert)
+        raise CredentialsNotFoundError('cert or proxy file %s not found'% cert)
     openssl_cmd = spawn.find_executable("openssl")
     if not openssl_cmd:
         raise Exception("Unable to find command 'openssl' in the PATH")

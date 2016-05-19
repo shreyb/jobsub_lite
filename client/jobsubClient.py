@@ -96,7 +96,7 @@ class JobSubClient:
         else:
             if serverParts[2]!= self.serverPort:
                 self.serverPort = serverParts[2]
-        self.credentials = get_client_credentials(self.acctGroup)
+        self.credentials = get_client_credentials(acctGroup=self.acctGroup, server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acctRole = get_acct_role(acct_role, cert)
@@ -677,11 +677,12 @@ class JobSubClient:
             #logSupport.dprint(traceback.format_exc(limit=10))
             traceback.print_stack()
             raise JobSubClientError(err)
-        except:
+        #except:
             #probably called a server that doesnt support this URL, just continue
             #and let round robin do its thing
-            logSupport.dprint( "Error: %s "% sys.exc_info()[0])
-            pass
+            #err = "Error: %s "% sys.exc_info()[0]
+            #logSupport.dprint(err)
+            #raise 
 
         curl.close()
         response.close()
@@ -1012,7 +1013,7 @@ def print_formatted_response(msg, response_code, server, serving_server,
         print_server_details(response_code, server, serving_server, response_time)
 
 
-def get_client_credentials(acctGroup=None):
+def get_client_credentials(acctGroup=None, server=None):
     """
     Client credentials lookup follows following order until it finds them
 
@@ -1022,7 +1023,7 @@ def get_client_credentials(acctGroup=None):
 
     1. $X509_USER_PROXY
     2. $X509_USER_CERT & $X509_USER_KEY
-    3. Default JOBSUB proxy location: /tmp/jobsub_x509up_u<UID> 
+    3. Default JOBSUB proxy location: /tmp/jobsub_x509up_u<UID>_<acctGroup>
        (we have been using a distinct JOBSUB proxy instead of the
        default /tmp/x509up_u<UID> since v0.4 , the default 
        was causing user side effects. We overlooked updating this
@@ -1039,7 +1040,7 @@ def get_client_credentials(acctGroup=None):
     #print 'get_client_credentials default_proxy=%s' % default_proxy_file
     env_proxy = os.environ.get('X509_USER_PROXY')
     #print 'get_client_credentials env_proxy=%s' % env_proxy
-    if env_proxy:
+    if env_proxy and os.path.exists(env_proxy):
         cred_dict['proxy'] = env_cert = env_key = env_proxy
     elif (os.environ.get('X509_USER_CERT') and os.environ.get('X509_USER_KEY')):
         env_cert = os.environ.get('X509_USER_CERT')
@@ -1048,7 +1049,7 @@ def get_client_credentials(acctGroup=None):
         cred_dict['proxy'] = default_proxy_file
         cred_dict['cert'] = default_proxy_file
         cred_dict['key'] = default_proxy_file
-    if env_cert is not None:
+    if env_cert and env_key and os.path.exists(env_cert) and os.path.exists(env_key):
         cred_dict['cert'] = cred_dict['env_cert'] = env_cert
         cred_dict['key'] = cred_dict['env_key'] = env_key
 
@@ -1066,8 +1067,22 @@ def get_client_credentials(acctGroup=None):
             cred_dict = {}
 
     if not cred_dict:
+        long_err_msg = "Cannot find credentials to use. Try the following:\n"
+        long_err_msg +="\n- If you have an FNAL kerberized "
+        long_err_msg +="account, run 'kinit'.\n- Otherwise, if you have "
+        long_err_msg +="an FNAL services account, run the following cigetcert "
+        long_err_msg += "command and which \n will  prompt for your "
+        long_err_msg += "services password, then resubmit your job:\n'%s; export X509_USER_PROXY=%s'"%(
+            jobsubClientCredentials.cigetcert_to_x509_cmd(server,acctGroup),
+            jobsubClientCredentials.default_proxy_filename(acctGroup))
+        long_err_msg += "\n- Otherwise, follow the instructions at "
+        long_err_msg += "https://fermi.service-now.com/kb_view_customer.do?sysparm_article=KB0010798 "
+        long_err_msg += "to obtain a services and/or kerberized account. "
         # Look for credentials in form of kerberos ticket
-        krb5_creds = jobsubClientCredentials.Krb5Ticket()
+        try:
+            krb5_creds = jobsubClientCredentials.Krb5Ticket()
+        except jobsubClientCredentials.CredentialsNotFoundError:
+            raise JobSubClientError(long_err_msg)
         if krb5_creds.isValid():
             jobsubClientCredentials.krb5cc_to_x509(
                     krb5_creds.krb5CredCache,
@@ -1075,7 +1090,7 @@ def get_client_credentials(acctGroup=None):
             cred_dict['cert'] = default_proxy_file
             cred_dict['key'] = default_proxy_file
         else:
-            raise JobSubClientError("Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables")
+            raise JobSubClientError(long_err_msg)
 
     return cred_dict
 

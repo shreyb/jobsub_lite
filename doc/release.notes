@@ -10,6 +10,7 @@ Client
                  for load balancing, ignoring INDOWNTIME.  Fixed.
 * Bug     12698  Unnecessary voms-proxy-info usage
 * Bug     12699  Change return code for jobsub_fetchlog --list
+* Bug     12713  Submission continues after cigetcert fails
 
 
 ================================================================================

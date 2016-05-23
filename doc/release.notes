@@ -78,6 +78,12 @@ Server
                   #default host that cdf jobs try to scp data back to
                   default_output_host = fcdflnxgpvm01.fnal.gov
 
+================================================================================
+v1.2-5
+================================================================================
+* Maint    12755  Backport 12643, some submissions ignoring INDOWNTIME attribute
+                  to the v1.2.0 release
+
 
 ================================================================================
 v1.2-4

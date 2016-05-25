@@ -168,7 +168,7 @@ def checkDestDir(destDir):
 
 def list_sandboxes(options):
     
-    creds = get_client_credentials()
+    creds = get_client_credentials(acctGroup=options.acctGroup, server=options.jobsubServer)
     cert = creds['cert']
     cmd = "openssl x509 -in %s -noout -subject"%cert
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -207,7 +207,7 @@ def list_sandboxes(options):
 
 
 def get_sandbox(options):
-    creds = get_client_credentials()
+    creds = get_client_credentials(acctGroup=options.acctGroup, server=options.jobsubServer)
     if options.jobId.find('@')>0:
         tokens = options.jobId.split('@')
         job = tokens[0]
@@ -328,6 +328,8 @@ def get_sandbox(options):
 
 def main(argv):
     options = parse_opts(argv)
+    if options.debug:
+        print "CLIENT_ARGS: %s"%options
     if options.list:
         return list_sandboxes(options)
     else:

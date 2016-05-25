@@ -4,6 +4,7 @@ v1.2.1-4
 ================================================================================
 Client
 ------
+* Bug     12775  fetchlog not working for cilogon DNS after #12713 changes
 * Bug     12642  Some submissions ignoring INDOWNTIME attribute.
                  Specifically, submissions that create a dropbox
                  tar file were still using round-robin DNS lookup

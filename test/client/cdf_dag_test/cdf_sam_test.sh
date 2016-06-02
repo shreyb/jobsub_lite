@@ -18,7 +18,7 @@ define_if_needed SAM_PROJECT4 `whoami`_test_project_4_`date +%s`
 define_if_needed SAM_PROJECT5 `whoami`_test_project_5_`date +%s`
 define_if_needed IFDH_BASE_URI http://samweb.fnal.gov:8480/sam/cdf/api
 
-/usr/krb5/bin/kx509 -o /tmp/jobsub_x509up_u${UID}_cdf
+kx509 -o /tmp/jobsub_x509up_u${UID}_cdf
 
 cd ..
 source ./setup_env.sh

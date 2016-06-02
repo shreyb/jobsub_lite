@@ -432,12 +432,9 @@ def authorize(dn, username, acctgroup, acctrole=None ,age_limit=3600):
 #REFRESH_EVERY_4_HOURS=4
 
 def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
-    # TODO: Break this into smaller functions. Krb5 related code 
-    #       should be split out
     logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
     jobsubConfig = jobsub.JobsubConfig()
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    krb5cc_dir = jobsubConfig.krb5ccDir
     logger.log("dn=%s, username=%s, acctgroup=%s, acctrole=%s, age_limit=%s"%(dn, username, acctgroup, acctrole, age_limit))
     # Create the proxy as a temporary file in tmp_dir and perform a
     # privileged move on the file.
@@ -448,14 +445,7 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
                                        delete=False)
     x509_tmp_fname = x509_tmp_file.name
     x509_tmp_file.close()
-    real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
-    new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
-    new_cache_fname = new_cache_file.name
-    logger.log("new_cache_fname=%s"%new_cache_fname)
-    new_cache_file.close()
     try:
-        principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        old_cache_fname = os.path.join(krb5cc_dir, 'old_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
         x509_user_cert = os.path.join(jobsubConfig.certsDir,
                                       '%s.cert'%username)
@@ -469,18 +459,7 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
         if needs_refresh(x509_cache_fname, age_limit):
             # First check if need to use keytab/KCA robot keytab
             if os.path.exists(keytab_fname):
-                # always refresh for now
-                # if not is_valid_cache(real_cache_fname):
-                if True:
-                    logger.log('Creating krb5 ticket ...')
-                    krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
-                    krb5_ticket.create()
-                    logger.log('Creating krb5 ticket ... DONE')
-
-                    # Rename is atomic and silently overwrites destination
-                    if os.path.exists(new_cache_fname):
-                         os.rename(new_cache_fname, real_cache_fname)
-
+                real_cache_fname = refresh_krb5cc(username)
                 krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
                                     acctgroup, acctrole)
             elif( os.path.exists(x509_user_cert) and
@@ -504,12 +483,36 @@ def authorize_kca(dn, username, acctgroup, acctrole=None ,age_limit=3600):
         if os.path.exists(x509_tmp_fname):
             os.remove(x509_tmp_fname)
             logger.log("cleanup:rm %s"%x509_tmp_fname)
+    return x509_cache_fname
+
+def refresh_krb5cc(username):
+    try:
+        creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+        jobsubConfig = jobsub.JobsubConfig()
+        principal = '%s/batch/fifegrid@FNAL.GOV' % username
+        krb5cc_dir = jobsubConfig.krb5ccDir
+        keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
+        real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s'%username)
+        new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+        new_cache_fname = new_cache_file.name
+        new_cache_file.close()
+        logger.log("new_cache_fname=%s"%new_cache_fname)
+        logger.log('Creating krb5 ticket ...')
+        krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
+        krb5_ticket.create()
+        logger.log('Creating krb5 ticket ... DONE')
+        os.rename(new_cache_fname, real_cache_fname)
+        return real_cache_fname
+    except Exception, e:
+        logger.log(str(e), severity=logging.ERROR)
+        logger.log(str(e), severity=logging.ERROR, logfile='error')
+        raise 
+    finally:
         if os.path.exists(new_cache_fname):
             os.remove(new_cache_fname)
             logger.log("cleanup:rm %s"% new_cache_fname)
 
-    return x509_cache_fname
-
+    return None
 
 def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
@@ -525,6 +528,10 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     x509_tmp_file.close()
     try:
         if needs_refresh(x509_cache_fname, age_limit):
+
+            if jobsub.should_transfer_krb5cc(acctgroup):
+                refresh_krb5cc(username)
+
             p = JobsubConfigParser()
             myproxy_exe=spawn.find_executable("myproxy-logon")
             vomsproxy_exe=spawn.find_executable("voms-proxy-info")

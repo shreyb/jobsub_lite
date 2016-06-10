@@ -11,6 +11,27 @@ for OPT in "$@" ; do
     done
 done
 
+function curl_submit {
+   URL="$@"
+   echo URL=$URL
+   cmd_pt=`echo $URL | sed 's/\//\./g'| sed 's/\?//g' | sed 's/\@/\./g' | sed 's/\=//' | sed 's/\.$//' `
+   outfile="${MACH}.html${cmd_pt}.out"
+   cmd="curl ${GET_FLAGS} https://${MACH}.fnal.gov:8443${URL} "
+
+   echo "https://${MACH}.fnal.gov:8443${URL}"
+   echo $cmd > $outfile 
+   echo '--------------------------------------------------' >> $outfile
+   bash -c "$cmd" >> $outfile 2>&1
+   stat=$?
+   if [ "$stat" != "0" ]; then
+       echo $cmd returned status $stat
+       echo $cmd returned status $stat  >> $outfile 2>&1
+       echo FAILED
+       exit $stat
+   fi
+}
+
+
 if [ "$MACH" = "" ]; then
     MACH=fifebatch
 fi
@@ -23,24 +44,38 @@ if [ "$JOBSUB_GROUP" != "" ]; then
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
+
+if [ "$X509_USER_PROXY" = "" ]; then
+    kx509
+    X509_USER_PROXY=/tmp/x509up_u${UID}
+fi
+
 if [ "$X509_USER_CERT" = "" ]; then
     X509_USER_CERT=$X509_USER_PROXY
     X509_USER_KEY=$X509_USER_PROXY
 fi
-GET_FLAGS=" -s -i --cacert  /etc/pki/tls/certs/ca-bundle.crt "
+
+GET_FLAGS=" -v --tlsv1 -s -i --cacert  /etc/pki/tls/certs/ca-bundle.crt "
 GET_FLAGS=${GET_FLAGS}" --cert "${X509_USER_CERT}" "
 GET_FLAGS=${GET_FLAGS}" --key  "${X509_USER_KEY}"  -k "
 GET_FLAGS=${GET_FLAGS}"  -H 'Accept: text/html' -X GET "
+#GET_FLAGS=${GET_FLAGS}" -X GET "
 
 #all the GET URLS in JobSub-API-v0.4.pdf
 GET_URLS="            /jobsub/acctgroups/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/help/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/ "
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/hold/ "
+#GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/ "
+#GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/long/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/users/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/ "
+GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/hold/ "
+GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/long/ "
+GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/dag/ "
 
 #some GET URLS that deliberately won't work to test 404 or not
 
@@ -61,30 +96,25 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/?jo
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/users/${USER}/jobs/history/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/jobs/summary/ "
+GET_URLS=${GET_URLS}" /jobsub/jobs/hold/ "
 GET_URLS=${GET_URLS}" /jobsub/version/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/job_doesnt_exist/sandbox/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/sandboxes/${USER}/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/help/ "
-
+GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/1.0@${MACH}.fnal.gov/betteranalyze/"
+GET_URLS=${GET_URLS}" /jobsub/scheddload/"
 
 
 for URL in ${GET_URLS}; do
-   cmd_pt=`echo $URL | tr {'/','.'} | tr {'@','.'} | tr {'?','.'}`
-   outfile="${MACH}.html${cmd_pt}out"
-   cmd="curl ${GET_FLAGS} https://${MACH}.fnal.gov:8443${URL} "
-
-   echo "https://${MACH}.fnal.gov:8443${URL}"
-   echo $cmd > $outfile
-   echo '--------------------------------------------------' >> $outfile
-   bash -c "$cmd" >> $outfile
+   curl_submit $URL
 done
 
 echo
 echo 
 echo quick and dirty report of which pages are implemented or not
 echo
-grep 'HTTP/1.1' ${MACH}*${GROUP}*.out
-grep 'HTTP/1.1' ${MACH}*${GROUP}*.out | cut -d ' ' -f2-4 | sort | uniq -c
+grep '< HTTP/1.1' ${MACH}*${GROUP}*.out
+grep '< HTTP/1.1' ${MACH}*${GROUP}*.out | cut -d ' ' -f2-5 | sort | uniq -c
 grep Exception ${MACH}*${GROUP}*.out
 if [ $? = 0 ] ; then
     echo 'FAILED'

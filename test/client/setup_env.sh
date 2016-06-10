@@ -21,7 +21,7 @@ else
     if [ "$IS_SL5" = "0" ] ; then
         . /grid/fermiapp/products/common/etc/setups.sh
         setup python v2_7_3 -f Linux64bit+2.6-2.5
-        setup pycurl v7_15_5
+        setup pycurl "$PYCURL_VERSION" 
     fi
     export X509_CERT_DIR=/etc/grid-security/certificates 
     #export X509_USER_CERT=/tmp/x509up_u${UID}

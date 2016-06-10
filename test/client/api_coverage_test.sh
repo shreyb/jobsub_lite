@@ -13,12 +13,15 @@ done
 
 function curl_submit {
    URL="$@"
-   echo URL=$URL
-   cmd_pt=`echo $URL | sed 's/\//\./g'| sed 's/\?//g' | sed 's/\@/\./g' | sed 's/\=//' | sed 's/\.$//' `
-   outfile="${MACH}.html${cmd_pt}.out"
-   cmd="curl ${GET_FLAGS} https://${MACH}.fnal.gov:8443${URL} "
+   cmd_pt=`echo $URL | sed 's/.*:8443/x./' | sed 's/\//\./g'| sed 's/\?//g' | sed 's/\@/\./g' | sed 's/\=//' | sed 's/\.$//' `
+   outfile="${GROUP}/${MACH}.html${cmd_pt}.out"
+   echo $URL | grep http > /dev/null 2>&1
+   if [ $? -ne 0 ] ; then
+       URL=" https://${MACH}.fnal.gov:8443${URL} "
+   fi
+   cmd="curl ${GET_FLAGS} ${URL} "
 
-   echo "https://${MACH}.fnal.gov:8443${URL}"
+   echo "${URL}"
    echo $cmd > $outfile 
    echo '--------------------------------------------------' >> $outfile
    bash -c "$cmd" >> $outfile 2>&1
@@ -36,7 +39,7 @@ if [ "$MACH" = "" ]; then
     MACH=fifebatch
 fi
 
-if [[ "$GROUP" = "" && "$JOBSUB_GROUP" = "" ]]; then
+if [[ "${GROUP}" = "" && "$JOBSUB_GROUP" = "" ]]; then
     GROUP=nova
 fi
 if [ "$JOBSUB_GROUP" != "" ]; then
@@ -44,6 +47,7 @@ if [ "$JOBSUB_GROUP" != "" ]; then
 fi
 
 MACH=`echo $MACH | sed -e s/.fnal.gov//`
+FQDN=$MACH.fnal.gov
 
 if [ "$X509_USER_PROXY" = "" ]; then
     kx509
@@ -67,19 +71,22 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/help/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/hold/ "
-#GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/ "
-#GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/long/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/1.0@${MACH}.fnal.gov/ "
 GET_URLS=${GET_URLS}" /jobsub/users/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/hold/ "
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/long/ "
+#this one is a typo, should be 'dags' not 'dag'
+#throws an exception visible in output but returns
+# a 200/OK usersjobs.py:default
 GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/dag/ "
 
 #some GET URLS that deliberately won't work to test 404 or not
 
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/ "
+#this one returns a 500 Internal Server error in job.py:index, 
+#it should be a 404 not found
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/jobs/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/group_doesnt_exist/help/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/resource_doesnt_exist/ "
@@ -104,18 +111,22 @@ GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/dag/help/ "
 GET_URLS=${GET_URLS}" /jobsub/acctgroups/${GROUP}/jobs/1.0@${MACH}.fnal.gov/betteranalyze/"
 GET_URLS=${GET_URLS}" /jobsub/scheddload/"
 
-
+mkdir -p ${GROUP}
 for URL in ${GET_URLS}; do
    curl_submit $URL
+done
+
+for URL in `cat ${FQDN}.${GROUP}.urls_covered.log`; do
+    curl_submit $URL
 done
 
 echo
 echo 
 echo quick and dirty report of which pages are implemented or not
 echo
-grep '< HTTP/1.1' ${MACH}*${GROUP}*.out
-grep '< HTTP/1.1' ${MACH}*${GROUP}*.out | cut -d ' ' -f2-5 | sort | uniq -c
-grep Exception ${MACH}*${GROUP}*.out
+grep '< HTTP/1.1' ${GROUP}/${MACH}*out
+grep '< HTTP/1.1' ${GROUP}/${MACH}*out | cut -d ' ' -f2-5 | sort | uniq -c
+grep 'Exception ' ${GROUP}/${MACH}*.out
 if [ $? = 0 ] ; then
     echo 'FAILED'
     exit 1

@@ -1,5 +1,7 @@
 #!/bin/sh 
 
+export OTHER_FLAGS=" --debug "
+
 function lg_echo {
   echo "$@"
   echo "$@" >> $TESTLOGFILE
@@ -256,8 +258,9 @@ for JOB in $NOISYJID ; do
 done
 
 OUTFILE=$1.api_coverage.$OUTGROUP.log
+
 if [ "$X509_USER_PROXY" = "" ]; then
-    X509_USER_PROXY=/tmp/x509up_${UID}
+    X509_USER_PROXY=/tmp/x509up_u${UID}
     if [ ! -e "$X509_USER_PROXY" ]; then
         kx509
     fi
@@ -269,10 +272,12 @@ if [ "$X509_USER_CERT" = "" ]; then
 fi
 
 grep URL ${SERVER}*${GROUP}*log | sed 's/.*https/https/' | sed 's/ .*$//' | sort | uniq -u > ${SERVER}.${GROUP}.urls_covered.log
+
 lg_echo testing api coverage of URLS
 sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP X509_USER_CERT=$X509_USER_CERT  X509_USER_KEY=$X509_USER_KEY >$OUTFILE 2>&1
 RSLT=$?
-grep 'HTTP/1.1' `echo $SERVER | cut -d '.' -f1`*out | cut -d ' ' -f2-4 | sort | uniq -c
+#grep 'HTTP/1.1' `echo $SERVER | cut -d '.' -f1`*out | cut -d ' ' -f2-4 | sort | uniq -c
+tail -6 $OUTFILE
 test "$RSLT" = "0"
 pass_or_fail
 

@@ -183,7 +183,7 @@ class Krb5Ticket(Credentials):
         return True
 
 def mk_temp_fname( fname ):
-    tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=False)
+    tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=True)
     tmp_fname = tmp_file.name
     tmp_file.close()
     return tmp_fname

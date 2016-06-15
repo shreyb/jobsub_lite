@@ -143,7 +143,7 @@ class Krb5Ticket(Credentials):
             self.validFrom = None
             self.validTo = None
             self.principal = None
-            raise CredentialsNotFoundError
+            raise CredentialsNotFoundError('no valid Krb5 cache found')
 
 
     def __str__(self):

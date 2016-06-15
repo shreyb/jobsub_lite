@@ -1072,8 +1072,8 @@ def get_client_credentials(acctGroup=None, server=None):
         long_err_msg +="account, run 'kinit'.\n- Otherwise, if you have "
         long_err_msg +="an FNAL services account, run the following cigetcert "
         long_err_msg += "command and which \n will  prompt for your "
-        long_err_msg += "services password, then resubmit your job:\n'%s; export X509_USER_PROXY=%s'"%(
-            jobsubClientCredentials.cigetcert_to_x509_cmd(server,acctGroup),
+        long_err_msg += "services password, then resubmit your job:\n'cigetcert -s %s -o %s'"%(
+            server,
             jobsubClientCredentials.default_proxy_filename(acctGroup))
         long_err_msg += "\n- Otherwise, follow the instructions at "
         long_err_msg += "https://fermi.service-now.com/kb_view_customer.do?sysparm_article=KB0010798 "

@@ -10,6 +10,7 @@ Client
 Server
 ------
 * Bug     12829  krbrefresh/myproxy not updating CDF users krb5cc_(uid) caches
+* Bug     12937  increase lifetime of proxy retrieved from myproxy server to 24 hours
 
 ================================================================================
 v1.2.1-4

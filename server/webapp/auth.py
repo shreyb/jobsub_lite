@@ -540,7 +540,7 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             child_env['X509_USER_CERT']=child_env['JOBSUB_SERVER_X509_CERT']
             child_env['X509_USER_KEY']=child_env['JOBSUB_SERVER_X509_KEY']
             dn = clean_proxy_dn(dn)
-            cmd = "%s -n -l '%s' -s %s -o %s"%\
+            cmd = "%s -n -l '%s' -s %s -t 24 -o %s"%\
                     (myproxy_exe, dn, myproxy_server, x509_tmp_fname)
             logger.log('%s'%cmd)
             out, err = subprocessSupport.iexe_cmd(cmd,child_env=child_env)

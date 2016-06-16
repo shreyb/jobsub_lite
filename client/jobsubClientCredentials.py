@@ -215,22 +215,27 @@ def krb5_default_principal(cache=None):
         prn = "UNKNOWN"
     return prn
             
-def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
-
-    default_proxy_file = default_proxy_filename(acctGroup)
-    proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
-    issuer = proxy_issuer(proxy_file)
+def server_hostname(server):
 
     serverParts = server.split(':')
 
     if len(serverParts)==1:
-        pass
+        return server    
     elif len(serverParts)>1:
         if serverParts[0].startswith('http'):
             server = serverParts[1]
         else:
             server = serverParts[0]
     server = server.replace('/','')        
+    return server
+
+def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
+
+    default_proxy_file = default_proxy_filename(acctGroup)
+    proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
+    issuer = proxy_issuer(proxy_file)
+
+    server = server_hostname(server)
     cigetcert_cmd = spawn.find_executable("cigetcert")
     if not cigetcert_cmd:
         print "ERROR: Server %s wants to use cigetcert to authenticate, but Unable to find command 'cigetcert' in the PATH" % server

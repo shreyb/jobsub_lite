@@ -100,6 +100,7 @@ class JobSubClient:
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acctRole = get_acct_role(acct_role, cert)
+        self.serverAuthMethods()
 
         # Help URL
         self.helpURL = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN % (

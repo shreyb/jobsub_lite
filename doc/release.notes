@@ -4,6 +4,7 @@ v1.2.1.5
 ================================================================================
 Client
 ------    
+* Bug     13060  client fails to upload to dropbox if proxy expired
 * Bug     12930  SLF5 submission failing due to zero length file 
 * Maint   12926  Change error message when authentication fails
 

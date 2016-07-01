@@ -1,5 +1,16 @@
 
 ================================================================================
+v1.2.1.5.1
+================================================================================
+Client
+------    
+* Bug    13084 use correct kx509 depending on whether VO has transitioned or not
+               actually use old kx509 (for now) to authenticate with server
+               so you can then ask it what method to use to authenticate :-/
+               If VO has transitioned cigetcert will be called to correct
+               DN of proxy
+
+================================================================================
 v1.2.1.5
 ================================================================================
 Client

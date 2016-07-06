@@ -208,6 +208,7 @@ class AccountJobsResource(object):
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
+                cherrypy.response.status = 404
                 rc = {'err': err}
         except:
             cherrypy.response.status = 500
@@ -215,8 +216,6 @@ class AccountJobsResource(object):
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}
-        if rc.get('err'):
-            cherrypy.response.status = 500
         return rc
 
 

@@ -15,7 +15,10 @@ export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
 
-setup jobsub_tools
+#setup jobsub_tools
+export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
+export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
+export PATH=/opt/jobsub/server/tools:$PATH
 
 
 has_exports=`echo $1 |grep 'export_env=' `

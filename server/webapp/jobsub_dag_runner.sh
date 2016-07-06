@@ -25,7 +25,12 @@ fi
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
-setup jobsub_tools
+#setup jobsub_tools
+#setup jobsub_tools
+export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
+export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
+export PATH=/opt/jobsub/server/tools:$PATH
+
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
     cd ${WORKDIR}
@@ -81,7 +86,7 @@ JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
 export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA $JCKP "
 
-export JOBSUB_CMD="dagNabbit.py -s  $@ "
+export JOBSUB_CMD="dagsub -s  $@ "
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> ${DEBUG_LOG}

@@ -5,15 +5,6 @@ WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_dag_runner.log
 
-if [ "$DEBUG_JOBSUB" != "" ]; then
-   cmd="dagNabbit.py $@"
-   date=`date`
-   echo `whoami` >> ${DEBUG_LOG}
-   echo "CWD: `pwd`" >> ${DEBUG_LOG}
-   echo "$date "  >> ${DEBUG_LOG}
-   echo "$cmd "  >> ${DEBUG_LOG}
-   printenv | sort >> ${DEBUG_LOG}
-fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
 	source $JOBSUB_UPS_LOCATION > /dev/null 2>&1
@@ -27,6 +18,7 @@ export SUBMIT_HOST=$HOSTNAME
 
 #setup jobsub_tools
 #setup jobsub_tools
+export CONDOR_TMP=${WORKDIR}
 export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
 export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
 export PATH=/opt/jobsub/server/tools:$PATH
@@ -47,9 +39,21 @@ if [ $RSLT == 0 ] ; then
 	echo $cmds > $file
 	source $file
 	shift
-        if [ "$DEBUG_JOBSUB" = "" ]; then
-          rm $file
-        fi
+    if [ "$DEBUG_JOBSUB" = "" ]; then
+      rm $file
+    else
+      echo "source file is $file" >>${DEBUG_LOG}
+      printenv | sort >> ${DEBUG_LOG}
+    fi
+fi
+
+if [ "$DEBUG_JOBSUB" != "" ]; then
+   cmd="dagsub $@"
+   date=`date`
+   echo `whoami` >> ${DEBUG_LOG}
+   echo "CWD: `pwd`" >> ${DEBUG_LOG}
+   echo "$date "  >> ${DEBUG_LOG}
+   echo "$cmd "  >> ${DEBUG_LOG}
 fi
 
 if [ "$ENCRYPT_INPUT_FILES" = "" ]; then

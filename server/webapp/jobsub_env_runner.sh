@@ -16,6 +16,7 @@ export SUBMIT_HOST=$HOSTNAME
 
 
 #setup jobsub_tools
+export CONDOR_TMP=${WORKDIR}
 export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
 export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
 export PATH=/opt/jobsub/server/tools:$PATH
@@ -32,6 +33,9 @@ if [ $RSLT -eq 0 ] ; then
 	shift
         if [ "$DEBUG_JOBSUB" = "" ]; then
           rm $file
+        else
+          echo "source file:$file" >> $DEBUG_LOG
+          printenv | sort >> $DEBUG_LOG
         fi
 fi
 
@@ -43,7 +47,6 @@ if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "CWD: `pwd`" >> $DEBUG_LOG
    echo "$date "  >> $DEBUG_LOG
    echo "$cmd "  >> $DEBUG_LOG
-   printenv | sort >> $DEBUG_LOG
 fi
 
 

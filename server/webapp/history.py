@@ -17,15 +17,22 @@ class HistoryResource(object):
         """ Query list of user_ids. Returns a JSON list object.
         API is /acctgroups/<group>/users/<user_id>jobs/history
         """
-        acctgroup=kwargs.get('acctgroup')
-        if job_id is None:
-            job_id=kwargs.get('job_id')
-        if user_id is None:
-            user_id = kwargs.get('user_id')
-        filter = constructQuery(acctgroup,user_id,job_id)
-        logger.log("filter=%s"%filter)
-        history = jobsub_history( filter  )
-        return {'out': history}
+        try:
+            acctgroup=kwargs.get('acctgroup')
+            if job_id is None:
+                job_id=kwargs.get('job_id')
+            if user_id is None:
+                user_id = kwargs.get('user_id')
+            filter = constructQuery(acctgroup,user_id,job_id)
+            logger.log("filter=%s"%filter)
+            history = jobsub_history(filter)
+            return {'out': history}
+        except:
+            err = ' %s' % sys.exc_info()[1]
+            cherrypy.response.status = 500
+            logger.log(err, severity=logging.ERROR)
+            logger.log(err, severity=logging.ERROR, logfile='error')
+            return {'err': err}
 
     @cherrypy.expose
     @format_response
@@ -105,6 +112,7 @@ class HistoryResource(object):
 
         except:
             err = 'Exception on HistoryResource.default: %s'%sys.exc_info()[1]
+            cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
             rc = {'err': err}

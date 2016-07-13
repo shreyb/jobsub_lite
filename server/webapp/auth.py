@@ -95,6 +95,15 @@ def get_voms(acctgroup):
         raise jobsub.AcctGroupNotConfiguredError(acctgroup)
     return voms_group
 
+def krbrefresh_query_fmt():
+    query_fmt = """ -format "%s," accountinggroup -format "%s," x509userproxysubject -format "%s" x509userproxy -format "\n" ClusterId -constraint 'JobUniverse=!=7&&x509userproxysubject=!=UNDEFINED' """
+    p = JobsubConfigParser()
+    if p.has_section('default'):
+            qf = p.get('default', 'krbrefresh_query_format')
+            if qf:
+                query_fmt = qf
+    logger.log('query_fmt=%s'%query_fmt)
+    return query_fmt
 
 def get_voms_attrs(acctgroup, acctrole=None):
     fqan = get_voms(acctgroup)
@@ -620,7 +629,7 @@ def refresh_proxies(agelimit=3600):
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')
         raise Exception(err)
-    cmd += ' -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
+    cmd += krbrefresh_query_fmt()
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -633,8 +642,10 @@ def refresh_proxies(agelimit=3600):
     for line in lines:
         if line not in already_processed:
             already_processed.append(line)
-            check=line.split("^")
+            check=line.split(",")
             if len(check)==3:
+                for i in range(len(check)):
+                    check[i]=check[i].strip()
                 try:
                     ac_grp=check[0]
                     dn=check[1]

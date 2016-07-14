@@ -751,6 +751,14 @@ def check_auth(func=None, pass_through=None):
                     (acctgroup, role) = tokens[0:2]
                     kwargs['acctgroup'] = acctgroup
                     logger.log('found ROLE %s in %s' %(role,tokens))
+
+                p = JobsubConfigParser()
+                if role not in p.supportedRoles():
+                    err = "User authorization has failed: role '%s' is not supported. This may be a typo, supported roles are %s"%(role,p.supportedRoles())
+                    cherrypy.response.status = 401
+                    logger.log(err)
+                    return {'err': err}
+
                 username, voms_proxy =  _check_auth(dn, acctgroup, role)
                 if username and voms_proxy:
                     kwargs['role'] = role

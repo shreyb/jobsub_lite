@@ -752,9 +752,23 @@ def check_auth(func=None, pass_through=None):
                     kwargs['acctgroup'] = acctgroup
                     logger.log('found ROLE %s in %s' %(role,tokens))
 
-                p = JobsubConfigParser()
-                if role not in p.supportedRoles():
-                    err = "User authorization has failed: role '%s' is not supported. This may be a typo, supported roles are %s"%(role,p.supportedRoles())
+                default_roles = ['Analysis','Calibration','Data','Production']
+                supported_roles = JobsubConfigParser().supportedRoles()
+                if not supported_roles:
+                    supported_roles = default_roles
+                if role not in supported_roles:
+                    err = "User authorization has failed: --role "
+                    err +="'%s' not found. Configured roles are "%(role) 
+                    err +="%s . Check case and spelling."% supported_roles
+                    cherrypy.response.status = 401
+                    logger.log(err)
+                    return {'err': err}
+
+                supported_groups = JobsubConfigParser().supportedGroups()
+                if acctgroup not in supported_groups:
+                    err = "User authorization has failed: --group "
+                    err +="'%s' not found. Configured groups are "%(acctgroup) 
+                    err +="%s . Check case and spelling."% supported_groups
                     cherrypy.response.status = 401
                     logger.log(err)
                     return {'err': err}

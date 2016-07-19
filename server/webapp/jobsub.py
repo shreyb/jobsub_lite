@@ -124,6 +124,17 @@ def default_voms_role(acctgroup="default"):
                    logfile='error')
     return rc
 
+def sub_group_pattern(acctgroup):
+    p = JobsubConfigParser()
+    ac = acctgroup
+    try:
+        sgp = p.get(acctgroup,'sub_group_pattern')
+        if sgp:
+            ac = sgp
+    except:
+        pass
+    return ac
+
 def get_authentication_methods(acctgroup):
     rc = 'kca-dn'
     try:

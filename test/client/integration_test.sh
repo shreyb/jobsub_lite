@@ -61,7 +61,7 @@ if [ "$USE_JOBSUB_CLIENT_VERSION" != "" ]; then
     setup jobsub_client $USE_JOBSUB_CLIENT_VERSION
 fi
 
-echo "minos nova minerva lbne" | grep $GROUP > /dev/null 2>&1
+echo "minos nova minerva dune" | grep $GROUP > /dev/null 2>&1
 if [ "$?" != "0" ]; then
    export SKIP_PRODUCTION_TEST="YES"
 fi

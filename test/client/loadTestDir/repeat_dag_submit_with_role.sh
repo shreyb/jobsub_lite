@@ -12,6 +12,7 @@ cd -
 STOPFILE=$HOME/stop_load_test
 T1=0
 LOG=`pwd`/${GROUP}_dag.log
+echo '' > $LOG
 cd ../jobsubDagTest
 while [[ ! -e "$STOPFILE"  && "$T1" = "0" ]]
 do

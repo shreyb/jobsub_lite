@@ -74,6 +74,7 @@ def doSubmit(settings):
     else:
         append = """-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """%\
                 (settings['user'],settings['group'],settings['user'])
+        append = """%s -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """%(append,settings['submit_host'])
         if settings.has_key('maxConcurrent'):
             maxjobs = settings['maxConcurrent']
         else:

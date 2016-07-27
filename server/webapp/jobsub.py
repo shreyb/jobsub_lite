@@ -284,7 +284,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             logger.log(sub_msg, logfile='submit')
             logger.log(sub_msg)
     if len(err):
-        sub_msg += err
+        for line in err:
+            sub_msg += line
         logger.log(sub_msg, severity=logging.ERROR, logfile='submit')
         logger.log(sub_msg, severity=logging.ERROR, logfile='error')
         logger.log(sub_msg, severity=logging.ERROR)

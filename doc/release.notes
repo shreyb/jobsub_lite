@@ -11,6 +11,9 @@ Server
 ------
 
 * Maint  8379  Get rid of jobsub_tools ups product, merge into jobsub rpm
+* Bug   12394  jobsub_submit with --dataset-definition crashes in sambegin 
+               under certain conditions
+* Bug   12869  Unhandled error logging in jobsub.py
 * Bug   12912  jobsub_history exits with status 0 when it should not
 * Bug   12870  check for validitiy of --role and return an understandable error 
 

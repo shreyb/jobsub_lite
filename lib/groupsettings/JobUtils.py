@@ -83,6 +83,7 @@ set_jobsub_debug(){
 [[ "$JOBSUB_DEBUG" ]] && set_jobsub_debug
 
 
+
 cleanup_condor_dirs(){
 if [[ -d "$_CONDOR_JOB_IWD" ]]; then
    find $_CONDOR_JOB_IWD -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} \;
@@ -237,13 +238,16 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
         sam_start_str="""
 
 ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
-SPSTATUS=$?
 while true; do
     STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
     PROJECT_STATE=${JSB_TMP}/$SAM_DATASET.`date '+%s'`
     ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
     grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
-
+    if [ "$?" != "0" ]; then
+        echo "Sam Station $SAM_STATION still waiting for $SAM_DATASET, sleeping 60 seconds"
+        sleep 60
+        continue
+    fi
     TOTAL_FILES=`cat $PROJECT_STATE | sed "s/^.* contains //" | sed "s/ total files:.*$//"`
     CACHE_MIN=$TOTAL_FILES
 

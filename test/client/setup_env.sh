@@ -44,6 +44,12 @@ if [ "$MACH" = "default" ]; then
 else
     export SERVER_SPEC=" --jobsub-server $SERVER "
 fi
+echo $SERVER_SPEC | grep fifebatch >/dev/null 2>&1
+IS_FIFEBATCH="$?"
+if [ "$IS_FIFEBATCH" = "0" ]; then
+        export SUBMIT_FLAGS=$SUBMIT_FLAGS" --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC "
+    fi
+
 if [ "$OTHER_FLAGS" = "" ]; then
     echo -n
 else

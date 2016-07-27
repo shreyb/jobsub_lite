@@ -16,7 +16,7 @@ echo '' > $LOG
 cd ../jobsubDagTest
 while [[ ! -e "$STOPFILE"  && "$T1" = "0" ]]
 do
-        $EXEPATH/jobsub_submit_dag  --role Production  $GROUP_SPEC \
+        $EXEPATH/jobsub_submit_dag  --role Production  $GROUP_SPEC $SUBMIT_FLAGS \
            --debug $SERVER_SPEC  file://dagTest  --maxConcurrent 3 >> $LOG 2>&1
         T1=$?
         if [ "$T1" != "0" ]; then

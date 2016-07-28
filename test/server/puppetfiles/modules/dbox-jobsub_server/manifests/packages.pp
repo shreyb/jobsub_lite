@@ -3,7 +3,7 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
                                String $ups_version = $jobsub_server::vars::ups_version,
                                String $ups_flavor = $jobsub_server::vars::ups_flavor ) {
     yumrepo { 'jobsub':
-      baseurl  => 'http://web1.fnal.gov/files/jobsub/dev/6/x86_64/',
+      baseurl  => 'http://jobsub.fnal.gov/rpms/dev/el6/$basearch/',
       descr    => 'Jobsub',
       enabled  => 1,
       gpgcheck => 0,

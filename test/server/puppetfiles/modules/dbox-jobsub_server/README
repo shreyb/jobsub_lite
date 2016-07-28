@@ -1,0 +1,21 @@
+jobsub_server
+
+This is the developer/test jobsub_server module.  It can be installed on a server (SLF6 tested only) with the following commands:
+$ cd ..
+$ export SERVER=somemachine.fnal.gov
+$ puppet module build dbox-jobsub_server
+$ scp dbox-jobsub_server/pkg/dbox-jobsub_server-0.0.1.tar.gz root@${SERVER}:dbox-jobsub_server-0.0.1.tar.gz
+(then on $SERVER )
+# puppet module install dbox-jobsub_server-0.0.1.tar.gz ; echo "class { 'jobsub_server' : }" > /tmp/install_jobsub_server.pp ; puppet apply /tmp/install_jobsub_server.pp
+License
+-------
+
+
+Contact
+-------
+
+
+Support
+-------
+
+Please log tickets and issues at our [Projects site](https://cdcvs.fnal.gov/redmine/projects/jobsub)

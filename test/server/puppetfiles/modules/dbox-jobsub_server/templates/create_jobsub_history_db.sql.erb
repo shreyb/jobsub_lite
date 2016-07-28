@@ -1,0 +1,18 @@
+create table if not exists load_history(
+    history_file text PRIMARY KEY,
+    jobsub server text,
+    loaded datetime
+);
+create table if not exists jobsub_history( 
+    jobsubjobid text PRIMARY KEY ,
+    acctgroup text,  
+    owner text, 
+    ownerjob text, 
+    iwd text, 
+    qdate datetime, 
+    jobcurrentstartdate datetime, 
+    completiondate datetime, 
+    jobstatus datetime, 
+    numjobstarts integer
+);
+

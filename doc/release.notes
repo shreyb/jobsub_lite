@@ -16,6 +16,8 @@ Server
 * Bug   12869  Unhandled error logging in jobsub.py
 * Bug   12912  jobsub_history exits with status 0 when it should not
 * Bug   12870  check for validitiy of --role and return an understandable error 
+* Bug   13279  marslbne marsgm2 etc not authenticating with cilogon
+
 
 ================================================================================
 v1.2.1.6

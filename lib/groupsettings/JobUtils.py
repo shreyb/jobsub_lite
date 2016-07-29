@@ -51,9 +51,12 @@ if [ "$has_ifdh" -ne "0" ] ; then
 fi
 which ifdh > /dev/null 2>&1
 if [ "$?" -ne "0" ] ; then
-    echo "Can not find ifdh version $IFDH_VERSION in cvmfs"
+    echo "Can not find ifdh version $IFDH_VERSION ,exiting!"
+    echo "Can not find ifdh version $IFDH_VERSION ,exiting! ">&2
+    exit 1
 else
     ifdh "$@"
+    exit $?
 fi
 _HEREDOC_
 chmod +x %s
@@ -237,14 +240,28 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
     def sam_start(self):
         sam_start_str="""
 
-${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
+yell() { echo "$0: $*" >&2; }
+die() { yell "$*"; exit 111; }
+try() { echo "$@"; "$@" || die "FAILED $*"; }
+
+num_tries=0
+max_tries=60
+if [ "$JOBSUB_MAX_SAM_STAGE_MINUTES" != "" ]; then
+    max_tries=$JOBSUB_MAX_SAM_STAGE_MINUTES
+fi
+try ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
 while true; do
     STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
     PROJECT_STATE=${JSB_TMP}/$SAM_DATASET.`date '+%s'`
-    ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
+    try ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
     grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
     if [ "$?" != "0" ]; then
-        echo "Sam Station $SAM_STATION still waiting for $SAM_DATASET, sleeping 60 seconds"
+        num_tries=$(($num_tries + 1))
+        if [ $num_tries -gt $max_tries ]; then
+            echo "Something wrong with $SAM_PROJECT in $SAM_STATION, giving up"
+            exit 111
+        fi
+        echo "attempt $num_tries of $max_tries: Sam Station $SAM_STATION still waiting for project $SAM_PROJECT, dataset $SAM_DATASET, sleeping 60 seconds"
         sleep 60
         continue
     fi
@@ -272,7 +289,7 @@ while true; do
         exit 1
     fi
     if [ $IN_CACHE -ge $CACHE_MIN  ]; then
-        echo $IN_CACHE files of $TOTAL_FILES are staged, exiting
+        echo $IN_CACHE files of $TOTAL_FILES are staged, success!
         exit 0 
     fi
     sleep 60

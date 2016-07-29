@@ -23,7 +23,7 @@ class jobsub_server::vars{
     $jenkins_key = '/etc/grid-security/jenkins/jenkinskey.pem'
     $jenkins_admin_email = 'dbox@fnal.gov'
     $ups_version = 'v5_1_4'
-    $ifdhc_version = 'v1_8_5'
+    $ifdhc_version = 'v1_8_7'
     case $::os['release']['major']{
       '5' : {
         $ups_flavor = 'Linux64bit+2.6-2.5'

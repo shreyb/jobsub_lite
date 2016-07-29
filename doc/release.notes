@@ -6,6 +6,8 @@ Client
 ------
 * Bug   13349 jobid 'malformed' using fifebatch-dev jobids due to regular 
               expression over-constraints.
+* Bug   13375 client should not remove X509_USER_PROXY when nothing found in
+              myproxy server
 
 Server
 ------

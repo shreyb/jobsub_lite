@@ -13,8 +13,8 @@ import jobsubUtils
 
 class CredentialsNotFoundError(Exception):
     def __init__(self,errMsg="Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables"):
-       #sys.exit(errMsg)
-       Exception.__init__(self, errMsg)
+       sys.exit(errMsg)
+       #Exception.__init__(self, errMsg)
 
 
 class CredentialsError(Exception):
@@ -262,10 +262,6 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     except:
         err = "%s %s"%(cmd_err,sys.exc_info()[1])
-        try:
-            os.remove(proxy_file)
-        except:
-            pass
         raise CredentialsNotFoundError(err)
     if debug:
         print "stdout: %s"% cmd_out

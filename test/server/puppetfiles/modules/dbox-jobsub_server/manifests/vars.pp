@@ -1,6 +1,6 @@
 # author Dennis Box, dbox@fnal.gov
 class jobsub_server::vars{
-    $jobsub_server_version = '1.1.2-0.1.rc1'
+    $jobsub_server_version = '1.2.2-0.1.rc2'
     $jobsub_tools_version = 'v1_4_6'
     $jobsub_user = 'rexbatch'
     $jobsub_user_uid = 47535

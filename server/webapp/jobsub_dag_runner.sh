@@ -5,15 +5,6 @@ WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_dag_runner.log
 
-if [ "$DEBUG_JOBSUB" != "" ]; then
-   cmd="dagNabbit.py $@"
-   date=`date`
-   echo `whoami` >> ${DEBUG_LOG}
-   echo "CWD: `pwd`" >> ${DEBUG_LOG}
-   echo "$date "  >> ${DEBUG_LOG}
-   echo "$cmd "  >> ${DEBUG_LOG}
-   printenv | sort >> ${DEBUG_LOG}
-fi
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
 	source $JOBSUB_UPS_LOCATION > /dev/null 2>&1
@@ -25,7 +16,10 @@ fi
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
-setup jobsub_tools
+export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
+
+
+
 
 if [ "$JOBSUB_INTERNAL_ACTION" = "SUBMIT" ]; then
     cd ${WORKDIR}
@@ -42,9 +36,30 @@ if [ $RSLT == 0 ] ; then
 	echo $cmds > $file
 	source $file
 	shift
-        if [ "$DEBUG_JOBSUB" = "" ]; then
-          rm $file
-        fi
+    if [ "$DEBUG_JOBSUB" = "" ]; then
+      rm $file
+    else
+      echo "source file is $file" >>${DEBUG_LOG}
+    fi
+fi
+
+if [ "$USE_UPS_JOBSUB_TOOLS" = "" ]; then
+    export CONDOR_TMP=${WORKDIR}
+    export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
+    export PATH=/opt/jobsub/server/tools:$PATH
+    DAG_CMD="dagsub"
+else
+    setup jobsub_tools
+    DAG_CMD="dagNabbit.py"
+fi
+if [ "$DEBUG_JOBSUB" != "" ]; then
+   cmd="$DAG_CMD $@"
+   date=`date`
+   echo `whoami` >> ${DEBUG_LOG}
+   echo "CWD: `pwd`" >> ${DEBUG_LOG}
+   echo "$date "  >> ${DEBUG_LOG}
+   echo "$cmd "  >> ${DEBUG_LOG}
+   printenv | sort >> ${DEBUG_LOG}
 fi
 
 if [ "$ENCRYPT_INPUT_FILES" = "" ]; then
@@ -81,7 +96,7 @@ JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
 export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA $JCKP "
 
-export JOBSUB_CMD="dagNabbit.py -s  $@ "
+export JOBSUB_CMD="$DAG_CMD -s  $@ "
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> ${DEBUG_LOG}

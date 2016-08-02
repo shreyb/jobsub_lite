@@ -54,6 +54,36 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/httpd/conf.d/jobsub_api.conf
 %config(noreplace) /opt/jobsub/server/conf/jobsub_api.conf
 %config(noreplace) /opt/jobsub/server/conf/jobsub.ini
+/opt/jobsub/lib/DAGParser/DAGManParser.py
+/opt/jobsub/lib/DAGParser/DAGManParser.pyc
+/opt/jobsub/lib/DAGParser/DAGManParser.pyo
+/opt/jobsub/lib/DAGParser/PrintSummary.py
+/opt/jobsub/lib/DAGParser/PrintSummary.pyc
+/opt/jobsub/lib/DAGParser/PrintSummary.pyo
+/opt/jobsub/lib/DAGParser/xml_format.py
+/opt/jobsub/lib/DAGParser/xml_format.pyc
+/opt/jobsub/lib/DAGParser/xml_format.pyo
+/opt/jobsub/lib/groupsettings/__init__.py
+/opt/jobsub/lib/groupsettings/__init__.pyc
+/opt/jobsub/lib/groupsettings/__init__.pyo
+/opt/jobsub/lib/groupsettings/JobSettings.py
+/opt/jobsub/lib/groupsettings/JobSettings.pyo
+/opt/jobsub/lib/groupsettings/JobSettings.pyc
+/opt/jobsub/lib/groupsettings/JobUtils.py
+/opt/jobsub/lib/groupsettings/JobUtils.pyo
+/opt/jobsub/lib/groupsettings/JobUtils.pyc
+/opt/jobsub/lib/groupsettings/CdfSettings.py
+/opt/jobsub/lib/groupsettings/CdfSettings.pyo
+/opt/jobsub/lib/groupsettings/CdfSettings.pyc
+/opt/jobsub/lib/groupsettings/MinervaSettings.py
+/opt/jobsub/lib/groupsettings/MinervaSettings.pyo
+/opt/jobsub/lib/groupsettings/MinervaSettings.pyc
+/opt/jobsub/lib/groupsettings/MinosSettings.py
+/opt/jobsub/lib/groupsettings/MinosSettings.pyc
+/opt/jobsub/lib/groupsettings/MinosSettings.pyo
+/opt/jobsub/lib/groupsettings/NovaSettings.py
+/opt/jobsub/lib/groupsettings/NovaSettings.pyo
+/opt/jobsub/lib/groupsettings/NovaSettings.pyc
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.py
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.pyc
 /opt/jobsub/lib/JobsubConfigParser/fakelogger.pyo
@@ -87,6 +117,10 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/jobsub_preen.sh
 /opt/jobsub/server/admin/krbrefresh.sh
 /opt/jobsub/server/admin/test_krbrefresh.sh
+/opt/jobsub/server/tools/dagsub
+/opt/jobsub/server/tools/jobsub
+/opt/jobsub/server/tools/returnOK.sh
+/opt/jobsub/server/tools/summary.sh
 /opt/jobsub/server/webapp/jobsub_priv
 /opt/jobsub/server/webapp/__init__.py
 /opt/jobsub/server/webapp/__init__.pyc

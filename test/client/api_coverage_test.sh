@@ -80,7 +80,7 @@ GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/long/ "
 #this one is a typo, should be 'dags' not 'dag'
 #throws an exception visible in output but returns
 # a 200/OK usersjobs.py:default
-GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/dag/ "
+#GET_URLS=${GET_URLS}" /jobsub/users/${USER}/jobs/dag/ "
 
 #some GET URLS that deliberately won't work to test 404 or not
 

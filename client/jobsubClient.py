@@ -445,14 +445,7 @@ class JobSubClient:
 
 
     def checkID(self,jobid):
-        if jobid is None:
-            return jobid
-        else:
-            p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
-            if not p.match(jobid):
-                err = "ERROR: --jobid '%s' is malformed" % jobid
-                raise JobSubClientError(err)
-            return jobid
+        return check_id(jobid)
 
 
     def release(self, jobid=None, uid=None, constraint=None):
@@ -1237,6 +1230,16 @@ def digest_for_file(fileName, block_size=2**20):
     x=dig.hexdigest()
     return x
 
+def check_id(jobid):
+    if jobid is None:
+       return jobid
+    else:
+       #p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
+       p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
+       if not p.match(jobid):
+           err = "ERROR: --jobid '%s' is malformed" % jobid
+           raise JobSubClientError(err)
+       return jobid
 
 def http_code_to_rc(http_code):
     if http_code >= 200 and http_code < 300:

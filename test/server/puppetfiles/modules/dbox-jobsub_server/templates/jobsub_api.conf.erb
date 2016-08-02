@@ -1,0 +1,80 @@
+Listen 8443
+WSGISocketPrefix /opt/jobsub/server/jobsub_api
+LogLevel info
+
+<VirtualHost *:8443>
+    ServerAlias jobsub
+    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
+    WSGIProcessGroup jobsub
+    WSGIScriptAlias / /opt/jobsub/server/webapp/jobsub_api.py
+
+    SetEnv JOBSUB_INI_FILE /opt/jobsub/server/conf/jobsub.ini
+    SetEnv JOBSUB_UPS_LOCATION /fnal/ups/etc/setups.sh
+    SetEnv JOBSUB_LOG_DIR /var/log/jobsub
+    SetEnv JOBSUB_APP_NAME jobsub
+    SetEnv JOBSUB_ENV_RUNNER /opt/jobsub/server/webapp/jobsub_env_runner.sh
+    SetEnv JOBSUB_CREDENTIALS_DIR ~/.security
+    SetEnv KADMIN_PASSWD_FILE ~/.security/kadmin_passwd
+    SetEnv KCA_DN_PATTERN_LIST  '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$),^/DC=gov/DC=fnal/O=Fermilab/OU=Robots/CN.*/CN=cron/CN.*/CN=UID:(.*$)'
+    SetEnv JOBSUB_SERVER_X509_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
+    SetEnv JOBSUB_SERVER_X509_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+
+    AliasMatch ^/([^/]*\.css) /var/www/html/static/styles/$1
+    Alias /static/ /var/www/html/static/
+
+    <Location "/static">
+            SetHandler None
+    </Location>
+    <Directory /var/www/html/static>
+        Order deny,allow
+        Allow from all
+    </Directory>
+
+    RequestHeader set Front-End-Https "On"
+    RequestHeader set Auth-User "%{SSL_CLIENT_S_DN}s"
+    RequestHeader set Remote-User "%{SSL_CLIENT_S_DN}s"
+
+    SSLEngine On
+    SSLProtocol all -SSLv2 -SSLv3
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:+MEDIUM:+LOW
+
+    SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
+    SSLCertificateKeyFile <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    SSLCACertificatePath /etc/grid-security/certificates
+    SSLCACertificateFile /etc/grid-security/certificates/FNAL-SLCS.pem
+
+    <Location />
+    SSLRequireSSL On
+    SSLVerifyClient         require
+    SSLVerifyDepth          5
+    SSLOptions              +ExportCertData +StdEnvVars
+
+    RequestHeader set SSL_PROTOCOL %{SSL_PROTOCOL}e
+    RequestHeader set SSL_SESSION_ID %{SSL_SESSION_ID}e
+    RequestHeader set SSL_SESSION_RESUMED %{SSL_SESSION_RESUMED}e
+    RequestHeader set SSL_SECURE_RENEG %{SSL_SECURE_RENEG}e
+    RequestHeader set SSL_COMPRESS_METHOD %{SSL_COMPRESS_METHOD}e
+    RequestHeader set SSL_VERSION_INTERFACE %{SSL_VERSION_INTERFACE}e
+    RequestHeader set SSL_VERSION_LIBRARY %{SSL_VERSION_LIBRARY}e
+
+    RequestHeader set SSL_CLIENT_M_VERSION %{SSL_CLIENT_M_VERSION}e
+    RequestHeader set SSL_CLIENT_M_SERIAL %{SSL_CLIENT_M_SERIAL}e
+    RequestHeader set SSL_CLIENT_S_DN %{SSL_CLIENT_S_DN}e
+    RequestHeader set SSL_CLIENT_S_DN_x509 %{SSL_CLIENT_S_DN_x509}e
+    RequestHeader set SSL_CLIENT_I_DN %{SSL_CLIENT_I_DN}e
+    RequestHeader set SSL_CLIENT_I_DN_x509 %{SSL_CLIENT_I_DN_x509}e
+    RequestHeader set SSL_CLIENT_V_START %{SSL_CLIENT_V_START}e
+    RequestHeader set SSL_CLIENT_V_END %{SSL_CLIENT_V_END}e
+    RequestHeader set SSL_CLIENT_V_REMAIN %{SSL_CLIENT_V_REMAIN}e
+    RequestHeader set SSL_CLIENT_A_SIG %{SSL_CLIENT_A_SIG}e
+    RequestHeader set SSL_CLIENT_A_KEY %{SSL_CLIENT_A_KEY}e
+    RequestHeader set SSL_CLIENT_CERT %{SSL_CLIENT_CERT}e
+    RequestHeader set SSL_CLIENT_VERIFY %{SSL_CLIENT_VERIFY}e
+    RequestHeader set SSL_CLIENT_CERT_CHAIN_0 %{SSL_CLIENT_CERT_CHAIN_0}e
+    RequestHeader set SSL_CLIENT_CERT_CHAIN_1 %{SSL_CLIENT_CERT_CHAIN_1}e
+    RequestHeader set SSL_CLIENT_CERT_CHAIN_2 %{SSL_CLIENT_CERT_CHAIN_2}e
+    RequestHeader set SSL_CLIENT_CERT_CHAIN_3 %{SSL_CLIENT_CERT_CHAIN_3}e
+    RequestHeader set SSL_CLIENT_CERT_CHAIN_4 %{SSL_CLIENT_CERT_CHAIN_4}e
+
+    </Location>
+</VirtualHost>

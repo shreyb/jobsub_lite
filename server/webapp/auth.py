@@ -563,8 +563,9 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)
             if not acctrole:
-                acctrole="Analysis"
-            search_pat = "%s/Role=%s/Capability"%(acctgroup,acctrole)
+                acctrole = jobsub.default_voms_role(acctgroup)
+            sub_group_pattern = jobsub.sub_group_pattern(acctgroup)
+            search_pat = "%s/Role=%s/Capability"%(sub_group_pattern, acctrole)
 
             if (search_pat in out2) and ('VO' in out2):
                 logger.log('found  %s , authenticated successfully'% (search_pat))
@@ -573,7 +574,7 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
                 logger.log('failed to find %s in %s'%(search_pat,out2))
                 t1=search_pat in out2
                 t2='VO' in out2
-                logger.log('test (%s in out2)=%s test(VO in out2)=%s'%(search_pat,t1,t2) )
+                logger.log('test (%s in out2)=%s test(VO in out2)=%s'%(search_pat, t1, t2))
                 os.remove(x509_tmp_fname)
 
                 err = "unable to authenticate with role='%s'.  Is this a typo?" % acctrole
@@ -751,6 +752,28 @@ def check_auth(func=None, pass_through=None):
                     (acctgroup, role) = tokens[0:2]
                     kwargs['acctgroup'] = acctgroup
                     logger.log('found ROLE %s in %s' %(role,tokens))
+
+                default_roles = ['Analysis','Calibration','Data','Production']
+                supported_roles = JobsubConfigParser().supportedRoles()
+                if not supported_roles:
+                    supported_roles = default_roles
+                if role not in supported_roles:
+                    err = "User authorization has failed: --role "
+                    err +="'%s' not found. Configured roles are "%(role) 
+                    err +="%s . Check case and spelling."% supported_roles
+                    cherrypy.response.status = 401
+                    logger.log(err)
+                    return {'err': err}
+
+                supported_groups = JobsubConfigParser().supportedGroups()
+                if acctgroup not in supported_groups:
+                    err = "User authorization has failed: --group "
+                    err +="'%s' not found. Configured groups are "%(acctgroup) 
+                    err +="%s . Check case and spelling."% supported_groups
+                    cherrypy.response.status = 401
+                    logger.log(err)
+                    return {'err': err}
+
                 username, voms_proxy =  _check_auth(dn, acctgroup, role)
                 if username and voms_proxy:
                     kwargs['role'] = role

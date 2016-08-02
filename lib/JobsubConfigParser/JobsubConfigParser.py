@@ -74,6 +74,16 @@ class JobsubConfigParser(object):
                         
                 
 
+    def supportedRoles(self,host=None):
+        if host is None:
+            host=self.submit_host
+        if host is None:
+            host=socket.gethostname()
+        str=self.get(host,'supported_roles')
+        if str is not None:
+            return str.split()
+        return []
+
     def supportedGroups(self,host=None):
         if host is None:
             host=self.submit_host

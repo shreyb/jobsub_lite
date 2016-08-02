@@ -1,0 +1,5 @@
+export SERVER=fermicloud337
+puppet module build jobsub_client; scp jobsub_client/pkg/dbox-jobsub_client-0.1.0.tar.gz root@${SERVER}:dbox-jobsub_client-0.1.0.tar.gz
+
+on SERVER
+puppet module uninstall dbox-jobsub_client; puppet module install dbox-jobsub_client-0.1.0.tar.gz ; echo "class { 'jobsub_client' : }" > /tmp/install_jobsub_client.pp ; puppet apply /tmp/install_jobsub_client.pp 

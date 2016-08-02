@@ -15,10 +15,12 @@ if [ "$rpmfile" = "" ]; then
     exit 1
 fi
 
-repologin="jobsub@web1.fnal.gov"
-repodir='/var/www/html/files/jobsub'
+#repologin="jobsub@web1.fnal.gov"
+repologin="flxi02.fnal.gov"
+#repodir='/var/www/html/files/jobsub'
+repodir='/web/sites/j/jobsub.fnal.gov/htdocs/rpms'
 #For now only SL6 support
-versionlist='6'
+versionlist='el6'
 #For now only 64bit support
 archlist='x86_64'
 # Create repo for dev (developers) and one for production (operations)

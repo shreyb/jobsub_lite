@@ -3,6 +3,7 @@
 WORKDIR=${COMMAND_PATH_ROOT}/${GROUP}/${USER}/${WORKDIR_ID}
 WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
+export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
 
 if [ -e "$JOBSUB_UPS_LOCATION" ]; then
    source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
@@ -15,7 +16,6 @@ export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
 
-setup jobsub_tools
 
 
 has_exports=`echo $1 |grep 'export_env=' `
@@ -29,10 +29,19 @@ if [ $RSLT -eq 0 ] ; then
 	shift
         if [ "$DEBUG_JOBSUB" = "" ]; then
           rm $file
+        else
+          echo "source file:$file" >> $DEBUG_LOG
         fi
 fi
 
-#DEBUG_JOBSUB=TRUE
+if [ "$USE_UPS_JOBSUB_TOOLS" = "" ]; then
+    export CONDOR_TMP=${WORKDIR}
+    export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
+    export PATH=/opt/jobsub/server/tools:$PATH
+else
+     setup jobsub_tools
+fi 
+
 if [ "$DEBUG_JOBSUB" != "" ]; then
    cmd="jobsub $@"
    date=`date`

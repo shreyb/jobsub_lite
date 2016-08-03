@@ -225,17 +225,24 @@ class JobSubClient:
         serving_server = servicing_jobsub_server(curl)
         curl.close()
 
-        print "SERVER RESPONSE CODE: %s" % response_code
-        if response_code == 200:
-            value = response.getvalue()
-            if response_content_type == 'application/json':
-                result = json.loads(value)
-            else:
-                print_formatted_response(value, response_code, self.server,
+        if self.verbose:
+            print "SERVER RESPONSE CODE: %s" % response_code
+        value = response.getvalue()
+        if response_content_type == 'application/json':
+            result = json.loads(value)
+        else:
+            print_formatted_response(value, response_code, self.server,
                                          serving_server, response_time, verbose=self.verbose)
-        response.close()
+        if response_code == 200:
+            response.close()
+            return result
+        else:
+            import ast
+            err = ast.literal_eval(value).get('err')
+            if not err:
+                err = value
+            raise JobSubClientSubmissionError(err)
 
-        return result
 
 
     def submit_dag(self):

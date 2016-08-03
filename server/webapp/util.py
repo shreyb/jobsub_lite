@@ -16,6 +16,7 @@ import condor_commands
 import re
 import cherrypy
 import auth
+import socket
 
 
 
@@ -259,50 +260,51 @@ def doJobAction(acctgroup,
 
     collector_host = condor_commands.collector_host()
     logger.log('collector_host is "%s"' % collector_host)
-
+    hostname = socket.gethostname()
     for schedd_name in scheddList:
-        try:
-            cmd = [
-                jobsub.condor_bin(condorCommands()[job_action]), '-totals',
-                '-name', schedd_name,
-                '-pool', collector_host,
-                '-constraint', constraint
-            ]
-            if job_action == 'REMOVE' and kwargs.get('forcex'):
-                cmd.append('-forcex')
-            out, err = jobsub.run_cmd_as_user(cmd, cmd_user, child_env=child_env)
-            extra_err = err
-        except:
-            #TODO: We need to change the underlying library to return
-            #      stderr on failure rather than just raising exception
-            #however, as we are iterating over schedds we don't want
-            #to return error condition if one fails, we need to 
-            #continue and process the other ones
-            failures += 1
-            err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
-            logger.log(err,traceback=1)
-            msg = "%s - %s"%(cmd,err)
-            logger.log(msg, severity=logging.ERROR)
-            logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
-            logger.log(msg, severity=logging.ERROR, logfile='error')
-            if user and user != cherrypy.request.username:
-                logger.log(msg, severity=logging.ERROR, logfile='condor_superuser')
-            extra_err = extra_err + err
-            return {'out':out, 'err':extra_err}
-        out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
-        for line in out2:
-            if regex.match(line):
-                grps=regex.match(line)
-                affected_jobs += int(grps.group(1))
-                retOut += line
-        err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
-        for line in err2:
-            if regex.match(line):
-                retOut += line.replace('STDOUT:','')
-            if regex2.match(line):
-                retErr += line
-            if regex3.match(line):
-                retErr += line
+        if hostname in schedd_name:
+            try:
+                cmd = [
+                    jobsub.condor_bin(condorCommands()[job_action]), '-totals',
+                    '-name', schedd_name,
+                    '-pool', collector_host,
+                    '-constraint', constraint
+                ]
+                if job_action == 'REMOVE' and kwargs.get('forcex'):
+                    cmd.append('-forcex')
+                out, err = jobsub.run_cmd_as_user(cmd, cmd_user, child_env=child_env)
+                extra_err = err
+            except:
+                #TODO: We need to change the underlying library to return
+                #      stderr on failure rather than just raising exception
+                #however, as we are iterating over schedds we don't want
+                #to return error condition if one fails, we need to 
+                #continue and process the other ones
+                failures += 1
+                err="%s: exception:  %s "%(cmd,sys.exc_info()[1])
+                logger.log(err,traceback=1)
+                msg = "%s - %s"%(cmd,err)
+                logger.log(msg, severity=logging.ERROR)
+                logger.log(msg, severity=logging.ERROR, logfile='condor_commands')
+                logger.log(msg, severity=logging.ERROR, logfile='error')
+                if user and user != cherrypy.request.username:
+                    logger.log(msg, severity=logging.ERROR, logfile='condor_superuser')
+                extra_err = extra_err + err
+                return {'out':out, 'err':extra_err}
+            out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
+            for line in out2:
+                if regex.match(line):
+                    grps=regex.match(line)
+                    affected_jobs += int(grps.group(1))
+                    retOut += line
+            err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
+            for line in err2:
+                if regex.match(line):
+                    retOut += line.replace('STDOUT:','')
+                if regex2.match(line):
+                    retErr += line
+                if regex3.match(line):
+                    retErr += line
     #retOut += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
     #if failures:
     #    retOut = "%s \nCONDOR_ERRORS: %s" %( retOut, extra_err )

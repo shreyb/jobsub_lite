@@ -231,6 +231,7 @@ class PackageExcludes:
             'server',
             'test',
             'ups_jobsub_client',
+            'config_files',
         ]
 
         # Patterns that need to be excluded from the server tarball
@@ -254,6 +255,7 @@ class PackageExcludes:
             'Readme',
             'dev_use_virtual_env.sh',
             'requirements.txt',
+            'config_files',
         ]
 ############################################################
 #

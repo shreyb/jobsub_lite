@@ -9,6 +9,7 @@ Client
               expression over-constraints.
 * Bug   13375 client should not remove X509_USER_PROXY when nothing found in
               myproxy server
+* Bug   13433 unhelpful message when authentication fails during dropbox upload
 
 Server
 ------

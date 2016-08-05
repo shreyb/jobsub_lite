@@ -1299,3 +1299,37 @@ def date_callback(option, opt, value, p):
     else:
         sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'"""%value)
     return p
+
+def create_tarfile(tar_file, tar_path, tar_type="tgz" ):
+    print 'tar_file=%s tar_path=%s'%(tar_file,tar_path)
+    if tar_type == "tgz":
+        tar = tarfile.open(tar_file, 'w:gz')
+        tar_name = "%s.tgz" % tar_file
+    else:
+        tar = tarfile.open(tar_file, 'w:bz2')
+        tar_name = "%s.tar.bz2" % tar_file
+    os.chdir(tar_path)
+    print('creating tar of %s'% tar_path)
+    failed_file_list = []
+    f0 = os.path.realpath(tar_path)
+    files = os.listdir(tar_path)
+
+    for file in files:
+        f1 = os.path.join(f0, file)
+        try:
+            tar.add(f1, file)
+
+        except:
+            failed_file_list.append(file)
+    if len(failed_file_list) > 0:
+        for fname in failed_file_list:
+            print("failed to add to tarfile: %s Permissions problem?\n" % fname)
+        f.close()
+    tar.close()
+    return tar_name
+
+
+
+
+if __name__ == '__main__':
+    create_tarfile(sys.argv[1],sys.argv[2], sys.argv[3])

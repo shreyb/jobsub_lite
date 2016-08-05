@@ -146,10 +146,11 @@ def parse_opts(argv):
 
 def main(argv):
     options = parse_opts(argv)
+    extraOpts={'debug':options.debug, 'forcex':options.forcex, 'uid':options.uid, 'constraint':options.constraint, }
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-            options.acctRole, None, extra_opts={'debug':options.debug, 'forcex':options.forcex })
+            options.acctRole, None, extra_opts=extraOpts)
     
     rc = 0
     try:
@@ -167,9 +168,11 @@ def main(argv):
             if options.constraint:
                 print 'removing jobs with constraint=%s' % options.constraint
             http_code_list = js_client.remove(uid=options.uid, constraint=options.constraint)
+            rc = 1
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
-                rc += tmp_rc
+                if tmp_rc == 0:
+                    rc = tmp_rc
 
     except JobSubClientError, e:
         print e

@@ -311,12 +311,14 @@ def get_sandbox(options):
         if response_content_type == 'application/json' :
             print_json_response(value, response_code, options.jobsubServer,
                                 serving_server, response_time,
-                                ignore_empty_msg=False, verbose=options.debug )
+                                suppress_server_details=False,
+                                verbose=options.debug )
         else:
             print_formatted_response(value, response_code, options.jobsubServer,
                                      serving_server, response_time,
-                                     ignore_empty_msg=False,
-                                     print_msg_type=False, verbose=options.debug)
+                                     suppress_server_details=False,
+                                     print_msg_type=False,
+                                     verbose=options.debug)
     except:
         print 'Error extracting the fetched files'
         sandbox_extract_rc = 1

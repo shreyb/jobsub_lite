@@ -142,7 +142,7 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    extraOpts={'debug':options.debug}
+    extraOpts={'debug':options.debug, 'uid':options.uid, 'constraint':options.constraint }
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
             options.acctRole, None , extra_opts=extraOpts)
     rc = 0
@@ -162,9 +162,11 @@ def main(argv):
             if options.constraint:
                 print 'Holding jobs with constraint=%s' % options.constraint
             http_code_list = js_client.hold(uid=options.uid, constraint=options.constraint)
+            rc = 1
             for http_code in http_code_list: 
-                tmp_rc += http_code_to_rc(http_code)
-                rc += tmp_rc
+                tmp_rc = http_code_to_rc(http_code)
+                if tmp_rc == 0:
+                    rc = 0
 
     except JobSubClientError, e:
         print e

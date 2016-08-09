@@ -538,7 +538,7 @@ class JobSubClient:
             item = uid
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
-                if self.acctoRole:
+                if self.acctRole:
                     u =\
                     constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
                     % (srv, self.acctGroup, self.acctRole, item)

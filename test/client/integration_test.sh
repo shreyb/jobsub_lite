@@ -179,7 +179,7 @@ sh ${TEST_FLAG} ./test_dropbox_submit.sh $SERVER ${GROUP}_dropbox.sh >$OUTFILE 2
 pass_or_fail
 
 lg_echo testing dropbox with multiple -f functionality
-mv ${GROUP}_dropbox.sh ${GROUP}_minus_f.sh
+cp ${GROUP}_dropbox.sh ${GROUP}_minus_f.sh
 OUTFILE=$1.dropbox_minus_f.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_dropbox_minus_f_submit.sh $SERVER ${GROUP}_minus_f.sh >$OUTFILE 2>&1
 pass_or_fail

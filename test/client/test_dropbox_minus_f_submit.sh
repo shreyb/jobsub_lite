@@ -14,7 +14,7 @@ export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC $SUBMIT_FLAGS \
-               -f dropbox://stuff.tar \
+               -f dropbox://${GROUP}_stuff.tar \
                -f dropbox://stuff2.tar \
             -e SERVER  file://"$@"
 SUBMIT_WORKED=$?

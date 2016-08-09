@@ -5,11 +5,22 @@ v1.2.2
 
 Client
 ------
-* Bug   13349 jobid 'malformed' using fifebatch-dev jobids due to regular 
-              expression over-constraints.
-* Bug   13375 client should not remove X509_USER_PROXY when nothing found in
-              myproxy server
-* Bug   13433 unhelpful message when authentication fails during dropbox upload
+* Feature 12244 new url type: tardir://(path/to/some_directory) .  When this
+                url is encountered during job submission, create a tar file 
+                some_directory.tar in the cwd, and upload it to the dropbox
+                as if the dropbox://some_directory.tar url had been in the
+                command line.  Can be used with --tar_file_name to save a
+                step.  In other words: tar cvzf some_directory some_directory.tar;
+                jobsub_submit --tar_file_name dropbox://some_directory.tar and
+                jobsub_submit --tar_file_name tardir://some_directoy are
+                equivalent. 
+
+* Bug     13349 jobid 'malformed' using fifebatch-dev jobids due to regular 
+                expression over-constraints.
+* Bug     13375 client should not remove X509_USER_PROXY when nothing found in
+                myproxy server
+* Bug     13433 unhelpful message when authentication fails during dropbox upload
+ 
 
 Server
 ------

@@ -71,7 +71,6 @@ class JobSubClient:
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, useDag=False, server_version='current',
                  extra_opts={}):
-        logSupport.dprint('JobSubClient.__init__: extra_opts=%s' % extra_opts)
         self.server = server
         self.initial_server = server
         actual_server = server
@@ -116,8 +115,9 @@ class JobSubClient:
         self.dagHelpURL = fmt_pattern % (self.server,
                                          self.acctGroup)
 
-        # TODO: Following is specific to the job submission and dropbox
-        #       This should be pulled out of the constructor
+
+
+    def init_submission(self):
 
         if self.serverArgv:
             self.jobExeURI = get_jobexe_uri(self.serverArgv)
@@ -128,6 +128,7 @@ class JobSubClient:
                                   self.serverArgv[d_idx].split('=') + \
                                   self.serverArgv[d_idx+1:]
             self.jobDropboxURIMap = get_dropbox_uri_map(self.serverArgv)
+            self.get_directory_tar_map(self.serverArgv)
             self.serverEnvExports = get_server_env_exports(self.serverArgv)
             srv_argv = copy.copy(self.serverArgv)
             if not os.path.exists(self.jobExe):
@@ -138,9 +139,11 @@ class JobSubClient:
                 exeInTarball = False
                 try:
                     dropbox_uri = get_dropbox_uri(self.serverArgv)
-                    #print "dropbox_uri is %s"%dropbox_uri
+                    if constants.DIRECTORY_SUPPORTED_URI in dropbox_uri:
+                        dropbox_uri = self.jobDirectoryTarMap.get(dropbox_uri)
+
                     tarball = uri2path(dropbox_uri)
-                    contents = tarfile.open(tarball,'r').getnames()
+                    contents = tarfile.open(tarball, 'r').getnames()
                     if self.jobExe in contents or \
                             os.path.basename(self.jobExe) in contents:
                         exeInTarball = True
@@ -148,7 +151,7 @@ class JobSubClient:
                         for arg in self.serverArgv:
                             if arg in contents or \
                                     os.path.basename(arg) in contents:
-                                exeInTarball = True    
+                                exeInTarball = True
                                 break
                     if exeInTarball:
                         pass
@@ -156,8 +159,9 @@ class JobSubClient:
                         raise JobSubClientError(err)
 
                 except:
-                
+
                     raise JobSubClientError(err)
+
 
 
             if self.jobDropboxURIMap:
@@ -193,7 +197,7 @@ class JobSubClient:
                                                        self.serverEnvExports)
                     if self.dropboxServer is None and \
                             self.server != actual_server:
-                        self.server=actual_server
+                        self.server = actual_server
 
             if self.jobExeURI and self.jobExe:
                 idx = get_jobexe_idx(srv_argv)
@@ -201,11 +205,27 @@ class JobSubClient:
                     srv_argv[idx] = '@%s' % self.jobExe
 
             if self.serverEnvExports:
-                srv_env_export_b64en = base64.urlsafe_b64encode(self.serverEnvExports)
+                srv_env_export_b64en = \
+                        base64.urlsafe_b64encode(self.serverEnvExports)
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
 
+    def get_directory_tar_map(self, argv):
+        try:
+            x = self.jobDirectoryTarMap
+        except:
+            self.jobDirectoryTarMap = {}
+        for arg in argv:
+            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                tarpath = uri2path(arg)
+                dirname = os.path.basename(tarpath)
+                tarname = dirname + ".tar"
+                create_tarfile(tarname, tarpath)
+                digest = digest_for_file(tarname)
+                tarUrl = "dropbox://%s"%tarname
+                self.jobDropboxURIMap[tarUrl] = digest
+                self.jobDirectoryTarMap[arg] = tarUrl
 
     def dropbox_upload(self):
         result = dict()
@@ -213,7 +233,8 @@ class JobSubClient:
         orig_server = self.server
         self.probeSchedds()
 
-        dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN % (self.dropboxServer or self.server, self.acctGroup)
+        dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN %\
+                (self.dropboxServer or self.server, self.acctGroup)
 
         # Create curl object and set curl options to use
         curl, response = curl_secure_context(dropboxURL, self.credentials)
@@ -233,7 +254,7 @@ class JobSubClient:
             response_time = etime - stime
         except pycurl.error, error:
             errno, errstr = error
-            err= "PyCurl Error %s: %s" % (errno, errstr)
+            err = "PyCurl Error %s: %s" % (errno, errstr)
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
@@ -249,7 +270,8 @@ class JobSubClient:
             result = json.loads(value)
         else:
             print_formatted_response(value, response_code, self.server,
-                                         serving_server, response_time, verbose=self.verbose)
+                                     serving_server, response_time,
+                                     verbose=self.verbose)
         if response_code == 200:
             response.close()
             return result
@@ -263,13 +285,17 @@ class JobSubClient:
 
 
     def submit_dag(self):
+        self.init_submission()
         if (not self.jobDropboxURIMap) or self.dropboxServer:
             self.probeSchedds()
         self.serverAuthMethods()
         if self.acctRole:
-            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            self.submitURL = \
+                    constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE %\
+                    (self.server, self.acctGroup, self.acctRole)
         else:
-            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+            self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN %\
+                    (self.server, self.acctGroup)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
@@ -277,11 +303,14 @@ class JobSubClient:
             ('jobsub_client_krb5_principal', krb5_principal),
         ]
 
-        logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
+        logSupport.dprint('URL            : %s %s\n' %\
+                (self.submitURL, self.serverArgs_b64en))
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
-        logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
-        #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
+        logSupport.dprint('SERVER_ARGS_B64: %s\n' %\
+                base64.urlsafe_b64decode(self.serverArgs_b64en))
+        #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
+        #        (self.serverArgs_b64en, self.submitURL)
 
         # Get curl & resposne object to use
         curl, response = curl_secure_context(self.submitURL, self.credentials)
@@ -295,9 +324,11 @@ class JobSubClient:
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
-            post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
-            payloadFileName=self.makeDagPayload(uri2path(self.jobExeURI))
-            post_data.append(('jobsub_payload', (pycurl.FORM_FILE, payloadFileName)))
+            post_data.append(('jobsub_command',
+                              (pycurl.FORM_FILE, self.jobExe)))
+            payloadFileName = self.makeDagPayload(uri2path(self.jobExeURI))
+            post_data.append(('jobsub_payload',
+                              (pycurl.FORM_FILE, payloadFileName)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
         http_code = 200
@@ -316,7 +347,8 @@ class JobSubClient:
             logSupport.dprint(traceback.format_exc())
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?"%self.server 
+                err += "your server specification \n( --jobsub-server %s )?"%\
+                        self.server 
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
         shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
@@ -327,52 +359,52 @@ class JobSubClient:
         return http_code
 
 
-    def makeDagPayload(self,infile):
-        orig=os.getcwd()
-        dirpath=tempfile.mkdtemp()
-        fin=open(infile,'r')
-        z=fin.read()
+    def makeDagPayload(self, infile):
+        orig = os.getcwd()
+        dirpath = tempfile.mkdtemp()
+        fin = open(infile, 'r')
+        z = fin.read()
         os.chdir(dirpath)
-        fnameout="%s"%(os.path.basename(infile))
-        fout=open(fnameout,'w')
-        tar = tarfile.open('payload.tgz','w:gz')
-        
-        lines=z.split('\n')
+        fnameout = "%s"%(os.path.basename(infile))
+        fout = open(fnameout, 'w')
+        tar = tarfile.open('payload.tgz', 'w:gz')
+        lines = z.split('\n')
         for l in lines:
-            wrds=re.split('\s+',l)
-            la=[]
+            wrds = re.split('\s+', l)
+            la = []
             for w in wrds:
-                w2=uri2path(w)
-                if w != w2 :
-                    b=os.path.basename(w2)
-                    w3=" ${JOBSUB_EXPORTS} ./%s"%b
+                w2 = uri2path(w)
+                if w != w2:
+                    b = os.path.basename(w2)
+                    w3 = " ${JOBSUB_EXPORTS} ./%s"%b
                     la.append(w3)
                     os.chdir(orig)
-                    tar.add(uri2path(w),b)
+                    tar.add(uri2path(w), b)
                     os.chdir(dirpath)
                 else:
                     la.append(w)
             la.append('\n')
-            l2=' '.join(la)
+            l2 = ' '.join(la)
             fout.write(l2)
-    
-    
         fin.close()
         fout.close()
-        tar.add(fnameout,fnameout)
+        tar.add(fnameout, fnameout)
         tar.close()
         return "%s/payload.tgz" % dirpath
 
 
     def submit(self):
+        self.init_submission()
         if (not self.jobDropboxURIMap) or self.dropboxServer:
             self.probeSchedds()
         self.serverAuthMethods()
         
         if self.acctRole:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE%\
+                    (self.server, self.acctGroup, self.acctRole)
         else:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
+            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN %\
+                    (self.server, self.acctGroup)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
         post_data = [
             ('jobsub_args_base64', self.serverArgs_b64en),
@@ -380,11 +412,14 @@ class JobSubClient:
             ('jobsub_client_krb5_principal', krb5_principal),
         ]
 
-        logSupport.dprint('URL            : %s %s\n' % (self.submitURL, self.serverArgs_b64en))
+        logSupport.dprint('URL            : %s %s\n' %\
+                (self.submitURL, self.serverArgs_b64en))
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submitURL)
-        logSupport.dprint('SERVER_ARGS_B64: %s\n' % base64.urlsafe_b64decode(self.serverArgs_b64en))
-        #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' % (self.serverArgs_b64en, self.submitURL)
+        logSupport.dprint('SERVER_ARGS_B64: %s\n' %\
+                base64.urlsafe_b64decode(self.serverArgs_b64en))
+        #cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
+        #       (self.serverArgs_b64en, self.submitURL)
 
         # Get curl & resposne object to use
         curl, response = curl_secure_context(self.submitURL, self.credentials)
@@ -393,12 +428,14 @@ class JobSubClient:
         curl.setopt(curl.POST, True)
         # If we uploaded a dropbox file we saved the actual hostname to
         # self.server and self.submitURL so disable SSL_VERIFYHOST
-        #always have to do this now as we select the best schedd and submit directly to it
+        #always have to do this now as we select the best schedd 
+        #and submit directly to it
         curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.jobExeURI):
-            post_data.append(('jobsub_command', (pycurl.FORM_FILE, self.jobExe)))
+            post_data.append(('jobsub_command',
+                              (pycurl.FORM_FILE, self.jobExe)))
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
 
@@ -413,11 +450,12 @@ class JobSubClient:
         except pycurl.error, error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err="HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
-                                                          errstr)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
+                                                            errstr)
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?"%self.server
+                err += "your server specification \n( --jobsub-server %s )?"%\
+                        self.server
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
@@ -455,10 +493,12 @@ class JobSubClient:
         except pycurl.error, error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
+            err = "HTTP response:%s PyCurl Error %s: %s" %\
+                    (http_code, errno, errstr)
             if errno == 60:
-                err=err+"\nDid you remember to include the port number to "
-                err=err+"your server specification \n( --jobsub-server %s )?"%self.server
+                err += "\nDid you remember to include the port number to "
+                err += "your server specification \n( --jobsub-server %s )?"%\
+                        self.server
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientError(err)
 
@@ -468,7 +508,7 @@ class JobSubClient:
         return http_code
 
 
-    def checkID(self,jobid):
+    def checkID(self, jobid):
         return check_id(jobid)
 
 
@@ -483,11 +523,14 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 self.actionURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, urllib.quote(constraint) )
+                        % (srv, self.acctGroup, urllib.quote(constraint))
                 if uid:
                     self.actionURL = "%s%s/" % (self.actionURL, uid)
                 print "Schedd: %s"%schedd
-                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+                rslts.append(self.changeJobState(self.actionURL,
+                                                 'PUT',
+                                                 post_data,
+                                                 ssl_verifyhost=False))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -496,26 +539,36 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 if self.acctRole:
-                    self.actionURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
-                        % (srv, self.acctGroup, self.acctRole, item)
+                    u =\
+                    constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
+                    % (srv, self.acctGroup, self.acctRole, item)
+                    self.actionURL = u
                 else:
-                    self.actionURL = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
+                    u = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
                         % ( srv, self.acctGroup, item )
+                    self.actionURL = u
                 if jobid:
                     self.actionURL = "%s%s/" % (self.actionURL, jobid)
                 print "Schedd: %s"%schedd
-                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+                rslts.append(self.changeJobState(self.actionURL,
+                                                 'PUT',
+                                                 post_data,
+                                                 ssl_verifyhost=False))
             return rslts
         elif jobid:
             self.server="https://%s:8443"%jobid.split('@')[-1]
             item = jobid
             if self.acctRole:
-                self.actionURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
+                u = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
                         % (self.server, self.acctGroup, self.acctRole, item)
+                self.actionURL = u
             else:
                 self.actionURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
-                        % ( self.server, self.acctGroup, item )
-            return self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False)
+                        % (self.server, self.acctGroup, item)
+            return self.changeJobState(self.actionURL,
+                                       'PUT',
+                                       post_data,
+                                       ssl_verifyhost=False)
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -534,11 +587,14 @@ class JobSubClient:
             for schedd in self.schedd_list:
                 srv = "https://%s:8443"%schedd
                 self.actionURL = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                        % ( srv, self.acctGroup, urllib.quote(constraint) )
+                        % (srv, self.acctGroup, urllib.quote(constraint))
                 if uid:
                     self.actionURL = "%s%s/" % (self.actionURL, uid)
                 print "Schedd: %s"%schedd
-                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+                rslts.append(self.changeJobState(self.actionURL,
+                                                 'PUT',
+                                                 post_data,
+                                                 ssl_verifyhost=False))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -547,28 +603,38 @@ class JobSubClient:
                 srv = "https://%s:8443"%schedd
                 item = uid
                 if self.acctRole:
-                    self.actionURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
-                        % (srv, self.acctGroup, self.acctRole, item )
+                    u = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN_WITH_ROLE\
+                        % (srv, self.acctGroup, self.acctRole, item)
+                    self.actionURL = u
                 else:
-                    self.actionURL = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
-                        % ( srv, self.acctGroup, item )
+                    u = constants.JOBSUB_JOB_HOLD_BYUSER_URL_PATTERN\
+                        % (srv, self.acctGroup, item)
+                    self.actionURL = u
                 if jobid:
                     self.actionURL = "%s%s/" % (self.actionURL, jobid)
                 print "Schedd: %s"%schedd
-                rslts.append(self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False))
+                rslts.append(self.changeJobState(self.actionURL,
+                                                 'PUT',
+                                                 post_data,
+                                                 ssl_verifyhost=False))
             return rslts
         elif jobid:
-            self.server="https://%s:8443"%jobid.split('@')[-1]
+            self.server = "https://%s:8443"%jobid.split('@')[-1]
             item = jobid
             if self.acctRole:
-                self.actionURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
-                        % (self.server, self.acctGroup, self.acctRole, item )
+                u = constants.JOBSUB_JOB_HOLD_URL_PATTERN_WITH_ROLE\
+                        % (self.server, self.acctGroup, self.acctRole, item)
+                self.actionURL = u
             else:
                 self.actionURL = constants.JOBSUB_JOB_HOLD_URL_PATTERN\
                         % ( self.server, self.acctGroup, item )
-            return self.changeJobState(self.actionURL, 'PUT', post_data, ssl_verifyhost=False)
+            return self.changeJobState(self.actionURL,
+                                       'PUT',
+                                       post_data,
+                                       ssl_verifyhost=False)
         else:
-            raise JobSubClientError("hold requires one of a jobid or uid or constraint")
+            err = "hold requires one of a jobid or uid or constraint"
+            raise JobSubClientError(err)
 
 
 
@@ -774,26 +840,30 @@ class JobSubClient:
             self.listURL = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN%\
                     (self.server, jobid)
         elif self.better_analyze and not jobid:
-            raise JobSubClientError("you must specify a jobid with --better-analyze")
+            err = "you must specify a jobid with --better-analyze"
+            raise JobSubClientError(err)
         elif jobid is None and self.acctGroup is None and userid is None:
             self.listURL = constants.JOBSUB_Q_NO_GROUP_URL_PATTERN % self.server
         elif userid is not None:
-            tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN % ( self.server, userid)
+            tmpURL = constants.JOBSUB_Q_USERID_URL_PATTERN %\
+                    (self.server, userid)
             if self.acctGroup is not None:
                 tmpURL="%sacctgroup/%s/"%(tmpURL,self.acctGroup)
             if jobid is not None:
                 tmpURL="%s%s/"%(tmpURL,jobid)
             self.listURL = tmpURL
         elif self.acctGroup is not None:
-            tmpURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN % (self.server, self.acctGroup)
+            tmpURL = constants.JOBSUB_Q_WITH_GROUP_URL_PATTERN %\
+                    (self.server, self.acctGroup)
             if jobid is not None:
-                tmpURL="%s%s/"% ( tmpURL, jobid)
+                tmpURL="%s%s/"% (tmpURL, jobid)
             self.listURL = tmpURL
         else :
-            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN % ( self.server, jobid)
+            self.listURL = constants.JOBSUB_Q_JOBID_URL_PATTERN %\
+                    (self.server, jobid)
 
         if outFormat is not None:
-            self.listURL="%s%s/"%(self.listURL,outFormat)
+            self.listURL = "%s%s/"%(self.listURL, outFormat)
         return self.changeJobState(self.listURL, 'GET')
 
 
@@ -807,9 +877,9 @@ class JobSubClient:
 
     def help(self,helpType='jobsubHelp'):
 
-        helpURL=self.helpURL
-        if helpType=='dag':
-            helpURL=self.dagHelpURL
+        helpURL = self.helpURL
+        if helpType == 'dag':
+            helpURL = self.dagHelpURL
 
         curl, response = curl_secure_context(helpURL, self.credentials)
         return_value = None
@@ -818,7 +888,7 @@ class JobSubClient:
             curl.perform()
         except pycurl.error, error:
             errno, errstr = error
-            err="PyCurl Error %s: %s" % (errno, errstr)
+            err = "PyCurl Error %s: %s" % (errno, errstr)
             logSupport.dprint(err)
             logSupport.dprint(traceback.format_exc())
             raise JobSubClientError(err)
@@ -851,18 +921,31 @@ class JobSubClient:
         Given the curl and response objects print the response on screen
         """
 
-        content_type, code, value, serving_server = self.extractResponseDetails(
-                                                        curl, response)
+        content_type, code, value, serving_server =\
+                self.extractResponseDetails(curl, response)
         suppress_server_details = False
-        if (self.extra_opts.get('uid') or self.extra_opts.get('constraint')) and len(self.schedd_list)>1:
+        if (self.extra_opts.get('uid') \
+                or self.extra_opts.get('constraint')) \
+                and len(self.schedd_list) > 1:
             suppress_server_details = True
 
         if content_type == 'application/json':
-            print_json_response(value, code, self.server,
-                                serving_server, response_time, verbose=self.verbose, suppress_server_details=suppress_server_details)
+            print_json_response(value,
+                                code,
+                                self.server,
+                                serving_server,
+                                response_time,
+                                verbose=self.verbose,
+                                suppress_server_details=suppress_server_details)
         else:
-            print_formatted_response(value, code, self.server,
-                                     serving_server, response_time, verbose=self.verbose, suppress_server_details=suppress_server_details )
+            print_formatted_response(value,
+                                     code,
+                                     self.server,
+                                     serving_server,
+                                     response_time,
+                                     verbose=self.verbose,
+                                     suppress_server_details=\
+                                             suppress_server_details)
 
 
 def get_jobsub_server_aliases(server):
@@ -897,9 +980,9 @@ def servicing_jobsub_server(curl):
     server = 'UNKNOWN'
     try:
         ip = curl.getinfo(pycurl.PRIMARY_IP)
-        server = constants.JOBSUB_SERVER_URL_PATTERN % (
-                     socket.gethostbyaddr(ip)[0],
-                     constants.JOBSUB_SERVER_DEFAULT_PORT)
+        server = constants.JOBSUB_SERVER_URL_PATTERN %\
+                (socket.gethostbyaddr(ip)[0],
+                 constants.JOBSUB_SERVER_DEFAULT_PORT)
     except:
         # Ignore errors. This is not critical
         pass
@@ -999,18 +1082,20 @@ def print_server_details(response_code, server, serving_server, response_time):
     print >> sys.stderr, ''
     print >> sys.stderr, 'JOBSUB SERVER CONTACTED     : %s' % server
     print >> sys.stderr, 'JOBSUB SERVER RESPONDED     : %s' % serving_server
-    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s (%s)' % (
-                             response_code,
-                             constants.HTTP_RESPONSE_CODE_STATUS.get(
-                                 response_code,
-                                 'Failed'))
+    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s (%s)' %\
+            (response_code,
+             constants.HTTP_RESPONSE_CODE_STATUS.get(response_code,
+                                                     'Failed'))
     print >> sys.stderr, 'JOBSUB SERVER SERVICED IN   : %s sec' % response_time
-    print >> sys.stderr, 'JOBSUB CLIENT FQDN          : %s' % socket.gethostname()
-    print >> sys.stderr, 'JOBSUB CLIENT SERVICED TIME : %s' % time.strftime('%d/%b/%Y %X')
+    print >> sys.stderr, 'JOBSUB CLIENT FQDN          : %s' %\
+            socket.gethostname()
+    print >> sys.stderr, 'JOBSUB CLIENT SERVICED TIME : %s' %\
+            time.strftime('%d/%b/%Y %X')
 
 
 def print_json_response(response, response_code, server, serving_server,
-                        response_time, suppress_server_details=False, verbose=False):
+                        response_time, suppress_server_details=False,
+                        verbose=False):
     response_dict = json.loads(response)
     output = response_dict.get('out')
     error = response_dict.get('err')
@@ -1075,14 +1160,16 @@ def get_client_credentials(acctGroup=None, server=None):
         cred_dict['proxy'] = default_proxy_file
         cred_dict['cert'] = default_proxy_file
         cred_dict['key'] = default_proxy_file
-    if env_cert and env_key and os.path.exists(env_cert) and os.path.exists(env_key):
+    if env_cert and \
+        env_key and \
+        os.path.exists(env_cert) and \
+        os.path.exists(env_key):
         cred_dict['cert'] = cred_dict['env_cert'] = env_cert
         cred_dict['key'] = cred_dict['env_key'] = env_key
 
     if cred_dict:
-        x509 = jobsubClientCredentials.X509Credentials(
-                cred_dict['cert'],
-                cred_dict['key'])
+        x509 = jobsubClientCredentials.X509Credentials(cred_dict['cert'],
+                                                       cred_dict['key'])
         #if x509.expired():
         #    print "WARNING: %s has expired.  Attempting to regenerate " % \
         #            cred_dict['cert']
@@ -1110,9 +1197,8 @@ def get_client_credentials(acctGroup=None, server=None):
         except jobsubClientCredentials.CredentialsNotFoundError:
             raise JobSubClientError(long_err_msg)
         if krb5_creds.isValid():
-            jobsubClientCredentials.krb5cc_to_x509(
-                    krb5_creds.krb5CredCache,
-                    default_proxy_file)
+            jobsubClientCredentials.krb5cc_to_x509(krb5_creds.krb5CredCache,
+                                                   default_proxy_file)
             cred_dict['cert'] = default_proxy_file
             cred_dict['key'] = default_proxy_file
         else:
@@ -1132,6 +1218,35 @@ def get_capath():
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
+
+def create_tarfile(tar_file, tar_path, tar_type="tgz" ):
+    orig_dir = os.getcwd()
+    logSupport.dprint ('tar_file=%s tar_path=%s cwd=%s'%\
+                       (tar_file, tar_path, orig_dir))
+    if tar_type == "tgz":
+        tar = tarfile.open(tar_file, 'w:gz')
+    else:
+        tar = tarfile.open(tar_file, 'w:bz2')
+    os.chdir(tar_path)
+    tar_dir = os.getcwd()
+    print('creating tar of %s' % tar_dir)
+    failed_file_list = []
+    f0 = os.path.realpath(tar_dir)
+    files = os.listdir(tar_dir)
+
+    for file in files:
+        f1 = os.path.join(f0, file)
+        try:
+            tar.add(f1, file)
+
+        except:
+            failed_file_list.append(file)
+    if len(failed_file_list) > 0:
+        for fname in failed_file_list:
+            print("failed to add to tarfile: %s Permissions problem?\n" % fname)
+        f.close()
+    tar.close()
+    os.chdir(orig_dir)
 
 ################################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
@@ -1164,18 +1279,18 @@ def get_server_env_exports(argv):
     exports = ''
     i = 0
     while(i < len(argv)):
-        idx=argv[i].find('=')
-        if idx>=0:
-            arg=argv[i][:idx]
-            val=argv[i][idx+1:]
+        idx = argv[i].find('=')
+        if idx >= 0:
+            arg = argv[i][:idx]
+            val = argv[i][idx+1:]
         else:
-            arg=argv[i]
-            val=None
+            arg = argv[i]
+            val = None
         
         if arg in constants.JOBSUB_SERVER_OPT_ENV:
             if val is None: 
                 i += 1
-                val=argv[i]
+                val = argv[i]
             env_vars.append(val)
         i += 1
 
@@ -1209,7 +1324,8 @@ def get_dropbox_idx(argv):
 
     i = 0
     while(i < len(argv)):
-        if argv[i].find(constants.DROPBOX_SUPPORTED_URI)<0: 
+        if argv[i].find(constants.DROPBOX_SUPPORTED_URI) < 0 and\
+                argv[i].find(constants.DIRECTORY_SUPPORTED_URI) < 0: 
             i += 1
         else:
             return i
@@ -1221,11 +1337,14 @@ def get_dropbox_uri(argv):
     dropbox_uri = None
     if dropbox_idx is not None:
         dropbox_uri = argv[dropbox_idx]
-        if dropbox_uri.find('=')>0:
-            parts=dropbox_uri.split('=')
+        if dropbox_uri.find('=') > 0:
+            parts = dropbox_uri.split('=')
             for part in parts:
-                if part.find(constants.DROPBOX_SUPPORTED_URI)>=0:
-                    dropbox_uri=part.strip()
+                if part.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
+                    dropbox_uri = part.strip()
+                    return dropbox_uri
+                if part.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                    dropbox_uri = part.strip()
                     return dropbox_uri
     return dropbox_uri
 
@@ -1245,7 +1364,7 @@ def get_dropbox_uri_map(argv):
     # make a map with keys of file path and value of sequence
     map = dict()
     for arg in argv:
-        if arg.find(constants.DROPBOX_SUPPORTED_URI)>=0:
+        if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
             map[arg] = digest_for_file(uri2path(arg))
     return map
 
@@ -1259,19 +1378,19 @@ def digest_for_file(fileName, block_size=2**20):
             break
         dig.update(data)
     f.close()
-    x=dig.hexdigest()
+    x = dig.hexdigest()
     return x
 
 def check_id(jobid):
     if jobid is None:
-       return jobid
+        return jobid
     else:
-       #p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
-       p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
-       if not p.match(jobid):
-           err = "ERROR: --jobid '%s' is malformed" % jobid
-           raise JobSubClientError(err)
-       return jobid
+        #p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
+        p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
+        if not p.match(jobid):
+            err = "ERROR: --jobid '%s' is malformed" % jobid
+            raise JobSubClientError(err)
+        return jobid
 
 def http_code_to_rc(http_code):
     if http_code >= 200 and http_code < 300:
@@ -1280,16 +1399,19 @@ def http_code_to_rc(http_code):
 
 def jid_callback(option, opt, value, p):
     if '@' not in value:
-        sys.exit("jobid (%s) is missing an '@', it must be of the form number@server, i.e. 313100.0@fifebatch.fnal.gov"%value)
+        
+        err = "jobid (%s) is missing an '@', it must be of the "%value
+        err += "form number@server, i.e. 313100.0@fifebatch.fnal.gov"
+        sys.exit(err)
     setattr(p.values, option.dest, value)
 
 def date_callback(option, opt, value, p):
     #check that date is valid and exit if conversion can't be made
     dateOK = False
-    flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d' ]
+    flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
     for fmt in flist:
         try:
-            datetime.strptime(value,fmt)
+            datetime.strptime(value, fmt)
             dateOK = True
             break
         except:

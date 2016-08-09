@@ -843,17 +843,17 @@ class JobRunner(object):
         if args is not None:
             subgroup = args.subgroup
 
-        cmd = cmd + """ -append "+Owner=\\"%s\\"" """ % usr 
+        cmd += """ -append "+Owner=\\"%s\\"" """ % usr 
         if subgroup:
-            cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """%\
+            cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """%\
                 (grp, subgroup, usr)
         else:
-            cmd = cmd + """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
+            cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
                 (grp, usr)
-
-        cmd = cmd + args.outputFile
+        cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """%(args.submitHost)
+        cmd += args.outputFile
         if host != args.submitHost:
-            cmd = cmd + ' "'
+            cmd += ' "'
         print "executing %s " % cmd
         (retVal, val) = commands.getstatusoutput(cmd)
         if retVal:

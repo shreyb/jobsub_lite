@@ -152,7 +152,7 @@ def main(argv):
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
             options.acctRole, None, extra_opts=extraOpts)
     
-    rc = 0
+    rc = 1
     try:
         tmp_rc = 0
 
@@ -161,7 +161,7 @@ def main(argv):
                 print 'Removing job with jobid=%s' % jid
                 http_code = js_client.remove(jid, uid=options.uid)
                 tmp_rc = http_code_to_rc(http_code)
-                rc += tmp_rc
+            rc = tmp_rc
         else:
             if options.uid:
                 print 'removing jobs owned by %s' % options.uid

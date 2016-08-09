@@ -542,11 +542,11 @@ class JobSubClient:
                     u =\
                     constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE\
                     % (srv, self.acctGroup, self.acctRole, item)
-                    self.ActionURL = u
+                    self.actionURL = u
                 else:
                     u = constants.JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN\
                         % ( srv, self.acctGroup, item )
-                    self.ActionURL = u
+                    self.actionURL = u
                 if jobid:
                     self.actionURL = "%s%s/" % (self.actionURL, jobid)
                 print "Schedd: %s"%schedd
@@ -561,7 +561,7 @@ class JobSubClient:
             if self.acctRole:
                 u = constants.JOBSUB_JOB_RELEASE_URL_PATTERN_WITH_ROLE\
                         % (self.server, self.acctGroup, self.acctRole, item)
-                self.ActionURL = u
+                self.actionURL = u
             else:
                 self.actionURL = constants.JOBSUB_JOB_RELEASE_URL_PATTERN\
                         % (self.server, self.acctGroup, item)

@@ -145,7 +145,7 @@ def main(argv):
     extraOpts={'debug':options.debug, 'uid':options.uid, 'constraint':options.constraint }
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
             options.acctRole, None , extra_opts=extraOpts)
-    rc = 0
+    rc = 1
     try:
         tmp_rc = 0
 
@@ -155,14 +155,13 @@ def main(argv):
                 http_code = js_client.hold(jid, uid=options.uid)
                 tmp_rc += http_code_to_rc(http_code)
             
-            rc += tmp_rc
+            rc = tmp_rc
         else:
             if options.uid:
                 print 'Holding jobs owned by %s' % options.uid
             if options.constraint:
                 print 'Holding jobs with constraint=%s' % options.constraint
             http_code_list = js_client.hold(uid=options.uid, constraint=options.constraint)
-            rc = 1
             for http_code in http_code_list: 
                 tmp_rc = http_code_to_rc(http_code)
                 if tmp_rc == 0:

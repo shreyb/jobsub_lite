@@ -56,14 +56,14 @@ def version_string():
 
 class JobSubClientError(Exception):
     def __init__(self, errMsg="JobSub client action failed."):
+        logSupport.dprint(traceback.format_exc())
         sys.exit(errMsg)
-        Exception.__init__(self, errMsg)
 
 
 class JobSubClientSubmissionError(Exception):
     def __init__(self, errMsg="JobSub remote submission failed."):
+        logSupport.dprint(traceback.format_exc())
         sys.exit(errMsg)
-        Exception.__init__(self, errMsg)
 
 
 class JobSubClient:
@@ -255,7 +255,7 @@ class JobSubClient:
         except pycurl.error, error:
             errno, errstr = error
             err = "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -344,12 +344,12 @@ class JobSubClient:
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
                                                             errstr)
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc())
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?"%\
                         self.server 
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
         shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
 
@@ -456,7 +456,7 @@ class JobSubClient:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?"%\
                         self.server
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
         self.printResponse(curl, response, response_time)
@@ -499,7 +499,7 @@ class JobSubClient:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?"%\
                         self.server
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(traceback.format_exc())
             raise JobSubClientError(err)
 
         self.printResponse(curl, response, response_time)
@@ -765,7 +765,7 @@ class JobSubClient:
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
             #logSupport.dprint(traceback.format_exc(limit=10))
-            traceback.print_stack()
+            #traceback.print_stack()
             raise JobSubClientError(err)
         #except:
             #probably called a server that doesnt support this URL, just continue
@@ -813,7 +813,7 @@ class JobSubClient:
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code,errno, errstr)
             #logSupport.dprint(traceback.format_exc(limit=10))
-            traceback.print_stack()
+            #traceback.print_stack()
             raise JobSubClientError(err)
         except:
             #probably called a server that doesnt support this URL, just continue
@@ -889,8 +889,8 @@ class JobSubClient:
         except pycurl.error, error:
             errno, errstr = error
             err = "PyCurl Error %s: %s" % (errno, errstr)
-            logSupport.dprint(err)
-            logSupport.dprint(traceback.format_exc())
+            #logSupport.dprint(err)
+            #logSupport.dprint(traceback.format_exc())
             raise JobSubClientError(err)
 
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)

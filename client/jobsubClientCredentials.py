@@ -6,20 +6,22 @@ import sys
 import re
 from distutils import spawn
 from tempfile import NamedTemporaryFile
-
+import traceback
+import logSupport
 import constants
 import subprocessSupport
 import jobsubUtils
 
 class CredentialsNotFoundError(Exception):
     def __init__(self,errMsg="Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables"):
+       logSupport.dprint(traceback.format_exc())
        sys.exit(errMsg)
-       #Exception.__init__(self, errMsg)
 
 
 class CredentialsError(Exception):
     def __init__(self, errMsg="Credentials eror"):
-       Exception.__init__(self, errMsg)
+       logSupport.dprint(traceback.format_exc())
+       sys.exit(errMsg)
 
 
 class Credentials():
@@ -59,7 +61,7 @@ class X509Credentials(Credentials):
         except:
             self.validFrom = None
             self.validTo = None
-            raise
+            raise CredentialsError
 
 
     def exists(self):
@@ -73,11 +75,17 @@ class X509Credentials(Credentials):
         if not self.exists():
             raise CredentialsNotFoundError
         now = time.mktime(time.gmtime())
-        stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
-        etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
-        if (stime < now) and (now < etime):
-            return False
-        return True
+        try:
+            stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
+            etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
+            if (stime < now) and (now < etime):
+                return False
+            return True
+        except:
+            err = "error parsing X509 certificate start time:%s or end time:%s"%\
+                    (self.validFrom,self.validTo) 
+            raise CredentialsError(err)
+            
 
 
 class X509Proxy(X509Credentials):
@@ -96,7 +104,9 @@ class X509Proxy(X509Credentials):
                                     constants.X509_PROXY_DEFAULT_FILE)
 
         if proxy_file and not os.path.exists(proxy_file):
-            raise CredentialsNotFoundError("Proxy file %s not found. Try running cigetcert or setting X509 credentials related environment variables" % proxy_file)
+            err = "Proxy file %s not found. Try running cigetcert " % proxy_file
+            err += "or setting X509 credentials related environment variables"
+            raise CredentialsNotFoundError(err)
 
         return proxy_file
 
@@ -114,7 +124,8 @@ class VOMSProxy(X509Proxy):
     def getFQAN(self):
         voms_cmd = spawn.find_executable("voms-proxy-info")
         if not voms_cmd:
-            wrn = "Unable to find command 'voms-proxy-info' in the PATH, used to verify  accounting role(s). Continuing."
+            wrn = "Unable to find command 'voms-proxy-info' in the PATH, "
+            wrn += "used to verify  accounting role(s). Continuing."
             print wrn
             return []
 
@@ -143,6 +154,7 @@ class Krb5Ticket(Credentials):
             self.validFrom = None
             self.validTo = None
             self.principal = None
+            #logSupport.dprint(traceback.format_exc())
             raise CredentialsNotFoundError('no valid Krb5 cache found')
 
 
@@ -159,16 +171,26 @@ class Krb5Ticket(Credentials):
 
         krb5_cc = os.environ.get('KRB5CCNAME', constants.KRB5_DEFAULT_CC)
         cache_file = krb5_cc.split(':')[-1]
+        cache_type = krb5_cc.split(':')[0]
 
-        if not os.path.exists(cache_file):
-            raise CredentialsNotFoundError
+        if cache_type == cache_file or cache_type == 'FILE':
+            if not os.path.exists(cache_file):
+                raise CredentialsNotFoundError("%s not found" % cache_file)
+            return cache_file
 
-        return cache_file
+        if cache_type == 'API':
+            return krb5_cc
+        
+        raise CredentialsNotFoundError("don't know how to handle krb5 credential type '%s'"% krb5_cc)
 
 
     def exists(self):
-        if self.krb5CredCache and os.path.exists(self.krb5CredCache):
-            return True
+        if self.krb5CredCache:
+            if 'API:' in self.krb5CredCache:
+                return True
+            else:
+                if os.path.exists(self.krb5CredCache):
+                    return True
         return False
 
 
@@ -176,13 +198,26 @@ class Krb5Ticket(Credentials):
         if not self.exists():
             raise CredentialsNotFoundError
         now = time.time()
-        stime = time.mktime(time.strptime(self.validFrom, '%m/%d/%y %H:%M:%S'))
-        etime = time.mktime(time.strptime(self.validTo, '%m/%d/%y %H:%M:%S'))
-        if (stime < now) and (now < etime):
-            return False
-        return True
+        fmts = ['%m/%d/%y %H:%M:%S',
+                '%m/%d/%Y %H:%M:%S',
+                '%b %d %H:%M:%S %Y',
+                ]
+        for fmt in fmts:
+            try:
+                stime = time.mktime(time.strptime(self.validFrom, fmt))
+                etime = time.mktime(time.strptime(self.validTo, fmt))
+            except:
+                pass
+        try:
+            if (stime < now) and (now < etime):
+                return False
+            return True
+        except:
+            err = "error parsing KRB5 ticket start time:%s or end time:%s"%\
+                    (self.validFrom,self.validTo) 
+            raise CredentialsError(err)
 
-def mk_temp_fname( fname ):
+def mk_temp_fname(fname):
     tmp_file = NamedTemporaryFile(prefix="%s_"% fname, delete=True)
     tmp_fname = tmp_file.name
     tmp_file.close()
@@ -248,8 +283,7 @@ def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
         print "ERROR: Server %s wants to use cigetcert to authenticate, but Unable to find command 'cigetcert' in the PATH" % server
         sys.exit(1)
     cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
-    if debug:
-        print cmd
+    logSupport.dprint(cmd)
     return cmd
 
 def cigetcert_to_x509(server, acctGroup=None, debug=None):
@@ -263,9 +297,8 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     except:
         err = "%s %s"%(cmd_err,sys.exc_info()[1])
         raise CredentialsNotFoundError(err)
-    if debug:
-        print "stdout: %s"% cmd_out
-        print "stderr: %s"% cmd_err
+    logSupport.dprint("stdout: %s"% cmd_out)
+    logSupport.dprintr( "stderr: %s"% cmd_errr)
     if len(cmd_err):
         print 'error: %s' % cmd_err
         return ""
@@ -278,8 +311,15 @@ def krb5_ticket_lifetime(cache):
     cmd = '%s -c %s' % (klist_cmd, cache)
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, cmd_out))[0]
-    return {'stime': ' '.join(lt.split()[:2]),
-            'etime': ' '.join(lt.split()[2:4])}
+    vstring = lt[2]
+    date_parts = vstring.split()
+    ld = len(date_parts)
+    mid = ld / 2
+
+    ltdict =  {'stime': ' '.join(date_parts[:mid]),
+               'etime': ' '.join(date_parts[mid:ld-1])}
+    logSupport.dprint('ltdict=%s'%ltdict)
+    return ltdict
 
 def x509_lifetime(cert):
     if not os.path.exists(cert):
@@ -319,7 +359,11 @@ def proxy_issuer(proxy_fname):
         pass
     return issuer
 
-# Simple tests that work on Linux
-#k = Krb5Ticket()
-#print k
-#print 'VALID: %s' % k.isValid()
+if __name__ == '__main__':
+    # Simple tests that work on SL5,6,7, OSX 10 
+    for a in sys.argv:
+        if a == '--debug':
+            logSupport.init_logging(True)
+    k = Krb5Ticket()
+    print k
+    print 'VALID: %s' % k.isValid()

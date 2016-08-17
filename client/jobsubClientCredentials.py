@@ -280,8 +280,9 @@ def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
     server = server_hostname(server)
     cigetcert_cmd = spawn.find_executable("cigetcert")
     if not cigetcert_cmd:
-        print "ERROR: Server %s wants to use cigetcert to authenticate, but Unable to find command 'cigetcert' in the PATH" % server
-        sys.exit(1)
+        err = "ERROR: Server %s wants to use cigetcert to authenticate, " % server
+        err += "but Unable to find command 'cigetcert' in the PATH" 
+        raise CredentialsError(err)
     cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
     logSupport.dprint(cmd)
     return cmd
@@ -298,7 +299,7 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
         err = "%s %s"%(cmd_err,sys.exc_info()[1])
         raise CredentialsNotFoundError(err)
     logSupport.dprint("stdout: %s"% cmd_out)
-    logSupport.dprintr( "stderr: %s"% cmd_errr)
+    logSupport.dprint("stderr: %s"% cmd_err)
     if len(cmd_err):
         print 'error: %s' % cmd_err
         return ""

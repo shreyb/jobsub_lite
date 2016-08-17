@@ -791,7 +791,7 @@ class JobSubClient:
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            r = response.getvalue()
+            #r = response.getvalue()
             schedd_list = json.loads(response.getvalue())
             for line in schedd_list['out']:
                   pts = line.split()
@@ -818,7 +818,7 @@ class JobSubClient:
         except:
             #probably called a server that doesnt support this URL, just continue
             #and let round robin do its thing
-            logSupport.dprint( "Error: %s "% sys.exc_info()[0])
+            logSupport.dprint("Error: %s "% sys.exc_info()[0])
             pass
 
         curl.close()
@@ -1207,14 +1207,23 @@ def get_client_credentials(acctGroup=None, server=None):
     return cred_dict
 
 def get_capath():
-    system_ca_dir = '/etc/grid-security/certificates'
+    ca_dir_list = ['/etc/grid-security/certificates',
+                          '/cvmfs/grid.cern.ch/etc/grid-security/certificates/',
+                          ]
     ca_dir = None
     ca_dir = os.environ.get('X509_CERT_DIR')
 
-    if (not ca_dir) and (os.path.exists(system_ca_dir)):
-        ca_dir = system_ca_dir
+    if (not ca_dir):
+        for system_ca_dir in ca_dir_list:
+            if (os.path.exists(system_ca_dir)):
+                ca_dir = system_ca_dir
+                break
+
     if not ca_dir:
-        raise JobSubClientError('Could not find CA Certificates in %s. Set X509_CERT_DIR in the environment.' % system_ca_dir)
+        err = 'Could not find CA Certificates in %s. ' % system_ca_dir
+        err += 'Set X509_CERT_DIR in the environment.' 
+        raise JobSubClientError(err)
+
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
@@ -1234,17 +1243,16 @@ def create_tarfile(tar_file, tar_path, tar_type="tgz" ):
     f0 = os.path.realpath(tar_dir)
     files = os.listdir(tar_dir)
 
-    for file in files:
-        f1 = os.path.join(f0, file)
+    for fname in files:
+        f1 = os.path.join(f0, fname)
         try:
-            tar.add(f1, file)
+            tar.add(f1, fname)
 
         except:
-            failed_file_list.append(file)
+            failed_file_list.append(fname)
     if len(failed_file_list) > 0:
         for fname in failed_file_list:
             print("failed to add to tarfile: %s Permissions problem?\n" % fname)
-        f.close()
     tar.close()
     os.chdir(orig_dir)
 

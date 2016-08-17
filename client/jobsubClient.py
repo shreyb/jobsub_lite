@@ -739,6 +739,7 @@ class JobSubClient:
         curl, response = curl_secure_context(authMethodsURL, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET' )
+        curl.setopt(curl.CAPATH, get_capath())
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -1208,13 +1209,14 @@ def get_client_credentials(acctGroup=None, server=None):
 
 def get_capath():
     ca_dir_list = ['/etc/grid-security/certificates',
-                          '/cvmfs/grid.cern.ch/etc/grid-security/certificates/',
-                          ]
-    ca_dir = None
+                   '/cvmfs/oasis.opensciencegrid.org/mis/certificates',
+                   '/cvmfs/grid.cern.ch/etc/grid-security/certificates',
+                  ]
     ca_dir = os.environ.get('X509_CERT_DIR')
 
     if (not ca_dir):
         for system_ca_dir in ca_dir_list:
+            print 'checking %s' % system_ca_dir
             if (os.path.exists(system_ca_dir)):
                 ca_dir = system_ca_dir
                 break

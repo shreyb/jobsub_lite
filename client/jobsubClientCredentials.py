@@ -11,6 +11,7 @@ import logSupport
 import constants
 import subprocessSupport
 import jobsubUtils
+import jobsubClient
 
 class CredentialsNotFoundError(Exception):
     def __init__(self,errMsg="Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables"):
@@ -293,8 +294,10 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     default_proxy_file = default_proxy_filename(acctGroup)
     proxy_file  = os.environ.get('X509_USER_PROXY', default_proxy_file)
     cmd_out = cmd_err = ""
+    child_env = os.environ.copy()
+    child_env['X509_CERT_DIR'] = jobsubClient.get_capath()
     try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
     except:
         err = "%s %s"%(cmd_err,sys.exc_info()[1])
         raise CredentialsNotFoundError(err)

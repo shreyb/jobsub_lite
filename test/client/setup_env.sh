@@ -23,7 +23,7 @@ else
         setup python v2_7_3 -f Linux64bit+2.6-2.5
         setup pycurl "$PYCURL_VERSION" 
     fi
-    export X509_CERT_DIR=/etc/grid-security/certificates 
+    #export X509_CERT_DIR=/etc/grid-security/certificates 
     #export X509_USER_CERT=/tmp/x509up_u${UID}
     #export X509_USER_KEY=/tmp/x509up_u${UID}
 

@@ -45,7 +45,7 @@ def version_string():
     ver_str = ver
 
     # Release candidates are in rpmrelease with specific pattern
-    p = re.compile('\.rc[1-9]+$')
+    p = re.compile('\.rc[0-9]+$')
     if rel:
         rc = p.findall(rel)
         if rc:

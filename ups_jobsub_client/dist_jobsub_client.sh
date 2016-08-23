@@ -33,6 +33,7 @@ TARBALL=`basename $3`
 tar xzvf $TARBALL
 rm $TARBALL
 mv jobsub/client jobsub/jobsub_client
+cp jobsub/doc/release.notes jobsub/jobsub_client
 cd jobsub
 tar cvf prd.jobsub_client.tar jobsub_client 
 

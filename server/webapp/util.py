@@ -4,7 +4,6 @@ import os
 import errno
 import zipfile
 import tarfile
-import time
 import sys
 import mimetypes
 import base64

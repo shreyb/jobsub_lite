@@ -14,15 +14,18 @@ import jobsubUtils
 import jobsubClient
 
 class CredentialsNotFoundError(Exception):
-    def __init__(self,errMsg="Cannot find credentials to use. Run 'kinit' to get a valid kerberos ticket or set X509 credentials related variables"):
-       logSupport.dprint(traceback.format_exc())
-       sys.exit(errMsg)
+    def __init__(self, errMsg=''.join(["Cannot find credentials to use. ",
+                                       "Run 'kinit' to get a valid kerberos ",
+                                       "ticket or set X509 credentials ",
+                                       "related variables"])):
+        logSupport.dprint(traceback.format_exc())
+        sys.exit(errMsg)
 
 
 class CredentialsError(Exception):
     def __init__(self, errMsg="Credentials eror"):
-       logSupport.dprint(traceback.format_exc())
-       sys.exit(errMsg)
+        logSupport.dprint(traceback.format_exc())
+        sys.exit(errMsg)
 
 
 class Credentials():
@@ -66,8 +69,9 @@ class X509Credentials(Credentials):
 
 
     def exists(self):
-        if (self.cert and self.key and
-            os.path.exists(self.cert) and os.path.exists(self.key)):
+        if self.cert and self.key \
+            and os.path.exists(self.cert) \
+            and os.path.exists(self.key):
             return True
         return False
 
@@ -77,16 +81,17 @@ class X509Credentials(Credentials):
             raise CredentialsNotFoundError
         now = time.mktime(time.gmtime())
         try:
-            stime = time.mktime(time.strptime(self.validFrom, '%b %d %H:%M:%S %Y %Z'))
-            etime = time.mktime(time.strptime(self.validTo, '%b %d %H:%M:%S %Y %Z'))
+            fmt = '%b %d %H:%M:%S %Y %Z'
+            stime = time.mktime(time.strptime(self.validFrom, fmt))
+            etime = time.mktime(time.strptime(self.validTo, fmt))
             if (stime < now) and (now < etime):
                 return False
             return True
         except:
-            err = "error parsing X509 certificate start time:%s or end time:%s"%\
-                    (self.validFrom,self.validTo) 
+            err = ''.join(["error parsing X509 certificate start time:",
+                           "%s or end time:%s"% (self.validFrom, self.validTo)])
             raise CredentialsError(err)
-            
+
 
 
 class X509Proxy(X509Credentials):
@@ -149,7 +154,7 @@ class Krb5Ticket(Credentials):
             lt = krb5_ticket_lifetime(self.krb5CredCache)
             self.validFrom = lt['stime']
             self.validTo = lt['etime']
-            self.principal = krb5_default_principal(self.krb5CredCache) 
+            self.principal = krb5_default_principal(self.krb5CredCache)
         except:
             self.krb5CredCache = None
             self.validFrom = None
@@ -181,8 +186,8 @@ class Krb5Ticket(Credentials):
 
         if cache_type == 'API':
             return krb5_cc
-        
-        raise CredentialsNotFoundError("don't know how to handle krb5 credential type '%s'"% krb5_cc)
+        err = "don't know how to handle krb5 credential type '%s'"% krb5_cc
+        raise CredentialsNotFoundError(err)
 
 
     def exists(self):

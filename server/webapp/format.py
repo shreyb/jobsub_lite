@@ -1,7 +1,6 @@
 import cherrypy
-import logger
 import json
-from functools import wraps, partial
+from functools import partial
 from pprint import pformat
 
 def htmlPrintItemList(src, dpth=0, key=''):

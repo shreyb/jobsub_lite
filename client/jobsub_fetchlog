@@ -32,7 +32,8 @@ from jobsubClient import check_id
 
 def required_args_present(options):
     try:
-        if (options.acctGroup and options.jobsubServer and options.jobId) or (options.jobsubServer and options.list):
+        if (options.acctGroup and options.jobsubServer and options.jobId) or \
+            (options.jobsubServer and options.list):
             return True
     except AttributeError:
         return False
@@ -40,19 +41,25 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
+
+    epilog = "REQUIRED arguments are: ( (--group  AND --jobid) "
+    epilog += "OR (--list) ) . Please direct questions, comments, or problems "
+    epilog += "to the service desk."
+
     parser = optparse.OptionParser(usage='%prog [options]',
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
+                                   epilog=epilog)
 
     # Required args
+    ghelp='Group/Experiment/Subgroup for priorities and accounting'
     parser.add_option('-G', '--group',
                       dest='acctGroup',
                       type='string',
                       action='store',
                       metavar='<Group/Experiment/Subgroup>',
                       default=os.environ.get('JOBSUB_GROUP'),
-                      help='Group/Experiment/Subgroup for priorities and accounting')
+                      help=ghelp)
 
     parser.add_option('-J', '--job', '--jobid',
                       dest='jobId',
@@ -102,27 +109,33 @@ def parse_opts(argv):
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
+    shelp = 'format for downloaded archive:"tar" (default,compressed) or "zip"'
     parser.add_option('--archive-format',
                       dest='format',
                       type='string',
                       action='store',
                       metavar='<Archive Format>',
                       default='tar',
-                      help='format for downloaded archive:"tar" (default,compressed) or "zip"')
+                      help=shelp)
 
+    phelp = 'download only the stdout and stderr for this jobid, '
+    phelp += 'not the entire sandbox'
     parser.add_option('--partial',
                       dest='partial',
                       action='store_true',
                       metavar='<partial>',
                       default=False,
-                      help='download only the stdout and stderr for this jobid, not the entire sandbox')
+                      help=phelp)
 
+    shelp = 'List all available sandboxes and creation date for given '
+    shelp += 'user/group.  If no group specified, list available sandboxes '
+    shelp += 'for all groups. '
     parser.add_option('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
                       metavar='<List Sandboxes and creation dates>',
                       default=False,
-                      help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
+                      help=shelp)
 
     parser.add_option('--debug',
                       dest='debug',

@@ -4,7 +4,6 @@ import logging
 import traceback
 import math
 import platform
-import sys
 import subprocessSupport
 import socket
 import re
@@ -16,7 +15,6 @@ jobstatus_dict = {'unexpanded':0, 'idle':1, 'run':2, 'running':2, 'removed':3, '
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
-        import classad
     except:
         logger.log('Cannot import htcondor. Have the condor'+\
                 ' python bindings been installed?')
@@ -164,7 +162,6 @@ def constructFilter( acctgroup=None, uid=None, jobid=None, jobstatus=None):
         job_cnst = 'True'
     elif jobid.find('@') >= 0:
         x = jobid.split('@')
-        l = len(x)
         clusterid = x[0]
         host = '@'.join(x[1:])
         if clusterid.find('.')<0:

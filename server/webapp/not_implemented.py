@@ -2,7 +2,6 @@ import cherrypy
 import logger
 import sys
 
-from auth import check_auth
 from format import format_response
 
 

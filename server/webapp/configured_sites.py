@@ -1,13 +1,11 @@
 import cherrypy
 import logger
 import logging
-import os
-import time
 import socket
 import sys
 import subprocessSupport
 from JobsubConfigParser import JobsubConfigParser
-from jobsub import is_supported_accountinggroup,  get_command_path_root
+from jobsub import is_supported_accountinggroup
 from format import format_response
 from auth import get_client_dn
 

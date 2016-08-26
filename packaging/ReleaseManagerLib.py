@@ -232,6 +232,7 @@ class PackageExcludes:
             'test',
             'ups_jobsub_client',
             'config_files',
+            'pylint.sh',
         ]
 
         # Patterns that need to be excluded from the server tarball
@@ -256,6 +257,7 @@ class PackageExcludes:
             'dev_use_virtual_env.sh',
             'requirements.txt',
             'config_files',
+            'pylint.sh',
         ]
 ############################################################
 #

@@ -1,13 +1,7 @@
-import base64
-import random
-import os
-import re
 import cherrypy
 import logger
 import logging
-import sys
 import util
-from shutil import copyfileobj
 
 from auth import check_auth
 from jobsub import is_supported_accountinggroup

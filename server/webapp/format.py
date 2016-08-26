@@ -3,6 +3,7 @@ import json
 from functools import partial
 from pprint import pformat
 
+
 def htmlPrintItemList(src, dpth=0, key=''):
     s = ''
     tabs = lambda n: ' ' * n * 4
@@ -19,11 +20,13 @@ def htmlPrintItemList(src, dpth=0, key=''):
             s = '%s%s' % (s, htmlPrintItemList(litem, dpth + 2, key))
         s = '%s%s</ul>\n' % (s, tabs(dpth))
     else:
-        s = '%s%s<li>%s</li>\n' %(s, tabs(dpth),  src)
+        s = '%s%s<li>%s</li>\n' % (s, tabs(dpth),  src)
     return s
+
 
 def htmlPrintPreformatted(src):
     return """<pre>%s</pre>""" % _htmlPrintPreformatted(src)
+
 
 def _htmlPrintPreformatted(src, dpth=0, key=''):
     s = ''
@@ -35,11 +38,13 @@ def _htmlPrintPreformatted(src, dpth=0, key=''):
     elif isinstance(src, list):
         s = '%s%s' % (s, '\n'.join(src))
     else:
-        s = '%s%s' %(s,   src)
+        s = '%s%s' % (s,   src)
     return s
+
 
 def htmlPrintTableList(src):
     return """<table>%s</table>""" % _htmlPrintTableList(src)
+
 
 def _htmlPrintTableList(src, dpth=0, key=''):
     s = ''
@@ -52,25 +57,28 @@ def _htmlPrintTableList(src, dpth=0, key=''):
         for litem in src:
             s = '%s%s' % (s, _htmlPrintTableList(litem,  key))
     else:
-        s = '%s<tr><td>%s</td></tr>\n' %(s,   src)
+        s = '%s<tr><td>%s</td></tr>\n' % (s,   src)
     return s
 
-def rel_link(itm,exp=None):
-   content_type_accept = cherrypy.request.headers.get('Accept')
-   content_type_list = content_type_accept.split(',')
-   if 'application/json' in content_type_list:
-       return itm
-   if 'text/html' not in content_type_list:
-       return itm
-   if not exp:
-      exp = itm
-   return "<a href=%s/>%s</a>"%(itm,exp)
+
+def rel_link(itm, exp=None):
+    content_type_accept = cherrypy.request.headers.get('Accept')
+    content_type_list = content_type_accept.split(',')
+    if 'application/json' in content_type_list:
+        return itm
+    if 'text/html' not in content_type_list:
+        return itm
+    if not exp:
+        exp = itm
+    return "<a href=%s/>%s</a>" % (itm, exp)
+
 
 def styleSheets():
-    #put style sheet info in here once we decide what we want
+    # put style sheet info in here once we decide what we want
     style = """
     """
     return style
+
 
 def _format_response(content_type, data, output_format=None):
     #logger.log('Response Content-Type: %s' % content_type)
@@ -88,11 +96,11 @@ def _format_response(content_type, data, output_format=None):
         if hasattr(cherrypy.request, 'output_format'):
             output_format = getattr(cherrypy.request, 'output_format', None)
         if output_format == 'pre':
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(),htmlPrintPreformatted(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintPreformatted(data))
         elif output_format == 'table':
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(),htmlPrintTableList(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintTableList(data))
         else:
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(),htmlPrintItemList(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintItemList(data))
     elif 'application/x-download' in content_type_list:
         return data
     else:
@@ -102,7 +110,7 @@ def _format_response(content_type, data, output_format=None):
 def format_response(func=None, output_format=None):
     if func is None:
         return partial(format_response, output_format=output_format)
-    
+
     #@wraps(func)
     def wrapper(*args, **kwargs):
         cherrypy.response.headers['Content-Type'] = None

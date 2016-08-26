@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import sys
 import subprocess
 import shlex
 import shutil
@@ -10,12 +11,10 @@ import string
 #from pylint import lint
 
 
-
-
 class ExeError(RuntimeError):
 
-    def __init__(self,str):
-        RuntimeError.__init__(self,str)
+    def __init__(self, str):
+        RuntimeError.__init__(self, str)
 
 
 class Release:
@@ -52,12 +51,12 @@ class Release:
             print "************* %s Status %s *************" % ((self.tasks[i]).name, (self.tasks[i]).status)
 
     def printReport(self):
-        print 35*"_"
-        print "TASK" + 20*" " + "STATUS"
-        print 35*"_"
+        print 35 * "_"
+        print "TASK" + 20 * " " + "STATUS"
+        print 35 * "_"
         for i in range(0, len(self.tasks)):
             print "%-23s %s" % ((self.tasks[i]).name, (self.tasks[i]).status)
-        print 35*"_"
+        print 35 * "_"
 
 
 class TaskRelease:
@@ -69,7 +68,8 @@ class TaskRelease:
     #   __init__
 
     def execute(self):
-        raise ExeError('Action execute not implemented for task %s' % self.name)
+        raise ExeError(
+            'Action execute not implemented for task %s' % self.name)
     #   execute
 
 
@@ -84,8 +84,6 @@ class TaskClean(TaskRelease):
         execute_cmd(cmd)
         self.status = 'COMPLETE'
     #   execute
-
-
 
 
 class TaskSetupReleaseDir(TaskRelease):
@@ -115,7 +113,8 @@ class TaskTar(TaskRelease):
     def execute(self):
         exclude = ""
         if len(self.excludePattern) > 0:
-            exclude = "--exclude='" +  string.join(self.excludePattern, "' --exclude='") + "'"
+            exclude = "--exclude='" + \
+                string.join(self.excludePattern, "' --exclude='") + "'"
         src_dir = '%s/../src/%s' % (self.release.releaseDir,
                                     self.release.version)
         cmd = 'rm -rf %s; mkdir -p %s; cp -r %s %s/%s' % \
@@ -125,17 +124,18 @@ class TaskTar(TaskRelease):
         for f in self.updateFileList:
             self.updateFile(f)
         cmd = 'cd %s; %s %s -czf %s/%s %s' % \
-              (src_dir, self.tarExe, exclude, self.release.releaseDir, self.releaseFilename, self.releaseDirname)
+              (src_dir, self.tarExe, exclude, self.release.releaseDir,
+               self.releaseFilename, self.releaseDirname)
         print "%s" % cmd
         execute_cmd(cmd)
         self.status = 'COMPLETE'
 
-    def updateFile(self,fileName):
+    def updateFile(self, fileName):
         print 'updating %s' % fileName
         fd = open(fileName, 'r')
         specs = fd.readlines()
         fd.close()
-        
+
         fd = open(fileName, 'w')
         for line in specs:
             line = line.replace('__VERSION__', self.release.serverRPMVersion)
@@ -152,8 +152,10 @@ class TaskClientTar(TaskTar):
         self.releaseDirname = 'jobsub'
         self.releaseFilename = 'jobsub-client-v%s.tgz' % self.release.clientVersion
         self.excludePattern = self.excludes.clientPattern
-        _constants_py = os.path.join(self.release.releaseDir,'..','src',self.release.serverRPMVersion, 'jobsub','client','constants.py')
+        _constants_py = os.path.join(self.release.releaseDir, '..', 'src',
+                                     self.release.serverRPMVersion, 'jobsub', 'client', 'constants.py')
         self.updateFileList.append(_constants_py)
+
 
 class TaskServerRPM(TaskTar):
 
@@ -163,14 +165,16 @@ class TaskServerRPM(TaskTar):
         self.releaseDirname = 'jobsub-%s' % self.release.serverRPMVersion
         self.releaseFilename = 'jobsub-%s.tar.gz' % self.release.serverRPMVersion
         self.excludePattern = self.excludes.serverPattern
-    
-        edit_dir = os.path.join(self.release.releaseDir,'..','src',self.release.serverRPMVersion)
-        _rpm_specs_infile = "%s/jobsub-%s/packaging/jobsub_server.spec"%(edit_dir,self.release.serverRPMVersion)
-        _jobsub_api_py_infile = "%s/jobsub-%s/server/webapp/jobsub_api.py"%(edit_dir,self.release.serverRPMVersion)
+
+        edit_dir = os.path.join(self.release.releaseDir,
+                                '..', 'src', self.release.serverRPMVersion)
+        _rpm_specs_infile = "%s/jobsub-%s/packaging/jobsub_server.spec" % (
+            edit_dir, self.release.serverRPMVersion)
+        _jobsub_api_py_infile = "%s/jobsub-%s/server/webapp/jobsub_api.py" % (
+            edit_dir, self.release.serverRPMVersion)
         self.updateFileList.append(_rpm_specs_infile)
         self.updateFileList.append(_jobsub_api_py_infile)
     #   __init__
-
 
     def execute(self):
         # First build the source tarball
@@ -181,7 +185,8 @@ class TaskServerRPM(TaskTar):
         rpm_specs_dir = os.path.join(self.release.rpmbuildDir, 'SPECS')
         rpm_file = os.path.join(self.release.rpmbuildDir, 'RPMS', 'noarch',
                                 'jobsub-%s-%s.noarch.rpm' % (self.release.serverRPMVersion, self.release.serverRPMRelease))
-        rpm_specs_infile = os.path.join(self.release.sourceDir, 'packaging', 'jobsub_server.spec')
+        rpm_specs_infile = os.path.join(
+            self.release.sourceDir, 'packaging', 'jobsub_server.spec')
         rpm_specs_outfile = os.path.join(rpm_specs_dir, 'jobsub_server.spec')
 
         # Create directories required by rpmbuild
@@ -192,7 +197,6 @@ class TaskServerRPM(TaskTar):
         shutil.move(os.path.join(self.release.releaseDir, self.releaseFilename),
                     rpm_src_dir)
 
-
         # Create rpmmacros file
         rpm_macros_file = os.path.join(os.path.expanduser('~'), '.rpmmacros')
         fd = open(rpm_macros_file, 'w')
@@ -201,11 +205,12 @@ class TaskServerRPM(TaskTar):
         fd.close()
 
         # Create the rpm
-        cmd = 'rpmbuild -bb %s' % self.updateFileList[0] 
+        cmd = 'rpmbuild -bb %s' % self.updateFileList[0]
         print "%s" % cmd
         execute_cmd(cmd)
         rpm_filename = os.path.basename(rpm_file)
-        shutil.copyfile(rpm_file, os.path.join(self.release.releaseDir, rpm_filename))
+        shutil.copyfile(rpm_file, os.path.join(
+            self.release.releaseDir, rpm_filename))
 
 
 class PackageExcludes:
@@ -265,6 +270,7 @@ class PackageExcludes:
 #
 ############################################################
 
+
 def create_dir(dir, mode=0755, errorIfExists=False):
     try:
         os.makedirs(dir, mode=0755)
@@ -274,19 +280,21 @@ def create_dir(dir, mode=0755, errorIfExists=False):
         else:
             raise
     except Exception:
-            raise
+        raise
 
 # can throw ExeError
+
+
 def execute_cmd(cmd, stdin_data=None):
     child = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if stdin_data!=None:
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if stdin_data != None:
         child.stdin.write(stdin_data)
 
     tempOut = child.stdout.readlines()
     tempErr = child.stderr.readlines()
     child.communicate()
-    #child.childerr.close()
+    # child.childerr.close()
     try:
         errcode = child.wait()
     except OSError, e:
@@ -295,9 +303,11 @@ def execute_cmd(cmd, stdin_data=None):
             # have seen a lot of those when running very short processes
             errcode = 0
         else:
-            raise ExeError, "Error running '%s'\nStdout:%s\nStderr:%s\nException OSError: %s"%(cmd,tempOut,tempErr,e)
+            raise ExeError, "Error running '%s'\nStdout:%s\nStderr:%s\nException OSError: %s" % (
+                cmd, tempOut, tempErr, e)
     if (errcode != 0):
-        raise ExeError, "Error running '%s'\ncode %i:%s"%(cmd,errcode,tempErr)
+        raise ExeError, "Error running '%s'\ncode %i:%s" % (
+            cmd, errcode, tempErr)
     return tempOut
 
 """
@@ -325,6 +335,7 @@ def execute_cmd1(cmd, stdin_data=None):
     return tempOut
 """
 
+
 def which(program):
     """
     Implementation of which command in python.
@@ -347,4 +358,3 @@ def which(program):
                 return exe_file
 
     return None
-

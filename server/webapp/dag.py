@@ -25,16 +25,14 @@ from format import format_response
 from dag_help import DAGHelpResource
 
 
-
 @cherrypy.popargs('job_id')
 class DagResource(object):
-    
+
     def __init__(self):
         self.help = DAGHelpResource()
         cherrypy.request.username = None
         cherrypy.request.vomsProxy = None
         self.payLoadFileName = 'payload.tgz'
-
 
     def doPOST(self, acctgroup, job_id, kwargs):
         """ Create/Submit a new dag. Returns the output from the jobsub tools.
@@ -46,34 +44,39 @@ class DagResource(object):
             logger.log('dag.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
-            jobsub_client_krb5_principal = kwargs.get('jobsub_client_krb5_principal','UNKNOWN')
+            jobsub_client_krb5_principal = kwargs.get(
+                'jobsub_client_krb5_principal', 'UNKNOWN')
             child_env = os.environ.copy()
             if jobsub_args is not None:
 
-                jobsub_args = base64.urlsafe_b64decode(str(jobsub_args)).rstrip()
+                jobsub_args = base64.urlsafe_b64decode(
+                    str(jobsub_args)).rstrip()
                 logger.log('jobsub_args: %s' % jobsub_args)
                 jobsub_command = kwargs.get('jobsub_command')
                 jobsub_payload = kwargs.get('jobsub_payload')
                 role = kwargs.get('role')
-                logger.log('dag.py:doPost:jobsub_command %s' %(jobsub_command))
+                logger.log('dag.py:doPost:jobsub_command %s' %
+                           (jobsub_command))
                 logger.log('dag.py:doPost:role %s ' % (role))
 
-                command_path_acctgroup = jobsubConfig.commandPathAcctgroup(acctgroup)
+                command_path_acctgroup = jobsubConfig.commandPathAcctgroup(
+                    acctgroup)
                 mkdir_p(command_path_acctgroup)
                 command_path_user = jobsubConfig.commandPathUser(acctgroup,
                                                                  cherrypy.request.username)
                 # Check if the user specific dir exist with correct
                 # ownership. If not create it.
-                jobsubConfig.initCommandPathUser(acctgroup, cherrypy.request.username)
+                jobsubConfig.initCommandPathUser(
+                    acctgroup, cherrypy.request.username)
 
                 ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer = random.randrange(0, 10000)
                 workdir_id = '%s_%s' % (ts, uniquer)
-                command_path = os.path.join(command_path_acctgroup, 
+                command_path = os.path.join(command_path_acctgroup,
                                             cherrypy.request.username, workdir_id)
                 logger.log('command_path: %s' % command_path)
                 child_env['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
-                                                                 acctgroup, role)
+                                                                acctgroup, role)
                 child_env['JOBSUB_PAYLOAD'] = self.payLoadFileName
                 # Create the job's working directory as user
                 create_dir_as_user(command_path_user, workdir_id,
@@ -84,8 +87,8 @@ class DagResource(object):
                                                      jobsub_command.filename)
                     payload_file_path = os.path.join(command_path,
                                                      jobsub_payload.filename)
-                    #os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
-                    cf_path_w_space = ' %s'%command_file_path
+                    # os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
+                    cf_path_w_space = ' %s' % command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     logger.log('payload_file_path: %s' % payload_file_path)
                     payload_dest = os.path.join(command_file_path,
@@ -95,19 +98,20 @@ class DagResource(object):
                     tmp_file_prefix = os.path.join(jobsubConfig.tmpDir,
                                                    self.payLoadFileName)
                     tmp_payload_fd = NamedTemporaryFile(
-                                         prefix="%s_"%tmp_file_prefix,
-                                         delete=False)
+                        prefix="%s_" % tmp_file_prefix,
+                        delete=False)
                     copyfileobj(jobsub_payload.file, tmp_payload_fd)
 
                     tmp_payload_fd.close()
                     move_file_as_user(tmp_payload_fd.name, payload_file_path,
                                       cherrypy.request.username)
 
-                    logger.log('before: jobsub_args = %s'%jobsub_args)
-                    logger.log("cf_path_w_space='%s'"%cf_path_w_space)
+                    logger.log('before: jobsub_args = %s' % jobsub_args)
+                    logger.log("cf_path_w_space='%s'" % cf_path_w_space)
                     command_tag = "\@(\S*)%s" % jobsub_command.filename
-                    logger.log("command_tag='%s'"%command_tag)
-                    logger.log('executing:"re.sub(command_tag, cf_path_w_space, jobsub_args)"')
+                    logger.log("command_tag='%s'" % command_tag)
+                    logger.log(
+                        'executing:"re.sub(command_tag, cf_path_w_space, jobsub_args)"')
                     jobsub_args = re.sub(command_tag, cf_path_w_space,
                                          str(jobsub_args))
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
@@ -115,11 +119,11 @@ class DagResource(object):
                 jobsub_args = jobsub_args.strip().split(' ')
 
                 rc = execute_job_submit_wrapper(
-                         acctgroup=acctgroup, username=cherrypy.request.username,
-                         jobsub_args=jobsub_args, workdir_id=workdir_id,
-                         role=role, jobsub_client_version=jobsub_client_version,
-                         jobsub_client_krb5_principal=jobsub_client_krb5_principal,
-                         submit_type='dag', child_env=child_env)
+                    acctgroup=acctgroup, username=cherrypy.request.username,
+                    jobsub_args=jobsub_args, workdir_id=workdir_id,
+                    role=role, jobsub_client_version=jobsub_client_version,
+                    jobsub_client_krb5_principal=jobsub_client_krb5_principal,
+                    submit_type='dag', child_env=child_env)
 
                 if rc.get('out'):
                     for line in rc['out']:
@@ -127,7 +131,8 @@ class DagResource(object):
                             logger.log(line)
                 if rc.get('err'):
                     logger.log(rc['err'], severity=logging.ERROR)
-                    logger.log(rc['err'], severity=logging.ERROR, logfile='error')
+                    logger.log(rc['err'], severity=logging.ERROR,
+                               logfile='error')
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
@@ -144,12 +149,12 @@ class DagResource(object):
         if rc.get('err'):
             cherrypy.response.status = 500
         return rc
-   
+
     @cherrypy.expose
     @format_response
-    def default(self,kwargs):
-        logger.log('kwargs=%s'%kwargs)
-        return {'out':"kwargs=%s"%kwargs}
+    def default(self, kwargs):
+        logger.log('kwargs=%s' % kwargs)
+        return {'out': "kwargs=%s" % kwargs}
 
     @cherrypy.expose
     @format_response
@@ -178,8 +183,8 @@ class DagResource(object):
             err = 'Exception on DagResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc
-

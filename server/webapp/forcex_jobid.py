@@ -8,7 +8,6 @@ from jobsub import is_supported_accountinggroup
 from format import format_response
 
 
-
 @cherrypy.popargs('job_id')
 class RemoveForcexByJobIDResource(object):
 
@@ -21,13 +20,13 @@ class RemoveForcexByJobIDResource(object):
         cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
 
         try:
-            logger.log('job_id=%s'%(job_id))
+            logger.log('job_id=%s' % (job_id))
             kwargs['forcex'] = True
-            logger.log('kwargs=%s'%kwargs)
+            logger.log('kwargs=%s' % kwargs)
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
-                    #remove job
-                    rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs )
+                    # remove job
+                    rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
@@ -43,10 +42,9 @@ class RemoveForcexByJobIDResource(object):
             cherrypy.response.status = 500
             err = 'Exception on RemoveForcexByJobIDResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
         if rc.get('err'):
             cherrypy.response.status = 500
         return rc
-
-

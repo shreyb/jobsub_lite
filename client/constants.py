@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-################################################################################
+##########################################################################
 # Project:
 #   JobSub
 #
@@ -10,17 +10,17 @@
 # Description:
 #   This module implements constants used by the JobSub Client
 #
-################################################################################
+##########################################################################
 
 import os
 
-################################################################################
+##########################################################################
 # JOBSUB Constants
-################################################################################
+##########################################################################
 
-#Version strings to be set by release.py
-__rpmversion__='__VERSION__'
-__rpmrelease__='__RELEASE__'
+# Version strings to be set by release.py
+__rpmversion__ = '__VERSION__'
+__rpmrelease__ = '__RELEASE__'
 
 
 # Default JobSub Server
@@ -54,7 +54,7 @@ JOBSUB_HISTORY_URL_PATTERN = '%s/jobsub/jobs/history/query/acctgroup/%s/'
 
 JOBSUB_HISTORY_WITH_USER_PATTERN = '%s/jobsub/acctgroups/%s/users/%s/jobs/history/'
 
-JOBSUB_HISTORY_BYDATE_PATTERN='%s/jobsub/jobs/history/'
+JOBSUB_HISTORY_BYDATE_PATTERN = '%s/jobsub/jobs/history/'
 
 JOBSUB_ACCTGROUP_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/help/'
 
@@ -92,21 +92,20 @@ JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE
 JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
 
 
-
 # {(jobid, uid,role,forcex) : STUPID_ASS_REMOVE_URL }
 remove_url_dict = {
- (False, True, False, False):JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN,
- (False, True, False, True):JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN,
- (False, True, True, False):JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE,
- (False, True, True, True):JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN_WITH_ROLE,
- (True, False, False, False):JOBSUB_JOB_REMOVE_URL_PATTERN, 
- (True, False, False, True):JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN,
- (True, False, True, False):JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE, 
- (True, False, True, True):JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN_WITH_ROLE,
- }
-################################################################################
+    (False, True, False, False): JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN,
+    (False, True, False, True): JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN,
+    (False, True, True, False): JOBSUB_JOB_REMOVE_BYUSER_URL_PATTERN_WITH_ROLE,
+    (False, True, True, True): JOBSUB_JOB_REMOVE_BYUSER_FORCEX_URL_PATTERN_WITH_ROLE,
+    (True, False, False, False): JOBSUB_JOB_REMOVE_URL_PATTERN,
+    (True, False, False, True): JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN,
+    (True, False, True, False): JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE,
+    (True, False, True, True): JOBSUB_JOB_REMOVE_FORCEX_URL_PATTERN_WITH_ROLE,
+}
+##########################################################################
 # HTTP/REST API Constants
-################################################################################
+##########################################################################
 
 # HTTP Verbs/Actions
 HTTP_GET = 'GET'
@@ -118,7 +117,7 @@ HTTP_POST = 'POST'
 # 3XX: Redirection
 # 4XX: Client Error
 # 5XX: Server Error
- 
+
 HTTP_RESPONSE_CODE_STATUS = {
     200: 'Success',
     201: 'Success',
@@ -126,17 +125,17 @@ HTTP_RESPONSE_CODE_STATUS = {
     204: 'Success',
 }
 
-################################################################################
+##########################################################################
 # PyCurl Constants
-################################################################################
+##########################################################################
 
 JOBSUB_PYCURL_CONNECTTIMEOUT = 60
 JOBSUB_PYCURL_TIMEOUT = 600
 JOBSUB_SSL_VERIFYHOST = 2
 
-################################################################################
+##########################################################################
 # URIs
-################################################################################
+##########################################################################
 
 JOB_EXE_SUPPORTED_URIs = ('file://',)
 DROPBOX_SUPPORTED_URI = 'dropbox://'
@@ -144,11 +143,11 @@ DIRECTORY_SUPPORTED_URI = 'tardir://'
 
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
 
-JOBSUB_SERVER_OPT_ENV = ('-e','--environment',)
+JOBSUB_SERVER_OPT_ENV = ('-e', '--environment',)
 
-################################################################################
+##########################################################################
 # KRB5 Constants
-################################################################################
+##########################################################################
 
 KRB5TICKET_VALIDITY_HEADER = "(.*)Expires(.*)rincipal\\n(.*)\\n.*"
 KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN = "rincipal: (.*)"

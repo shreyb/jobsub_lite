@@ -8,9 +8,8 @@ from format import format_response
 from jobsub import execute_job_submit_wrapper
 
 
-
-
 class JobsubHelpResource(object):
+
     def doGET(self, acctgroup):
         """ Executes the jobsub tools command with the help argument and returns the output.
             API call is /jobsub/acctgroups/<group_id>/help
@@ -20,7 +19,6 @@ class JobsubHelpResource(object):
                                         priv_mode=False)
 
         return rc
-
 
     @cherrypy.expose
     @format_response(output_format='pre')
@@ -43,14 +41,13 @@ class JobsubHelpResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except :
-            err = 'Exception on JobsubHelpResource.index %s'% sys.exc_info()[1]
+        except:
+            err = 'Exception on JobsubHelpResource.index %s' % sys.exc_info()[
+                1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc
-
-
-

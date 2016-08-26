@@ -7,13 +7,11 @@ from condor_commands import ui_condor_queued_jobs_summary
 from format import format_response
 
 
-
-
 class JobSummaryResource(object):
 
     def doGET(self, kwargs):
         jobs = ui_condor_queued_jobs_summary()
-        return {'out':jobs.split('\n')}
+        return {'out': jobs.split('\n')}
 
     @cherrypy.expose
     @format_response
@@ -23,12 +21,13 @@ class JobSummaryResource(object):
                 rc = self.doGET(kwargs)
             else:
                 err = 'Unimplemented method: %s' %\
-                        cherrypy.request.method
+                    cherrypy.request.method
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on JobSummaryResouce.index: %s'%sys.exc_info()[1]
+            err = 'Exception on JobSummaryResouce.index: %s' % sys.exc_info()[
+                1]
             cherrypy.response.status = 500
             logger.log(err, traceback=True)
             logger.log(err,
@@ -38,4 +37,3 @@ class JobSummaryResource(object):
             rc = {'err': err}
 
         return rc
-

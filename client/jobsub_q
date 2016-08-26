@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-################################################################################
+##########################################################################
 # Project:
 #   JobSub
 #
@@ -10,7 +10,7 @@
 # Description:
 #   This module implements the JobSub client tool
 #
-################################################################################
+##########################################################################
 
 import sys
 import os
@@ -27,6 +27,7 @@ from jobsubClient import http_code_to_rc
 from jobsubClient import jid_callback
 from defaultServer import defaultServer
 
+
 def print_opts(options):
     logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
@@ -35,23 +36,23 @@ def print_opts(options):
 def required_args_present(options):
     try:
         if options.summary:
-            if options.outFormat=='long':
+            if options.outFormat == 'long':
                 err = 'ERROR: --summary and --long options conflict. Choose one, not both.'
                 print err
                 return False
 
-            if options.outFormat=='dags':
+            if options.outFormat == 'dags':
                 err = 'ERROR: --summary and --dag options conflict. Choose one, not both.'
                 print err
                 return False
 
-            if options.outFormat=='hold':
+            if options.outFormat == 'hold':
                 err = 'ERROR: --summary and --hold options conflict. Choose one, not both.'
                 print err
                 return False
 
             if options.help or options.better_analyze or options.uid or \
-                options.jobId or options.acctRole :
+                    options.jobId or options.acctRole:
                 err =  """ERROR: --summary conflicts with all of ( 
                 --better-analyze, --user --jobid --role --dag --long)."""
                 print err
@@ -62,7 +63,7 @@ def required_args_present(options):
             print err
             return False
 
-        if options.jobsubServer :
+        if options.jobsubServer:
             return True
     except AttributeError, e:
         print 'ERROR'
@@ -123,7 +124,7 @@ def parse_opts(argv):
 
     opt_group.add_option('--long',
                          dest='outFormat',
-                         action='store_const', 
+                         action='store_const',
                          const='long',
                          metavar='<output Format>',
                          default=None,
@@ -182,7 +183,6 @@ def parse_opts(argv):
                          default=False,
                          help='Print debug messages to including server contacted, http response, response time')
 
-
     opt_group.add_option('--better-analyze',
                          dest='better_analyze',
                          action='store_true',
@@ -194,8 +194,6 @@ def parse_opts(argv):
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
-
-
 
     parser.add_option_group(opt_group)
 
@@ -223,13 +221,16 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    optDict={'debug':options.debug,'better_analyze':options.better_analyze, 'constraint':options.constraint}
-    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts=optDict)
+    optDict = {'debug': options.debug, 'better_analyze': options.better_analyze,
+               'constraint': options.constraint}
+    js_client = JobSubClient(options.jobsubServer,
+                             options.acctGroup, None, [], extra_opts=optDict)
     try:
         if options.summary:
             http_code = js_client.summary()
         else:
-            http_code = js_client.listJobs(options.jobId,options.uid,options.outFormat)
+            http_code = js_client.listJobs(
+                options.jobId, options.uid, options.outFormat)
         rc = http_code_to_rc(http_code)
     except JobSubClientError, e:
         print e

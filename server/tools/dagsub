@@ -183,6 +183,7 @@ class L(list):
     shamelessy lifted from:
     https://code.activestate.com/recipes/579103-python-addset-attributes-to-list/
     """
+
     def __new__(self, *args, **kwargs):
         return super(L, self).__new__(self, args, kwargs)
 
@@ -196,7 +197,6 @@ class L(list):
     def __call__(self, **kwargs):
         self.__dict__.update(kwargs)
         return self
-
 
 
 class DagParser(object):
@@ -232,13 +232,12 @@ class DagParser(object):
 #######################################################################
 
     def startSerial(self, s):
- 
+
         s = s.lower()
         if s.find("<serial>") >= 0:
             self.processingSerial = True
             return True
         return False
-
 
     def endSerial(self, s):
 
@@ -250,7 +249,6 @@ class DagParser(object):
 
 #######################################################################
 
-
     def startParallel(self, s):
 
         s = s.lower()
@@ -258,9 +256,6 @@ class DagParser(object):
             self.processingParallel = True
             return True
         return False
-
-
-
 
     def endParallel(self, s):
 
@@ -279,7 +274,6 @@ class DagParser(object):
             return True
         return False
 
-
     def endBeginJob(self, s):
         s = s.lower()
         if s.find("</beginjob>") >= 0:
@@ -287,24 +281,21 @@ class DagParser(object):
             return True
         return False
 
-               
     def isInBeginJob(self, s):
         if self.startBeginJob(s):
             self.processingBeginJob = True
         return self.processingBeginJob
 
-
-     
     def processBeginJob(self, line):
         if self.endBeginJob(line):
             self.processingBeginJob = False
         else:
-            line=line.strip()
+            line = line.strip()
             self.beginJobList.append(line)
-            #print "self.beginJobList=",self.beginJobList
+            # print "self.beginJobList=",self.beginJobList
 
 #######################################################################
-     
+
     def startFinishJob(self, s):
         s = s.lower()
         if s.find("<finishjob>") >= 0:
@@ -312,7 +303,6 @@ class DagParser(object):
             return True
         return False
 
-     
     def endFinishJob(self, s):
         s = s.lower()
         if s.find("</finishjob>") >= 0:
@@ -325,7 +315,6 @@ class DagParser(object):
             self.processingFinishJob = True
         return self.processingFinishJob
 
-     
     def processFinishJob(self, line):
         if self.endFinishJob(line):
             self.processingFinishJob = False
@@ -335,8 +324,6 @@ class DagParser(object):
             self.finishJobList.append(line)
 #######################################################################
 
-
-     
     def startMacros(self, s):
         s = s.lower()
         if s.find("<macros>") >= 0:
@@ -344,35 +331,32 @@ class DagParser(object):
             return True
         return False
 
-     
     def endMacros(self, s):
         s = s.lower()
         if s.find("</macros>") >= 0:
             self.processingMacros = False
             return True
         return False
-     
-     
+
     def isInMacros(self, s):
         if self.startMacros(s):
             self.processingMacros = True
         return self.processingMacros
 
-     
     def processMacro(self, line):
-        #print "processMacro input=",line
+        # print "processMacro input=",line
         if self.endMacros(line):
             self.processingMacros = False
         elif line.find("=") >= 0:
-            [a,b] = line.split("=")
+            [a, b] = line.split("=")
             a = a.strip()
             b = b.strip()
             self.macroList.append(a)
             self.macroDict[a] = b
             if (b.find("`") == 0):
-                if  (b.find("`", 1) == (len(b)-1) ):
-                    cmd = b[1:len(b)-1]
-                    (retVal,val) = commands.getstatusoutput(cmd)
+                if (b.find("`", 1) == (len(b) - 1)):
+                    cmd = b[1:len(b) - 1]
+                    (retVal, val) = commands.getstatusoutput(cmd)
                     if retVal == 0:
                         self.macroDict[a] = val
 
@@ -384,29 +368,29 @@ class DagParser(object):
             self.nodeDict[elem.attrib['name']] = elem
             return
         if elem.tag == 'serial':
-            elem.attrib['name']='Serial_%s'% (self.snum)
+            elem.attrib['name'] = 'Serial_%s' % (self.snum)
             self.snum += 1
         if elem.tag == 'parallel':
-            elem.attrib['name']='Parallel_%s'% (self.pnum)
+            elem.attrib['name'] = 'Parallel_%s' % (self.pnum)
             self.pnum += 1
         if elem.tag == 'job':
-            elem.attrib['name']='Job_%s'% (self.jnum)
+            elem.attrib['name'] = 'Job_%s' % (self.jnum)
             self.jnum += 1
         if elem.tag == 'dag':
-            elem.attrib['name']='dag'
+            elem.attrib['name'] = 'dag'
         self.nodeDict[elem.attrib['name']] = elem
-    
+
     def labelTree(self, elem):
         self.nameNode(elem)
         l = list(elem)
         if len(l):
             for i2 in range(0, len(l)):
-                x=l[i2]
+                x = l[i2]
                 self.nameNode(x)
-                l2=list(x)
+                l2 = list(x)
                 if len(l2):
                     self.labelTree(x)
-    
+
     def makeJobLists(self, elem):
         l = list(elem)
         if len(l):
@@ -417,72 +401,69 @@ class DagParser(object):
                 l2 = list(x)
                 if len(l2):
                     self.makeJobLists(x)
-    
+
         if len(jlist):
             jobs = " ".join(jlist)
-            elem.attrib['joblist']=jobs
+            elem.attrib['joblist'] = jobs
             self.dagDict[elem.attrib['name']] = jlist
-    
-    
+
     def expand(self, jlist):
-        for n,i in enumerate(jlist):
+        for n, i in enumerate(jlist):
             if self.dagDict.get(str(i)):
                 jlist[n] = self.dagDict.get(str(i))
-        for n,i in enumerate(jlist):
+        for n, i in enumerate(jlist):
             if isinstance(i, list):
                 jlist[n] = self.expand(i)
         return jlist
-    
+
     def getJobs(self, jlist, ndx=0):
         tag = getattr(jlist, 'tag', False)
         if tag == 'parallel':
             j = ''
             for j1 in jlist:
-                j += self.getJobs(j1, ndx) 
+                j += self.getJobs(j1, ndx)
                 j += ' '
             return j
         elif tag == 'serial':
             return self.getJobs(jlist[ndx], ndx)
         else:
             return jlist
-    
+
     def generateParentChildList(self, jlist):
         par_or_ser = getattr(jlist, 'tag', False)
         if par_or_ser:
-            for n,i in enumerate(jlist):
+            for n, i in enumerate(jlist):
 
                 if n == 0:
                     self.generateParentChildList(jlist[n])
 
-                elif n > 0 :
-    
-                    p = self.getJobs(jlist[n-1], ndx=-1)
-                    self.generateParentChildList(jlist[n-1])
-        
+                elif n > 0:
+
+                    p = self.getJobs(jlist[n - 1], ndx=-1)
+                    self.generateParentChildList(jlist[n - 1])
+
                     c = self.getJobs(jlist[n], ndx=0)
                     self.generateParentChildList(jlist[n])
-    
+
                     if par_or_ser == 'serial':
-                        pc = "parent %s child %s" % (p,c)
+                        pc = "parent %s child %s" % (p, c)
                         if pc not in self.pcList:
                             self.pcList.append(pc)
-    
-    
-    
+
     def printJobRelationships(self, outFile):
-        with open(outFile,"a") as f:
+        with open(outFile, "a") as f:
             for line in self.pcList:
-                f.write("%s\n"%line)
+                f.write("%s\n" % line)
         f.close()
 
     def reportState(self):
-        print "processingSerial:%s processingParallel:%s"%\
+        print "processingSerial:%s processingParallel:%s" %\
             (self.processingSerial, self.processingParallel)
         print self.jobList
         print self.jobDict
 
     def digestInputFile(self, args):
-        #strip out comments starting with '#'
+        # strip out comments starting with '#'
         infile = args.inputFile
         xmlfile = "%s.xml" % infile
         r = re.compile("#.*")
@@ -496,9 +477,9 @@ class DagParser(object):
             for line in f:
                 line = line.strip()
                 line = r.sub('', line)
-                #print "input line " , line
+                # print "input line " , line
                 if 'jobsub ' not in line and len(line) > 0:
-                    x.write("%s\n"%line)
+                    x.write("%s\n" % line)
 
                 if self.startSerial(line):
                     pass
@@ -514,16 +495,17 @@ class DagParser(object):
                     self.processBeginJob(line)
                 elif self.isInFinishJob(line):
                     self.processFinishJob(line)
-                
+
                 elif len(line) > 0:
                     for mac in self.macroList:
-                        line = line.replace(mac,self.macroDict[mac])
+                        line = line.replace(mac, self.macroDict[mac])
                     val = ""
                     j += 1
-                    os.environ['JOBSUBJOBSECTION'] = "%s"%j
+                    os.environ['JOBSUBJOBSECTION'] = "%s" % j
                     passedArgs = ' '.join(args.passedArgs)
-                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection=\\\"%s\\\"' %s """%(j, passedArgs)
-                    repVal = "jobsub %s " %passedArgs
+                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection=\\\"%s\\\"' %s """ % (
+                        j, passedArgs)
+                    repVal = "jobsub %s " % passedArgs
                     line = line.replace("jobsub ", repVal)
                     (retVal, val) = commands.getstatusoutput(line)
                     if retVal:
@@ -539,9 +521,10 @@ class DagParser(object):
                         for word in biglist:
                             if word.find(".cmd") >= 0 and word not in condor_cmd_list:
                                 ncmds = ncmds + 1
-                                condor_cmd = word     
-                                jobName = "Jb_%d_%d"%(j, i)
-                                x.write("""<job name="%s" cmd="%s" />\n"""%(jobName, condor_cmd))
+                                condor_cmd = word
+                                jobName = "Jb_%d_%d" % (j, i)
+                                x.write("""<job name="%s" cmd="%s" />\n""" %
+                                        (jobName, condor_cmd))
                                 self.jobNameList.append(jobName)
                                 self.jobDict[condor_cmd] = jobName
                                 self.jobNameDict[jobName] = condor_cmd
@@ -555,12 +538,12 @@ class DagParser(object):
                             print "ERROR: different number of '.cmd' files detected"
                             print "between jobs in input file! This will generate"
                             print "an incorrect DAG!  aborting......"
-                            #sys.exit(-1)
+                            # sys.exit(-1)
                             self.redundancy = len(condor_cmd_list)
                         else:
                             self.redundancy = len(condor_cmd_list)
-                          
-                        #reportState()
+
+                        # reportState()
             x.write('</dag>\n')
             x.close()
             tree = ET.parse(xmlfile)
@@ -571,21 +554,19 @@ class DagParser(object):
             cntr = 0
             for line in self.beginJobList:
                 for mac in self.macroList:
-                    line = line.replace(mac,self.macroDict[mac])
-                    #print line
-                    self.beginJobList[cntr]=line
+                    line = line.replace(mac, self.macroDict[mac])
+                    # print line
+                    self.beginJobList[cntr] = line
                 cntr += 1
             cntr = 0
             for line in self.finishJobList:
                 for mac in self.macroList:
-                    line = line.replace(mac,self.macroDict[mac])
-                    #print line
+                    line = line.replace(mac, self.macroDict[mac])
+                    # print line
                     self.finishJobList[cntr] = line
                 cntr += 1
 
-
     def getJobName(self, jlist, i, j=0):
-
 
         if isinstance(jlist[i], tuple):
             retval = self.jobDict[jlist[i][j]]
@@ -597,93 +578,91 @@ class DagParser(object):
         else:
 
             retval = self.jobDict[jlist[j]]
-        
+
         return retval
 
-
-
     def generateDependencies(self, outputFile, jlist):
-        f = open(outputFile,"a")
+        f = open(outputFile, "a")
         jend = len(jlist)
         i = 0
-          
+
         if len(self.beginJobList) > 0:
             j = 0
             while(j < self.redundancy):
-                l = "parent JOB_BEGIN child %s\n"% self.getJobName(jlist, i, j)
+                l = "parent JOB_BEGIN child %s\n" % self.getJobName(
+                    jlist, i, j)
                 f.write(l)
                 j += 1
 
-        while (i < jend-1):
+        while (i < jend - 1):
             j = 0
             while(j < self.redundancy):
-                l = "parent %s child %s\n"%\
-                (self.getJobName(jlist,i,j),self.getJobName(jlist, i+1, j))
+                l = "parent %s child %s\n" %\
+                    (self.getJobName(jlist, i, j), self.getJobName(jlist, i + 1, j))
                 f.write(l)
                 j += 1
             i += 1
 
         if len(self.finishJobList) > 0:
             j = 0
-               
+
             while(j < self.redundancy):
-                l = "parent %s child JOB_FINISH\n"% self.getJobName(jlist, i, j)
+                l = "parent %s child JOB_FINISH\n" % self.getJobName(
+                    jlist, i, j)
                 f.write(l)
                 j += 1
-               
+
         f.close()
-          
+
     def writeDummyCmdFile(self):
-          
+
         condor_tmp = os.environ.get("CONDOR_TMP")
         if condor_tmp is None:
             print "ERROR, CONDOR_TMP env variable needs to be set!"
             sys.exit(-1)
-               
+
         condor_exec = os.environ.get("CONDOR_EXEC")
         if condor_exec is None:
             print "ERROR, CONDOR_EXEC env variable needs to be set!"
             sys.exit(-1)
-          
-        now = datetime.datetime.now()
-        filebase = "%s%02d%02d_%02d%02d%02d"%(now.year, now.month, now.day,\
-                now.hour, now.minute, now.second)
-        cmd_file_name = "%s/dummy%s.cmd" %(condor_tmp, filebase)
-        wrap_file_name = "%s/returnOK_%s.sh" %(condor_exec, filebase)
-        cmd_file = cmd_file_dummy % (condor_exec, filebase, condor_tmp, filebase, condor_tmp,\
-            filebase, condor_tmp, filebase, condor_tmp, condor_exec)
 
-        f = open(cmd_file_name,"w")
+        now = datetime.datetime.now()
+        filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
+                                                now.hour, now.minute, now.second)
+        cmd_file_name = "%s/dummy%s.cmd" % (condor_tmp, filebase)
+        wrap_file_name = "%s/returnOK_%s.sh" % (condor_exec, filebase)
+        cmd_file = cmd_file_dummy % (condor_exec, filebase, condor_tmp, filebase, condor_tmp,
+                                     filebase, condor_tmp, filebase, condor_tmp, condor_exec)
+
+        f = open(cmd_file_name, "w")
         f.write(cmd_file)
         f.close()
-        f = open(wrap_file_name,"w")
+        f = open(wrap_file_name, "w")
         f.write(wrap_file_dummy)
         f.close()
-        os.chmod(wrap_file_name,stat.S_IRWXU| stat.S_IRGRP|stat.S_IXGRP |stat.S_IROTH|stat.S_IXOTH)
+        os.chmod(wrap_file_name, stat.S_IRWXU | stat.S_IRGRP |
+                 stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         return cmd_file_name
-     
 
     def generateDag(self, outputFile=None):
 
-
-
-        f = open(outputFile,"w")
+        f = open(outputFile, "w")
         l = "DOT %s.dot UPDATE\n" % outputFile
         f.write(l)
 
         if len(self.beginJobList) > 0:
-               
-            l = "JOB JOB_BEGIN %s\n" % self.writeDummyCmdFile() 
+
+            l = "JOB JOB_BEGIN %s\n" % self.writeDummyCmdFile()
             f.write(l)
-               
-        #for n in self.jobNameList:
+
+        # for n in self.jobNameList:
         #    l = "JOB " + n + " "+ self.jobNameDict[n]+"\n"
         #    f.write(l)
 
         for k in sorted(self.nodeDict.keys()):
             e = self.nodeDict[k]
             if e.tag == 'job':
-                f.write( "JOB %s %s\n"%(k, e.attrib['cmd']))
+                f.write("JOB %s %s\n" % (k, e.attrib['cmd']))
 
         if len(self.finishJobList) > 0:
             time.sleep(1)
@@ -698,20 +677,21 @@ class DagParser(object):
             f.write(l)
 
         f.close()
-        #self.generateDependencies(outputFile,self.jobList)
-        jobList=L(self.dagDict.get('dag'), tag='serial')
+        # self.generateDependencies(outputFile,self.jobList)
+        jobList = L(self.dagDict.get('dag'), tag='serial')
         self.expand(jobList)
         self.generateParentChildList(jobList)
         self.printJobRelationships(outputFile)
 
 
-#this should really use optparse but too many of the input
-#options are malformed for optparse  - not enough dashes etc
-#also --subgroups has to go both to this programs input and on to jobsub
+# this should really use optparse but too many of the input
+# options are malformed for optparse  - not enough dashes etc
+# also --subgroups has to go both to this programs input and on to jobsub
 #
-#parse out the ones we intend to use and pass the rest on to jobsub
+# parse out the ones we intend to use and pass the rest on to jobsub
 #
 class ArgParser(object):
+
     def __init__(self, cfp):
         cfp.findConfigFile()
         self.inputFile = None
@@ -721,7 +701,7 @@ class ArgParser(object):
         self.maxJobs = 0
         self.passedArgs = None
         self.submitHost = os.environ.get("SUBMIT_HOST")
-        self.condorSetup = cfp.get(self.submitHost,"condor_setup_cmd")
+        self.condorSetup = cfp.get(self.submitHost, "condor_setup_cmd")
         self.group = os.environ.get("GROUP")
         self.subgroup = None
         self.passedArgs = []
@@ -731,9 +711,8 @@ class ArgParser(object):
 
         if self.group not in allowed:
             print "ERROR do not run this script as member of group %s" % self.group
-            print "export GROUP=one of %s and try again"% allowed
+            print "export GROUP=one of %s and try again" % allowed
             sys.exit(-1)
-               
 
         i = 0
         args = sys.argv
@@ -744,22 +723,22 @@ class ArgParser(object):
             arg = args[i]
             if arg in ["--h", "-h", "--help", "-help"]:
                 self.printHelp()
-            elif arg in [ "-man", "-manual"]:
+            elif arg in ["-man", "-manual"]:
                 self.printManual()
-            elif arg in ["--inputFile", "-input_file","-i" ]:
-                if os.path.isfile(args[i+1]):
-                    self.inputFile = args[i+1]
+            elif arg in ["--inputFile", "-input_file", "-i"]:
+                if os.path.isfile(args[i + 1]):
+                    self.inputFile = args[i + 1]
                     i += 1
-            elif arg in ["--outputFile", "-output_file", "-o" ]:
-                self.outputFile = args[i+1]
+            elif arg in ["--outputFile", "-output_file", "-o"]:
+                self.outputFile = args[i + 1]
                 i += 1
-            elif arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m" ]:
-                self.maxJobs = int(args[i+1])
+            elif arg in ["--maxConcurrent", "--maxRunning", "-max_running", "-m"]:
+                self.maxJobs = int(args[i + 1])
                 i += 1
-            elif arg in ["--submit", "-submit", "-s" ]:
+            elif arg in ["--submit", "-submit", "-s"]:
                 self.runDag = True
-            elif arg ==  "--subgroup" :
-                self.subgroup = args[i+1]
+            elif arg == "--subgroup":
+                self.subgroup = args[i + 1]
                 self.passedArgs.append("--subgroup")
                 self.passedArgs.append(self.subgroup)
                 i += 1
@@ -767,31 +746,32 @@ class ArgParser(object):
             elif i > 0:
                 self.passedArgs.append(arg)
             i += 1
-                    
+
         if self.inputFile is None:
             i = 0
-            fileOpts = [ '-L', '--log_file', '--tar_file_name', '-f', '-i', '-t' ]
+            fileOpts = ['-L', '--log_file',
+                        '--tar_file_name', '-f', '-i', '-t']
             for arg in self.passedArgs:
                 if os.path.isfile(arg):
-                    if (i == 0) or ((i > 0) and (self.passedArgs[i-1] not in fileOpts)):
+                    if (i == 0) or ((i > 0) and (self.passedArgs[i - 1] not in fileOpts)):
                         self.inputFile = self.passedArgs[i]
                         del self.passedArgs[i]
                         break
                 i += 1
 
-        if self.outputFile=="":
+        if self.outputFile == "":
             cmd = """date +%Y%m%d_%H%M%S"""
-            #commands=JobUtils()
-            (retVal , val) = commands.getstatusoutput(cmd)
+            # commands=JobUtils()
+            (retVal, val) = commands.getstatusoutput(cmd)
             if retVal == 0:
                 now = val.rstrip()
-                condor_tmp = os.environ.get("CONDOR_TMP")               
+                condor_tmp = os.environ.get("CONDOR_TMP")
                 home = os.environ.get("HOME")
-                if condor_tmp == "" or condor_tmp == None :
-                    self.outputFile = home+"/submit.%s.dag"%now
+                if condor_tmp == "" or condor_tmp == None:
+                    self.outputFile = home + "/submit.%s.dag" % now
                 else:
-                    self.outputFile = condor_tmp+"/submit.%s.dag"%now
-                #print "generated DAG saved as ", self.outputFile
+                    self.outputFile = condor_tmp + "/submit.%s.dag" % now
+                # print "generated DAG saved as ", self.outputFile
             else:
                 sys.stderr.write("error executing %s\n ") % cmd
                 sys.stderr.write("%s\n ") % val
@@ -799,11 +779,11 @@ class ArgParser(object):
 
     def report(self):
         print "====================================="
-        print "inputFile = ",self.inputFile
-        print "outputFile = ",self.outputFile
-        print "runDag =",self.runDag
-        print "maxJobs =",self.maxJobs
-          
+        print "inputFile = ", self.inputFile
+        print "outputFile = ", self.outputFile
+        print "runDag =", self.runDag
+        print "maxJobs =", self.maxJobs
+
     def printHelp(self):
         h = os.path.basename(sys.argv[0])
         helpFile = usage % (h, h)
@@ -817,23 +797,25 @@ class ArgParser(object):
         print manFile
         sys.exit(0)
 
+
 class JobRunner(object):
-    def __init__(self): 
+
+    def __init__(self):
         pass
 
     def doSubmit(self, args=None):
-        cmd=""
-        #commands=JobUtils()
+        cmd = ""
+        # commands=JobUtils()
         (retVal, host) = commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")
         if ups_shell is None:
             ups_shell = "sh"
 
         if host == args.submitHost:
-            cmd = """condor_submit_dag -dont_suppress_notification  """ 
+            cmd = """condor_submit_dag -dont_suppress_notification  """
         else:
             cmd = """ssh %s "condor_submit_dag -dont_suppress_notification """\
-                   % (args.submitHost)
+                % (args.submitHost)
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
         usr = os.environ.get("USER")
@@ -843,14 +825,15 @@ class JobRunner(object):
         if args is not None:
             subgroup = args.subgroup
 
-        cmd += """ -append "+Owner=\\"%s\\"" """ % usr 
+        cmd += """ -append "+Owner=\\"%s\\"" """ % usr
         if subgroup:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """%\
+            cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """ %\
                 (grp, subgroup, usr)
         else:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """%\
+            cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
                 (grp, usr)
-        cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """%(args.submitHost)
+        cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
+            args.submitHost)
         cmd += args.outputFile
         if host != args.submitHost:
             cmd += ' "'
@@ -866,8 +849,6 @@ class JobRunner(object):
         print val
 
 
-     
-
 if __name__ == '__main__':
     c = JobsubConfigParser()
     args = ArgParser(c)
@@ -877,4 +858,3 @@ if __name__ == '__main__':
     if args.runDag:
         j = JobRunner()
         j.doSubmit(args)
-

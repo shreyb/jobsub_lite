@@ -7,9 +7,6 @@ from format import format_response
 from jobsub import execute_job_submit_wrapper
 
 
-
-
-
 class VersionResource(object):
 
     def doGET(self, kwargs):
@@ -17,10 +14,10 @@ class VersionResource(object):
                                                   ['--version'],
                                                   priv_mode=False)
         if jstools_dict.has_key('out'):
-            tools_version = 'jobsub tools version: %s'% jstools_dict['out']
+            tools_version = 'jobsub tools version: %s' % jstools_dict['out']
         else:
-            tools_version = 'jobsub tools version: %s'% jstools_dict['err']
-        server_version = 'jobsub server rpm release: %s'%\
+            tools_version = 'jobsub tools version: %s' % jstools_dict['err']
+        server_version = 'jobsub server rpm release: %s' %\
             os.environ.get('JOBSUB_SERVER_VERSION')
         return {'out': [server_version, tools_version]}
 
@@ -39,7 +36,7 @@ class VersionResource(object):
                            logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on VersionResouce.index: %s'%sys.exc_info()[1]
+            err = 'Exception on VersionResouce.index: %s' % sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, traceback=True)
             logger.log(err,
@@ -49,4 +46,3 @@ class VersionResource(object):
             rc = {'err': err}
 
         return rc
-

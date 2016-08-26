@@ -7,9 +7,8 @@ from format import format_response
 from condor_commands import ui_condor_q, constructFilter
 
 
-
-
 class UsersJobsResource(object):
+
     def __init__(self):
         cherrypy.response.status = 501
 
@@ -29,7 +28,8 @@ class UsersJobsResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on UsersJobsResource.index: %s'%sys.exc_info()[1]
+            err = 'Exception on UsersJobsResource.index: %s' % sys.exc_info()[
+                1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR)
             logger.log(err, severity=logging.ERROR, logfile='error')
@@ -63,7 +63,8 @@ class UsersJobsResource(object):
         """
         cherrypy.request.username = kwargs.get('username')
         cherrypy.response.status = 501
-        logger.log("param1 %s param2 %s param3 %s param4 %s param5 %s param6 %s"%(param1, param2, param3, param4, param5, param6))
+        logger.log("param1 %s param2 %s param3 %s param4 %s param5 %s param6 %s" % (
+            param1, param2, param3, param4, param5, param6))
         try:
             if cherrypy.request.method == 'GET':
                 if param2 == "jobs":
@@ -74,10 +75,10 @@ class UsersJobsResource(object):
                     nextIsAcctGroup = False
                     jobStatus = None
 
-                    for p in [ param3, param4, param5, param6 ]:
-                        if p in ['long','dags','hold','run','idle']:
+                    for p in [param3, param4, param5, param6]:
+                        if p in ['long', 'dags', 'hold', 'run', 'idle']:
                             fmt = p
-                            if p in [ 'hold','run','idle']:
+                            if p in ['hold', 'run', 'idle']:
                                 jobStatus = p
                         elif p in ['acctgroup']:
                             nextIsAcctGroup = True
@@ -88,25 +89,27 @@ class UsersJobsResource(object):
                             jobid = p
                         else:
                             break
-                        
 
-                    cherrypy.response.status = 200 
+                    cherrypy.response.status = 200
                     filter = constructFilter(acctgroup, user, jobid, jobStatus)
-                    logger.log("filter=%s"%filter)
+                    logger.log("filter=%s" % filter)
                     user_jobs = ui_condor_q(filter, fmt)
                     return {'out': user_jobs.split('\n')}
 
                 else:
-                    rc = {'out':'informational page for %s/%s/%s/%s/%s/%s not implemented' % (param1, param2, param3, param4, param5, param6)}
+                    rc = {'out': 'informational page for %s/%s/%s/%s/%s/%s not implemented' % (
+                        param1, param2, param3, param4, param5, param6)}
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on UsersJobsResource.default: %s'%sys.exc_info()[1]
+            err = 'Exception on UsersJobsResource.default: %s' % sys.exc_info()[
+                1]
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

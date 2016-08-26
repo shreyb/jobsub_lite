@@ -16,10 +16,9 @@ from configured_sites import ConfiguredSitesResource
 from auth_methods import AuthMethodsResource
 
 
-
-
 @cherrypy.popargs('acctgroup')
 class AccountingGroupsResource(object):
+
     def __init__(self):
         self.jobs = AccountJobsResource()
         self.users = UsersResource()
@@ -40,14 +39,14 @@ class AccountingGroupsResource(object):
             return {'out': out}
         else:
             g = acctgroup
-            out = ['Accounting group %s'%g,
+            out = ['Accounting group %s' % g,
                    ['<a href=jobs/>running jobs</a>',
                     '<a href=sandboxes/>sandboxes for completed jobs</a>',
-                    '<a href=help/>jobsub_submit help options for %s </a>'%g,
+                    '<a href=help/>jobsub_submit help options for %s </a>' % g,
+                    ]
                    ]
-                  ]
 
-            rc = {'out':out}
+            rc = {'out': out}
             return rc
 
     @cherrypy.expose
@@ -71,8 +70,8 @@ class AccountingGroupsResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on AccountingGroupsResource.index: %s'%\
-                                                      sys.exc_info()[1]
+            err = 'Exception on AccountingGroupsResource.index: %s' %\
+                sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR, logfile='error',

@@ -8,6 +8,7 @@ import optparse
 sys.path.append(os.path.join(sys.path[0], '../lib'))
 import ReleaseManagerLib
 
+
 def usage():
     print "%s <version> <SourceDir> <ReleaseDir>" % os.path.basename(sys.argv[0])
     print ""
@@ -18,8 +19,9 @@ def usage():
     print "release.py --version=0.2 --source-dir=/cloud/login/parag/wspace/jobsub/code/jobsub --release-dir=/var/tmp/parag --rpm-release=1"
     print ""
 
+
 def parse_opts(argv):
-    #parser = optparse.OptionParser(usage='%prog [options]',
+    # parser = optparse.OptionParser(usage='%prog [options]',
     parser = optparse.OptionParser(usage=usage(),
                                    version='v0.1',
                                    conflict_handler="resolve")
@@ -64,6 +66,7 @@ def parse_opts(argv):
         sys.exit(1)
     return options
 
+
 def required_args_present(options):
     try:
         if not (options.version and options.srcDir and options.relDir):
@@ -74,18 +77,18 @@ def required_args_present(options):
 #   check_required_args
 
 
-#def main(ver, srcDir, relDir):
+# def main(ver, srcDir, relDir):
 def main(argv):
     options = parse_opts(argv)
-    #sys.exit(1)
+    # sys.exit(1)
     product = 'jobsub'
     ver = options.version
     rpm_rel = options.rpmRel
     rc = options.rc
-    
+
     srcDir = options.srcDir
     relDir = options.relDir
-    
+
     print "___________________________________________________________________"
     print "Creating following release"
     print "Product=%s Version=%s RC=%s RPMRelease=%s\nSourceDir=%s\nReleaseDir=%s" % (product, ver, rc, rpm_rel, srcDir, relDir)

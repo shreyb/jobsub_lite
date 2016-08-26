@@ -8,23 +8,21 @@ from sqlite_commands import jobsub_history, constructQuery
 import sys
 
 
-
-
-@cherrypy.popargs('user_id','job_id')
+@cherrypy.popargs('user_id', 'job_id')
 class HistoryResource(object):
 
-    def doGET(self, user_id=None,job_id=None,**kwargs):
+    def doGET(self, user_id=None, job_id=None, **kwargs):
         """ Query list of user_ids. Returns a JSON list object.
         API is /acctgroups/<group>/users/<user_id>jobs/history
         """
         try:
-            acctgroup=kwargs.get('acctgroup')
+            acctgroup = kwargs.get('acctgroup')
             if job_id is None:
-                job_id=kwargs.get('job_id')
+                job_id = kwargs.get('job_id')
             if user_id is None:
                 user_id = kwargs.get('user_id')
-            filter = constructQuery(acctgroup,user_id,job_id)
-            logger.log("filter=%s"%filter)
+            filter = constructQuery(acctgroup, user_id, job_id)
+            logger.log("filter=%s" % filter)
             history = jobsub_history(filter)
             return {'out': history}
         except:
@@ -39,15 +37,15 @@ class HistoryResource(object):
     def index(self, user_id=None, job_id=None, **kwargs):
         try:
             subject_dn = get_client_dn()
-            logger.log("user_id %s"%user_id)
-            logger.log("job_id %s"%job_id)
-            logger.log("kwargs %s"%kwargs)
+            logger.log("user_id %s" % user_id)
+            logger.log("job_id %s" % job_id)
+            logger.log("kwargs %s" % kwargs)
             if subject_dn is not None:
 
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    logger.log('user_id=%s job_id=%s'%(user_id,job_id))
-                    rc = self.doGET(user_id,job_id,**kwargs)
+                    logger.log('user_id=%s job_id=%s' % (user_id, job_id))
+                    rc = self.doGET(user_id, job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
@@ -63,11 +61,11 @@ class HistoryResource(object):
             err = 'Exception on HistoryResouce.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc
-
 
     @cherrypy.expose
     @cherrypy.popargs('param1')
@@ -83,38 +81,42 @@ class HistoryResource(object):
     @cherrypy.popargs('param11')
     @cherrypy.popargs('param12')
     @format_response
-    def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None, 
-                      pararm7=None, param8=None, param9=None, param10=None, param11=None, param12=None,  **kwargs):
+    def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None,
+                pararm7=None, param8=None, param9=None, param10=None, param11=None, param12=None,  **kwargs):
         """ supports the following URLS
         """
         try:
-            params = [param1, param2, param3, param4, param5, param6, pararm7, param8, param9, param10, param11, param12,]
-            logger.log("params %s "%(params))
-            pDict={}
-            for n,i in enumerate(params):
-                if i in ['user','acctgroup','jobid','qdate_ge','qdate_le',]:
-                    pDict[i]=params[n+1]
-            
-            if pDict: 
+            params = [param1, param2, param3, param4, param5, param6,
+                      pararm7, param8, param9, param10, param11, param12, ]
+            logger.log("params %s " % (params))
+            pDict = {}
+            for n, i in enumerate(params):
+                if i in ['user', 'acctgroup', 'jobid', 'qdate_ge', 'qdate_le', ]:
+                    pDict[i] = params[n + 1]
+
+            if pDict:
                 filter = constructQuery(acctgroup=pDict.get('acctgroup'),
                                         uid=pDict.get('user'),
                                         jobid=pDict.get('jobid'),
                                         qdate_ge=pDict.get('qdate_ge'),
                                         qdate_le=pDict.get('qdate_le')
                                         )
-                logger.log("filter=%s"%filter)
-                history = jobsub_history( filter  )
+                logger.log("filter=%s" % filter)
+                history = jobsub_history(filter)
                 return {'out': history}
 
             else:
                 cherrypy.response.status = 501
-                rc = {'out':'informational page for %s not implemented' % (params)}
+                rc = {
+                    'out': 'informational page for %s not implemented' % (params)}
 
         except:
-            err = 'Exception on HistoryResource.default: %s'%sys.exc_info()[1]
+            err = 'Exception on HistoryResource.default: %s' % sys.exc_info()[
+                1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
-            logger.log(err, severity=logging.ERROR, logfile='error', traceback=True)
+            logger.log(err, severity=logging.ERROR,
+                       logfile='error', traceback=True)
             rc = {'err': err}
 
         return rc

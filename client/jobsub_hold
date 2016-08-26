@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-################################################################################
+##########################################################################
 # Project:
 #   JobSub
 #
@@ -10,7 +10,7 @@
 # Description:
 #   This module implements the JobSub client tool
 #
-################################################################################
+##########################################################################
 
 import sys
 import os
@@ -28,6 +28,7 @@ from jobsubClient import http_code_to_rc
 from jobsubClient import jid_callback
 from defaultServer import defaultServer
 
+
 def print_opts(options):
     logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
@@ -36,7 +37,7 @@ def print_opts(options):
 def required_args_present(options):
     try:
         if options.acctGroup and options.jobsubServer and \
-               (options.jobId or options.uid or options.constraint):
+                (options.jobId or options.uid or options.constraint):
             return True
     except AttributeError:
         return False
@@ -49,7 +50,6 @@ def parse_opts(argv):
                                    version=version_string(),
                                    conflict_handler="resolve",
                                    epilog="""REQUIRED arguments to hold jobs are (-G AND   (--jobid OR --user --constraint) ).  Please direct questions, comments, or problems to the service desk""")
-
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 
@@ -115,8 +115,6 @@ def parse_opts(argv):
                          metavar='<constraint>',
                          help='hold all jobs with this constraint ')
 
-
-
     parser.add_option_group(opt_group)
 
     if len(argv) < 1:
@@ -142,9 +140,10 @@ def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    extraOpts={'debug':options.debug, 'uid':options.uid, 'constraint':options.constraint }
+    extraOpts = {'debug': options.debug, 'uid': options.uid,
+                 'constraint': options.constraint}
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
-            options.acctRole, None , extra_opts=extraOpts)
+                             options.acctRole, None, extra_opts=extraOpts)
     rc = 1
     try:
         tmp_rc = 0
@@ -154,15 +153,16 @@ def main(argv):
                 print 'Holding job with jobid=%s' % jid
                 http_code = js_client.hold(jid, uid=options.uid)
                 tmp_rc += http_code_to_rc(http_code)
-            
+
             rc = tmp_rc
         else:
             if options.uid:
                 print 'Holding jobs owned by %s' % options.uid
             if options.constraint:
                 print 'Holding jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.hold(uid=options.uid, constraint=options.constraint)
-            for http_code in http_code_list: 
+            http_code_list = js_client.hold(
+                uid=options.uid, constraint=options.constraint)
+            for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
                 if tmp_rc == 0:
                     rc = 0

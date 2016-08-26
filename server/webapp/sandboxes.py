@@ -13,53 +13,51 @@ from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 
 
-
-@cherrypy.popargs('user_id','job_id','file_id')
-
+@cherrypy.popargs('user_id', 'job_id', 'file_id')
 class SandboxesResource(object):
 
-
-    def doGET(self,user_id=None,job_id=None,file_id=None,kwargs=None):
+    def doGET(self, user_id=None, job_id=None, file_id=None, kwargs=None):
         """ Query for valid sandboxes for given user/acctgroup.  Returns a JSON list object.
         API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
         """
         command_path_root = get_command_path_root()
         if file_id or job_id:
             allowed_list = sandbox_allowed_browsable_file_types()
-            #if user_id != cherrypy.request.username:
+            # if user_id != cherrypy.request.username:
             sandbox_dir = "%s/%s/%s/%s" %\
-                    (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
-            make_sandbox_readable(sandbox_dir,user_id)
+                (command_path_root, cherrypy.request.acctgroup, user_id, job_id)
+            make_sandbox_readable(sandbox_dir, user_id)
 
         if file_id:
             suffix = ".%s" % file_id.split('.')[-1]
             if suffix in allowed_list:
                 cherrypy.request.output_format = 'pre'
                 cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
-                (command_path_root,cherrypy.request.acctgroup,user_id,job_id, file_id)
+                    (command_path_root, cherrypy.request.acctgroup,
+                     user_id, job_id, file_id)
             else:
-                return {'out':'you do not have permission to browse %s'%file_id}
+                return {'out': 'you do not have permission to browse %s' % file_id}
         elif job_id:
             cmd = "find  %s/%s/%s/%s/ -maxdepth 1 -mindepth 1 -ls" %\
-            (command_path_root,cherrypy.request.acctgroup,user_id,job_id)
+                (command_path_root, cherrypy.request.acctgroup, user_id, job_id)
         elif user_id:
             cmd = "find  %s/%s/%s -maxdepth 1 -mindepth 1 -type l" %\
-            (command_path_root,cherrypy.request.acctgroup,user_id)
+                (command_path_root, cherrypy.request.acctgroup, user_id)
         else:
             cmd = "find  %s/%s -maxdepth 1 -mindepth 1 -type d" %\
-            (command_path_root,cherrypy.request.acctgroup)
+                (command_path_root, cherrypy.request.acctgroup)
         try:
             logger.log(cmd)
             cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
         except:
-            err="No sandboxes found for user %s accounting group %s" %\
+            err = "No sandboxes found for user %s accounting group %s" %\
                 (user_id, cherrypy.request.acctgroup)
             logger.log(err)
             rc = {'out': err}
-            cherrypy.response.status = 404 
-            logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR)
-            logger.log("%s"%sys.exc_info()[1],
+            cherrypy.response.status = 404
+            logger.log("%s" % sys.exc_info()[1], severity=logging.ERROR)
+            logger.log("%s" % sys.exc_info()[1],
                        severity=logging.ERROR,
                        logfile='error')
             return rc
@@ -76,7 +74,7 @@ class SandboxesResource(object):
                     p2 = parts[-5:-1]
                     suffix = ".%s" % filename.split('.')[-1]
                     if suffix in allowed_list:
-                        p2.insert(0,rel_link(filename))
+                        p2.insert(0, rel_link(filename))
                     else:
                         p2.insert(0, filename)
                     outlist.append(' '.join(p2))
@@ -90,10 +88,10 @@ class SandboxesResource(object):
                         filelist.append(itm)
                     except:
 
-                        logger.log("%s"%sys.exc_info()[1],
+                        logger.log("%s" % sys.exc_info()[1],
                                    severity=logging.ERROR)
 
-                        logger.log("%s"%sys.exc_info()[1],
+                        logger.log("%s" % sys.exc_info()[1],
                                    severity=logging.ERROR,
                                    logfile='error')
             else:
@@ -103,21 +101,19 @@ class SandboxesResource(object):
         if filelist:
             filelist.sort(key=lambda itm: itm[1])
             #acctgroup = os.path.basename(os.path.dirname(line))
-            outlist.append("JobsubJobID CreationDate for user %s in Accounting Group %s"%\
-                    (user_id, cherrypy.request.acctgroup))
+            outlist.append("JobsubJobID CreationDate for user %s in Accounting Group %s" %
+                           (user_id, cherrypy.request.acctgroup))
             for itm in filelist:
                 outlist.append("%s   %s" % (itm[0], time.ctime(itm[1])))
         if outlist:
             return {'out': outlist}
         else:
             host = socket.gethostname()
-            return {'out':'no sandbox information found on %s for user %s '%(host, user_id)}
-
+            return {'out': 'no sandbox information found on %s for user %s ' % (host, user_id)}
 
     @cherrypy.expose
     @format_response
     @check_auth
-
     def index(self, acctgroup, **kwargs):
         try:
             cherrypy.request.role = kwargs.get('role')
@@ -132,8 +128,8 @@ class SandboxesResource(object):
             if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
                 if not user_id:
                     user_id = 'other user'
-                grinfo = "%s may only look at  thier own output for group %s."%\
-                            (rel_link(requestor), acctgroup)
+                grinfo = "%s may only look at  thier own output for group %s." %\
+                    (rel_link(requestor), acctgroup)
                 grinfo += "This is configurable, please open a service desk "
                 grinfo += "ticket if you want this changed"
                 user_id = requestor

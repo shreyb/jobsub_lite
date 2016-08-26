@@ -8,10 +8,9 @@ from condor_commands import ui_condor_q, constructFilter
 from queued_jobs import QueuedJobsResource
 
 
-
-
 @cherrypy.popargs('user_id')
 class UsersResource(object):
+
     def __init__(self):
         self.jobs = QueuedJobsResource()
 
@@ -24,7 +23,7 @@ class UsersResource(object):
         acctgroup = kwargs.get('acctgroup')
         job_id = kwargs.get('job_id')
         filter = constructFilter(acctgroup, user_id, job_id)
-        logger.log("filter=%s"%filter)
+        logger.log("filter=%s" % filter)
         all_jobs = ui_condor_q(filter)
         return {'out': all_jobs.split("\n")}
 
@@ -33,13 +32,13 @@ class UsersResource(object):
     def index(self, user_id=None, **kwargs):
         try:
             subject_dn = get_client_dn()
-            logger.log("user_id %s"%user_id)
-            logger.log("kwargs %s"%kwargs)
+            logger.log("user_id %s" % user_id)
+            logger.log("kwargs %s" % kwargs)
             if subject_dn is not None:
 
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(user_id,kwargs)
+                    rc = self.doGET(user_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)

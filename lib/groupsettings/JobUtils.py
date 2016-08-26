@@ -6,22 +6,24 @@ import subprocess
 
 
 class JobUtils(object):
+
     def __init__(self):
         pass
 
-    def getstatusoutput(self,cmd,yakFlag=False):
-        proc = subprocess.Popen(cmd,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    def getstatusoutput(self, cmd, yakFlag=False):
+        proc = subprocess.Popen(
+            cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         retVal = proc.wait()
         #val= "%s"%os.getpid()+" "
-        val=""
+        val = ""
         for op in proc.stdout:
-            val=val+op.rstrip()
+            val = val + op.rstrip()
         if yakFlag:
-            print "\n\nJobUtils output is %s\n---DONE---\n" %(val)
-        return(retVal,val)
+            print "\n\nJobUtils output is %s\n---DONE---\n" % (val)
+        return(retVal, val)
 
     def ifdhString(self):
-        fs="""
+        fs = """
 setup_ifdh_env(){
 #
 # create ifdh.sh which runs
@@ -61,7 +63,7 @@ fi
 _HEREDOC_
 chmod +x %s
 }
-            """        
+            """
         return fs
 
     def krb5ccNameString(self):
@@ -190,11 +192,8 @@ trap "signal_exit received signal PIPE" PIPE
         """
         return lts
 
-
-
-
     def maketar_sh(self):
-        cmpr="""
+        cmpr = """
 #!/bin/sh
 
 TMPDIR=`/bin/mktemp -d`
@@ -207,11 +206,11 @@ rm $CMPRSSDIR.tgz
 chmod +x $TMPDIR/$CMPRSSDIR.sh
 echo "your submission file is  $TMPDIR/$CMPRSSDIR.sh"
 """
-                
+
         return cmpr
-        
+
     def untar_sh(self):
-        xtrct="""
+        xtrct = """
 #!/bin/bash
 SKIP=`/bin/gawk '/^__TARFILE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
 THIS=$0
@@ -225,9 +224,8 @@ __TARFILE_FOLLOWS__
 """
         return xtrct
 
-        
     def poms_info(self):
-        poms_str="""
+        poms_str = """
 
 export NODE_NAME=`hostname`
 export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
@@ -238,7 +236,7 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
         return poms_str
 
     def sam_start(self):
-        sam_start_str="""
+        sam_start_str = """
 
 yell() { echo "$0: $*" >&2; }
 die() { yell "$*"; exit 111; }
@@ -302,6 +300,6 @@ done
     def print_usage(self):
         usage = """
                 This method should never be called.  Please open a service desk ticket
-                """ 
+                """
 
         print usage

@@ -16,8 +16,10 @@ import jobsub
 
 
 class ApplicationInitializationError(Exception):
+
     def __init__(self, err):
         self.err = err
+
     def __str__(self):
         return "JobSub server initialization failed: %s" % (self.err)
 
@@ -32,6 +34,7 @@ root.jobs = QueuedJobsResource()
 root.users = UsersJobsResource()
 root.version = VersionResource()
 root.scheddload = ScheddLoadResource()
+
 
 def create_statedir(log):
     """
@@ -50,11 +53,11 @@ def create_statedir(log):
         if not os.path.isdir(dir[0]):
             try:
                 cmd = '%s mkdirsAsUser %s %s %s %s' % (
-                          exe,
-                          os.path.dirname(dir[0]),
-                          os.path.basename(dir[0]),
-                          getpass.getuser(),
-                          dir[1])
+                    exe,
+                    os.path.dirname(dir[0]),
+                    os.path.basename(dir[0]),
+                    getpass.getuser(),
+                    dir[1])
                 out, err = iexe_priv_cmd(cmd)
                 log.error('Created statedir/subdirectories' % dir[0])
             except:
@@ -73,10 +76,10 @@ def application(environ, start_response):
     os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
     os.environ['JOBSUB_UPS_LOCATION'] = environ['JOBSUB_UPS_LOCATION']
     os.environ['JOBSUB_CREDENTIALS_DIR'] = \
-            os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
+        os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
     os.environ['KCA_DN_PATTERN_LIST'] = environ['KCA_DN_PATTERN_LIST']
     os.environ['KADMIN_PASSWD_FILE'] = \
-            os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
+        os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
     os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
     os.environ['JOBSUB_SERVER_X509_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
     os.environ['JOBSUB_SERVER_X509_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
@@ -101,8 +104,8 @@ def application(environ, start_response):
         'log.access_file': access_log
     })
 
-    app.log.error('[%s:jobsub_api.py:application]: starting api: JOBSUB_INI_FILE: %s' % \
-            (current_thread().ident, os.environ.get('JOBSUB_INI_FILE')))
+    app.log.error('[%s:jobsub_api.py:application]: starting api: JOBSUB_INI_FILE: %s' %
+                  (current_thread().ident, os.environ.get('JOBSUB_INI_FILE')))
 
     initialize(app.log)
 

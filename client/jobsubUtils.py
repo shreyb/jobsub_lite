@@ -3,8 +3,10 @@
 import platform
 import os
 
+
 def is_os_macosx():
     return platform.system() == 'Darwin'
+
 
 def is_os_linux():
     return platform.system() == 'Linux'

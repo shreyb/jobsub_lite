@@ -3,7 +3,7 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
                                String $ups_version = $jobsub_server::vars::ups_version,
                                String $ups_flavor = $jobsub_server::vars::ups_flavor ) {
     yumrepo { 'jobsub':
-      baseurl  => 'http://jobsub.fnal.gov/rpms/dev/el6/$basearch/',
+      baseurl  => 'http://jobsub.fnal.gov/rpms/dev/6/$basearch/',
       descr    => 'Jobsub',
       enabled  => 1,
       gpgcheck => 0,
@@ -90,7 +90,6 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
     #install these ups products and make them current
     jobsub_server::ups::product {
       'ups'          : version => $ups_version, qualifier => "-f ${ups_flavor}";
-      'jobsub_tools' : version => $jobsub_tools_version, qualifier => "-f Linux+2" ;
       'ifdhc'        : version => $ifdhc_version, qualifier => "-f ${ups_flavor} -q python27";
     }
 

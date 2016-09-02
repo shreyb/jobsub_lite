@@ -394,39 +394,8 @@ def kadmin_command(command):
     return 0
 
 
-def authenticate_kca_dn(dn):
-    """check DN against supported patterns, extract username
-    """
-    KCA_DN_PATTERN_LIST = os.environ.get('KCA_DN_PATTERN_LIST')
-    logger.log("dns patterns supported:%s " % KCA_DN_PATTERN_LIST)
-
-    for pattern in KCA_DN_PATTERN_LIST.split(','):
-        username = re.findall(pattern, dn)
-        if len(username) >= 1 and username[0] != '':
-            return username[0]
-    err = 'failed to authenticate:%s' % dn
-    logger.log(err, severity=logging.ERROR)
-    logger.log(err, severity=logging.ERROR, logfile='error')
-    raise AuthenticationError(err)
 
 
-def authenticate_gums(dn, acctgroup, acctrole):
-    """Check if DN, accounting group, and role is
-       in GUMS database
-    """
-    try:
-        fqan = get_voms_fqan(acctgroup, acctrole)
-        username = get_gums_mapping(dn, fqan)
-        username = username.strip()
-        logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" %
-                   (dn, fqan, username))
-        return username
-    except:
-        err = "GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan)
-        logger.log(err, traceback=True, severity=logging.ERROR)
-        logger.log(err, traceback=True,
-                   severity=logging.ERROR, logfile='error')
-    raise AuthenticationError(dn, acctgroup)
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -439,12 +408,18 @@ def authenticate(dn, acctgroup, acctrole):
         cherrypy.response.status = 200
         logger.log("Authenticating using method: %s" % method)
         try:
-            if method.lower() == 'gums':
-                return authenticate_gums(dn, acctgroup, acctrole)
-            elif method.lower() == 'myproxy':
-                return authenticate_gums(dn, acctgroup, acctrole)
+            if method.lower() in ['gums' ,'myproxy']:
+                try:
+                    import auth_gums
+                    return auth_gums.authenticate(dn, acctgroup, acctrole)
+                except Exception, e:
+                    logger.log('failed %s'%e)
             elif method.lower() == 'kca-dn':
-                return authenticate_kca_dn(dn)
+                try:
+                    import auth_kca
+                    return auth_kca.authenticate(dn)
+                except Exception, e:
+                    logger.log('failed %s'%e)
             else:
                 logger.log("Unknown authenticate method: %s" % method)
         except:
@@ -468,26 +443,6 @@ def clean_proxy_dn(dn):
         dn = dn.replace(p, '')
     return dn
 
-
-def get_gums_mapping(dn, fqan):
-    """find user mapped to input dn
-    """
-    exe = jobsub.get_jobsub_priv_exe()
-    # get rid of all the /CN=133990 and /CN=proxy for gums mapping
-    # is this kosher?  how would a bad guy defeat this?
-    #
-    dn = clean_proxy_dn(dn)
-    cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
-    err = ''
-    logger.log(cmd)
-    try:
-        out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except:
-        err = 'Error running command %s: %s' % (cmd, err)
-        logger.log(err, severity=logging.ERROR)
-        logger.log(err, severity=logging.ERROR, logfile='error')
-        raise
-    return out
 
 
 def x509_proxy_fname(username, acctgroup, acctrole=None):
@@ -517,15 +472,23 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         cherrypy.response.status = 200
         logger.log("Authorizing using method: %s" % method)
         try:
-            if method.lower() == 'gums':
-                return authorize_kca(dn, username,
+            if method.lower() in ['gums', 'kca-dn']:
+                try:
+                    import auth_kca
+                    return auth_kca.authorize_kca(dn, username,
                                      acctgroup, acctrole, age_limit)
+                except Exception, e:
+                    logger.log('authoriziation failed, %s'%e)
+
             elif method.lower() == 'myproxy':
-                return authorize_myproxy(dn, username,
-                                         acctgroup, acctrole, age_limit)
-            elif method.lower() == 'kca-dn':
-                return authorize_kca(dn, username,
-                                     acctgroup, acctrole, age_limit)
+                try:
+                    import auth_myproxy
+                    return auth_myproxy.authorize(dn, username,
+                                                  acctgroup, acctrole,
+                                                  age_limit)
+                except Exception, e:
+                    logger.log('myproxy authoriziation failed, %s'%e)
+
             else:
                 logger.log("Unknown authorization method: %s" % method)
         except:
@@ -545,64 +508,6 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 # REFRESH_DAILY=24
 # REFRESH_EVERY_4_HOURS=4
 
-def authorize_kca(dn, username, acctgroup, acctrole=None, age_limit=3600):
-    """Authorize using FNAL KCA 
-    """
-    logger.log("dn %s username %s acctgroup %s acctrole %s age_limit %s" %
-               (dn, username, acctgroup, acctrole, age_limit))
-    jobsubConfig = jobsub.JobsubConfig()
-    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    # Create the proxy as a temporary file in tmp_dir and perform a
-    # privileged move on the file.
-    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
-    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
-                                   os.path.basename(x509_cache_fname))
-    x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
-                                       delete=False)
-    x509_tmp_fname = x509_tmp_file.name
-    x509_tmp_file.close()
-    try:
-        keytab_fname = os.path.join(creds_base_dir, '%s.keytab' % username)
-        x509_user_cert = os.path.join(jobsubConfig.certsDir,
-                                      '%s.cert' % username)
-        x509_user_key = os.path.join(jobsubConfig.certsDir,
-                                     '%s.key' % username)
-
-        # If the x509_cache_fname is new enough skip everything and use it
-        # needs_refresh only looks for file existance and stat. It works on
-        # proxies owned by other users as well.
-        if needs_refresh(x509_cache_fname, age_limit):
-            # First check if need to use keytab/KCA robot keytab
-            if os.path.exists(keytab_fname):
-                real_cache_fname = refresh_krb5cc(username)
-                krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
-                                    acctgroup, acctrole)
-            elif(os.path.exists(x509_user_cert) and
-                 os.path.exists(x509_user_key)):
-                # Convert x509 cert-key pair to voms proxy
-                x509pair_to_vomsproxy(x509_user_cert, x509_user_key,
-                                      x509_tmp_fname, acctgroup,
-                                      acctrole=acctrole)
-            else:
-                # No source credentials found for this user.
-                err = ''.join(["Unable to find Kerberoes keytab file or X509 ",
-                               "cert-key pair for user %s" % (username),
-                               "dn = %s acctgroup =%s" % (dn, acctgroup), ])
-                logger.log(err)
-                raise OtherAuthError(err)
-
-            jobsub.move_file_as_user(
-                x509_tmp_fname, x509_cache_fname, username)
-
-    except Exception, e:
-        logger.log(str(e), severity=logging.ERROR)
-        logger.log(str(e), severity=logging.ERROR, logfile='error')
-        raise
-    finally:
-        if os.path.exists(x509_tmp_fname):
-            os.remove(x509_tmp_fname)
-            logger.log("cleanup:rm %s" % x509_tmp_fname)
-    return x509_cache_fname
 
 
 def refresh_krb5cc(username):
@@ -636,86 +541,6 @@ def refresh_krb5cc(username):
             logger.log("cleanup:rm %s" % new_cache_fname)
 
     return None
-
-
-def authorize_myproxy(dn, username, acctgroup, acctrole=None, age_limit=3600):
-    """ Pull a proxy from the myproxy server
-    """
-    #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
-    jobsubConfig = jobsub.JobsubConfig()
-
-    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
-    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
-                                   os.path.basename(x509_cache_fname))
-    x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
-                                       delete=False)
-    x509_tmp_fname = x509_tmp_file.name
-    x509_tmp_file.close()
-    try:
-        if needs_refresh(x509_cache_fname, age_limit):
-
-            if jobsub.should_transfer_krb5cc(acctgroup):
-                refresh_krb5cc(username)
-
-            p = JobsubConfigParser()
-            myproxy_exe = spawn.find_executable("myproxy-logon")
-            vomsproxy_exe = spawn.find_executable("voms-proxy-info")
-            myproxy_server = p.get('default', 'myproxy_server')
-            child_env = os.environ.copy()
-            child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
-            child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
-            dn = clean_proxy_dn(dn)
-            cmd = "%s -n -l '%s' -s %s -t 24 -o %s" %\
-                (myproxy_exe, dn, myproxy_server, x509_tmp_fname)
-            logger.log('%s' % cmd)
-            out, err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
-            logger.log('out= %s' % out)
-            if err:
-                logger.log(err, severity=logging.ERROR)
-                logger.log(err, severity=logging.ERROR, logfile='error')
-            x509pair_to_vomsproxy(
-                x509_tmp_fname, x509_tmp_fname, x509_tmp_fname, acctgroup, acctrole)
-
-            cmd2 = "%s  -all -file %s " % (vomsproxy_exe, x509_tmp_fname)
-            logger.log(cmd2)
-            out2, err2 = subprocessSupport.iexe_cmd(cmd2)
-            if not acctrole:
-                acctrole = jobsub.default_voms_role(acctgroup)
-            sub_group_pattern = jobsub.sub_group_pattern(acctgroup)
-            search_pat = "%s/Role=%s/Capability" % (
-                sub_group_pattern, acctrole)
-
-            if (search_pat in out2) and ('VO' in out2):
-                logger.log('found  %s , authenticated successfully' %
-                           (search_pat))
-                jobsub.move_file_as_user(
-                    x509_tmp_fname, x509_cache_fname, username)
-            else:
-                logger.log('failed to find %s in %s' % (search_pat, out2))
-                t1 = search_pat in out2
-                t2 = 'VO' in out2
-                logger.log('test (%s in out2)=%s test(VO in out2)=%s' %
-                           (search_pat, t1, t2))
-                os.remove(x509_tmp_fname)
-
-                err = "unable to authenticate with role='%s'.  Is this a typo?" % acctrole
-                logger.log(err, severity=logging.ERROR)
-                logger.log(err, severity=logging.ERROR, logfile='error')
-
-                raise OtherAuthError(err)
-
-    except:
-        err = traceback.format_exc()
-        logger.log(err, severity=logging.ERROR)
-        logger.log(err, severity=logging.ERROR, logfile='error')
-        raise AuthorizationError(dn, acctgroup)
-    if os.path.exists(x509_tmp_fname):
-        os.remove(x509_tmp_fname)
-        logger.log("cleanup:rm %s" % x509_tmp_fname)
-
-    return x509_cache_fname
-
 
 def is_valid_cache(cache_name):
     """Check if 'cache_name' is valid

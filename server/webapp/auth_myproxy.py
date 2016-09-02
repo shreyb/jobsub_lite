@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """
  Description:
-   This module implements the JobSub webapp authN/authZ functionailty.
-   Some code and functionality is take from CDFCAF
+   This module implements the JobSub myproxy authN/authZ functionailty.
 
  Project:
    JobSub
 
  Author:
-   Parag Mhashilkar
+   Dennis Box
 
  TODO:
    The code still has lot of hardcoded path and makes several assumptions.
@@ -30,7 +29,14 @@ from JobsubConfigParser import JobsubConfigParser
 
 
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
-    """ Pull a proxy from the myproxy server
+    """ Pull a fresh proxy from the myproxy server
+        Args:
+                dn: DN of proxy or cert trying to authorize
+          username: uid of user 
+         acctgroup: account group (experiment)
+          acctrole: role (Analysis Production etc)
+         age_limit: maximum age in seconds or existing proxy before
+                    forced refresh
     """
     #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
     jobsubConfig = jobsub.JobsubConfig()
@@ -47,7 +53,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         if auth.needs_refresh(x509_cache_fname, age_limit):
 
             if jobsub.should_transfer_krb5cc(acctgroup):
-                refresh_krb5cc(username)
+                auth.refresh_krb5cc(username)
 
             p = JobsubConfigParser()
             myproxy_exe = spawn.find_executable("myproxy-logon")

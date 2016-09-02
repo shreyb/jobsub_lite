@@ -4,21 +4,16 @@ import sys
 import os
 import logging
 from format import format_response
-from jobsub import execute_job_submit_wrapper
 
 
 class VersionResource(object):
 
     def doGET(self, kwargs):
-        jstools_dict = execute_job_submit_wrapper('fermilab', None,
-                                                  ['--version'],
-                                                  priv_mode=False)
-        if jstools_dict.has_key('out'):
-            tools_version = 'jobsub tools version: %s' % jstools_dict['out']
-        else:
-            tools_version = 'jobsub tools version: %s' % jstools_dict['err']
+        tools_version = 'jobsub_tools now integrated into server'
         server_version = 'jobsub server rpm release: %s' %\
             os.environ.get('JOBSUB_SERVER_VERSION')
+        if not server_version:
+            server_version = 'Unknown'
         return {'out': [server_version, tools_version]}
 
     @cherrypy.expose

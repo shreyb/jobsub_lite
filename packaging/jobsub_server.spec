@@ -131,6 +131,15 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/auth.py
 /opt/jobsub/server/webapp/auth.pyc
 /opt/jobsub/server/webapp/auth.pyo
+/opt/jobsub/server/webapp/auth_myproxy.py
+/opt/jobsub/server/webapp/auth_myproxy.pyc
+/opt/jobsub/server/webapp/auth_myproxy.pyo
+/opt/jobsub/server/webapp/auth_gums.py
+/opt/jobsub/server/webapp/auth_gums.pyc
+/opt/jobsub/server/webapp/auth_gums.pyo
+/opt/jobsub/server/webapp/auth_kca.py
+/opt/jobsub/server/webapp/auth_kca.pyc
+/opt/jobsub/server/webapp/auth_kca.pyo
 /opt/jobsub/server/webapp/auth_methods.py
 /opt/jobsub/server/webapp/auth_methods.pyc
 /opt/jobsub/server/webapp/auth_methods.pyo

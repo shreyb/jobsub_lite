@@ -2,17 +2,13 @@
 """
  Description:
    This module implements the JobSub webapp authN/authZ functionailty.
-   Some code and functionality is take from CDFCAF
+   Some code and functionality is taken from CDFCAF
 
  Project:
    JobSub
 
  Author:
    Parag Mhashilkar
-
- TODO:
-   The code still has lot of hardcoded path and makes several assumptions.
-   This needs to be cleaned up.
 
 """
 
@@ -43,6 +39,13 @@ def authenticate(dn):
 
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     """Authorize using FNAL KCA
+       Args:
+                dn: DN of proxy or cert trying to authorize
+          username: uid of user 
+         acctgroup: account group (experiment)
+          acctrole: role (Analysis Production etc)
+         age_limit: maximum age in seconds or existing proxy before
+                    forced refresh
     """
     logger.log("dn %s username %s acctgroup %s acctrole %s age_limit %s" %
                (dn, username, acctgroup, acctrole, age_limit))

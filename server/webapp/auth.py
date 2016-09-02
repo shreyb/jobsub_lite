@@ -164,11 +164,6 @@ def get_voms_attrs(acctgroup, acctrole=None):
     return fqan
 
 
-def get_voms_fqan(acctgroup, acctrole=None):
-    """return the fqan from the VOMS string
-    """
-    attrs = get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
-    return attrs[-1]
 
 
 def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
@@ -475,7 +470,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             if method.lower() in ['gums', 'kca-dn']:
                 try:
                     import auth_kca
-                    return auth_kca.authorize_kca(dn, username,
+                    return auth_kca.authorize(dn, username,
                                      acctgroup, acctrole, age_limit)
                 except Exception, e:
                     logger.log('authoriziation failed, %s'%e)

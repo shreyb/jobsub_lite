@@ -1,18 +1,13 @@
 #!/usr/bin/env python
 """
  Description:
-   This module implements the JobSub webapp authN/authZ functionailty.
-   Some code and functionality is take from CDFCAF
+   This module implements the JobSub gums  authN/authZ functionailty.
 
  Project:
    JobSub
 
  Author:
    Parag Mhashilkar
-
- TODO:
-   The code still has lot of hardcoded path and makes several assumptions.
-   This needs to be cleaned up.
 
 """
 
@@ -24,11 +19,14 @@ import auth
 
 
 def authenticate(dn, acctgroup, acctrole):
-    """Check if DN, accounting group, and role is
-       in GUMS database
+    """Check if this combination in GUMS database
+       Args:
+                  dn: DN of proxy or cert trying to authenticate
+           acctgroup: accounting group (experiment)
+            acctrole: role (Analysis, Production, etc)
     """
     try:
-        fqan = auth.get_voms_fqan(acctgroup, acctrole)
+        fqan = get_voms_fqan(acctgroup, acctrole)
         username = get_gums_mapping(dn, fqan)
         username = username.strip()
         logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" %
@@ -42,7 +40,10 @@ def authenticate(dn, acctgroup, acctrole):
     raise auth.AuthenticationError(dn, acctgroup)
 
 def get_gums_mapping(dn, fqan):
-    """find user mapped to input dn
+    """find user mapped to input combo 
+       Args:
+             dn: DN of proxy or cert trying to authenticate
+           fqan: combination of acctgroup/role
     """
     exe = jobsub.get_jobsub_priv_exe()
     # get rid of all the /CN=133990 and /CN=proxy for gums mapping
@@ -60,4 +61,10 @@ def get_gums_mapping(dn, fqan):
         logger.log(err, severity=logging.ERROR, logfile='error')
         raise
     return out
+
+def get_voms_fqan(acctgroup, acctrole=None):
+    """return the fqan from the VOMS string
+    """
+    attrs = auth.get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
+    return attrs[-1]
 

@@ -21,7 +21,7 @@ import logger
 import logging
 import jobsub
 import subprocessSupport
-import auth
+import authutils
 
 from distutils import spawn
 from tempfile import NamedTemporaryFile
@@ -42,7 +42,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     jobsubConfig = jobsub.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    x509_cache_fname = auth.x509_proxy_fname(username, acctgroup, acctrole)
+    x509_cache_fname = authutils.x509_proxy_fname(username, acctgroup, acctrole)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
@@ -50,10 +50,10 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     x509_tmp_fname = x509_tmp_file.name
     x509_tmp_file.close()
     try:
-        if auth.needs_refresh(x509_cache_fname, age_limit):
+        if authutils.needs_refresh(x509_cache_fname, age_limit):
 
             if jobsub.should_transfer_krb5cc(acctgroup):
-                auth.refresh_krb5cc(username)
+                authutils.refresh_krb5cc(username)
 
             p = JobsubConfigParser()
             myproxy_exe = spawn.find_executable("myproxy-logon")
@@ -62,7 +62,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             child_env = os.environ.copy()
             child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
             child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
-            dn = auth.clean_proxy_dn(dn)
+            dn = authutils.clean_proxy_dn(dn)
             cmd = "%s -n -l '%s' -s %s -t 24 -o %s" %\
                 (myproxy_exe, dn, myproxy_server, x509_tmp_fname)
             logger.log('%s' % cmd)
@@ -71,7 +71,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             if err:
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-            auth.x509pair_to_vomsproxy(
+            authutils.x509pair_to_vomsproxy(
                 x509_tmp_fname, x509_tmp_fname, x509_tmp_fname, acctgroup, acctrole)
 
             cmd2 = "%s  -all -file %s " % (vomsproxy_exe, x509_tmp_fname)
@@ -100,13 +100,13 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
 
-                raise auth.OtherAuthError(err)
+                raise authutils.OtherAuthError(err)
 
     except:
         err = traceback.format_exc()
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')
-        raise auth.AuthorizationError(dn, acctgroup)
+        raise authutils.AuthorizationError(dn, acctgroup)
     if os.path.exists(x509_tmp_fname):
         os.remove(x509_tmp_fname)
         logger.log("cleanup:rm %s" % x509_tmp_fname)

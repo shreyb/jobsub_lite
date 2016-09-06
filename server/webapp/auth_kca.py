@@ -17,7 +17,7 @@ import re
 import logger
 import logging
 import jobsub
-import auth
+import authutils
 
 from tempfile import NamedTemporaryFile
 
@@ -34,7 +34,7 @@ def authenticate(dn):
     err = 'failed to authenticate:%s' % dn
     logger.log(err, severity=logging.ERROR)
     logger.log(err, severity=logging.ERROR, logfile='error')
-    raise auth.AuthenticationError(err)
+    raise authutils.AuthenticationError(err)
 
 
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
@@ -53,7 +53,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     # Create the proxy as a temporary file in tmp_dir and perform a
     # privileged move on the file.
-    x509_cache_fname = auth.x509_proxy_fname(username, acctgroup, acctrole)
+    x509_cache_fname = authutils.x509_proxy_fname(username, acctgroup, acctrole)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
@@ -70,16 +70,16 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         # If the x509_cache_fname is new enough skip everything and use it
         # needs_refresh only looks for file existance and stat. It works on
         # proxies owned by other users as well.
-        if auth.needs_refresh(x509_cache_fname, age_limit):
+        if authutils.needs_refresh(x509_cache_fname, age_limit):
             # First check if need to use keytab/KCA robot keytab
             if os.path.exists(keytab_fname):
-                real_cache_fname = auth.refresh_krb5cc(username)
-                auth.krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
+                real_cache_fname = authutils.refresh_krb5cc(username)
+                authutils.krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
                                     acctgroup, acctrole)
             elif(os.path.exists(x509_user_cert) and
                  os.path.exists(x509_user_key)):
                 # Convert x509 cert-key pair to voms proxy
-                auth.x509pair_to_vomsproxy(x509_user_cert, x509_user_key,
+                authutils.x509pair_to_vomsproxy(x509_user_cert, x509_user_key,
                                       x509_tmp_fname, acctgroup,
                                       acctrole=acctrole)
             else:
@@ -88,7 +88,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                                "cert-key pair for user %s" % (username),
                                "dn = %s acctgroup =%s" % (dn, acctgroup), ])
                 logger.log(err)
-                raise auth.OtherAuthError(err)
+                raise authutils.OtherAuthError(err)
 
             jobsub.move_file_as_user(
                 x509_tmp_fname, x509_cache_fname, username)

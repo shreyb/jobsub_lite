@@ -7,7 +7,7 @@ import platform
 import subprocessSupport
 import socket
 import re
-import auth
+import jobsub
 from random import randint
 
 
@@ -222,7 +222,7 @@ def ui_condor_q(a_filter=None, a_format=None):
             else:
                 cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-            dn = auth.get_client_dn()
+            dn = jobsub.get_client_dn()
             pts = dn.split(':')
             user = pts[-1]
             log_cmd = "[user:%s] condor_q -name %s %s" % (
@@ -274,7 +274,7 @@ def iwd_condor_q(a_filter, a_part='iwd'):
         else:
             cherrypy.response.status = 500
             if 'ailed to connect' in tb:
-                err = 'Failed to connect to condor schedd %s' % schedd
+                err = 'Failed to connect to condor schedd '
                 logger.log(err, severity=logging.ERROR,
                            logfile='condor_commands')
                 logger.log(err, severity=logging.ERROR, logfile='error')

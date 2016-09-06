@@ -13,7 +13,8 @@ from shutil import copyfileobj
 from tempfile import NamedTemporaryFile
 
 from util import mkdir_p
-from auth import check_auth, x509_proxy_fname
+from auth import check_auth
+from authutils import  x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import JobsubConfig
 from jobsub import execute_job_submit_wrapper

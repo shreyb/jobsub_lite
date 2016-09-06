@@ -15,7 +15,7 @@ import logger
 import logging
 import jobsub
 import subprocessSupport
-import auth
+import authutils
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -37,7 +37,7 @@ def authenticate(dn, acctgroup, acctrole):
         logger.log(err, traceback=True, severity=logging.ERROR)
         logger.log(err, traceback=True,
                    severity=logging.ERROR, logfile='error')
-    raise auth.AuthenticationError(dn, acctgroup)
+    raise authutils.AuthenticationError(dn, acctgroup)
 
 def get_gums_mapping(dn, fqan):
     """find user mapped to input combo 
@@ -49,7 +49,7 @@ def get_gums_mapping(dn, fqan):
     # get rid of all the /CN=133990 and /CN=proxy for gums mapping
     # is this kosher?  how would a bad guy defeat this?
     #
-    dn = auth.clean_proxy_dn(dn)
+    dn = authutils.clean_proxy_dn(dn)
     cmd = '%s getMappedUsername "%s" "%s"' % (exe, dn, fqan)
     err = ''
     logger.log(cmd)
@@ -65,6 +65,6 @@ def get_gums_mapping(dn, fqan):
 def get_voms_fqan(acctgroup, acctrole=None):
     """return the fqan from the VOMS string
     """
-    attrs = auth.get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
+    attrs = authutils.get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
     return attrs[-1]
 

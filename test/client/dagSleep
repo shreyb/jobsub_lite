@@ -1,0 +1,12 @@
+<serial>
+jobsub  -n --mail_always $SUBMIT_FLAGS file://sleep_900.sh 
+jobsub  -n --mail_always $SUBMIT_FLAGS file://sleep_900.sh
+</serial>
+<parallel>
+jobsub  -n --mail_always $SUBMIT_FLAGS file://sleep_900.sh
+jobsub  -n --mail_always $SUBMIT_FLAGS file://sleep_forever.sh
+</parallel>
+<serial>
+jobsub  -n --mail_always $SUBMIT_FLAGS file://sleep_900.sh
+</serial>
+

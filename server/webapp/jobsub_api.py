@@ -12,6 +12,7 @@ from scheddload import ScheddLoadResource
 from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
 from threading import current_thread
+from format import format_response
 import jobsub
 
 
@@ -23,22 +24,61 @@ class ApplicationInitializationError(Exception):
     def __str__(self):
         return "JobSub server initialization failed: %s" % (self.err)
 
-
 class Root(object):
-    pass
+    """
+    Root class of API
+    /jobsub
+    """
+    def __init__(self):
+
+        self.acctgroups = AccountingGroupsResource()
+        self.jobs = QueuedJobsResource()
+        self.users = UsersJobsResource()
+        self.version = VersionResource()
+        self.scheddload = ScheddLoadResource()
+
+    @cherrypy.expose
+    @format_response
+    def index(self, **kwargs):
+        """
+        index.html for /jobsub/
+        """
+        if cherrypy.request.method == 'GET':
+            out = ['Jobsub Server',
+                   ['<a href=version/>Version</a>',
+                    '<a href=acctgroups/>Browse Accounting Groups</a>',
+                    '<a href=users/>User Information</a>',
+                    '<a href=scheddload/>Schedd Load </a>',
+                   ]
+                  ]
+
+            rc = {'out': out}
+            return rc
+        else:
+            rc = 'Unsupported method: %s' % cherrypy.request.method
+            return rc
+
+class RDirect(object):
+    """A redirect class to direct / to /jobsub
+    """
+    @cherrypy.expose
+    def index(self, **kwargs):
+        """
+        the actual redirect
+        """
+        raise cherrypy.HTTPRedirect('/jobsub')
+        #cherrypy.tree.mount(RDirect, '/')
+
+
 
 
 root = Root()
-root.acctgroups = AccountingGroupsResource()
-root.jobs = QueuedJobsResource()
-root.users = UsersJobsResource()
-root.version = VersionResource()
-root.scheddload = ScheddLoadResource()
+cherrypy.tree.mount(RDirect(), '/')
 
 
 def create_statedir(log):
     """
-    Create Application statedir(s) 
+    Create Application statedir(s)
     /var/lib/jobsub             : rexbatch : 755
     /var/lib/jobsub/tmp         : rexbatch : 700
     """
@@ -49,17 +89,17 @@ def create_statedir(log):
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)
 
-    for dir in jobsubConfig.stateDirLayout():
-        if not os.path.isdir(dir[0]):
+    for s_dir in jobsubConfig.stateDirLayout():
+        if not os.path.isdir(s_dir[0]):
             try:
                 cmd = '%s mkdirsAsUser %s %s %s %s' % (
                     exe,
                     os.path.dirname(dir[0]),
                     os.path.basename(dir[0]),
                     getpass.getuser(),
-                    dir[1])
+                    s_dir[1])
                 out, err = iexe_priv_cmd(cmd)
-                log.error('Created statedir/subdirectories' % dir[0])
+                log.error('Created statedir/subdirectories' % s_dir[0])
             except:
                 err = 'Failed creating internal state directory %s' % state_dir
                 log.error(err)
@@ -104,8 +144,9 @@ def application(environ, start_response):
         'log.access_file': access_log
     })
 
-    app.log.error('[%s:jobsub_api.py:application]: starting api: JOBSUB_INI_FILE: %s' %
-                  (current_thread().ident, os.environ.get('JOBSUB_INI_FILE')))
+    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE: %s' %\
+                  (current_thread().ident,
+                   os.environ.get('JOBSUB_INI_FILE')))
 
     initialize(app.log)
 

@@ -44,7 +44,7 @@ class QueuedJobsResource(object):
         return {'out': history.split('\n')}
 
     @cherrypy.expose
-    @format_response
+    @format_response(output_format='pre')
     def index(self, user_id=None, job_id=None, **kwargs):
         try:
             subject_dn = get_client_dn()

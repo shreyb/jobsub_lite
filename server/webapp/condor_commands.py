@@ -257,6 +257,19 @@ def ui_condor_q(a_filter=None, a_format=None):
     return all_jobs
 
 
+def condor_userprio():
+    cmd = 'condor_userprio -allusers'
+    users = ''
+    try:
+        users, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        # logger.log("cmd=%s"%cmd)
+        # logger.log("rslt=%s"%all_jobs)
+        return users
+    except:
+        tb = traceback.format_exc()
+        logger.log(tb, severity=logging.ERROR)
+        return tb
+
 def iwd_condor_q(a_filter, a_part='iwd'):
     cmd = 'condor_q -af %s  %s' % (a_part, a_filter)
     iwd = ''

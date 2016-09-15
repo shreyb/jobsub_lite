@@ -74,7 +74,7 @@ def condor_format(inputSwitch=None):
 
     dagStatusStr = """'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'"""
 
-    runTimeStr = """ifthenelse(JobStartDate=?=UNDEFINED,0,ifthenelse(CompletionDate==0,ServerTime-JobStartDate,CompletionDate-JobStartDate))"""
+    runTimeStr = """ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(JobStatus==2,ServerTime-JobCurrentStartDate,EnteredCurrentStatus-JobCurrentStartDate))"""
 
     if inputSwitch == "long":
         fmtList = [" -l "]
@@ -210,6 +210,12 @@ def ui_condor_history(a_filter=None, a_format=None):
 
 
 def ui_condor_q(a_filter=None, a_format=None):
+    """
+    condor_q 
+        args:
+            a_filter: a condor constraint, usually built by constuct_filter
+            a_format: one of 'long', 'dags', 'better-analyze'
+    """
     #logger.log('filter=%s format=%s'%(filter,format))
     hdr = condor_header(a_format)
     fmt = condor_format(a_format)
@@ -258,6 +264,9 @@ def ui_condor_q(a_filter=None, a_format=None):
 
 
 def condor_userprio():
+    """
+    list users condor priorities
+    """
     cmd = 'condor_userprio -allusers'
     users = ''
     try:
@@ -271,6 +280,9 @@ def condor_userprio():
         return tb
 
 def iwd_condor_q(a_filter, a_part='iwd'):
+    """ 
+    return the iwd of a job or multiple jobs
+    """
     cmd = 'condor_q -af %s  %s' % (a_part, a_filter)
     iwd = ''
     try:
@@ -299,16 +311,6 @@ def iwd_condor_q(a_filter, a_part='iwd'):
                 return tb
 
 
-def all_known_jobs(acct_group, uid=None, jobid=None):
-    my_filter = constructFilter(acct_group, uid, jobid)
-    queued = ui_condor_q(my_filter)
-    if len(queued.split('\n')) < 1:
-        queued = ''
-    history = ui_condor_history(my_filter)
-    if len(history.split('\n')) < 1:
-        history = ''
-    all = queued + history
-    return all
 
 
 def api_condor_q(acctgroup, uid, convert=False):
@@ -330,7 +332,7 @@ def api_condor_q(acctgroup, uid, convert=False):
 
 
 def classad_to_dict(classad):
-    """ Converts a ClassAd object to a dictionary. 
+    """ Converts a ClassAd object to a dictionary.
     Used for serialization to JSON.
     """
     job_dict = dict()
@@ -340,6 +342,9 @@ def classad_to_dict(classad):
 
 
 def collector_host():
+    """
+    return the condor collector host name
+    """
     try:
         hosts, cmd_err = subprocessSupport.iexe_cmd(
             """condor_config_val collector_host """)
@@ -356,6 +361,10 @@ def collector_host():
 
 
 def schedd_list():
+    """
+    return a list of all the schedds
+    """
+
     try:
         schedds, cmd_err = subprocessSupport.iexe_cmd(
             """condor_status -schedd -af name """)
@@ -368,6 +377,11 @@ def schedd_list():
 
 
 def schedd_name(arglist=None):
+    """
+    return name of the local schedd
+    will not work properly with multiple schedds on a host
+    """
+
     # logger.log(arglist)
     _list = schedd_list()
     if len(_list) == 1:

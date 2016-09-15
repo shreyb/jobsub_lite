@@ -21,7 +21,7 @@ class CredentialsNotFoundError(Exception):
                                        "ticket or set X509 credentials ",
                                        "related variables"])):
         logSupport.dprint(traceback.format_exc())
-        sys.exit(errMsg)
+        #sys.exit(errMsg)
 
 
 class CredentialsError(Exception):
@@ -286,7 +286,7 @@ def cigetcert_to_x509_cmd(server, acctGroup=None, debug=None):
         err = "ERROR: Server %s wants to use cigetcert to authenticate, " % server
         err += "but Unable to find command 'cigetcert' in the PATH"
         raise CredentialsError(err)
-    cmd = "%s -s %s -kv -o %s" % (cigetcert_cmd, server, proxy_file)
+    cmd = "%s -s %s -n -o %s" % (cigetcert_cmd, server, proxy_file)
     logSupport.dprint(cmd)
     return cmd
 

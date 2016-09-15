@@ -1199,7 +1199,7 @@ def get_capath():
 
     if (not ca_dir):
         for system_ca_dir in ca_dir_list:
-            print 'checking %s' % system_ca_dir
+            logSupport.dprint('checking %s' % system_ca_dir)
             if (os.path.exists(system_ca_dir)):
                 ca_dir = system_ca_dir
                 break

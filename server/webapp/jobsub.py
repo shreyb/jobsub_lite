@@ -15,7 +15,9 @@ from JobsubConfigParser import JobsubConfigParser
 
 
 class AcctGroupNotConfiguredError(Exception):
-
+    """
+    Exception class for accounting group not found
+    """
     def __init__(self, acctgroup):
         self.acctgroup = acctgroup
         Exception.__init__(
@@ -42,16 +44,21 @@ def is_supported_accountinggroup(accountinggroup):
 
 
 def group_superusers(acctgroup):
+    g_list = []
     p = JobsubConfigParser()
     susers = p.get(acctgroup, 'group_superusers')
+    global_susers = p.get('default', 'global_superusers')
     if susers:
-        return susers.split()
-    else:
-        return []
-
+        for itm in susers.split():
+            g_list.append(itm)
+    if global_susers:
+        for itm in global_susers.split():
+            g_list.append(itm)
+    logger.log('returning %s' % g_list)
+    return g_list
 
 def is_superuser_for_group(acctgroup, user):
-    logger.log('checking if %s in %s is group_superuser' % (acctgroup, user))
+    logger.log('checking if %s in %s is group_superuser' % (user, acctgroup))
     su_list = group_superusers(acctgroup)
     logger.log('sulist is %s for %s' % (su_list, acctgroup))
     return user in su_list

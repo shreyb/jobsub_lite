@@ -6,9 +6,12 @@ import time
 import socket
 import sys
 import subprocessSupport
-from auth import check_auth, get_client_dn
+from auth import check_auth
+from auth import get_client_dn
 from jobsub import get_command_path_root
-from jobsub import sandbox_readable_by_group, sandbox_allowed_browsable_file_types
+from jobsub import sandbox_readable_by_group
+from jobsub import sandbox_allowed_browsable_file_types
+from jobsub import group_superusers
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 
@@ -125,16 +128,19 @@ class SandboxesResource(object):
             user_id = kwargs.get('user_id')
             job_id = kwargs.get('job_id')
             file_id = kwargs.get('file_id')
-            if not sandbox_readable_by_group(acctgroup) and user_id != requestor:
-                if not user_id:
-                    user_id = 'other user'
-                grinfo = "%s may only look at  thier own output for group %s." %\
-                    (rel_link(requestor), acctgroup)
-                grinfo += "This is configurable, please open a service desk "
-                grinfo += "ticket if you want this changed"
-                user_id = requestor
-                rc = {'out': grinfo}
-                return rc
+            if user_id != requestor:
+                allowed = sandbox_readable_by_group(acctgroup) \
+                        or requestor in group_superusers(acctgroup)
+                if not allowed: 
+                    if not user_id:
+                        user_id = 'other user'
+                    grinfo = "%s may only look at  thier own output for group %s." %\
+                        (rel_link(requestor), acctgroup)
+                    grinfo += "This is configurable, please open a service desk "
+                    grinfo += "ticket if you want this changed"
+                    user_id = requestor
+                    rc = {'out': grinfo}
+                    return rc
 
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

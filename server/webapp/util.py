@@ -14,7 +14,7 @@ import jobsub
 import condor_commands
 import re
 import cherrypy
-import auth
+import authutils
 import socket
 
 
@@ -227,7 +227,7 @@ def doJobAction(acctgroup,
         acctrole = 'Analysis'
         if acctgroup in user and 'pro' in user:
             acctrole = 'Production'
-        cmd_proxy = auth.x509_proxy_fname(cmd_user, acctgroup, acctrole)
+        cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
         logger.log('proxy for %s is %s' % (cmd_user, cmd_proxy))
         msg = '[user: %s] %s jobs owned by %s with constraints (%s) ' %\
             (cherrypy.request.username, job_action, cmd_user, constraint)

@@ -6,17 +6,21 @@ import re
 
 from cherrypy.lib.static import serve_file
 
-from util import create_zipfile, create_tarfile
+from util import create_zipfile
+from util import create_tarfile
 from auth import check_auth
-from jobsub import is_supported_accountinggroup, get_command_path_root
+from jobsub import is_supported_accountinggroup
 from jobsub import sandbox_readable_by_group
+from jobsub import group_superusers
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
 from datetime import datetime
 from JobsubConfigParser import JobsubConfigParser
-from condor_commands import constructFilter, iwd_condor_q
-from sqlite_commands import constructQuery, iwd_jobsub_history
+from condor_commands import constructFilter
+from condor_commands import iwd_condor_q
+from sqlite_commands import constructQuery
+from sqlite_commands import iwd_jobsub_history
 
 
 def cleanup(zip_file, outfilename=None):
@@ -39,6 +43,9 @@ def cleanup(zip_file, outfilename=None):
 
 
 def make_sandbox_readable(workdir, username):
+    """
+    change file permissions on sandbox, see 'cmd'
+    """
     cmd = [
         'chmod',
         '-R',
@@ -50,6 +57,9 @@ def make_sandbox_readable(workdir, username):
 
 
 def create_archive(zip_file, zip_path, job_id, out_format, partial=None):
+    """
+    create a tar or zip file depending on outformat
+    """
     if out_format == 'tgz':
         create_tarfile(zip_file, zip_path, job_id, partial=partial)
     else:
@@ -68,6 +78,9 @@ class SandboxResource(object):
         cherrypy.request.vomsProxy = None
 
     def findSandbox(self, path):
+        """
+        check that sandbox exists
+        """
         if not path:
             return False
         if os.path.exists(path):
@@ -75,17 +88,20 @@ class SandboxResource(object):
         return False
 
     #@format_response
-    def doGET(self, acctgroup, job_id, partial=None,  **kwargs):
+    def doGET(self, acctgroup, job_id, partial=None, **kwargs):
+        """
+        perform http get
+        """
         # set cherrypy.response.timeout to something bigger than 300 seconds
         timeout = 60 * 15
         try:
-            p = JobsubConfigParser()
-            t = p.get('default', 'sandbox_timeout')
-            if t is not None:
-                timeout = t
-        except Exception, e:
-            logger.log('caught %s  setting default timeout' % e)
-            logger.log('caught %s  setting default timeout' % e,
+            prs = JobsubConfigParser()
+            tim = prs.get('default', 'sandbox_timeout')
+            if tim is not None:
+                timeout = tim
+        except Exception, excp:
+            logger.log('caught %s  setting default timeout' % excp)
+            logger.log('caught %s  setting default timeout' % excp,
                        severity=logging.ERROR,
                        logfile='error')
 
@@ -97,7 +113,6 @@ class SandboxResource(object):
         sbx_final_dir = jobsubConfig.commandPathUser(acctgroup,
                                                      cherrypy.request.username)
 
-        command_path_root = get_command_path_root()
         if job_id is None:
             job_id = 'I_am_planning_on_failing'
         zip_path = os.path.join(sbx_final_dir, job_id)
@@ -119,9 +134,9 @@ class SandboxResource(object):
                     logger.log('partial=%s' % partial)
 
                 logger.log('zip_path from condor_q:%s' % zip_path)
-            except Exception, e:
-                logger.log('%s' % e)
-                logger.log('%s' % e,
+            except Exception, excp:
+                logger.log('%s' % excp)
+                logger.log('%s' % excp,
                            severity=logging.ERROR,
                            logfile='error')
         if not zip_path:
@@ -138,9 +153,9 @@ class SandboxResource(object):
                     partial = g.group(2)
                     logger.log('partial=%s' % partial)
 
-            except Exception, e:
-                logger.log('%s' % e)
-                logger.log('%s' % e,
+            except Exception, excp:
+                logger.log('%s' % excp)
+                logger.log('%s' % excp,
                            severity=logging.ERROR,
                            logfile='error')
         logger.log('zip_path=%s' % zip_path)
@@ -151,7 +166,6 @@ class SandboxResource(object):
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             out_format = kwargs.get('archive_out_format', 'tgz')
             logger.log('archive_out_format:%s' % out_format)
-            zip_file_tmp = None
             if out_format not in ('zip', 'tgz'):
                 out_format = 'tgz'
 
@@ -160,7 +174,7 @@ class SandboxResource(object):
             # in acctgroup area to allow for cleanup
             zip_file = os.path.join(sbx_create_dir,
                                     '%s.%s.%s' % (job_id, ts, out_format))
-            rc = {'out': zip_file}
+            r_code = {'out': zip_file}
 
             cherrypy.request.hooks.attach('on_end_request', cleanup,
                                           zip_file=zip_file)
@@ -168,15 +182,17 @@ class SandboxResource(object):
                                           zip_file=zip_file)
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != cherrypy.request.username:
-                if sandbox_readable_by_group(acctgroup):
+                if sandbox_readable_by_group(acctgroup) \
+                    or owner in group_superusers(acctgroup):
                     make_sandbox_readable(zip_path, owner)
                 else:
-                    err = "User %s is not allowed  to read %s, owned by %s on this server.  " % (
+                    err = "User %s is not allowed  to read %s, owned by %s." % (
                         cherrypy.request.username, job_id, owner)
-                    err += "This is configurable, if you believe this to be in error please open a service desk ticket."
+                    err += " This is configurable, if you believe this to be "
+                    err += "in error please open a service desk ticket."
                     cherrypy.response.status = 500
-                    rc = {'err': err}
-                    return rc
+                    r_code = {'err': err}
+                    return r_code
             else:
                 make_sandbox_readable(zip_path, owner)
             create_archive(zip_file, zip_path, job_id,
@@ -191,15 +207,24 @@ class SandboxResource(object):
             # return error for no data found
             cherrypy.response.status = 404
             outmsg = """
-                Information for job %s not found.  Make sure that you specified the appropriate Role for this job. The role must be the same as what it was for submission.  If you used jobsub_q or jobsub_history to find this job ID, double check that you specified --group incorrectly.  If the job is more than a few weeks old, it was probably removed to save space. Jobsub_fetchlog --list will show the  sandboxes that are still on the server."""  % job_id
-            rc = {'err': outmsg}
+            Information for job %s not found.  Make sure that you specified
+            the appropriate Role for this job. The role must be the same as
+            what it was for submission.  If you used jobsub_q or jobsub_history
+            to find this job ID, double check that you specified --group
+            incorrectly.  If the job is more than a few weeks old, it was
+            probably removed to save space. Jobsub_fetchlog --list will
+            show the  sandboxes that are still on the server."""  % job_id
+            r_code = {'err': ' '.join(outmsg.split())}
 
-        return rc
+        return r_code
 
     @cherrypy.expose
     @format_response
     @check_auth
     def index(self, acctgroup, job_id, partial=None, **kwargs):
+        """
+        index.html for /jobsub/<acctgroup>/job/jobid/sandbox
+        """
         logger.log('job_id:%s' % job_id)
         logger.log('partial:%s' % partial)
         logger.log('kwargs:%s' % kwargs)
@@ -213,19 +238,20 @@ class SandboxResource(object):
 
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':
-                    rc = self.doGET(acctgroup, job_id, partial, **kwargs)
+                    r_code = self.doGET(acctgroup, job_id, partial, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    rc = {'err': err}
+                    r_code = {'err': err}
                     cherrypy.response.status = 500
             else:
                 # return error for unsupported acctgroup
-                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
+                err = 'AccountingGroup %s is not configured in jobsub' %\
+                        acctgroup
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                rc = {'err': err}
+                r_code = {'err': err}
                 cherrypy.response.status = 500
         except:
             err = 'Exception on SandboxResource.index'
@@ -235,7 +261,7 @@ class SandboxResource(object):
                        traceback=True,
                        severity=logging.ERROR,
                        logfile='error')
-            rc = {'err': err}
+            r_code = {'err': err}
             cherrypy.response.status = 500
 
-        return rc
+        return r_code

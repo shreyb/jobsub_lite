@@ -128,7 +128,7 @@ def condor_format(inputSwitch=None):
 def munge_jobid(theInput=None):
     header = ['ID', ' ', ' ', ' ', 'OWNER', 'SUBMITTED',
               'RUN_TIME', 'ST', 'PRI', 'SIZE', 'CMD']
-    if theInput == None:
+    if theInput is None:
         return None
     linput = theInput.split('\n')
     loutput = []
@@ -211,7 +211,7 @@ def ui_condor_history(a_filter=None, a_format=None):
 
 def ui_condor_q(a_filter=None, a_format=None):
     """
-    condor_q 
+    condor_q
         args:
             a_filter: a condor constraint, usually built by constuct_filter
             a_format: one of 'long', 'dags', 'better-analyze'
@@ -279,8 +279,9 @@ def condor_userprio():
         logger.log(tb, severity=logging.ERROR)
         return tb
 
+
 def iwd_condor_q(a_filter, a_part='iwd'):
-    """ 
+    """
     return the iwd of a job or multiple jobs
     """
     cmd = 'condor_q -af %s  %s' % (a_part, a_filter)
@@ -309,8 +310,6 @@ def iwd_condor_q(a_filter, a_part='iwd'):
                            logfile='condor_commands')
                 logger.log(tb, severity=logging.ERROR, logfile='error')
                 return tb
-
-
 
 
 def api_condor_q(acctgroup, uid, convert=False):

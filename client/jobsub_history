@@ -150,10 +150,10 @@ def main(argv):
     rc = 1
     try:
         rc = js_client.history(options.histUser, options.jobId)
-    except JobSubClientError, e:
+    except JobSubClientError as e:
         print e
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
+    except Exception as e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
 

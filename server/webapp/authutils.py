@@ -33,12 +33,12 @@ from JobsubConfigParser import JobsubConfigParser
 
 
 class AuthenticationError(Exception):
-    """Authentication Exception.  I do not recognize you as who you 
+    """Authentication Exception.  I do not recognize you as who you
        claim you are.
 
        Args:
            dn       : DN of certificate you are presenting
-           acctgroup: Accounting group or experiment you are trying 
+           acctgroup: Accounting group or experiment you are trying
            to authenticate to
 
     """
@@ -52,12 +52,12 @@ class AuthenticationError(Exception):
 
 
 class AuthorizationError(Exception):
-    """Authorization Exception.  You are not authorized to perform desired 
+    """Authorization Exception.  You are not authorized to perform desired
        action as member of acctgroup
 
        Args:
            dn       : DN of certificate you are presenting
-           acctgroup: Accounting group or experiment you are trying to 
+           acctgroup: Accounting group or experiment you are trying to
            authorize from
 
     """
@@ -90,7 +90,7 @@ class Krb5Ticket(object):
 
         Args:
             keytab   : kerberos5 keytab
-            krb5cc   : kerberos5 credential cache 
+            krb5cc   : kerberos5 credential cache
             principal: kerberos principal subject name
     """
 
@@ -155,14 +155,12 @@ def krbrefresh_query_fmt():
 
 
 def get_voms_attrs(acctgroup, acctrole=None):
-    """Add voms ROLE to fqan if needed 
+    """Add voms ROLE to fqan if needed
     """
     fqan = get_voms(acctgroup)
     if acctrole:
         fqan = '%s/Role=%s' % (fqan, acctrole)
     return fqan
-
-
 
 
 def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
@@ -180,7 +178,7 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
-    except jobsub.AcctGroupNotConfiguredError, e:
+    except jobsub.AcctGroupNotConfiguredError as e:
         logger.log("%s" % e, severity=logging.ERROR)
         logger.log("%s" % e, severity=logging.ERROR, logfile='error')
         raise
@@ -211,7 +209,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
-    except jobsub.AcctGroupNotConfiguredError, e:
+    except jobsub.AcctGroupNotConfiguredError as e:
         os.remove(new_proxy_fname)
         logger.log("%s" % e, severity=logging.ERROR)
         logger.log("%s" % e, severity=logging.ERROR, logfile='error')
@@ -388,12 +386,6 @@ def kadmin_command(command):
     return 0
 
 
-
-
-
-
-
-
 def clean_proxy_dn(dn):
     """Strip off proxy-of-proxy info to the the 'root' proxy
     """
@@ -406,16 +398,15 @@ def clean_proxy_dn(dn):
     return dn
 
 
-
 def x509_proxy_fname(username, acctgroup, acctrole=None):
-    """generate file name to store x509 proxy 
+    """generate file name to store x509 proxy
     """
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     jobsubConfig = jobsub.JobsubConfig()
     proxies_base_dir = jobsubConfig.proxiesDir
     creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
-        os.makedirs(creds_dir, 0755)
+        os.makedirs(creds_dir, 0o755)
     if acctrole:
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s' % (username, acctrole))
@@ -423,9 +414,6 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s' % username)
     logger.log('Using x509_proxy_name=%s' % x509_cache_fname)
     return x509_cache_fname
-
-
-
 
 
 def refresh_krb5cc(username):
@@ -449,7 +437,7 @@ def refresh_krb5cc(username):
         logger.log('Creating krb5 ticket ... DONE')
         os.rename(new_cache_fname, real_cache_fname)
         return real_cache_fname
-    except Exception, e:
+    except Exception as e:
         logger.log(str(e), severity=logging.ERROR)
         logger.log(str(e), severity=logging.ERROR, logfile='error')
         raise
@@ -459,6 +447,7 @@ def refresh_krb5cc(username):
             logger.log("cleanup:rm %s" % new_cache_fname)
 
     return None
+
 
 def is_valid_cache(cache_name):
     """Check if 'cache_name' is valid
@@ -482,10 +471,6 @@ def is_valid_cache(cache_name):
         return False
 
 
-
-
-
-
 def needs_refresh(filepath, agelimit=3600):
     """Check if filepath is older than agelimit. If yes,
        filepath needs refreshing
@@ -494,11 +479,11 @@ def needs_refresh(filepath, agelimit=3600):
     if not os.path.exists(filepath):
         logger.log("%s does not exist, need to refresh" % filepath)
         return True
-    if agelimit == sys.maxint:
+    if agelimit == sys.maxsize:
         return False
     rslt = False
     agelimit = int(agelimit)
-    age = sys.maxint
+    age = sys.maxsize
     try:
         st = os.stat(filepath)
         age = (time.time() - st.st_mtime)
@@ -510,5 +495,3 @@ def needs_refresh(filepath, agelimit=3600):
     if age > agelimit:
         rslt = True
     return rslt
-
-

@@ -7,7 +7,7 @@ from format import format_response, rel_link
 from condor_commands import ui_condor_q, constructFilter, condor_userprio
 
 
-class UsersJobsResource(object): 
+class UsersJobsResource(object):
     """
     Implementation of /jobsub/users/ and most of its sub leafs
     """
@@ -87,8 +87,8 @@ class UsersJobsResource(object):
         cherrypy.request.username = kwargs.get('username')
         cherrypy.response.status = 501
         logger.log(
-           "param1 %s param2 %s param3 %s param4 %s param5 %s param6 %s" % (
-            param1, param2, param3, param4, param5, param6))
+            "param1 %s param2 %s param3 %s param4 %s param5 %s param6 %s" % (
+                param1, param2, param3, param4, param5, param6))
         try:
             if cherrypy.request.method == 'GET':
                 if param2 is None:
@@ -117,7 +117,8 @@ class UsersJobsResource(object):
                             break
 
                     cherrypy.response.status = 200
-                    q_filter = constructFilter(acctgroup, user, jobid, jobStatus)
+                    q_filter = constructFilter(
+                        acctgroup, user, jobid, jobStatus)
                     logger.log("q_filter=%s" % q_filter)
                     user_jobs = ui_condor_q(q_filter, fmt)
                     return {'out': user_jobs.split('\n')}
@@ -125,7 +126,7 @@ class UsersJobsResource(object):
                 else:
                     rc = {'out': 'informational page for %s/%s/%s/%s/%s/%s not implemented' % (
                         param1, param2, param3, param4, param5, param6)}
-                    logger.log('%s'%rc)
+                    logger.log('%s' % rc)
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err, severity=logging.ERROR)

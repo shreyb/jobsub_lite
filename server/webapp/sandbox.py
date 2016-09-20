@@ -99,7 +99,7 @@ class SandboxResource(object):
             tim = prs.get('default', 'sandbox_timeout')
             if tim is not None:
                 timeout = tim
-        except Exception, excp:
+        except Exception as excp:
             logger.log('caught %s  setting default timeout' % excp)
             logger.log('caught %s  setting default timeout' % excp,
                        severity=logging.ERROR,
@@ -134,7 +134,7 @@ class SandboxResource(object):
                     logger.log('partial=%s' % partial)
 
                 logger.log('zip_path from condor_q:%s' % zip_path)
-            except Exception, excp:
+            except Exception as excp:
                 logger.log('%s' % excp)
                 logger.log('%s' % excp,
                            severity=logging.ERROR,
@@ -153,7 +153,7 @@ class SandboxResource(object):
                     partial = g.group(2)
                     logger.log('partial=%s' % partial)
 
-            except Exception, excp:
+            except Exception as excp:
                 logger.log('%s' % excp)
                 logger.log('%s' % excp,
                            severity=logging.ERROR,
@@ -183,7 +183,7 @@ class SandboxResource(object):
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != cherrypy.request.username:
                 if sandbox_readable_by_group(acctgroup) \
-                    or owner in group_superusers(acctgroup):
+                        or owner in group_superusers(acctgroup):
                     make_sandbox_readable(zip_path, owner)
                 else:
                     err = "User %s is not allowed  to read %s, owned by %s." % (
@@ -248,7 +248,7 @@ class SandboxResource(object):
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' %\
-                        acctgroup
+                    acctgroup
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 r_code = {'err': err}

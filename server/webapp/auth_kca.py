@@ -21,6 +21,7 @@ import authutils
 
 from tempfile import NamedTemporaryFile
 
+
 def authenticate(dn):
     """check DN against supported patterns, extract username
     """
@@ -41,7 +42,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     """Authorize using FNAL KCA
        Args:
                 dn: DN of proxy or cert trying to authorize
-          username: uid of user 
+          username: uid of user
          acctgroup: account group (experiment)
           acctrole: role (Analysis Production etc)
          age_limit: maximum age in seconds or existing proxy before
@@ -53,7 +54,8 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     # Create the proxy as a temporary file in tmp_dir and perform a
     # privileged move on the file.
-    x509_cache_fname = authutils.x509_proxy_fname(username, acctgroup, acctrole)
+    x509_cache_fname = authutils.x509_proxy_fname(
+        username, acctgroup, acctrole)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
@@ -75,13 +77,13 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             if os.path.exists(keytab_fname):
                 real_cache_fname = authutils.refresh_krb5cc(username)
                 authutils.krb5cc_to_vomsproxy(real_cache_fname, x509_tmp_fname,
-                                    acctgroup, acctrole)
+                                              acctgroup, acctrole)
             elif(os.path.exists(x509_user_cert) and
                  os.path.exists(x509_user_key)):
                 # Convert x509 cert-key pair to voms proxy
                 authutils.x509pair_to_vomsproxy(x509_user_cert, x509_user_key,
-                                      x509_tmp_fname, acctgroup,
-                                      acctrole=acctrole)
+                                                x509_tmp_fname, acctgroup,
+                                                acctrole=acctrole)
             else:
                 # No source credentials found for this user.
                 err = ''.join(["Unable to find Kerberoes keytab file or X509 ",
@@ -93,7 +95,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             jobsub.move_file_as_user(
                 x509_tmp_fname, x509_cache_fname, username)
 
-    except Exception, e:
+    except Exception as e:
         logger.log(str(e), severity=logging.ERROR)
         logger.log(str(e), severity=logging.ERROR, logfile='error')
         raise
@@ -102,4 +104,3 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             os.remove(x509_tmp_fname)
             logger.log("cleanup:rm %s" % x509_tmp_fname)
     return x509_cache_fname
-

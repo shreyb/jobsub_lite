@@ -136,8 +136,8 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
         f = open(failed_fname, "w")
         f.write("""
                 The following files were present in the log directory
-                but were not downloaded.  The most likely reason is that 
-                condor changed read permissions on individual files as jobs 
+                but were not downloaded.  The most likely reason is that
+                condor changed read permissions on individual files as jobs
                 completed.  If you repeat the jobsub_fetchlog command that
                 retrieved this tarball  after the jobs that caused the
                 problem have completed they will probably download:
@@ -316,10 +316,10 @@ def doJobAction(acctgroup,
     return {'out': retOut, 'err': retErr}
 
 
-def doDELETE(acctgroup,  user=None, job_id=None, constraint=None, **kwargs):
+def doDELETE(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
 
     rc = doJobAction(
-        acctgroup,  user=user, constraint=constraint,
+        acctgroup, user=user, constraint=constraint,
         job_id=job_id,
         job_action='REMOVE',
         **kwargs)
@@ -327,7 +327,7 @@ def doDELETE(acctgroup,  user=None, job_id=None, constraint=None, **kwargs):
     return rc
 
 
-def doPUT(acctgroup,  user=None,  job_id=None, constraint=None, **kwargs):
+def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     """
     Executed to hold and release jobs
     """
@@ -337,7 +337,7 @@ def doPUT(acctgroup,  user=None,  job_id=None, constraint=None, **kwargs):
 
     if job_action and job_action.upper() in condorCommands():
         rc = doJobAction(
-            acctgroup,  user=user, constraint=constraint,
+            acctgroup, user=user, constraint=constraint,
             job_id=job_id,
             job_action=job_action.upper())
     else:

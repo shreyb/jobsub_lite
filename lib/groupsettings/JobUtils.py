@@ -101,14 +101,14 @@ is_set() {
   RSLT=$?
   return $RSLT
 }
-    
+
 get_log_sizes() {
     total=$JOBSUB_MAX_JOBLOG_SIZE
     head=$JOBSUB_MAX_JOBLOG_HEAD_SIZE
     tail=$JOBSUB_MAX_JOBLOG_TAIL_SIZE
 
     if (( is_set $head) && ( is_set $tail )); then
-         total=$(($head + $tail))   
+         total=$(($head + $tail))
     elif ( is_set $total ); then
             if ((  is_set $head ) && (($total > $head))); then
                 tail=$(($total - $head))
@@ -122,7 +122,7 @@ get_log_sizes() {
             fi
     else
         total=5000000
-        head=1000000        
+        head=1000000
         tail=4000000
     fi
     export JOBSUB_MAX_JOBLOG_SIZE=$total
@@ -130,9 +130,9 @@ get_log_sizes() {
     export JOBSUB_MAX_JOBLOG_TAIL_SIZE=$tail
 
 }
-        
+
 jobsub_truncate() {
-    get_log_sizes 
+    get_log_sizes
     JOBSUB_LOG_SIZE=`wc -c $1 | awk '{print $1}'`
     if ( ! is_set $JSB_TMP );then
             export JSB_TMP=/tmp/$$
@@ -274,7 +274,7 @@ while true; do
 
     IN_CACHE=`cat $PROJECT_STATE | sed "s/^.*of these //" | sed "s/ in cache.*$//"`
 
-    echo "$IN_CACHE files of $TOTAL_FILES are staged, waiting for $CACHE_MIN to stage" 
+    echo "$IN_CACHE files of $TOTAL_FILES are staged, waiting for $CACHE_MIN to stage"
 
     if [ $TOTAL_FILES -le 0 ]; then
         echo there are no files in $SAM_PROJECT! exiting....
@@ -288,7 +288,7 @@ while true; do
     fi
     if [ $IN_CACHE -ge $CACHE_MIN  ]; then
         echo $IN_CACHE files of $TOTAL_FILES are staged, success!
-        exit 0 
+        exit 0
     fi
     sleep 60
 

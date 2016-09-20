@@ -32,7 +32,8 @@ from jobsubClient import check_id
 
 def required_args_present(options):
     try:
-        if (options.acctGroup and options.jobsubServer and options.jobId) or (options.jobsubServer and options.list):
+        if (options.acctGroup and options.jobsubServer and options.jobId) or (
+                options.jobsubServer and options.list):
             return True
     except AttributeError:
         return False
@@ -266,7 +267,7 @@ def get_sandbox(options):
         response_time = etime - stime
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-    except pycurl.error, error:
+    except pycurl.error as error:
         errno, errstr = error
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         err = "HTTP response:%s PyCurl Error %s: %s" % (response_code,

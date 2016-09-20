@@ -82,7 +82,7 @@ class HistoryResource(object):
     @cherrypy.popargs('param12')
     @format_response
     def default(self, param1, param2=None, param3=None, param4=None, param5=None, param6=None,
-                pararm7=None, param8=None, param9=None, param10=None, param11=None, param12=None,  **kwargs):
+                pararm7=None, param8=None, param9=None, param10=None, param11=None, param12=None, **kwargs):
         """ supports the following URLS
         """
         try:
@@ -91,7 +91,8 @@ class HistoryResource(object):
             logger.log("params %s " % (params))
             pDict = {}
             for n, i in enumerate(params):
-                if i in ['user', 'acctgroup', 'jobid', 'qdate_ge', 'qdate_le', ]:
+                if i in ['user', 'acctgroup', 'jobid',
+                         'qdate_ge', 'qdate_le', ]:
                     pDict[i] = params[n + 1]
 
             if pDict:

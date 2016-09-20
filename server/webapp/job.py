@@ -53,11 +53,11 @@ class AccountJobsResource(object):
     def doGET(self, acctgroup, job_id, kwargs):
         """ Serves the following APIs:
 
-            Query a single job. Returns a JSON map of the ClassAd 
+            Query a single job. Returns a JSON map of the ClassAd
             object that matches the job id
             API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
 
-            Query list of jobs. Returns a JSON map of all the ClassAd 
+            Query list of jobs. Returns a JSON map of all the ClassAd
             objects in the queue
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
@@ -182,7 +182,7 @@ class AccountJobsResource(object):
     @cherrypy.expose
     @format_response(output_format='pre')
     @check_auth(pass_through='GET')
-    def index(self, acctgroup, job_id=None,  **kwargs):
+    def index(self, acctgroup, job_id=None, **kwargs):
         try:
             logger.log('job_id=%s ' % (job_id))
             logger.log('kwargs=%s ' % (kwargs))
@@ -203,7 +203,7 @@ class AccountJobsResource(object):
                     rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
-                    rc = util.doPUT(acctgroup, job_id=job_id,  **kwargs)
+                    rc = util.doPUT(acctgroup, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)

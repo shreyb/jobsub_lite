@@ -112,7 +112,8 @@ class SandboxesResource(object):
             return {'out': outlist}
         else:
             host = socket.gethostname()
-            return {'out': 'no sandbox information found on %s for user %s ' % (host, user_id)}
+            return {'out': 'no sandbox information found on %s for user %s ' % (
+                host, user_id)}
 
     @cherrypy.expose
     @format_response
@@ -130,8 +131,8 @@ class SandboxesResource(object):
             file_id = kwargs.get('file_id')
             if user_id != requestor:
                 allowed = sandbox_readable_by_group(acctgroup) \
-                        or requestor in group_superusers(acctgroup)
-                if not allowed: 
+                    or requestor in group_superusers(acctgroup)
+                if not allowed:
                     if not user_id:
                         user_id = 'other user'
                     grinfo = "%s may only look at  thier own output for group %s." %\

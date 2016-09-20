@@ -20,7 +20,7 @@ def htmlPrintItemList(src, dpth=0, key=''):
             s = '%s%s' % (s, htmlPrintItemList(litem, dpth + 2, key))
         s = '%s%s</ul>\n' % (s, tabs(dpth))
     else:
-        s = '%s%s<li>%s</li>\n' % (s, tabs(dpth),  src)
+        s = '%s%s<li>%s</li>\n' % (s, tabs(dpth), src)
     return s
 
 
@@ -32,13 +32,13 @@ def _htmlPrintPreformatted(src, dpth=0, key=''):
     s = ''
     if isinstance(src, dict):
         if key:
-            s = '%s%s' % (s,  key)
+            s = '%s%s' % (s, key)
         for key, value in src.iteritems():
-            s = '%s%s' % (s, _htmlPrintPreformatted(value,  key))
+            s = '%s%s' % (s, _htmlPrintPreformatted(value, key))
     elif isinstance(src, list):
         s = '%s%s' % (s, '\n'.join(src))
     else:
-        s = '%s%s' % (s,   src)
+        s = '%s%s' % (s, src)
     return s
 
 
@@ -50,14 +50,14 @@ def _htmlPrintTableList(src, dpth=0, key=''):
     s = ''
     if isinstance(src, dict):
         if key:
-            s = '%s<tr><td>%s:</td></tr>\n' % (s,  key)
+            s = '%s<tr><td>%s:</td></tr>\n' % (s, key)
         for key, value in src.iteritems():
-            s = '%s%s' % (s, _htmlPrintTableList(value,  key))
+            s = '%s%s' % (s, _htmlPrintTableList(value, key))
     elif isinstance(src, list):
         for litem in src:
-            s = '%s%s' % (s, _htmlPrintTableList(litem,  key))
+            s = '%s%s' % (s, _htmlPrintTableList(litem, key))
     else:
-        s = '%s<tr><td>%s</td></tr>\n' % (s,   src)
+        s = '%s<tr><td>%s</td></tr>\n' % (s, src)
     return s
 
 
@@ -96,11 +96,14 @@ def _format_response(content_type, data, output_format=None):
         if hasattr(cherrypy.request, 'output_format'):
             output_format = getattr(cherrypy.request, 'output_format', None)
         if output_format == 'pre':
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintPreformatted(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (
+                styleSheets(), htmlPrintPreformatted(data))
         elif output_format == 'table':
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintTableList(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (
+                styleSheets(), htmlPrintTableList(data))
         else:
-            return '<html><head>%s</head><body>%s</body></html>' % (styleSheets(), htmlPrintItemList(data))
+            return '<html><head>%s</head><body>%s</body></html>' % (
+                styleSheets(), htmlPrintItemList(data))
     elif 'application/x-download' in content_type_list:
         return data
     else:
@@ -119,6 +122,7 @@ def format_response(func=None, output_format=None):
         content_type_response = cherrypy.response.headers['Content-Type']
         content_type = (content_type_response or content_type_accept)
 
-        return _format_response(content_type, data, output_format=output_format)
+        return _format_response(
+            content_type, data, output_format=output_format)
 
     return wrapper

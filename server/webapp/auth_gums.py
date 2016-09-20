@@ -39,8 +39,9 @@ def authenticate(dn, acctgroup, acctrole):
                    severity=logging.ERROR, logfile='error')
     raise authutils.AuthenticationError(dn, acctgroup)
 
+
 def get_gums_mapping(dn, fqan):
-    """find user mapped to input combo 
+    """find user mapped to input combo
        Args:
              dn: DN of proxy or cert trying to authenticate
            fqan: combination of acctgroup/role
@@ -62,9 +63,9 @@ def get_gums_mapping(dn, fqan):
         raise
     return out
 
+
 def get_voms_fqan(acctgroup, acctrole=None):
     """return the fqan from the VOMS string
     """
     attrs = authutils.get_voms_attrs(acctgroup, acctrole=acctrole).split(':')
     return attrs[-1]
-

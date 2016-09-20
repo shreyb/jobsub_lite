@@ -237,7 +237,8 @@ def print_acctgroup_help(options):
     #    --help message
     #    Options:
     for lineno in range(len(out)):
-        if out[lineno].lstrip().startswith('-h, --help') or (out[lineno].strip() == 'Options:'):
+        if out[lineno].lstrip().startswith(
+                '-h, --help') or (out[lineno].strip() == 'Options:'):
             out[lineno] = ''
             break
     help_str = '  '.join(out[4:])
@@ -256,10 +257,10 @@ def main(argv):
     try:
         http_code = js_client.submit()
         rc = http_code_to_rc(http_code)
-    except JobSubClientSubmissionError, e:
+    except JobSubClientSubmissionError as e:
         print e
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
+    except Exception as e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
 

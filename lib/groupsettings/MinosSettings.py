@@ -50,11 +50,11 @@ class MinosSettings(JobSettings):
 """
 
         relfmt2 = """
-        echo Running 'srt_setup -a' in `%s %s` 
-        here=`/bin/pwd` 
+        echo Running 'srt_setup -a' in `%s %s`
+        here=`/bin/pwd`
         cd ` %s %s`
-        srt_setup -a 
-        cd $here 
+        srt_setup -a
+        cd $here
 
 
 """
@@ -74,13 +74,13 @@ class MinosSettings(JobSettings):
         f.write("    export MINOS_GRIDDB=/grid/fermiapp/minos/griddb\n")
         f.write("""    export PATH="/grid/fermiapp/minos/griddb:${PATH}"\n""")
 
-        if (settings.has_key('rel')):
+        if ('rel' in settings):
             f.write(
                 "    export ENV_TSQL_URL=`/grid/fermiapp/minos/griddb/choose_db_server`")
             f.write("    echo Setting database URL to $ENV_TSQL_URL\n    ")
             f.write(relfmt % (settings['rel'], settings['msopt']))
 
-        if (settings.has_key('testreldir')):
+        if ('testreldir' in settings):
             f.write("""    if [ -d "%s" ] then;    \n""" %
                     settings['testreldir'])
 
@@ -91,7 +91,7 @@ class MinosSettings(JobSettings):
         f.close()
 
     def checkSanity(self):
-        if self.settings.has_key('msopt'):
+        if 'msopt' in self.settings:
             self.settings['msopt'] = "-O"
         else:
             self.settings['msopt'] = ""

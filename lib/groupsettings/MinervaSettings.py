@@ -24,7 +24,7 @@ class MinervaSettings(JobSettings):
         self.settings['testreldir'] = ''
         self.settings['prefix'] = ''
         self.settings['cmtconfig'] = os.environ.get("CMTCONFIG")
-        if self.settings['cmtconfig'] == None:
+        if self.settings['cmtconfig'] is None:
             self.settings['cmtconfig'] = ''
 
         self.settings['enstorefiles'] = ""

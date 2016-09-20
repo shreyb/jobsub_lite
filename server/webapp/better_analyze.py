@@ -24,7 +24,7 @@ class BetterAnalyzeResource(object):
 
     @cherrypy.expose
     @format_response
-    def index(self, job_id,  **kwargs):
+    def index(self, job_id, **kwargs):
         cherrypy.response.status = 501
         try:
             if cherrypy.request.method == 'GET':

@@ -51,10 +51,10 @@ class NovaSettings(JobSettings):
   setup_nova -r  %s %s """
 
         relfmt2 = """
-    echo "Running 'srt_setup -a' in  %s" 
-    here=`/bin/pwd` 
-    cd %s 
-    srt_setup -a 
+    echo "Running 'srt_setup -a' in  %s"
+    here=`/bin/pwd`
+    cd %s
+    srt_setup -a
     cd $here """
 
         relfmt3 = """source /grid/fermiapp/nova/novaart/novasvn/srt/srt.sh
@@ -70,9 +70,9 @@ source $SRT_DIST/setup/setup_novasoft.sh -r %s"""
 
         f.write("#NovaSettingsPreamble\n")
 
-        if (settings.has_key('rel')):
+        if ('rel' in settings):
             f.write(relfmt3 % (settings['rel']))
-        if (settings.has_key('testreldir')):
+        if ('testreldir' in settings):
             f.write("#NovaSettingsPreamble2\n")
 
             f.write(relfmt2 % (settings['testreldir'], settings['testreldir']))

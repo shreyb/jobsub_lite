@@ -217,15 +217,15 @@ class CdfSettings(JobSettings):
         settings = self.settings
         default_output_host = settings.get('default_output_host',
                                            'fcdflnxgpvm01.fnal.gov')
-        if not settings.has_key('outLocation'):
+        if 'outLocation' not in settings:
             settings['outLocation'] = "%s@%s:%s_$.tgz" %\
                                       (settings['user'],
                                        default_output_host,
                                        settings['local_host'])
-        if not settings.has_key('tar_file_name'):
+        if 'tar_file_name' not in settings:
             raise Exception(
                 'you must supply an input tar ball using --tarFile')
-        if settings.has_key('sectionList'):
+        if 'sectionList' in settings:
             try:
                 # print 'sectionList %s'%settings['sectionList']
                 firstSection, lastSectioni = settings['sectionList'].split('-')
@@ -242,7 +242,7 @@ class CdfSettings(JobSettings):
                 err += "where both i and j are positive integers"
                 raise InitializationError(err)
 
-        if settings.has_key('lastSection'):
+        if 'lastSection' in settings:
 
             if settings['lastSection'] < 1:
                 err = "--end value must be greater than 1"
@@ -250,18 +250,18 @@ class CdfSettings(JobSettings):
         else:
             settings['lastSection'] = settings['queuecount']
 
-        if not settings.has_key('firstSection'):
+        if 'firstSection' not in settings:
             settings['firstSection'] = 1
 
         numJobs = settings['lastSection'] - settings['firstSection'] + 1
         settings['queuecount'] = numJobs
         settings['job_count'] = numJobs
 
-        if settings.has_key('firstSection') and not settings.has_key('lastSection'):
+        if 'firstSection' in settings and 'lastSection' not in settings:
             err = 'you must specify a --end value if you specify a --start one'
             raise InitializationError(err)
 
-        if settings.has_key('firstSection') and settings.has_key('lastSection'):
+        if 'firstSection' in settings and 'lastSection' in settings:
             if settings['lastSection'] < settings['firstSection']:
                 err = " --end value must be greater than or equal to  --start value"
                 raise InitializationError(err)
@@ -274,12 +274,12 @@ class CdfSettings(JobSettings):
                 settings['queuecount'] = numJobs
                 settings['job_count'] = numJobs
 
-        if not settings.has_key('firstSection'):
+        if 'firstSection' not in settings:
             settings['firstSection'] = 1
-        if not settings.has_key('lastSection'):
+        if 'lastSection' not in settings:
             settings['lastSection'] = settings['queuecount']
 
-        if not settings.has_key('job_count'):
+        if 'job_count' not in settings:
             settings['job_count'] = settings['queuecount']
 
         return super(CdfSettings, self).checkSanity()

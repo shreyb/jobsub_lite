@@ -11,11 +11,12 @@ class NotImplementedResource(object):
         cherrypy.response.status = 501
 
     def doGET(self, kwargs):
-        return {'out': 'this url is not yet implemented %s %s' % (self.__class__.__name__, kwargs)}
+        return {'out': 'this url is not yet implemented %s %s' % (
+            self.__class__.__name__, kwargs)}
 
     @cherrypy.expose
     @format_response
-    def index(self,  **kwargs):
+    def index(self, **kwargs):
         cherrypy.response.status = 501
         try:
             if cherrypy.request.method == 'GET':
@@ -40,7 +41,8 @@ class NotImplementedResource(object):
     @cherrypy.popargs('param4')
     @cherrypy.popargs('param5')
     @format_response
-    def default(self, param1, param2=None, param3=None, param4=None, param5=None,  **kwargs):
+    def default(self, param1, param2=None, param3=None,
+                param4=None, param5=None, **kwargs):
         cherrypy.response.status = 501
         try:
             if cherrypy.request.method == 'GET':

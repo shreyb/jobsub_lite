@@ -254,7 +254,7 @@ class JobSubClient:
             curl.perform()
             etime = time.time()
             response_time = etime - stime
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             err = "PyCurl Error %s: %s" % (errno, errstr)
             # logSupport.dprint(traceback.format_exc())
@@ -339,7 +339,7 @@ class JobSubClient:
             etime = time.time()
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
@@ -445,7 +445,7 @@ class JobSubClient:
             etime = time.time()
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
@@ -487,7 +487,7 @@ class JobSubClient:
             etime = time.time()
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" %\
@@ -643,7 +643,7 @@ class JobSubClient:
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print "Schedd: %s" % schedd
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE',  ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=False))
             return rslts
         elif uid:
             item = uid
@@ -752,7 +752,7 @@ class JobSubClient:
                     self.credentials['proxy'] = cred
             return methods
 
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (
@@ -799,7 +799,7 @@ class JobSubClient:
             # this will fail for secondary schedd with @ in name
             # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (
@@ -875,7 +875,7 @@ class JobSubClient:
 
         try:
             curl.perform()
-        except pycurl.error, error:
+        except pycurl.error as error:
             errno, errstr = error
             err = "PyCurl Error %s: %s" % (errno, errstr)
             # logSupport.dprint(err)
@@ -1126,7 +1126,7 @@ def get_client_credentials(acctGroup=None, server=None):
     2. $X509_USER_CERT & $X509_USER_KEY
     3. Default JOBSUB proxy location: /tmp/jobsub_x509up_u<UID>_<acctGroup>
        (we have been using a distinct JOBSUB proxy instead of the
-       default /tmp/x509up_u<UID> since v0.4 , the default 
+       default /tmp/x509up_u<UID> since v0.4 , the default
        was causing user side effects. We overlooked updating this
        comment.  )
     4. Kerberos ticket in $KRB5CCNAME. Convert it to proxy.
@@ -1245,7 +1245,9 @@ def create_tarfile(tar_file, tar_path, tar_type="tgz"):
             failed_file_list.append(fname)
     if len(failed_file_list) > 0:
         for fname in failed_file_list:
-            print("failed to add to tarfile: %s Permissions problem?\n" % fname)
+            print(
+                "failed to add to tarfile: %s Permissions problem?\n" %
+                fname)
     tar.close()
     os.chdir(orig_dir)
 
@@ -1428,5 +1430,7 @@ def date_callback(option, opt, value, p):
     if dateOK:
         setattr(p.values, option.dest, value)
     else:
-        sys.exit("""invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'""" % value)
+        sys.exit(
+            """invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'""" %
+            value)
     return p

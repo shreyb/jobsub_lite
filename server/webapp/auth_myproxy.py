@@ -32,7 +32,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     """ Pull a fresh proxy from the myproxy server
         Args:
                 dn: DN of proxy or cert trying to authorize
-          username: uid of user 
+          username: uid of user
          acctgroup: account group (experiment)
           acctrole: role (Analysis Production etc)
          age_limit: maximum age in seconds or existing proxy before
@@ -42,7 +42,8 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     jobsubConfig = jobsub.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    x509_cache_fname = authutils.x509_proxy_fname(username, acctgroup, acctrole)
+    x509_cache_fname = authutils.x509_proxy_fname(
+        username, acctgroup, acctrole)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
@@ -112,4 +113,3 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         logger.log("cleanup:rm %s" % x509_tmp_fname)
 
     return x509_cache_fname
-

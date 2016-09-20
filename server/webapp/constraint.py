@@ -15,7 +15,7 @@ class JobActionByConstraintResource(object):
     @cherrypy.expose
     @format_response
     @check_auth(pass_through='GET')
-    def index(self, acctgroup,  constraint=None, **kwargs):
+    def index(self, acctgroup, constraint=None, **kwargs):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
@@ -26,10 +26,10 @@ class JobActionByConstraintResource(object):
                 if cherrypy.request.method == 'DELETE':
                     # remove job
                     rc = util.doDELETE(
-                        acctgroup, constraint=constraint, user=kwargs.get('job_owner'),  **kwargs)
+                        acctgroup, constraint=constraint, user=kwargs.get('job_owner'), **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
-                    rc = util.doPUT(acctgroup,  constraint=constraint,
+                    rc = util.doPUT(acctgroup, constraint=constraint,
                                     user=kwargs.get('job_owner'), **kwargs)
                 elif cherrypy.request.method == 'GET':
                     # query

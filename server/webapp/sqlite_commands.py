@@ -13,7 +13,8 @@ def sql_header():
     return hdr
 
 
-def constructQuery(acctgroup=None, uid=None, jobid=None, qdate_ge=None, qdate_le=None, limit=10000):
+def constructQuery(acctgroup=None, uid=None, jobid=None,
+                   qdate_ge=None, qdate_le=None, limit=10000):
     if acctgroup == 'None':
         acctgroup = None
     if uid == 'None':

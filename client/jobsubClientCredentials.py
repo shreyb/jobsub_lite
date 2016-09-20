@@ -21,7 +21,7 @@ class CredentialsNotFoundError(Exception):
                                        "ticket or set X509 credentials ",
                                        "related variables"])):
         logSupport.dprint(traceback.format_exc())
-        #sys.exit(errMsg)
+        # sys.exit(errMsg)
 
 
 class CredentialsError(Exception):

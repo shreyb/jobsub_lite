@@ -53,7 +53,7 @@ def required_args_present(options):
 
             if options.help or options.better_analyze or options.uid or \
                     options.jobId or options.acctRole:
-                err =  """ERROR: --summary conflicts with all of ( 
+                err =  """ERROR: --summary conflicts with all of (
                 --better-analyze, --user --jobid --role --dag --long)."""
                 print err
                 return False
@@ -65,7 +65,7 @@ def required_args_present(options):
 
         if options.jobsubServer:
             return True
-    except AttributeError, e:
+    except AttributeError as e:
         print 'ERROR'
         print e
         return False
@@ -232,10 +232,10 @@ def main(argv):
             http_code = js_client.listJobs(
                 options.jobId, options.uid, options.outFormat)
         rc = http_code_to_rc(http_code)
-    except JobSubClientError, e:
+    except JobSubClientError as e:
         print e
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
+    except Exception as e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
 

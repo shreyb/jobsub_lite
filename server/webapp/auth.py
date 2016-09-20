@@ -30,8 +30,6 @@ from distutils import spawn
 from JobsubConfigParser import JobsubConfigParser
 
 
-
-
 def authenticate(dn, acctgroup, acctrole):
     """Check which authentication method used by acctgroup
        and try that method
@@ -48,18 +46,18 @@ def authenticate(dn, acctgroup, acctrole):
         cherrypy.response.status = 200
         logger.log("Authenticating using method: %s" % method)
         try:
-            if method.lower() in ['gums' ,'myproxy']:
+            if method.lower() in ['gums', 'myproxy']:
                 try:
                     import auth_gums
                     return auth_gums.authenticate(dn, acctgroup, acctrole)
-                except Exception, e:
-                    logger.log('%s failed %s'%(method, e))
+                except Exception as e:
+                    logger.log('%s failed %s' % (method, e))
             elif method.lower() == 'kca-dn':
                 try:
                     import auth_kca
                     return auth_kca.authenticate(dn)
-                except Exception, e:
-                    logger.log('%s failed %s'%(method, e))
+                except Exception as e:
+                    logger.log('%s failed %s' % (method, e))
             else:
                 logger.log("Unknown authenticate method: %s" % method)
         except:
@@ -71,13 +69,14 @@ def authenticate(dn, acctgroup, acctrole):
     logger.log(err, severity=logging.ERROR, logfile='error')
     raise authutils.AuthenticationError(dn, acctgroup)
 
+
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
-    """Decide authorization method for acctgroup and 
-       try to call it 
+    """Decide authorization method for acctgroup and
+       try to call it
 
        Args:
                 dn: DN of proxy or cert trying to authorize
-          username: uid of user 
+          username: uid of user
          acctgroup: account group (experiment)
           acctrole: role (Analysis Production etc)
          age_limit: maximum age in seconds or existing proxy before
@@ -93,9 +92,9 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                 try:
                     import auth_kca
                     return auth_kca.authorize(dn, username,
-                                     acctgroup, acctrole, age_limit)
-                except Exception, e:
-                    logger.log('authoriziation failed, %s'%e)
+                                              acctgroup, acctrole, age_limit)
+                except Exception as e:
+                    logger.log('authoriziation failed, %s' % e)
 
             elif method.lower() == 'myproxy':
                 try:
@@ -103,8 +102,8 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                     return auth_myproxy.authorize(dn, username,
                                                   acctgroup, acctrole,
                                                   age_limit)
-                except Exception, e:
-                    logger.log('myproxy authoriziation failed, %s'%e)
+                except Exception as e:
+                    logger.log('myproxy authoriziation failed, %s' % e)
 
             else:
                 logger.log("Unknown authorization method: %s" % method)
@@ -120,10 +119,9 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     raise authutils.AuthenticationError(dn, acctgroup)
 
 
-
 def create_voms_proxy(dn, acctgroup, role):
     """create a VOMS proxy:
-          first authenticate() 
+          first authenticate()
           then authorize()
 
        Args:
@@ -142,7 +140,7 @@ def create_voms_proxy(dn, acctgroup, role):
 
 
 def refresh_proxies(agelimit=3600):
-    """refresh proxies for all jobs in queue.  
+    """refresh proxies for all jobs in queue.
        called from cron
        Args:
            agelimit: if proxy is older than this value in seconds
@@ -355,16 +353,16 @@ def test():
     for group in dns:
         try:
             create_voms_proxy(dns[group], group, 'Analysis')
-        except authutils.AuthenticationError, e:
+        except authutils.AuthenticationError as e:
             logger.log("Unauthenticated DN='%s' acctgroup='%s'" %
                        (e.dn, e.acctgroup))
-        except authutils.AuthorizationError, e:
+        except authutils.AuthorizationError as e:
             logger.log("Unauthorized DN='%s' acctgroup='%s'" %
                        (e.dn, e.acctgroup))
 
 
 if __name__ == '__main__':
-    """Entry point for krbrefresh cron job. 
+    """Entry point for krbrefresh cron job.
     """
     # Quick dirty hack that needs fixing
     if len(sys.argv) > 1:

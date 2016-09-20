@@ -18,7 +18,7 @@ class ConfiguredSitesResource(object):
         API is /jobsub/acctgroups/<grp>/configuredsites/
         """
         acctgroup = None
-        if kwargs.has_key('acctgroup'):
+        if 'acctgroup' in kwargs:
             acctgroup = kwargs.get('acctgroup')
         if is_supported_accountinggroup(acctgroup):
             site_list = []
@@ -54,7 +54,8 @@ class ConfiguredSitesResource(object):
                            1], severity=logging.ERROR, logfile='error')
             if len(site_list) == 0:
                 host = socket.gethostname()
-                return {'out': 'no site  information found on %s for accounting_group %s' % (host, acctgroup)}
+                return {'out': 'no site  information found on %s for accounting_group %s' % (
+                    host, acctgroup)}
             else:
                 return {'out': site_list}
         else:

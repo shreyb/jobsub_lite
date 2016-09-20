@@ -43,13 +43,13 @@ class MyCmdParser(OptionParser):
 
         The -d directory mapping works on non-Grid nodes, too.
 
-        export IFDH_VERSION=some_version then use -e IFDH_VERSION to use 
-        the (some_version) release of ifdh for copying files in and out 
+        export IFDH_VERSION=some_version then use -e IFDH_VERSION to use
+        the (some_version) release of ifdh for copying files in and out
         with -d and -f flags instead of the current ifdh version in KITS
 
-        More documentation is available at 
+        More documentation is available at
         https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Using_the_Client
-        address questions or problems to the service desk 
+        address questions or problems to the service desk
 
 
 
@@ -89,10 +89,10 @@ class JobSettings(object):
         (retVal, rslt) = commands.getstatusoutput("/bin/hostname")
         self.settings['local_host'] = rslt
         self.settings['submit_host'] = os.environ.get("SUBMIT_HOST")
-        if self.settings['submit_host'] == None:
+        if self.settings['submit_host'] is None:
             self.settings['local_host'] = rslt
         self.settings['condor_tmp'] = os.environ.get("CONDOR_TMP", "/tmp")
-        if self.settings['condor_tmp'] == None:
+        if self.settings['condor_tmp'] is None:
             raise InitializationError(
                 "CONDOR_TMP not defined! setup_condor and try again")
 
@@ -104,7 +104,7 @@ class JobSettings(object):
             "GROUP_CONDOR", "/this/is/bogus")
 
         self.settings['x509_user_proxy'] = os.environ.get("X509_USER_PROXY")
-        if self.settings['x509_user_proxy'] == None:
+        if self.settings['x509_user_proxy'] is None:
             user = os.environ.get("USER")
             group = os.environ.get("GROUP", "common")
             if group == "common":
@@ -115,7 +115,7 @@ class JobSettings(object):
                     'x509_user_proxy'] = "/scratch/%s/grid/%s.%s.proxy" % (user, user, group)
 
         self.settings['ifdh_base_uri'] = os.environ.get("IFDH_BASE_URI")
-        if self.settings['ifdh_base_uri'] == None:
+        if self.settings['ifdh_base_uri'] is None:
             group = os.environ.get("GROUP", "common")
             self.settings[
                 'ifdh_base_uri'] = "http://samweb.fnal.gov:8480/sam/%s/api" % (group)
@@ -229,7 +229,7 @@ class JobSettings(object):
 
         self.runFileParser()
         new_settings = vars(options)
-        if new_settings.has_key('verbose') and new_settings['verbose']:
+        if 'verbose' in new_settings and new_settings['verbose']:
             print "new_settings = ", new_settings
         for x in new_settings.keys():
             if new_settings[x] is not None:
@@ -249,7 +249,7 @@ class JobSettings(object):
         self.settings['exe_script'] = args[0]
         executable_ok = os.access(self.settings['exe_script'], os.X_OK)
         if not executable_ok and os.path.exists(self.settings['exe_script']):
-            os.chmod(self.settings['exe_script'], 0775)
+            os.chmod(self.settings['exe_script'], 0o775)
 
         # yuck
         if(len(args) > 1):
@@ -259,16 +259,16 @@ class JobSettings(object):
                 settings[x] = True
             if settings[x] in ['False', 'false', 'FALSE']:
                 settings[x] = False
-        if settings.has_key('transfer_wrapfile'):
+        if 'transfer_wrapfile' in settings:
             settings['tranfer_executable'] = settings['transfer_wrapfile']
-        if settings.has_key('always_run_on_grid') and settings['always_run_on_grid']:
+        if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
             settings['grid'] = True
         if settings['tar_file_name']:
             settings['tar_file_basename'] = os.path.basename(
                 settings['tar_file_name'])
 
     def findConfigFile(self):
-        if self.settings.has_key('jobsub_ini_file'):
+        if 'jobsub_ini_file' in self.settings:
             cnf = self.settings['jobsub_ini_file']
         else:
             cnf = self.fileParser.findConfigFile()
@@ -370,11 +370,11 @@ class JobSettings(object):
         jobs are run with the -N option, they all have the same $CLUSTER
         number and differing, sequential $PROCESS numbers, and many submission
         scripts take advantage of this.  When jobs are run with this
-        option in a DAG each job has a different $CLUSTER number and a 
+        option in a DAG each job has a different $CLUSTER number and a
         $PROCESS number of 0, which may break scripts that rely on the
         normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of
         jobs run with this option will have the same $JOBSUBPARENTJOBID,
-        each individual job will have a unique and sequential 
+        each individual job will have a unique and sequential
         $JOBSUBJOBSECTION.
         Scripts may need modification to take this into account"""))
 
@@ -411,7 +411,7 @@ class JobSettings(object):
         generic_group.add_option("--drain", dest="drain",
                                  action="store_true",
                                  help=re.sub('  \s+', ' ', """
-                mark this job to be allowed to be drained or killed during 
+                mark this job to be allowed to be drained or killed during
                 downtimes """))
 
         generic_group.add_option("--schedd", dest="schedd",
@@ -443,7 +443,7 @@ class JobSettings(object):
         generic_group.add_option("--email-to", dest="notify_user",
                                  action="store", type="string",
                                  help=re.sub('  \s+', ' ', """
-                email address to send job reports/summaries to 
+                email address to send job reports/summaries to
                 (default is $USER@fnal.gov)"""))
 
         generic_group.add_option("-G", "--group", dest="accountinggroup",
@@ -457,7 +457,7 @@ class JobSettings(object):
                 Subgroup for priorities and accounting. See
                 https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
                 Jobsub_submit#Groups-Subgroups-Quotas-Priorities
-                for more documentation on using --subgroup to set job 
+                for more documentation on using --subgroup to set job
                 quotas and priorities"""))
 
         generic_group.add_option("-v", "--verbose", dest="verbose",
@@ -470,7 +470,7 @@ class JobSettings(object):
                                  callback=self.resource_callback,
                                  help=re.sub('  \s+', ' ', """request specific
                                  resources by changing condor jdf file.
-                                 For example: --resource-provides=CVMFS=OSG 
+                                 For example: --resource-provides=CVMFS=OSG
                                  will add +CVMFS=\"OSG\" to the job classad
                                  attributes and '&&(CVMFS==\"OSG\")' to the
                                  job requirements"""))
@@ -506,25 +506,25 @@ class JobSettings(object):
 
         file_group.add_option("--no_log_buffer", dest="nologbuffer",
                               action="store_true",
-                              help=re.sub('  \s+', ' ', """write log file 
+                              help=re.sub('  \s+', ' ', """write log file
             directly to disk. DOES NOT WORK WITH PNFS, WILL NOT WORK WITH
-            BLUEARC WHEN IT IS UNMOUNTED FROM WORKER NODES VERY SOON. 
-            Default is to copy it back after job is completed.  
-            This option is useful for debugging but can be VERY DANGEROUS as 
-            joblogfile typically is sent to bluearc.  Using this option 
-            incorrectly can cause all grid submission systems at FNAL to 
-            become overwhelmed resulting in angry admins hunting you down, so 
+            BLUEARC WHEN IT IS UNMOUNTED FROM WORKER NODES VERY SOON.
+            Default is to copy it back after job is completed.
+            This option is useful for debugging but can be VERY DANGEROUS as
+            joblogfile typically is sent to bluearc.  Using this option
+            incorrectly can cause all grid submission systems at FNAL to
+            become overwhelmed resulting in angry admins hunting you down, so
             USE SPARINGLY. """))
 
         generic_group.add_option("-g", "--grid", dest="grid",
                                  action="store_true",
-                                 help=re.sub('  \s+', ' ', """run job on the 
-            FNAL GP  grid. Other flags can modify target sites to include other 
+                                 help=re.sub('  \s+', ' ', """run job on the
+            FNAL GP  grid. Other flags can modify target sites to include other
             areas of the Open Science Grid"""))
 
         generic_group.add_option("--nowrapfile", dest="nowrapfilex",
                                  action="store_true",
-                                 help=re.sub('  \s+', ' ', """DISABLED: 
+                                 help=re.sub('  \s+', ' ', """DISABLED:
             formerly was 'do not generate shell wrapper, disabled per request
             from fermigrid operations.  The wrapfiles used to not  work off
             site, now they do.""") )
@@ -545,9 +545,9 @@ class JobSettings(object):
 
         generic_group.add_option("--override", dest="override", nargs=2,
                                  action="store", default=(1, 1),
-                                 help=re.sub('  \s+', ' ', """override some 
-            other value: --override 'requirements' 'gack==TRUE' would produce 
-            the same condor command file as --overwrite_condor_requirements 
+                                 help=re.sub('  \s+', ' ', """override some
+            other value: --override 'requirements' 'gack==TRUE' would produce
+            the same condor command file as --overwrite_condor_requirements
             'gack==TRUE' if you want to use this option, test it first with -n
             to see what you get as output """))
 
@@ -562,12 +562,12 @@ class JobSettings(object):
         generic_group.add_option("-e", "--environment",
                                  dest="added_environment", action="append",
                                  metavar='ENV_VAR',
-                                 help=re.sub('  \s+', ' ',"""-e 
-        ADDED_ENVIRONMENT exports this variable with its local 
-        value to worker node environment. For example export FOO="BAR"; 
+                                 help=re.sub('  \s+', ' ', """-e
+        ADDED_ENVIRONMENT exports this variable with its local
+        value to worker node environment. For example export FOO="BAR";
         jobsub -e FOO <more stuff> guarantees that the value of $FOO on
-        the worker node is "BAR" .  Alternate format which does not require 
-        setting the env var first is the -e VAR=VAL, idiom which 
+        the worker node is "BAR" .  Alternate format which does not require
+        setting the env var first is the -e VAR=VAL, idiom which
         sets the value of $VAR to 'VAL' in the worker environment. The
         -e  option can be used as many times in one jobsub_submit
         invocation as desired"""))
@@ -579,10 +579,10 @@ class JobSettings(object):
                               action="store",
                               metavar="dropbox://PATH/TO/TAR_FILE",
                               help=re.sub('  \s+', ' ', """specify tarball
-                    to transfer to worker node. TAR_FILE 
-                    will be copied to the jobsub server and added to the 
+                    to transfer to worker node. TAR_FILE
+                    will be copied to the jobsub server and added to the
                     transfer_input_files list. TAR_FILE will be accessible
-                    to the user job on the worker node via the environment 
+                    to the user job on the worker node via the environment
                     variable  $INPUT_TAR_FILE.  """))
 
         generic_group.add_option("-n", "--no_submit", dest="submit",
@@ -603,10 +603,10 @@ class JobSettings(object):
         file_group.add_option("-f", dest="input_dir_array", action="append",
                               type="string", metavar='INPUT_FILE',
                               help=re.sub('  \s+', ' ',
-             """at runtime, INPUT_FILE will be copied to directory  
-            $CONDOR_DIR_INPUT on the execution node.  
-            Example :-f /grid/data/minerva/my/input/file.xxx  
-            will be copied to $CONDOR_DIR_INPUT/file.xxx 
+                                          """at runtime, INPUT_FILE will be copied to directory
+            $CONDOR_DIR_INPUT on the execution node.
+            Example :-f /grid/data/minerva/my/input/file.xxx
+            will be copied to $CONDOR_DIR_INPUT/file.xxx
             Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2
             args as you need.  To copy file at submission time
             instead of run time, use -f dropbox://INPUT_FILE to
@@ -620,7 +620,6 @@ class JobSettings(object):
             exist on the execution node.  After job completion,
             its contents will be moved to <dir> automatically
             Specify as many <tag>/<dir> pairs as you need. """))
-
 
     def expectedLifetimeOK(self, a_str):
         if 'lines' in self.settings:
@@ -715,8 +714,8 @@ class JobSettings(object):
     def checkSanity(self):
         settings = self.settings
         for i, arg in enumerate(settings['added_environment']):
-            if '=' in arg or os.environ.has_key(arg) == False:
-                if os.environ.has_key(arg) == False and '=' not in arg:
+            if '=' in arg or (arg in os.environ) == False:
+                if (arg in os.environ) == False and '=' not in arg:
                     err = "you used -e %s , but $%s must be set first for this to work!" % (
                         arg, arg)
                     raise InitializationError(err)
@@ -744,12 +743,14 @@ class JobSettings(object):
             err = "--disk '%s' format incorrect" % settings['disk']
             raise InitializationError(err)
 
-        if settings.get('timeout') and not self.timeFormatOK(settings['timeout']):
+        if settings.get('timeout') and not self.timeFormatOK(
+                settings['timeout']):
             err = "--timeout '%s' format incorrect" % settings['timeout']
             raise InitializationError(err)
 
         if settings.get('set_expected_max_lifetime'):
-            if not self.expectedLifetimeOK(settings['set_expected_max_lifetime']):
+            if not self.expectedLifetimeOK(
+                    settings['set_expected_max_lifetime']):
                 err = "--expected-lifetime '%s' format incorrect" % settings[
                     'set_expected_max_lifetime']
                 raise InitializationError(err)
@@ -766,7 +767,8 @@ class JobSettings(object):
             err = "-N  must be a positive number"
             raise InitializationError(err)
 
-        if int(settings['queuecount']) > int(settings['jobsub_max_cluster_procs']):
+        if int(settings['queuecount']) > int(
+                settings['jobsub_max_cluster_procs']):
             err = "-N was set to %s , cannot be greater than %s " % (
                 settings['queuecount'], settings['jobsub_max_cluster_procs'])
             raise InitializationError(err)
@@ -796,17 +798,17 @@ class JobSettings(object):
             err = "you must specify a --tar_file_name if you create a tar file using --input_tar_dir"
             raise InitializationError(err)
 
-        if settings.has_key('nowrapfilex') and settings['nowrapfilex']:
-            print """WARNING the --nowrapfile option has been disabled at the request of 
-            the Grid Operations group.  Your jobs will be submitted with a wrapper and should still 
-            run normally. If they do not please open a service desk ticket 
+        if 'nowrapfilex' in settings and settings['nowrapfilex']:
+            print """WARNING the --nowrapfile option has been disabled at the request of
+            the Grid Operations group.  Your jobs will be submitted with a wrapper and should still
+            run normally. If they do not please open a service desk ticket
              """
             settings['nowrapfilex'] = False
 
         if settings['dataset_definition'] != "":
             settings['usedagman'] = True
 
-        if settings.has_key('maxConcurrent') and settings['maxConcurrent'] != "":
+        if 'maxConcurrent' in settings and settings['maxConcurrent'] != "":
             settings['usedagman'] = True
 
         if settings['usedagman']:
@@ -823,8 +825,8 @@ class JobSettings(object):
         # print "makeParrotFile"
 
     def makeWrapFilePreamble(self):
-        """ Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env 
-            variables so that default behavior is for condor generated files NOT to come back to 
+        """ Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env
+            variables so that default behavior is for condor generated files NOT to come back to
             submit host, handle ifdh transfer of input files """
 
         settings = self.settings
@@ -889,7 +891,7 @@ class JobSettings(object):
         f.write(JobUtils().krb5ccNameString())
         f.write("\n")
         f.write("setup_ifdh_env\n")
-        if settings.has_key('set_up_ifdh') and settings['set_up_ifdh']:
+        if 'set_up_ifdh' in settings and settings['set_up_ifdh']:
             f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
 
         f.close()
@@ -957,7 +959,7 @@ class JobSettings(object):
         f.close()
 
     def makeWrapFilePostamble(self):
-        """ Make end part of wrapfile ($CONDOR_TMP/user_job_(numbers)_wrap.sh . 
+        """ Make end part of wrapfile ($CONDOR_TMP/user_job_(numbers)_wrap.sh .
         Handle transfer out of user_job generated files via ifdh. Exit with
         exit status of user_job
         """
@@ -1006,7 +1008,9 @@ class JobSettings(object):
             f.write(log_cmd1)
             f.write("%s %s\n" % (copy_cmd, append_cmd))
             f.write("echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
-            f.write(">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" % copy_cmd)
+            f.write(
+                ">&2 echo `date` FINISHED WRAPFILE COPY-OUT %s\n" %
+                copy_cmd)
             f.write(log_cmd2)
 
         if settings['joblogfile'] != "" and not settings['nologbuffer']:
@@ -1082,7 +1086,9 @@ class JobSettings(object):
             f.write("""%s  log "%s FINISHED %s"\n""" %
                     (ifdh_cmd, settings['user'], cmd))
             f.write("""echo `date` FINISHED WRAPFILE COPY-IN %s\n""" % (cmd))
-            f.write(""">&2 echo `date` FINISHED WRAPFILE COPY-IN %s\n""" % (cmd))
+            f.write(
+                """>&2 echo `date` FINISHED WRAPFILE COPY-IN %s\n""" %
+                (cmd))
 
         f.write("\n")
 
@@ -1102,7 +1108,8 @@ class JobSettings(object):
     def makeTarDir(self):
         settings = self.settings
         ju = JobUtils()
-        if os.path.exists(settings['tar_file_name']) and not settings['overwrite_tar_file']:
+        if os.path.exists(settings['tar_file_name']) and not settings[
+                'overwrite_tar_file']:
             raise IllegalInputError("%s already exists! if you want to overwrite it use --overwrite_tar_file " %
                                     settings['tar_file_name'])
         f = open(settings['tar_file_name'], 'w')
@@ -1416,7 +1423,7 @@ class JobSettings(object):
         f = open(settings['dagfile'], 'w')
         f.write("DOT %s.dot UPDATE\n" % settings['dagfile'])
         f.write("JOB %s_START %s\n" % (jobname, settings['dagbeginfile']))
-        if settings.has_key('firstSection'):
+        if 'firstSection' in settings:
             n = settings['firstSection']
             exe = 'Section'
         else:
@@ -1665,7 +1672,7 @@ class JobSettings(object):
             k2 = key + "="
             if envStr.find(k2) < 0:
                 val = dict[key]
-                if self.settings.has_key(val) and self.settings[val] != '':
+                if val in self.settings and self.settings[val] != '':
                     envStr = "%s;%s=%s" % (envStr, key, self.settings[val])
         l2 = len(envStr)
         if l2 > l1:

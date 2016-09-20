@@ -14,7 +14,7 @@ class AccountJobsByUserResource(object):
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup,  action_user=None, job_id=None, **kwargs):
+    def index(self, acctgroup, action_user=None, job_id=None, **kwargs):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')
@@ -25,10 +25,10 @@ class AccountJobsByUserResource(object):
                 if cherrypy.request.method == 'DELETE':
                     # remove job
                     rc = util.doDELETE(
-                        acctgroup, user=action_user, job_id=job_id,  **kwargs)
+                        acctgroup, user=action_user, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
-                    rc = util.doPUT(acctgroup,  user=action_user,
+                    rc = util.doPUT(acctgroup, user=action_user,
                                     job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method

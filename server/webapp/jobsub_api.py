@@ -24,11 +24,13 @@ class ApplicationInitializationError(Exception):
     def __str__(self):
         return "JobSub server initialization failed: %s" % (self.err)
 
+
 class Root(object):
     """
     Root class of API
     /jobsub
     """
+
     def __init__(self):
 
         self.acctgroups = AccountingGroupsResource()
@@ -49,14 +51,15 @@ class Root(object):
                     '<a href=acctgroups/>Browse Accounting Groups</a>',
                     '<a href=users/>User Information</a>',
                     '<a href=scheddload/>Schedd Load </a>',
+                    ]
                    ]
-                  ]
 
             rc = {'out': out}
             return rc
         else:
             rc = 'Unsupported method: %s' % cherrypy.request.method
             return rc
+
 
 class RDirect(object):
     """A redirect class to direct / to /jobsub
@@ -68,8 +71,6 @@ class RDirect(object):
         """
         raise cherrypy.HTTPRedirect('/jobsub')
         #cherrypy.tree.mount(RDirect, '/')
-
-
 
 
 root = Root()
@@ -144,7 +145,7 @@ def application(environ, start_response):
         'log.access_file': access_log
     })
 
-    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE: %s' %\
+    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE: %s' %
                   (current_thread().ident,
                    os.environ.get('JOBSUB_INI_FILE')))
 

@@ -14,7 +14,7 @@ class RemoveForcexByJobIDResource(object):
     @cherrypy.expose
     @format_response
     @check_auth
-    def index(self, acctgroup,  job_id=None, **kwargs):
+    def index(self, acctgroup, job_id=None, **kwargs):
         cherrypy.request.role = kwargs.get('role')
         cherrypy.request.username = kwargs.get('username')
         cherrypy.request.vomsProxy = kwargs.get('voms_proxy')

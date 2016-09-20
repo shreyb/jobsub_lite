@@ -18,6 +18,7 @@ class AcctGroupNotConfiguredError(Exception):
     """
     Exception class for accounting group not found
     """
+
     def __init__(self, acctgroup):
         self.acctgroup = acctgroup
         Exception.__init__(
@@ -57,6 +58,7 @@ def group_superusers(acctgroup):
     logger.log('returning %s' % g_list)
     return g_list
 
+
 def is_superuser_for_group(acctgroup, user):
     logger.log('checking if %s in %s is group_superuser' % (user, acctgroup))
     su_list = group_superusers(acctgroup)
@@ -82,6 +84,7 @@ def sandbox_readable_by_group(acctgroup):
 
     return rc
 
+
 def get_client_dn():
     """
     Identify the client DN based on if the client is using a X509 cert-key
@@ -104,7 +107,7 @@ def sandbox_allowed_browsable_file_types():
     try:
         p = JobsubConfigParser()
         s = p.get(p.submit_host, 'output_files_web_browsable_allowed_types')
-        if type(s) is str:
+        if isinstance(s, str):
             rc = s.split()
         logger.log('output_files_web_browsable_allowed_types %s' % (rc))
         return rc
@@ -322,9 +325,9 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                       submit_type, jobsub_client_version, jobsub_client_krb5_principal)
 
     # Convert the output to list as in case of previous version of jobsub
-    if (type(out) == type('string')) and out.strip():
+    if (isinstance(out, type('string'))) and out.strip():
         out = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
-    if (type(err) == type('string')) and err.strip():
+    if (isinstance(err, type('string'))) and err.strip():
         err = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
     for line in out:
         if 'jobsubjobid' in line.lower():
@@ -422,9 +425,9 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
     logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except Exception, e:
+    except Exception as e:
         err_str = 'Error creating dir as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
-        raise RuntimeError, err_str % (cmd, out, err, e)
+        raise RuntimeError(err_str % (cmd, out, err, e))
         #raise RuntimeError, err_str % (cmd, out, err, e)
 
 
@@ -435,9 +438,9 @@ def move_file_as_user(src, dst, username):
     logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except Exception, e:
+    except Exception as e:
         err_str = 'Error moving file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
-        raise RuntimeError, err_str % (cmd, out, err, e)
+        raise RuntimeError(err_str % (cmd, out, err, e))
 
 
 def copy_file_as_user(src, dst, username):
@@ -447,9 +450,9 @@ def copy_file_as_user(src, dst, username):
     logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except Exception, e:
+    except Exception as e:
         err_str = 'Error copying file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
-        raise RuntimeError, err_str % (cmd, out, err, e)
+        raise RuntimeError(err_str % (cmd, out, err, e))
 
 
 def chown_as_user(path, username):
@@ -459,9 +462,9 @@ def chown_as_user(path, username):
     logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except Exception, e:
+    except Exception as e:
         err_str = 'Error changing ownership of path as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
-        raise RuntimeError, err_str % (cmd, out, err, e)
+        raise RuntimeError(err_str % (cmd, out, err, e))
 
 
 def run_cmd_as_user(command, username, child_env={}):
@@ -473,7 +476,7 @@ def run_cmd_as_user(command, username, child_env={}):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)
-    except Exception, e:
+    except Exception as e:
         err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s' % (
             username, cmd, out, err, e)
         logger.log(err_str, severity=logging.ERROR)

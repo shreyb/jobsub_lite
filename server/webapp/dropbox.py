@@ -28,7 +28,8 @@ class DropboxResource(object):
         dropbox_path = os.path.join(
             dropbox_path_root, acctgroup, cherrypy.request.username)
         dropbox_file_path = os.path.join(dropbox_path, box_id, filename)
-        return serve_file(dropbox_file_path, "application/x-download", "attachment")
+        return serve_file(dropbox_file_path,
+                          "application/x-download", "attachment")
 
     def doPOST(self, acctgroup, kwargs):
         """ Upload files to Dropbox service. Return JSON object describing location of files.

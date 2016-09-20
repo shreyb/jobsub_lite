@@ -168,10 +168,10 @@ def main(argv):
                 if tmp_rc == 0:
                     rc = tmp_rc
 
-    except JobSubClientError, e:
+    except JobSubClientError as e:
         print e
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
+    except Exception as e:
         print e
         logSupport.dprint('%s' % traceback.print_exc())
     return rc

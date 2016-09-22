@@ -3,7 +3,7 @@ import logger
 import logging
 import sys
 
-from auth import get_client_dn
+from request_headers import get_client_dn
 from format import format_response
 from jobsub import execute_job_submit_wrapper
 

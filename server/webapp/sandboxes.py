@@ -7,7 +7,7 @@ import socket
 import sys
 import subprocessSupport
 from auth import check_auth
-from auth import get_client_dn
+from request_headers import get_client_dn
 from jobsub import get_command_path_root
 from jobsub import sandbox_readable_by_group
 from jobsub import sandbox_allowed_browsable_file_types

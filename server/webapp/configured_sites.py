@@ -7,7 +7,7 @@ import subprocessSupport
 from JobsubConfigParser import JobsubConfigParser
 from jobsub import is_supported_accountinggroup
 from format import format_response
-from auth import get_client_dn
+from request_headers import get_client_dn
 
 
 @cherrypy.popargs('user_id')

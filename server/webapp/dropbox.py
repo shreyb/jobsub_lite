@@ -5,8 +5,8 @@ import uuid
 import os
 import sys
 import socket
-
-from auth import check_auth, get_client_dn
+from auth import check_auth
+from request_headers import get_client_dn
 from format import format_response
 from jobsub import get_dropbox_path_root
 from util import mkdir_p

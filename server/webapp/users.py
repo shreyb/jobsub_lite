@@ -1,7 +1,7 @@
 import cherrypy
 import logger
 import logging
-from auth import get_client_dn
+from request_headers import get_client_dn
 from format import format_response
 from condor_commands import ui_condor_q, constructFilter
 #from history import HistoryResource

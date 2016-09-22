@@ -85,6 +85,17 @@ class OtherAuthError(Exception):
         Exception.__init__(self, errmsg)
 
 
+class AcctGroupNotConfiguredError(Exception):
+    """
+    Exception class for accounting group not found
+    """
+
+    def __init__(self, acctgroup):
+        self.acctgroup = acctgroup
+        Exception.__init__(
+            self, "AcctGroup='%s' not configured " % (self.acctgroup))
+
+
 class Krb5Ticket(object):
     """ Kerberos 5 ticket
 
@@ -132,7 +143,7 @@ def get_voms(acctgroup):
         if p.has_option(acctgroup, 'voms'):
             voms_group = p.get(acctgroup, 'voms')
     else:
-        raise jobsub.AcctGroupNotConfiguredError(acctgroup)
+        raise AcctGroupNotConfiguredError(acctgroup)
     return voms_group
 
 
@@ -178,7 +189,7 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
-    except jobsub.AcctGroupNotConfiguredError as e:
+    except AcctGroupNotConfiguredError as e:
         logger.log("%s" % e, severity=logging.ERROR)
         logger.log("%s" % e, severity=logging.ERROR, logfile='error')
         raise
@@ -209,7 +220,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # Any exception raised will result in Authorization Error by the caller
     try:
         voms_attrs = get_voms_attrs(acctgroup, acctrole)
-    except jobsub.AcctGroupNotConfiguredError as e:
+    except AcctGroupNotConfiguredError as e:
         os.remove(new_proxy_fname)
         logger.log("%s" % e, severity=logging.ERROR)
         logger.log("%s" % e, severity=logging.ERROR, logfile='error')

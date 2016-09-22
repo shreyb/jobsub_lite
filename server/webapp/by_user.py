@@ -1,8 +1,8 @@
 import cherrypy
 import logger
 import logging
-import util
-
+from util import doDELETE
+from util import doPUT
 from auth import check_auth
 from jobsub import is_supported_accountinggroup
 from format import format_response
@@ -24,11 +24,11 @@ class AccountJobsByUserResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
                     # remove job
-                    rc = util.doDELETE(
+                    rc = doDELETE(
                         acctgroup, user=action_user, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
-                    rc = util.doPUT(acctgroup, user=action_user,
+                    rc = doPUT(acctgroup, user=action_user,
                                     job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method

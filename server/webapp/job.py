@@ -23,9 +23,8 @@ from condor_commands import constructFilter, ui_condor_q
 from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
-from queued_long import QueuedLongResource
-from queued_hold import QueuedHoldResource
-from queued_dag import QueuedDagResource
+from queued_outformat import QueuedFormattedOutputResource
+from queued_jobstatus import QueuedJobStatusResource
 from by_user import AccountJobsByUserResource
 from forcex_jobid import RemoveForcexByJobIDResource
 from constraint import JobActionByConstraintResource
@@ -41,11 +40,11 @@ class AccountJobsResource(object):
         self.sandbox = SandboxResource()
         self.history = HistoryResource()
         self.dag = DagResource()
-        self.long = QueuedLongResource()
-        self.hold = QueuedHoldResource('hold')
-        self.run = QueuedHoldResource('run')
-        self.idle = QueuedHoldResource('idle')
-        self.dags = QueuedDagResource()
+        self.long = QueuedFormattedOutputResource()
+        self.dags = self.long
+        self.hold = QueuedJobStatusResource()
+        self.run = self.hold
+        self.idle = self.hold
         self.user = AccountJobsByUserResource()
         self.forcex = RemoveForcexByJobIDResource()
         self.constraint = JobActionByConstraintResource()

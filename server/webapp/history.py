@@ -2,7 +2,7 @@ import cherrypy
 import logger
 import logging
 
-from auth import get_client_dn
+from request_headers import get_client_dn
 from format import format_response
 from sqlite_commands import jobsub_history, constructQuery
 import sys

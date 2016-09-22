@@ -28,6 +28,7 @@ import authutils
 from functools import wraps, partial
 from distutils import spawn
 from JobsubConfigParser import JobsubConfigParser
+from request_headers import get_client_dn
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -223,21 +224,6 @@ def copy_user_krb5_caches():
                 logger.log("%s" % sys.exc_info()[1])
 
 
-def get_client_dn():
-    """
-    Identify the client DN based on if the client is using a X509 cert-key
-    pair or an X509 proxy. Currently only works with a single proxy chain.
-    Wont work if the proxy is derieved from the proxy itself.
-    """
-
-    issuer_dn = cherrypy.request.headers.get('Ssl-Client-I-Dn')
-    dn = client_dn = cherrypy.request.headers.get('Ssl-Client-S-Dn')
-
-    # In case of proxy additional last part will be of the form /CN=[0-9]*
-    # In other words, issuer_dn is a substring of the client_dn
-    if client_dn.startswith(issuer_dn):
-        dn = issuer_dn
-    return dn
 
 
 def _check_auth(dn, acctgroup, role):

@@ -4,7 +4,7 @@ import logging
 import sys
 
 from format import rel_link
-from auth import get_client_dn
+from request_headers import get_client_dn
 from job import AccountJobsResource
 from format import format_response
 from jobsub import get_supported_accountinggroups

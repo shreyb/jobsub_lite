@@ -12,17 +12,9 @@ import StringIO
 
 
 from JobsubConfigParser import JobsubConfigParser
+from request_headers import get_client_dn
 
 
-class AcctGroupNotConfiguredError(Exception):
-    """
-    Exception class for accounting group not found
-    """
-
-    def __init__(self, acctgroup):
-        self.acctgroup = acctgroup
-        Exception.__init__(
-            self, "AcctGroup='%s' not configured " % (self.acctgroup))
 
 
 def is_supported_accountinggroup(accountinggroup):
@@ -85,21 +77,6 @@ def sandbox_readable_by_group(acctgroup):
     return rc
 
 
-def get_client_dn():
-    """
-    Identify the client DN based on if the client is using a X509 cert-key
-    pair or an X509 proxy. Currently only works with a single proxy chain.
-    Wont work if the proxy is derieved from the proxy itself.
-    """
-
-    issuer_dn = cherrypy.request.headers.get('Ssl-Client-I-Dn')
-    dn = client_dn = cherrypy.request.headers.get('Ssl-Client-S-Dn')
-
-    # In case of proxy additional last part will be of the form /CN=[0-9]*
-    # In other words, issuer_dn is a substring of the client_dn
-    if client_dn.startswith(issuer_dn):
-        dn = issuer_dn
-    return dn
 
 
 def sandbox_allowed_browsable_file_types():

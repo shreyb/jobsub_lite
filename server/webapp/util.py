@@ -21,7 +21,7 @@ import socket
 def encode_multipart_formdata(fields, files, outfile):
     """
     fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be
+    files is a sequence of (name, fnameame, value) elements for data to be
     uploaded as files
     Return (content_type, body) ready for httplib.HTTP instance
     """
@@ -40,11 +40,11 @@ def encode_multipart_formdata(fields, files, outfile):
         outfile.write('Content-Type: application/json%s' % CRLF)
         outfile.write(CRLF)
         outfile.write(json.dumps(value) + CRLF)
-    for (key, filename, value) in files:
+    for (key, fnameame, value) in files:
         outfile.write('--' + SUBBOUNDARY + CRLF)
         outfile.write('Content-Type: %s; name=%s%s' %
-                      (get_content_type(filename), filename, CRLF))
-        outfile.write('Content-Location: %s%s' % (filename, CRLF))
+                      (get_content_type(fnameame), fnameame, CRLF))
+        outfile.write('Content-Location: %s%s' % (fnameame, CRLF))
         outfile.write('content-transfer-encoding: Base64%s' % CRLF)
         outfile.write(CRLF)
         outfile.write(base64.b64encode(value))
@@ -57,8 +57,8 @@ def encode_multipart_formdata(fields, files, outfile):
     return main_content_type
 
 
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+def get_content_type(fnameame):
+    return mimetypes.guess_type(fnameame)[0] or 'application/octet-stream'
 
 
 def mkdir_p(path):
@@ -114,22 +114,22 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
         jnum = job_parts[0]
         logger.log('jnum=%s' % jnum)
 
-    for file in files:
-        f1 = os.path.join(f0, file)
+    for fname in files:
+        f1 = os.path.join(f0, fname)
         try:
             if partial:
-                if jnum in file or partial in file:
-                    tar.add(f1, file)
+                if jnum in fname or partial in fname:
+                    tar.add(f1, fname)
             else:
-                tar.add(f1, file)
+                tar.add(f1, fname)
 
         except:
             logger.log('failed to add %s to %s ' %
-                       (file, tar_file), severity=logging.ERROR)
-            logger.log('failed to add %s to %s ' % (file, tar_file),
+                       (fname, tar_file), severity=logging.ERROR)
+            logger.log('failed to add %s to %s ' % (fname, tar_file),
                        severity=logging.ERROR,
                        logfile='error')
-            failed_file_list.append(file)
+            failed_file_list.append(fname)
     if len(failed_file_list) > 0:
         failed_fname = "/tmp/%s.MISSING_FILES" % \
             os.path.basename(tar_file)
@@ -243,7 +243,6 @@ def doJobAction(acctgroup,
     child_env = os.environ.copy()
     child_env['X509_USER_PROXY'] = cmd_proxy
     out = err = ''
-    affected_jobs = 0
     expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
     expr2 = '.*ailed to connect*'
     expr3 = '.*all jobs matching constraint*'
@@ -298,7 +297,6 @@ def doJobAction(acctgroup,
             for line in out2:
                 if regex.match(line):
                     grps = regex.match(line)
-                    affected_jobs += int(grps.group(1))
                     retOut += line
             err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
             for line in err2:
@@ -308,9 +306,6 @@ def doJobAction(acctgroup,
                     retErr += line
                 if regex3.match(line):
                     retErr += line
-    #retOut += "Performed %s on %s jobs matching your request %s" % (job_action, affected_jobs, extra_err)
-    # if failures:
-    #    retOut = "%s \nCONDOR_ERRORS: %s" %( retOut, extra_err )
     if err and not retErr:
         retErr = err
     return {'out': retOut, 'err': retErr}

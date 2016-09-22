@@ -4,7 +4,8 @@ import logging
 import sys
 
 from format import format_response, rel_link
-from condor_commands import ui_condor_q, constructFilter, condor_userprio
+#from condor_commands import ui_condor_q, constructFilter, condor_userprio
+import condor_commands 
 
 
 class UsersJobsResource(object):
@@ -19,7 +20,7 @@ class UsersJobsResource(object):
         """
         was the http request a GET? Go for it!
         """
-        out2 = condor_userprio()
+        out2 = condor_commands.condor_userprio()
         users = ['Uids the batch system knows about:']
 
         for line in out2.split('\n'):
@@ -117,10 +118,10 @@ class UsersJobsResource(object):
                             break
 
                     cherrypy.response.status = 200
-                    q_filter = constructFilter(
+                    q_filter = condor_commands.constructFilter(
                         acctgroup, user, jobid, jobStatus)
                     logger.log("q_filter=%s" % q_filter)
-                    user_jobs = ui_condor_q(q_filter, fmt)
+                    user_jobs = condor_commands.ui_condor_q(q_filter, fmt)
                     return {'out': user_jobs.split('\n')}
 
                 else:

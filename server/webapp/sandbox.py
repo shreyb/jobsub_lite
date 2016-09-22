@@ -33,13 +33,13 @@ def cleanup(zip_file, outfilename=None):
         except:
             err = 'Failed to remove encoded file at %s' % outfilename
             logger.log(err)
-            logger.log(err, serverity=logging.ERROR, logfile='error')
+            logger.log(err, severity=logging.ERROR, logfile='error')
     try:
         os.remove(zip_file)
     except:
         err = 'Failed to remove zip file at %s' % zip_file
         logger.log(err)
-        logger.log(err, serverity=logging.ERROR, logfile='error')
+        logger.log(err, severity=logging.ERROR, logfile='error')
 
 
 def make_sandbox_readable(workdir, username):

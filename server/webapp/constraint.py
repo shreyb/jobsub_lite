@@ -9,7 +9,7 @@ from format import format_response
 from condor_commands import ui_condor_q
 
 
-@cherrypy.popargs('constraint', 'job_owner')
+@cherrypy.popargs('constraint', 'post_constraint')
 class JobActionByConstraintResource(object):
 
     @cherrypy.expose
@@ -26,11 +26,11 @@ class JobActionByConstraintResource(object):
                 if cherrypy.request.method == 'DELETE':
                     # remove job
                     rc = util.doDELETE(
-                        acctgroup, constraint=constraint, user=kwargs.get('job_owner'), **kwargs)
+                        acctgroup, constraint=constraint, user=kwargs.get('post_constraint'), **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
                     rc = util.doPUT(acctgroup, constraint=constraint,
-                                    user=kwargs.get('job_owner'), **kwargs)
+                                    user=kwargs.get('post_constraint'), **kwargs)
                 elif cherrypy.request.method == 'GET':
                     # query
                     rc = self.doGET(constraint=constraint, **kwargs)
@@ -62,7 +62,8 @@ class JobActionByConstraintResource(object):
         """
         logger.log('constraint=%s' % constraint)
         q_filter = "-constraint '%s'" % constraint
-        q = ui_condor_q(q_filter)
+        fmt = kwargs.get('post_constraint')
+        q = ui_condor_q(q_filter, fmt)
         all_jobs = q.split('\n')
         if len(all_jobs) < 1:
             logger.log('condor_q %s returned no jobs' % q_filter)

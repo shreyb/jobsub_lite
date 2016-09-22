@@ -1,3 +1,7 @@
+"""Module: jobid
+   Purpose: query jobs by jobid from url /jobsub/jobs/jobid/<jobid>
+   Author: Dennis Box
+"""
 import cherrypy
 import logger
 import logging
@@ -20,11 +24,13 @@ class QueuedJobsByJobIDResource(object):
     def __init__(self):
         """constructor
         """
-        self.long = QueuedFormattedOutputResource()
-        self.dags = self.long 
-        self.hold = QueuedJobStatusResource()
-        self.run = self.hold
-        self.idle = self.hold
+        qfr = QueuedFormattedOutputResource()
+        self.long = qfr
+        self.dags = qfr
+        qjs = QueuedJobStatusResource()
+        self.hold = qjs
+        self.run = qjs
+        self.idle = qjs
         self.betteranalyze = BetterAnalyzeResource()
 
     def doGET(self, job_id, kwargs):

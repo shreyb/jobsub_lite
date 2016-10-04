@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""
 ##########################################################################
 # Project:
 #   JobSub
@@ -11,7 +11,7 @@
 #   This module implements the JobSub client tool
 #
 ##########################################################################
-
+"""
 import sys
 import os
 import re
@@ -774,6 +774,10 @@ class JobSubClient:
         """query all the schedds behind the jobsub-server.  Create a list of
         them stored in self.schedd_list and change self.server to point to
         the least loaded one"""
+        #
+        #test this, try to guard against unnecessary schedd queries
+        #if len(self.schedd_list):
+        #    return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')

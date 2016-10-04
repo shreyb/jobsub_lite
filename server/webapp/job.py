@@ -1,7 +1,7 @@
 """Module: job
    Purpose: submit,query,hold,release a single job via URL
             /jobsub/acctgroups/<group_id>/jobs/
-   Author: Nick
+   Author: Nick Palombo
 """
 import base64
 import random
@@ -80,11 +80,11 @@ class AccountJobsResource(object):
         if len(all_jobs) < 1:
             logger.log('condor_q %s returned no jobs' % my_filter)
             err = 'Job with id %s not found in condor queue' % job_id
-            r_code = {'err': err}
+            rcode = {'err': err}
         else:
-            r_code = {'out': all_jobs}
+            rcode = {'out': all_jobs}
 
-        return r_code
+        return rcode
 
     def doPOST(self, acctgroup, job_id, kwargs):
         """ Create/Submit a new job. Returns the output from the jobsub tools.
@@ -160,35 +160,35 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                r_code = execute_job_submit_wrapper(
+                rcode = execute_job_submit_wrapper(
                     acctgroup=acctgroup, username=cherrypy.request.username,
                     jobsub_args=jobsub_args, workdir_id=workdir_id,
                     role=role, jobsub_client_version=jobsub_client_version,
                     jobsub_client_krb5_principal=jobsub_client_krb5_principal,
                     child_env=child_env)
-                if r_code.get('out'):
-                    for line in r_code['out']:
+                if rcode.get('out'):
+                    for line in rcode['out']:
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
-                if r_code.get('err'):
-                    logger.log(r_code['err'], severity=logging.ERROR)
-                    logger.log(r_code['err'], severity=logging.ERROR,
+                if rcode.get('err'):
+                    logger.log(rcode['err'], severity=logging.ERROR)
+                    logger.log(rcode['err'], severity=logging.ERROR,
                                logfile='error')
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                r_code = {'err': err}
+                rcode = {'err': err}
         else:
             # return an error because job_id has been supplied but POST is for
             # creating new jobs
             err = 'User has supplied job_id but POST is for creating new jobs'
             logger.log(err, severity=logging.ERROR)
             logger.log(err, severity=logging.ERROR, logfile='error')
-            r_code = {'err': err}
+            rcode = {'err': err}
 
-        return r_code
+        return rcode
 
     @cherrypy.expose
     @format_response(output_format='pre')
@@ -208,33 +208,33 @@ class AccountJobsResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     # create job
-                    r_code = self.doPOST(acctgroup, job_id, kwargs)
+                    rcode = self.doPOST(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'GET':
                     # query job
-                    r_code = self.doGET(acctgroup, job_id, kwargs)
+                    rcode = self.doGET(acctgroup, job_id, kwargs)
                 elif cherrypy.request.method == 'DELETE':
                     # remove job
-                    r_code = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
+                    rcode = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
-                    r_code = util.doPUT(acctgroup, job_id=job_id, **kwargs)
+                    rcode = util.doPUT(acctgroup, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    r_code = {'err': err}
+                    rcode = {'err': err}
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 cherrypy.response.status = 404
-                r_code = {'err': err}
+                rcode = {'err': err}
         except:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
-            r_code = {'err': err}
-        return r_code
+            rcode = {'err': err}
+        return rcode

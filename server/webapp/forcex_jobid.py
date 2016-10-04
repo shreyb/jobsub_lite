@@ -1,3 +1,11 @@
+""" Module:
+            forcex_jobid
+    Purpose:
+            condor_rm --forcex a single jobid
+            API is  /jobsub/acctgroups/<acctgroup>/jobs/<job_id>/forcex
+    Author:
+            Dennis Box
+"""
 import cherrypy
 import logger
 import logging
@@ -26,25 +34,25 @@ class RemoveForcexByJobIDResource(object):
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'DELETE':
                     # remove job
-                    rc = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
+                    rcode = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    rc = {'err': err}
+                    rcode = {'err': err}
             else:
                 # return error for unsupported acctgroup
-                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
+                err = 'AccountingGroup %s is not configured' % acctgroup
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                rc = {'err': err}
+                rcode = {'err': err}
         except:
             cherrypy.response.status = 500
             err = 'Exception on RemoveForcexByJobIDResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
-            rc = {'err': err}
-        if rc.get('err'):
+            rcode = {'err': err}
+        if rcode.get('err'):
             cherrypy.response.status = 500
-        return rc
+        return rcode

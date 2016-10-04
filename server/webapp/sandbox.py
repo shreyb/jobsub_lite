@@ -174,7 +174,7 @@ class SandboxResource(object):
             # in acctgroup area to allow for cleanup
             zip_file = os.path.join(sbx_create_dir,
                                     '%s.%s.%s' % (job_id, ts, out_format))
-            r_code = {'out': zip_file}
+            rcode = {'out': zip_file}
 
             cherrypy.request.hooks.attach('on_end_request', cleanup,
                                           zip_file=zip_file)
@@ -191,8 +191,8 @@ class SandboxResource(object):
                     err += " This is configurable, if you believe this to be "
                     err += "in error please open a service desk ticket."
                     cherrypy.response.status = 500
-                    r_code = {'err': err}
-                    return r_code
+                    rcode = {'err': err}
+                    return rcode
             else:
                 make_sandbox_readable(zip_path, owner)
             create_archive(zip_file, zip_path, job_id,
@@ -214,9 +214,9 @@ class SandboxResource(object):
             incorrectly.  If the job is more than a few weeks old, it was
             probably removed to save space. Jobsub_fetchlog --list will
             show the  sandboxes that are still on the server."""  % job_id
-            r_code = {'err': ' '.join(outmsg.split())}
+            rcode = {'err': ' '.join(outmsg.split())}
 
-        return r_code
+        return rcode
 
     @cherrypy.expose
     @format_response
@@ -238,12 +238,12 @@ class SandboxResource(object):
 
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':
-                    r_code = self.doGET(acctgroup, job_id, partial, **kwargs)
+                    rcode = self.doGET(acctgroup, job_id, partial, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    r_code = {'err': err}
+                    rcode = {'err': err}
                     cherrypy.response.status = 500
             else:
                 # return error for unsupported acctgroup
@@ -251,7 +251,7 @@ class SandboxResource(object):
                     acctgroup
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                r_code = {'err': err}
+                rcode = {'err': err}
                 cherrypy.response.status = 500
         except:
             err = 'Exception on SandboxResource.index'
@@ -261,7 +261,7 @@ class SandboxResource(object):
                        traceback=True,
                        severity=logging.ERROR,
                        logfile='error')
-            r_code = {'err': err}
+            rcode = {'err': err}
             cherrypy.response.status = 500
 
-        return r_code
+        return rcode

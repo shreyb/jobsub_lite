@@ -1,3 +1,12 @@
+"""Module:
+    accounting_group
+   Purpose:
+    a central 'glue' and dispatch node when using
+    cherrypy default dispatcher for Jobsub project
+    API is /jobsub/acctgroups/<acctgroup>/
+   Author:
+    Nick Palombo
+"""
 import cherrypy
 import logger
 import logging
@@ -18,8 +27,21 @@ from auth_methods import AuthMethodsResource
 
 @cherrypy.popargs('acctgroup')
 class AccountingGroupsResource(object):
+    """Implementation of
+       API /jobsub/acctgroups/
+       /jobsub/acctgroups/<acctgroup>/
+       in constructor
+            self.jobs is link to /jobsub/acctgroups/<acctgroup>/jobs/
+            self.users goes to  /jobsub/acctgroups/<acctgroup>/users/
+            etc
+    """
 
     def __init__(self):
+        """ constructor
+            self.jobs is link to /jobsub/acctgroups/<acctgroup>/jobs/
+            self.users goes to  /jobsub/acctgroups/<acctgroup>/users/
+            and so on
+        """
         self.jobs = AccountJobsResource()
         self.users = UsersResource()
         self.help = JobsubHelpResource()
@@ -43,8 +65,9 @@ class AccountingGroupsResource(object):
                    ['<a href=jobs/>running jobs</a>',
                     '<a href=sandboxes/>sandboxes for completed jobs</a>',
                     '<a href=help/>jobsub_submit help options for %s </a>' % g,
-                    ]
+                    '<a href=sites/>OSG sites that accept jobs from %s </a>' % g,
                    ]
+                  ]
 
             rc = {'out': out}
             return rc
@@ -52,6 +75,8 @@ class AccountingGroupsResource(object):
     @cherrypy.expose
     @format_response
     def index(self, acctgroup=None, **kwargs):
+        """index.html
+        """
         try:
             subject_dn = get_client_dn()
             if subject_dn is not None:

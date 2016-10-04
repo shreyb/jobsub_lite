@@ -1,3 +1,12 @@
+"""Module:
+        dag
+   Purpose:
+        Create/Submit a new dag. Returns the output from
+        original jobsub tools dag generator.
+        API is /jobsub/acctgroups/<group_id>/jobs/dag/
+   Author:
+        Nick Palumbo
+"""
 import base64
 import random
 import os
@@ -18,7 +27,6 @@ from authutils import x509_proxy_fname
 from jobsub import is_supported_accountinggroup
 from jobsub import JobsubConfig
 from jobsub import execute_job_submit_wrapper
-from jobsub import JobsubConfig
 from jobsub import create_dir_as_user
 from jobsub import move_file_as_user
 
@@ -33,15 +41,16 @@ class DagResource(object):
         self.help = DAGHelpResource()
         cherrypy.request.username = None
         cherrypy.request.vomsProxy = None
-        self.payLoadFileName = 'payload.tgz'
+        self.payload_filename = 'payload.tgz'
 
     def doPOST(self, acctgroup, job_id, kwargs):
-        """ Create/Submit a new dag. Returns the output from the jobsub tools.
+        """ Create/Submit a new dag. Returns the output from
+            original jobsub tools dag generator.
             API is /jobsub/acctgroups/<group_id>/jobs/dag/
         """
 
         if job_id is None:
-            jobsubConfig = JobsubConfig()
+            jscfg = JobsubConfig()
             logger.log('dag.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
@@ -60,28 +69,29 @@ class DagResource(object):
                            (jobsub_command))
                 logger.log('dag.py:doPost:role %s ' % (role))
 
-                command_path_acctgroup = jobsubConfig.commandPathAcctgroup(
-                    acctgroup)
+                command_path_acctgroup = jscfg.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
-                command_path_user = jobsubConfig.commandPathUser(acctgroup,
-                                                                 cherrypy.request.username)
+                uname = cherrypy.request.username
+                command_path_user = jscfg.commandPathUser(acctgroup,
+                                                          uname)
                 # Check if the user specific dir exist with correct
                 # ownership. If not create it.
-                jobsubConfig.initCommandPathUser(
-                    acctgroup, cherrypy.request.username)
+                jscfg.initCommandPathUser(acctgroup, uname)
 
-                ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
+                tstmp = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
                 uniquer = random.randrange(0, 10000)
-                workdir_id = '%s_%s' % (ts, uniquer)
+                workdir_id = '%s_%s' % (tstmp, uniquer)
                 command_path = os.path.join(command_path_acctgroup,
-                                            cherrypy.request.username, workdir_id)
+                                            uname,
+                                            workdir_id)
                 logger.log('command_path: %s' % command_path)
-                child_env['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
-                                                                acctgroup, role)
-                child_env['JOBSUB_PAYLOAD'] = self.payLoadFileName
+                child_env['X509_USER_PROXY'] = x509_proxy_fname(uname,
+                                                                acctgroup,
+                                                                role)
+                child_env['JOBSUB_PAYLOAD'] = self.payload_filename
                 # Create the job's working directory as user
                 create_dir_as_user(command_path_user, workdir_id,
-                                   cherrypy.request.username, mode='755')
+                                   uname, mode='755')
                 if jobsub_command is not None:
                     os.chdir(command_path)
                     command_file_path = os.path.join(command_path,
@@ -92,12 +102,10 @@ class DagResource(object):
                     cf_path_w_space = ' %s' % command_file_path
                     logger.log('command_file_path: %s' % command_file_path)
                     logger.log('payload_file_path: %s' % payload_file_path)
-                    payload_dest = os.path.join(command_file_path,
-                                                self.payLoadFileName)
                     # First create a tmp file before moving the command file
                     # in place as correct user under the jobdir
-                    tmp_file_prefix = os.path.join(jobsubConfig.tmpDir,
-                                                   self.payLoadFileName)
+                    tmp_file_prefix = os.path.join(jscfg.tmpDir,
+                                                   self.payload_filename)
                     tmp_payload_fd = NamedTemporaryFile(
                         prefix="%s_" % tmp_file_prefix,
                         delete=False)
@@ -105,51 +113,51 @@ class DagResource(object):
 
                     tmp_payload_fd.close()
                     move_file_as_user(tmp_payload_fd.name, payload_file_path,
-                                      cherrypy.request.username)
+                                      uname)
 
                     logger.log('before: jobsub_args = %s' % jobsub_args)
                     logger.log("cf_path_w_space='%s'" % cf_path_w_space)
                     command_tag = "\@(\S*)%s" % jobsub_command.filename
                     logger.log("command_tag='%s'" % command_tag)
-                    logger.log(
-                        'executing:"re.sub(command_tag, cf_path_w_space, jobsub_args)"')
+                    _str = '"re.sub(command_tag, cf_path_w_space, jobsub_args)"'
+                    logger.log('executing:%s' % _str)
                     jobsub_args = re.sub(command_tag, cf_path_w_space,
                                          str(jobsub_args))
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.strip().split(' ')
 
-                rc = execute_job_submit_wrapper(
-                    acctgroup=acctgroup, username=cherrypy.request.username,
+                rcode = execute_job_submit_wrapper(
+                    acctgroup=acctgroup, username=uname,
                     jobsub_args=jobsub_args, workdir_id=workdir_id,
                     role=role, jobsub_client_version=jobsub_client_version,
                     jobsub_client_krb5_principal=jobsub_client_krb5_principal,
                     submit_type='dag', child_env=child_env)
 
-                if rc.get('out'):
-                    for line in rc['out']:
+                if rcode.get('out'):
+                    for line in rcode['out']:
                         if 'jobsubjobid' in line.lower():
                             logger.log(line)
-                if rc.get('err'):
-                    logger.log(rc['err'], severity=logging.ERROR)
-                    logger.log(rc['err'], severity=logging.ERROR,
+                if rcode.get('err'):
+                    logger.log(rcode['err'], severity=logging.ERROR)
+                    logger.log(rcode['err'], severity=logging.ERROR,
                                logfile='error')
             else:
                 # return an error because no command was supplied
                 err = 'User must supply jobsub command'
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                rc = {'err': err}
+                rcode = {'err': err}
         else:
             # return an error because job_id has been supplied
             # but POST is for creating new jobs
             err = 'User has supplied job_id but POST is for creating new jobs'
             logger.log(err, severity=logging.ERROR)
             logger.log(err, severity=logging.ERROR, logfile='error')
-            rc = {'err': err}
-        if rc.get('err'):
+            rcode = {'err': err}
+        if rcode.get('err'):
             cherrypy.response.status = 500
-        return rc
+        return rcode
 
     @cherrypy.expose
     @format_response
@@ -168,24 +176,25 @@ class DagResource(object):
 
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
-                    rc = self.doPOST(acctgroup, job_id, kwargs)
+                    rcode = self.doPOST(acctgroup, job_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    rc = {'err': err}
+                    rcode = {'err': err}
             else:
                 # return error for unsupported acctgroup
-                err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
+                err = 'AccountingGroup %s ' % acctgroup
+                err += 'is not configured in jobsub'
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                rc = {'err': err}
+                rcode = {'err': err}
         except:
             err = 'Exception on DagResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
-            rc = {'err': err}
+            rcode = {'err': err}
 
-        return rc
+        return rcode

@@ -1,3 +1,10 @@
+"""Module:
+        by_user
+   Purpose
+        implements condor_q <username>
+        API /jobsub/acctgroups/<group_id>/jobs/user/<username>/
+        API /jobsub/acctgroups/<group_id>/jobs/user/<username>/<jobsubjobid>
+"""
 import cherrypy
 import logger
 import logging
@@ -10,11 +17,20 @@ from format import format_response
 
 @cherrypy.popargs('action_user', 'job_id')
 class AccountJobsByUserResource(object):
+    """Class that implements above URLS
+       Only responds to http GET, only
+       index.html implemented
+    """
 
     @cherrypy.expose
     @format_response
     @check_auth
     def index(self, acctgroup, action_user=None, job_id=None, **kwargs):
+        """implementation of index.html
+           no point in putting anything here for pydoc
+           as decorators seem to eat it in python 2
+           hopefully 3 will be better
+        """
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.username = kwargs.get('username')

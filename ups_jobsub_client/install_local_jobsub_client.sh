@@ -8,6 +8,10 @@ if [ -e jobsub ]; then
 	rm -rf jobsub
 fi
 ./make_tablefile.py $VERS$REV
+MK=$?
+if [ "${MK}" != "0" ]; then
+    exit ${MK}
+fi
 cd ups_db
 tar cvf db.jobsub_client.tar jobsub_client 
 sudo -u products cp db.jobsub_client.tar /fnal/ups/db

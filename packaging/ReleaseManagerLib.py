@@ -238,6 +238,7 @@ class PackageExcludes:
             'ups_jobsub_client',
             'config_files',
             'pylint.sh',
+            'pydoc.sh',
         ]
 
         # Patterns that need to be excluded from the server tarball
@@ -263,6 +264,7 @@ class PackageExcludes:
             'requirements.txt',
             'config_files',
             'pylint.sh',
+            'pydoc.sh',
         ]
 ############################################################
 #

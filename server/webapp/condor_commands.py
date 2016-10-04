@@ -1,3 +1,12 @@
+"""Module: 
+        condor_commands
+   Purpose:
+        utility file with implementation of various condor commands such as
+        condor_q, condor_status, etc
+        no actual api implemented in this module
+   Author:
+        Dennis Box
+"""
 import cherrypy
 import logger
 import logging
@@ -11,7 +20,7 @@ from request_headers  import get_client_dn
 from random import randint
 
 
-jobstatus_dict = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
+JOBSTATUS_DICT = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
                   'removed': 3, 'completed': 4, 'held': 5, 'hold': 5, 'error': 6}
 if platform.system() == 'Linux':
     try:
@@ -22,18 +31,31 @@ if platform.system() == 'Linux':
 
 
 def ui_condor_userprio():
+    """call  /bin/condor_userprio
+    """
     all_users, cmd_err = subprocessSupport.iexe_cmd(
         'condor_userprio -allusers')
     return all_users
 
 
 def ui_condor_status_totalrunningjobs():
-    all_jobs, cmd_err = subprocessSupport.iexe_cmd(
-        """condor_status -schedd   -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")' -af name totalrunningjobs""")
+    """condor_status -schedd   
+        -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")' 
+        -af name totalrunningjobs
+    """
+    cmd = """condor_status -schedd"""
+    cmd += """  -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'"""
+    cmd += """ -af name totalrunningjobs"""
+
+    all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+
     return all_jobs
 
 
 def ui_condor_queued_jobs_summary():
+    """ return a summary of all running and 
+        queued jobs on the server
+    """
     try:
         all_queued1, cmd_err = subprocessSupport.iexe_cmd(
             'condor_status -submitter -wide')
@@ -54,21 +76,25 @@ def ui_condor_queued_jobs_summary():
         logger.log(tb, severity=logging.ERROR, logfile='error')
 
 
-def condor_header(inputSwitch=None):
-    # logger.log('inputSwitch="%s"'%inputSwitch)
-    if inputSwitch in ['long', 'better-analyze']:
+def condor_header(input_switch=None):
+    """generate header line for condor_q depending on input_switch
+    """
+    # logger.log('input_switch="%s"'%input_switch)
+    if input_switch in ['long', 'better-analyze']:
         hdr = ''
-    elif inputSwitch == 'dags':
+    elif input_switch == 'dags':
         hdr = "JOBSUBJOBID                           OWNER    DAG_INFO          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
-    elif inputSwitch == 'hold':
+    elif input_switch == 'hold':
         hdr = "JOBSUBJOBID                           OWNER           HELD_SINCE    HOLDREASON\n"
     else:
         hdr = "JOBSUBJOBID                           OWNER           SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
     return hdr
 
 
-def condor_format(inputSwitch=None):
-    # logger.log('inputSwitch="%s"'%inputSwitch)
+def condor_format(input_switch=None):
+    """return format strings for condor_q depending on input_switch
+    """
+    # logger.log('input_switch="%s"'%input_switch)
 
     jobStatusStr = """'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))'"""
 
@@ -76,11 +102,11 @@ def condor_format(inputSwitch=None):
 
     runTimeStr = """ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(JobStatus==2,ServerTime-JobCurrentStartDate,EnteredCurrentStatus-JobCurrentStartDate))"""
 
-    if inputSwitch == "long":
+    if input_switch == "long":
         fmtList = [" -l "]
-    elif inputSwitch == "better-analyze":
+    elif input_switch == "better-analyze":
         fmtList = [" -better-analyze "]
-    elif inputSwitch == "dags":
+    elif input_switch == "dags":
         # don't try this at home folks
         fmtList = [
             """ -dag """,
@@ -98,7 +124,7 @@ def condor_format(inputSwitch=None):
             """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
             """ -format '\\n' Owner """,
         ]
-    elif inputSwitch == "hold":
+    elif input_switch == "hold":
         fmtList = [
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
             """ -format ' %-14s ' Owner """,
@@ -125,23 +151,10 @@ def condor_format(inputSwitch=None):
     return ' '.join(fmtList)
 
 
-def munge_jobid(theInput=None):
-    header = ['ID', ' ', ' ', ' ', 'OWNER', 'SUBMITTED',
-              'RUN_TIME', 'ST', 'PRI', 'SIZE', 'CMD']
-    if theInput is None:
-        return None
-    linput = theInput.split('\n')
-    loutput = []
-    loutput.append("\t".join(header))
-    for line in linput:
-        if line == '':
-            continue
-        llout = line.split()
-        loutput.append("\t".join(llout))
-    return "\n".join(loutput)
-
 
 def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
+    """generate a constraint for condor_q 
+    """
     if acctgroup == 'None':
         acctgroup = None
     if uid == 'None':
@@ -177,36 +190,11 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
         jstat_cnst = 'True'
     else:
         jstat_cnst = 'JobStatus==%s' % (
-            jobstatus_dict.get(jobstatus.lower(), 5))
+            JOBSTATUS_DICT.get(jobstatus.lower(), 5))
     my_filter = " %s -constraint '%s && %s && %s && %s' " % (
         lorw, ac_cnst, usr_cnst, job_cnst, jstat_cnst)
     return my_filter
 
-
-def contains_jobid(a_filter=""):
-    if "GLOBALJOBID" in a_filter.upper() or "CLUSTERID" in a_filter.upper():
-        return True
-    return False
-
-
-def ui_condor_history(a_filter=None, a_format=None):
-    hdr = condor_header(a_format)
-    if a_filter is None:
-        cmd = 'condor_history %s' % condor_format(a_format)
-    else:
-        if contains_jobid(a_filter):
-            a_filter = "%s %s" % (a_filter, "-match 1")
-        cmd = 'condor_history %s %s' % (condor_format(a_format), a_filter)
-    try:
-        all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        return hdr + all_jobs
-    except:
-        cherrypy.response.status = 500
-        tb = traceback.format_exc()
-        logger.log(tb, severity=logging.ERROR)
-        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
-        logger.log(tb, severity=logging.ERROR, logfile='error')
-        return tb
 
 
 def ui_condor_q(a_filter=None, a_format=None):
@@ -228,8 +216,8 @@ def ui_condor_q(a_filter=None, a_format=None):
             else:
                 cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
-            dn = get_client_dn()
-            pts = dn.split(':')
+            c_dn = get_client_dn()
+            pts = c_dn.split(':')
             user = pts[-1]
             log_cmd = "[user:%s] condor_q -name %s %s" % (
                 user, schedd, a_filter)
@@ -275,9 +263,9 @@ def condor_userprio():
         # logger.log("rslt=%s"%all_jobs)
         return users
     except:
-        tb = traceback.format_exc()
-        logger.log(tb, severity=logging.ERROR)
-        return tb
+        tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
+        return tbk
 
 
 def iwd_condor_q(a_filter, a_part='iwd'):
@@ -292,24 +280,24 @@ def iwd_condor_q(a_filter, a_part='iwd'):
         # logger.log("rslt=%s"%all_jobs)
         return iwd
     except:
-        tb = traceback.format_exc()
-        logger.log(tb, severity=logging.ERROR)
+        tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
         no_jobs = "All queues are empty"
-        if len(re.findall(no_jobs, tb)):
+        if len(re.findall(no_jobs, tbk)):
             return no_jobs
         else:
             cherrypy.response.status = 500
-            if 'ailed to connect' in tb:
+            if 'ailed to connect' in tbk:
                 err = 'Failed to connect to condor schedd '
                 logger.log(err, severity=logging.ERROR,
                            logfile='condor_commands')
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 return err
             else:
-                logger.log(tb, severity=logging.ERROR,
+                logger.log(tbk, severity=logging.ERROR,
                            logfile='condor_commands')
-                logger.log(tb, severity=logging.ERROR, logfile='error')
-                return tb
+                logger.log(tbk, severity=logging.ERROR, logfile='error')
+                return tbk
 
 
 def api_condor_q(acctgroup, uid, convert=False):
@@ -353,10 +341,10 @@ def collector_host():
         logger.log('choosing %s from %s' % (host, host_list))
         return host
     except:
-        tb = traceback.format_exc()
-        logger.log(tb)
-        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
-        logger.log(tb, severity=logging.ERROR, logfile='error')
+        tbk = traceback.format_exc()
+        logger.log(tbk)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
 def schedd_list():
@@ -369,10 +357,10 @@ def schedd_list():
             """condor_status -schedd -af name """)
         return schedds.split()
     except:
-        tb = traceback.format_exc()
-        logger.log(tb, severity=logging.ERROR)
-        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
-        logger.log(tb, severity=logging.ERROR, logfile='error')
+        tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
 def schedd_name(arglist=None):

@@ -68,24 +68,24 @@ class QueuedJobsResource(object):
 
                 logger.log('subject_dn: %s' % subject_dn)
                 if cherrypy.request.method == 'GET':
-                    r_code = self.doGET(user_id, job_id, kwargs)
+                    rcode = self.doGET(user_id, job_id, kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)
                     logger.log(err, severity=logging.ERROR, logfile='error')
-                    r_code = {'err': err}
+                    rcode = {'err': err}
             else:
                 # return error for no subject_dn
                 err = 'User has not supplied subject dn'
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                r_code = {'err': err}
+                rcode = {'err': err}
         except:
             err = 'Exception on QueuedJobsResouce.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
-            r_code = {'err': err}
+            rcode = {'err': err}
 
-        return r_code
+        return rcode

@@ -51,9 +51,9 @@ class DAGManLogParser:
             #    DAG Node: Section_66
             datalist = string.split(block[0])
             if len(datalist) < 3:
-                raise Exception, "Invalid submit data: %s" % block[0]
+                raise Exception("Invalid submit data: %s" % block[0])
             if (datalist[0] != 'DAG') and (datalist[1] != 'Node:'):
-                raise Exception, "Invalid submit data: %s" % block[0]
+                raise Exception("Invalid submit data: %s" % block[0])
             section = datalist[2]
 
             self.jids[jid] = {"section": section, "submit": datetime, "current": status_codes[
@@ -83,13 +83,13 @@ class DAGManLogParser:
         datetime["port"] = exeport
 
         # if restarting, remove evict, hold and release history
-        if self.jids[jid].has_key("evict"):
+        if "evict" in self.jids[jid]:
             del self.jids[jid]["evict"]
-        if self.jids[jid].has_key("hold"):
+        if "hold" in self.jids[jid]:
             del self.jids[jid]["hold"]
-        if self.jids[jid].has_key("release"):
+        if "release" in self.jids[jid]:
             del self.jids[jid]["release"]
-        if self.jids[jid].has_key("suspend"):
+        if "suspend" in self.jids[jid]:
             del self.jids[jid]["suspend"]
 
         self.jids[jid]["exe"] = datetime
@@ -149,7 +149,7 @@ class DAGManLogParser:
         self.jids[jid]["current"] = status_codes["Idle"]
 
     def parseHold(self, jid, datetime, other, block):
-        if self.jids[jid].has_key("release"):
+        if "release" in self.jids[jid]:
             del self.jids[jid]["release"]
         self.jids[jid]["nr_holds"] = self.jids[jid]["nr_holds"] + 1
         self.jids[jid]["hold"] = datetime
@@ -165,7 +165,7 @@ class DAGManLogParser:
         self.jids[jid]["current"] = status_codes["Suspended"]
 
     def parseUnsuspend(self, jid, datetime, other, block):
-        if self.jids[jid].has_key("suspend"):
+        if "suspend" in self.jids[jid]:
             del self.jids[jid]["suspend"]
         self.jids[jid]["current"] = status_codes["Running"]
 
@@ -180,7 +180,8 @@ class DAGManLogParser:
 
         year = self.curtimelist[0]  # try current year
         utime = time.mktime((year, month, day, hour, min, sec, -1, -1, -1))
-        if (utime > (self.curtime + 360000)):  # probably the date was in the past year
+        if (utime > (self.curtime + 360000)
+            ):  # probably the date was in the past year
             utime = time.mktime(
                 (year - 1, month, day, hour, min, sec, -1, -1, -1))
         return utime
@@ -198,7 +199,7 @@ class DAGManLogParser:
         if optype == "000":
             self.parseSubmit(jid, datetime, other, block[1:], ignore_sections)
         else:
-            if not self.jids.has_key(jid):
+            if jid not in self.jids:
                 # protect against errors in the logfile
                 self.parseSubmit(jid, datetime, None, None, 1)
 
@@ -228,7 +229,7 @@ class DAGManLogParser:
 
         i = 0
         block_nr = 0
-        while 1:
+        while True:
             # split the text file in blocks
             j = i
             lines = [fd.readline()]
@@ -245,9 +246,9 @@ class DAGManLogParser:
                 # print "calling
                 # parseBlock(lines=%s,ignore_sections=%s,utime_only=%s)"%(lines,ignore_sections,utime_only)
                 self.parseBlock(lines, ignore_sections, utime_only)
-            except TypeError, msg:
-                raise Exception, "Lines %i-%i Block %i: %s" % (
-                    i, j, block_nr, msg)
+            except TypeError as msg:
+                raise Exception("Lines %i-%i Block %i: %s" % (
+                    i, j, block_nr, msg))
             fd.release()
             changed = 1
 
@@ -259,8 +260,8 @@ class DAGManLogParser:
         new_events = {}
         for k in jid.keys():
             el = jid[k]
-            if type(el) == type({}):
-                if el.has_key('utime'):
+            if isinstance(el, type({})):
+                if 'utime' in el:
                     utime = el['utime']
                     if utime > prev_time:
                         new_events[k] = utime
@@ -268,9 +269,10 @@ class DAGManLogParser:
 
     # main
     #****************************************
-    def __init__(self, logfilename, ignore_sections=0, utime_only=1, use_cache=0, cache_dir=None):
+    def __init__(self, logfilename, ignore_sections=0,
+                 utime_only=1, use_cache=0, cache_dir=None):
         if use_cache:
-            if cache_dir == None:
+            if cache_dir is None:
                 cache_basename = logfilename
             else:
                 cache_basename = cache_dir + "/cache_" + \
@@ -313,8 +315,7 @@ class DAGManLogParser:
 
     #****************************************
     def write(self, long=0):
-        jids = self.jids.keys()
-        jids.sort()
+        jids = sorted(self.jids.keys())
         for jid in jids:
             el = self.jids[jid]
             if long == 2:
@@ -325,11 +326,11 @@ class DAGManLogParser:
             print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, socket.gethostname(), cur, el["section"])
             if long:
                 print "\tSubmitted: %s %s" % (el["submit"]["date"], el["submit"]["time"])
-                if el.has_key("exe"):
+                if "exe" in el:
                     print "\tExe on %s: %s %s " % (socket.gethostbyaddr(el["exe"]["node"])[0], el["exe"]["date"], el["exe"]["time"])
-                if el.has_key("end"):
+                if "end" in el:
                     print "\tDone Exit Code %s: %s %s" % (el["end"]["retcode"], el["end"]["date"], el["end"]["time"])
-                if el.has_key("abort"):
+                if "abort" in el:
                     print "\tAbort: %s %s" % (el["abort"]["date"], el["abort"]["time"])
 
     ##########################################################################
@@ -341,20 +342,23 @@ class DAGManLogParser:
                                       indent_tab=indent_tab, leading_tab=leading_tab,
                                       subtypes_params=self.xmldesc_jids)
 
-    def xmlwrite_jids(self, fd, tag_name='jids', indent_tab="   ", leading_tab=""):
+    def xmlwrite_jids(self, fd, tag_name='jids',
+                      indent_tab="   ", leading_tab=""):
         return xml_format.dict2file(file, self.jids,
                                     tag_name, 'jid',
                                     indent_tab=indent_tab, leading_tab=leading_tab,
                                     subtypes_params=self.xmldesc_jids)
 
     ##########################################################################
-    def xml_sections(self, tag_name='sections', indent_tab="   ", leading_tab=""):
+    def xml_sections(self, tag_name='sections',
+                     indent_tab="   ", leading_tab=""):
         return xml_format.dict2string(self.sections,
                                       tag_name, 'section',
                                       indent_tab=indent_tab, leading_tab=leading_tab,
                                       el_attr_name='jid')
 
-    def xmlwrite_sections(self, fd, tag_name='sections', indent_tab="   ", leading_tab=""):
+    def xmlwrite_sections(self, fd, tag_name='sections',
+                          indent_tab="   ", leading_tab=""):
         return xml_format.dict2file(fd, self.sections,
                                     tag_name, 'section',
                                     indent_tab=indent_tab, leading_tab=leading_tab,
@@ -374,7 +378,7 @@ class DAGManLogParserFast:
 
         i = 0
         block_nr = 0
-        while 1:
+        while True:
             line = fd.readline()
             if len(line) == 0:
                 return changed  # EOF
@@ -398,7 +402,7 @@ class DAGManLogParserFast:
                             11):  # Unsuspend
                 new_state = 2  # status_codes["Running"]
             elif optype == 5:  # done
-                if self.jids.has_key(jid) and (self.jids[jid] != 2):
+                if jid in self.jids and (self.jids[jid] != 2):
                     # never really run, assume fake event for removing
                     new_state = 3  # status_codes["Removed"]
                 else:
@@ -428,20 +432,20 @@ class DAGManLogParserFast:
             changed = 1
             if alive_only and (new_state in (3,  # removed
                                              4)):  # completed
-                if self.jids.has_key(jid):
+                if jid in self.jids:
                     del self.jids[jid]
-                if want_counters and self.counters.has_key(jid):
+                if want_counters and jid in self.counters:
                     del self.counters[jid]
-            elif new_state != None:
+            elif new_state is not None:
                 self.jids[jid] = new_state
                 if want_counters:
-                    if self.counters.has_key(jid):
+                    if jid in self.counters:
                         cel = self.counters[jid]
                     else:
                         cel = {}
 
                     s = new_state
-                    if cel.has_key(s):
+                    if s in cel:
                         cel[s] = cel[s] + 1
                     else:
                         cel[s] = 1
@@ -454,14 +458,15 @@ class DAGManLogParserFast:
 
     # main
     #****************************************
-    def __init__(self, logfilename, use_cache=0, cache_dir=None, want_counters=0, alive_only=0):
+    def __init__(self, logfilename, use_cache=0,
+                 cache_dir=None, want_counters=0, alive_only=0):
         if want_counters:
             default_fields = {"jids": {}, "counters": {}}
         else:
             default_fields = {}
 
         if use_cache:
-            if cache_dir == None:
+            if cache_dir is None:
                 cache_basename = logfilename
             else:
                 cache_basename = cache_dir + "/cache_" + \
@@ -499,7 +504,8 @@ class DAGManLogParserFast:
                                       tag_name, 'jid',
                                       indent_tab=indent_tab, leading_tab=leading_tab)
 
-    def xmlwrite_jids(self, fd, tag_name='jid', indent_tab="   ", leading_tab=""):
+    def xmlwrite_jids(self, fd, tag_name='jid',
+                      indent_tab="   ", leading_tab=""):
         return xml_format.dict2file(fd, self.jids,
                                     tag_name, 'jid',
                                     indent_tab=indent_tab, leading_tab=leading_tab)

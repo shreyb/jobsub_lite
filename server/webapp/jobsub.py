@@ -15,8 +15,6 @@ from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
 
 
-
-
 def is_supported_accountinggroup(accountinggroup):
     rc = False
     try:
@@ -75,8 +73,6 @@ def sandbox_readable_by_group(acctgroup):
                    logfile='error')
 
     return rc
-
-
 
 
 def sandbox_allowed_browsable_file_types():

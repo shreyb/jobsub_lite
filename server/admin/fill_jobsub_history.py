@@ -18,7 +18,7 @@ def createDB(dir=None):
         os.chdir(dir)
     else:
         dir = os.getcwd()
-    logger.log('in directory %s'%dir, logfile="fill_jobsub_history")
+    logger.log('in directory %s' % dir, logfile="fill_jobsub_history")
     sql1 = """
         create table if not exists load_history(
         history_file text PRIMARY KEY,
@@ -26,21 +26,22 @@ def createDB(dir=None):
         loaded datetime
         );
     """
-    sql2="""    
-        create table if not exists jobsub_history( 
+    sql2 = """
+        create table if not exists jobsub_history(
         jobsubjobid text PRIMARY KEY ,
-        acctgroup text,  
-        owner text, 
-        ownerjob text, 
-        iwd text, 
-        qdate datetime, 
-        jobcurrentstartdate datetime, 
-        completiondate datetime, 
-        jobstatus datetime, 
+        acctgroup text,
+        owner text,
+        ownerjob text,
+        iwd text,
+        qdate datetime,
+        jobcurrentstartdate datetime,
+        completiondate datetime,
+        jobstatus datetime,
         numjobstarts integer
         );
      """
     executeSQLCmds([sql1, sql2])
+
 
 def checkHistoryDB():
     conn = sqlite3.connect('jobsub_history.db')
@@ -61,38 +62,36 @@ def checkHistoryDB():
 
 
 def createHistoryDump(historyFileName='history'):
-    cmd = """condor_history -file %s -af globaljobid iwd  
-             jobstatus qdate jobcurrentstartdate 
+    cmd = """condor_history -file %s -af globaljobid iwd
+             jobstatus qdate jobcurrentstartdate
              completiondate numjobstarts cmd""" % historyFileName
     hist, cmd_err = subprocessSupport.iexe_cmd(cmd)
     int_fname = "%s.dat" % historyFileName
-    with open(int_fname,'w') as f:
+    with open(int_fname, 'w') as f:
         for line in hist.split('\n'):
             f.write("%s\n" % line)
     f.close()
 
 
-
-
 def createSqlFile(historyFileName, serverName=None):
     f_outname = "%s.sql" % historyFileName
     f_inname = "%s.dat" % historyFileName
-    f_out = open(f_outname ,'w')
+    f_out = open(f_outname, 'w')
     if historyFileName == 'partial_history':
         now = time.time()
         historyFileName = "%s.%s" % (historyFileName, now)
     load_hist = """insert into load_history values """
     load_hist += """('%s','%s',datetime('now'));""" %\
-            (historyFileName, serverName)
+        (historyFileName, serverName)
     f_out.write('%s\n' % load_hist)
     with open(f_inname, 'r') as f_in:
         for line in f_in:
-            line = line.replace('undefined','0')
+            line = line.replace('undefined', '0')
             wrds = string.split(line)
             if len(wrds) > 0:
                 if '#' in wrds[0]:
                     idparts = string.split(wrds[0], '#')
-                    jobsubjobid = "%s@%s"%(idparts[1], idparts[0])
+                    jobsubjobid = "%s@%s" % (idparts[1], idparts[0])
                     ownerjob = os.path.basename(wrds[7])
                     iwd = wrds[1]
                     iwdparts = string.split(iwd, '/')
@@ -105,16 +104,16 @@ def createSqlFile(historyFileName, serverName=None):
                     jobcurrentstartdate = wrds[4]
                     completiondate = wrds[5]
                     numjobstarts = wrds[6]
-                    tmpl= """insert into jobsub_history values("""
+                    tmpl = """insert into jobsub_history values("""
                     tmpl += """'%s','%s','%s','%s','%s',"""
                     tmpl += """datetime(%s,'unixepoch', 'localtime'),"""
                     tmpl += """datetime(%s,'unixepoch', 'localtime'),"""
                     tmpl += """datetime(%s,'unixepoch', 'localtime'),'%s',%s);\n"""
-                    insertStr = tmpl% (jobsubjobid,acctgroup,owner,ownerjob,iwd,
-                            qdate,
-                            jobcurrentstartdate,
-                            completiondate,
-                            jobstatus,numjobstarts)
+                    insertStr = tmpl % (jobsubjobid, acctgroup, owner, ownerjob, iwd,
+                                        qdate,
+                                        jobcurrentstartdate,
+                                        completiondate,
+                                        jobstatus, numjobstarts)
 
                     f_out.write(insertStr)
     f_out.close()
@@ -123,23 +122,34 @@ def createSqlFile(historyFileName, serverName=None):
 def historyDBDir():
     host = socket.gethostname()
     p = JobsubConfigParser.JobsubConfigParser()
-    history_db = p.get(host,'history_db')
-    logger.log("history_db=%s"%history_db,logfile="fill_jobsub_history")
+    history_db = p.get(host, 'history_db')
+    logger.log("history_db=%s" % history_db, logfile="fill_jobsub_history")
     dir = os.path.dirname(history_db)
     return dir
 
-def loadArchive(afile,cleanup=False):
+
+def loadArchive(afile, cleanup=False):
     fp = afile
     try:
-        logger.log('catching up old file %s'% fp ,logfile="fill_jobsub_history")
+        logger.log(
+            'catching up old file %s' %
+            fp, logfile="fill_jobsub_history")
         f = os.path.basename(fp)
-        os.symlink(fp, os.path.join(os.path.realpath(os.curdir),f))
+        os.symlink(fp, os.path.join(os.path.realpath(os.curdir), f))
         createHistoryDump(f)
         createSqlFile(f)
-        loadDatabase(f,cleanup)
+        loadDatabase(f, cleanup)
     except:
-        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
-        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
+        logger.log(
+            "%s" %
+            sys.exc_info()[1],
+            severity=logging.ERROR,
+            logfile="fill_jobsub_history")
+        logger.log(
+            "%s" %
+            sys.exc_info()[1],
+            severity=logging.ERROR,
+            logfile="error")
 
 
 def loadNewestArchive(cleanup=False):
@@ -149,31 +159,49 @@ def loadNewestArchive(cleanup=False):
     for f in os.listdir(dir):
         if 'history.20' in f:
             try:
-                logger.log('looking at %s'%f,logfile="fill_jobsub_history")
-                fpx = os.path.join(dir,f)
+                logger.log('looking at %s' % f, logfile="fill_jobsub_history")
+                fpx = os.path.join(dir, f)
                 tx = os.path.getmtime(fpx)
                 if tx > t:
-                    logger.log('%s wins'%fpx,logfile="fill_jobsub_history")
+                    logger.log('%s wins' % fpx, logfile="fill_jobsub_history")
                     t = tx
                     fp = fpx
             except:
-                logger.log("%s"%sys.exc_info()[1], severity=logging.ERROR, logfile="fill_jobsub_history")
-                logger.log("%s"%sys.exc_info()[1], severity=logging.ERROR, logfile="error")
+                logger.log(
+                    "%s" %
+                    sys.exc_info()[1],
+                    severity=logging.ERROR,
+                    logfile="fill_jobsub_history")
+                logger.log(
+                    "%s" %
+                    sys.exc_info()[1],
+                    severity=logging.ERROR,
+                    logfile="error")
     if fp:
-        loadArchive(fp,cleanup)
+        loadArchive(fp, cleanup)
+
 
 def condorHistoryFile():
     cmd = "condor_config_val HISTORY"
-    histfile , cmd_err = subprocessSupport.iexe_cmd(cmd)
+    histfile, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
-        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
-        logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
+        logger.log(
+            "%s" %
+            sys.exc_info()[1],
+            severity=logging.ERROR,
+            logfile="fill_jobsub_history")
+        logger.log(
+            "%s" %
+            sys.exc_info()[1],
+            severity=logging.ERROR,
+            logfile="error")
     return histfile
+
 
 def keepUp():
     dir = historyDBDir()
     history_db = "%s/jobsub_history.db" % dir
-    logger.log("changing to %s"%dir, logfile="fill_jobsub_history")
+    logger.log("changing to %s" % dir, logfile="fill_jobsub_history")
     os.chdir(dir)
     checkHistoryDB()
     try:
@@ -188,29 +216,35 @@ def keepUp():
         histfile = condorHistoryFile()
         cmd = "rsync %s . --size-only --backup --times" % histfile
         logger.log(cmd, logfile="fill_jobsub_history")
-        cmd_out , cmd_err = subprocessSupport.iexe_cmd(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         logger.log(cmd_out, logfile="fill_jobsub_history")
         if cmd_err:
-            logger.log(cmd_err, severity=logging.ERROR, logfile="fill_jobsub_history")
+            logger.log(
+                cmd_err,
+                severity=logging.ERROR,
+                logfile="fill_jobsub_history")
             logger.log(cmd_err, severity=logging.ERROR, logfile="error")
         num_lines = open('history').read().count('\n')
-        logger.log("history file has %s lines" % num_lines, logfile="fill_jobsub_history")
+        logger.log(
+            "history file has %s lines" %
+            num_lines,
+            logfile="fill_jobsub_history")
         if os.path.exists('history~'):
             num_lines_old = open('history~').read().count('\n')
             tailsize = num_lines - num_lines_old
             if tailsize > 0:
                 cmd = "tail --lines %s history " % tailsize
                 logger.log(cmd, logfile="fill_jobsub_history")
-                cmd_out , cmd_err = subprocessSupport.iexe_cmd(cmd)
-                fname='partial_history'
-                with open(fname,'w') as f:
+                cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+                fname = 'partial_history'
+                with open(fname, 'w') as f:
                     for line in cmd_out.split('\n'):
                         f.write("%s\n" % line)
                 f.close()
             else:
                 fname = 'history'
         else:
-            fname='history'
+            fname = 'history'
             loadNewestArchive()
         createHistoryDump(fname)
         createSqlFile(fname)
@@ -218,10 +252,14 @@ def keepUp():
         shutil.copy('jobsub_history.db', history_db)
 
     except:
-        logger.log(sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
-        logger.log(sys.exc_info()[1],severity=logging.ERROR, logfile="error")
+        logger.log(
+            sys.exc_info()[1],
+            severity=logging.ERROR,
+            logfile="fill_jobsub_history")
+        logger.log(sys.exc_info()[1], severity=logging.ERROR, logfile="error")
 
-def pruneDB( ndays, dbname=None):
+
+def pruneDB(ndays, dbname=None):
 
     if dbname:
         dir = os.path.dirname(dbname)
@@ -229,28 +267,34 @@ def pruneDB( ndays, dbname=None):
         os.chdir(dir)
     else:
         dir = historyDBDir()
-        history_db = "%s/jobsub_history.db"%dir
-        logger.log("history_db is '%s'"% history_db, logfile="fill_jobsub_history")
+        history_db = "%s/jobsub_history.db" % dir
+        logger.log(
+            "history_db is '%s'" %
+            history_db,
+            logfile="fill_jobsub_history")
         os.chdir(dir)
-        shutil.copy('jobsub_history.db','work')
+        shutil.copy('jobsub_history.db', 'work')
         os.chdir('work')
 
-    logger.log('in dir %s db= %s'%(dir, history_db),logfile="fill_jobsub_history")
+    logger.log(
+        'in dir %s db= %s' %
+        (dir, history_db), logfile="fill_jobsub_history")
 
-    sql1="""DELETE from jobsub_history WHERE 
-                 qdate < datetime('now', '-%s days') AND 
+    sql1 = """DELETE from jobsub_history WHERE
+                 qdate < datetime('now', '-%s days') AND
                  jobstatus = 'X';""" % ndays
 
-    sql2="""DELETE from jobsub_history WHERE 
-                   completiondate < datetime('now', '-%s days') AND 
+    sql2 = """DELETE from jobsub_history WHERE
+                   completiondate < datetime('now', '-%s days') AND
                    jobstatus = 'C';""" % ndays
 
-    sql3="vacuum;"
+    sql3 = "vacuum;"
 
     executeSQLCmds([sql1, sql2, sql3])
 
     if not dbname:
         shutil.copy('jobsub_history.db', history_db)
+
 
 def executeSQLCmds(sql_list):
     conn = sqlite3.connect('jobsub_history.db')
@@ -258,28 +302,32 @@ def executeSQLCmds(sql_list):
     for sql in sql_list:
 
         try:
-            logger.log(sql,logfile="fill_jobsub_history")
+            logger.log(sql, logfile="fill_jobsub_history")
             c.execute(sql)
             conn.commit()
         except sqlite3.Error as e:
-            msg = "%s:%s " %(sql, str(e))
-            logger.log(msg , severity=logging.ERROR, logfile="fill_jobsub_history")
-            logger.log(msg , severity=logging.ERROR, logfile="error")
+            msg = "%s:%s " % (sql, str(e))
+            logger.log(
+                msg,
+                severity=logging.ERROR,
+                logfile="fill_jobsub_history")
+            logger.log(msg, severity=logging.ERROR, logfile="error")
     conn.close()
 
-def loadDatabase(filebase,cleanup=False):
+
+def loadDatabase(filebase, cleanup=False):
     dir = os.path.dirname(filebase)
     fb = os.path.basename(filebase)
     if dir:
-        logger.log("changing to %s"%dir , logfile="fill_jobsub_history")
-        os.chdir(dir) 
+        logger.log("changing to %s" % dir, logfile="fill_jobsub_history")
+        os.chdir(dir)
     conn = sqlite3.connect('jobsub_history.db')
     c = conn.cursor()
     sql_file = "%s.sql" % fb
     num_total = 0
     num_good = 0
     num_bad = 0
-    with open(sql_file,'r') as f:
+    with open(sql_file, 'r') as f:
         for line in f:
             num_total += 1
             try:
@@ -287,42 +335,53 @@ def loadDatabase(filebase,cleanup=False):
                 conn.commit()
                 num_good += 1
             except sqlite3.Error as e:
-                msg = "%s:%s " %(line, str(e))
+                msg = "%s:%s " % (line, str(e))
                 if 'is not unique' not in msg:
-                    logger.log(msg, severity=logging.ERROR, logfile="fill_jobsub_history")
+                    logger.log(msg, severity=logging.ERROR,
+                               logfile="fill_jobsub_history")
                     logger.log(msg, severity=logging.ERROR, logfile="error")
                     num_bad += 1
-   
-    totals = "%s lines in upload  %s successfully loaded  %s failed " % (num_total, num_good, num_bad)
+
+    totals = "%s lines in upload  %s successfully loaded  %s failed " % (
+        num_total, num_good, num_bad)
     logger.log(totals, logfile="fill_jobsub_history")
     conn.close()
     if cleanup:
         try:
             if filebase != 'history' and os.path.exists(filebase):
-                logger.log('cleaning up %s'%filebase, logfile="fill_jobsub_history")
+                logger.log(
+                    'cleaning up %s' %
+                    filebase,
+                    logfile="fill_jobsub_history")
                 os.remove(filebase)
-            f = '%s.dat'%filebase
+            f = '%s.dat' % filebase
             if os.path.exists(f):
-                logger.log('cleaning up %s'%f, logfile="fill_jobsub_history")
+                logger.log('cleaning up %s' % f, logfile="fill_jobsub_history")
                 os.remove(f)
-            f = '%s.sql'%filebase
+            f = '%s.sql' % filebase
             if os.path.exists(f):
-                logger.log('cleaning up %s'%f, logfile="fill_jobsub_history")
+                logger.log('cleaning up %s' % f, logfile="fill_jobsub_history")
                 os.remove(f)
         except:
-            logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="fill_jobsub_history")
-            logger.log("%s"%sys.exc_info()[1],severity=logging.ERROR, logfile="error")
-
+            logger.log(
+                "%s" %
+                sys.exc_info()[1],
+                severity=logging.ERROR,
+                logfile="fill_jobsub_history")
+            logger.log(
+                "%s" %
+                sys.exc_info()[1],
+                severity=logging.ERROR,
+                logfile="error")
 
 
 def run_prog():
     usage = '%prog [ Options]'
 
-    parser = optparse.OptionParser(usage = usage, 
-                                   description = \
-                                   'parse htcondor history logs into jobsub_history database')
+    parser = optparse.OptionParser(usage=usage,
+                                   description='parse htcondor history logs into jobsub_history database')
 
-    parser.add_option('-v', 
+    parser.add_option('-v',
                       dest='verbose',
                       action='store_true',
                       help='verbose mode')
@@ -330,15 +389,14 @@ def run_prog():
     parser.add_option('--keepUp',
                       dest='keepUp',
                       action='store_true',
-                      help=\
-                      'incrementally parse and load history file from last run')
+                      help='incrementally parse and load history file from last run')
 
     parser.add_option('--pruneDB',
                       dest='pruneDB',
                       metavar='<number of days>',
                       default=None,
                       type='string',
-                      help='remove history records older than '+\
+                      help='remove history records older than ' +
                            '<number of days> from jobsub_history.db')
 
     parser.add_option('--pruneDBName',
@@ -346,7 +404,7 @@ def run_prog():
                       metavar='<db name>',
                       default=None,
                       type='string',
-                      help='prune records from <db name>'+\
+                      help='prune records from <db name>' +
                            'the default is to prune the master db configured for server on this host')
 
     parser.add_option('--loadDBFromSQL',
@@ -363,35 +421,35 @@ def run_prog():
                       type='string',
                       help='parse htcondor history log into intermediate <history_file>.dat ')
 
-    parser.add_option('--createSqlFile', 
-                      dest='createSqlFile', 
+    parser.add_option('--createSqlFile',
+                      dest='createSqlFile',
                       metavar='<history_file>',
-                      default=None, 
-                      type='string' , 
+                      default=None,
+                      type='string',
                       help='load history db from <history_file>.sql')
 
-    parser.add_option('--loadArchive', 
-                      dest='loadArchive', 
+    parser.add_option('--loadArchive',
+                      dest='loadArchive',
                       metavar='<archived_history_file>',
-                      default=None, 
-                      type='string' , 
+                      default=None,
+                      type='string',
                       help='load history db from <archived_history_file> (typically named history.YYYYMMDDhhmmss (a date)')
 
     parser.add_option('--createDB',
-                      dest='createDB', 
+                      dest='createDB',
                       metavar='<db_dir>',
-                      default=None, 
-                      type='string' , 
+                      default=None,
+                      type='string',
                       help='create jobsub_history.db <db_dir> if it does not already exist')
 
     parser.add_option('--loadNewestArchive',
-                      dest='loadNewestArchive', 
-                      action = 'store_true', 
+                      dest='loadNewestArchive',
+                      action='store_true',
                       help='populate jobsub_history.db with newest htcondor history archive ')
 
     parser.add_option('--cleanup',
-                      dest='cleanup', 
-                      action = 'store_true', 
+                      dest='cleanup',
+                      action='store_true',
                       help='clean up the intermediate sql and dat files')
 
     options, remainder = parser.parse_args(sys.argv)
@@ -401,7 +459,7 @@ def run_prog():
         print "remainder %s" % remainder
 
     if options.loadDBFromSQL:
-       loadDatabase(options.loadDBFromSQL, options.cleanup)
+        loadDatabase(options.loadDBFromSQL, options.cleanup)
     elif options.createHistoryDump:
         createHistoryDump(options.createHistoryDump)
     elif options.createSqlFile:
@@ -409,7 +467,7 @@ def run_prog():
     elif options.createDB:
         createDB(options.createDB)
     elif options.loadArchive:
-        loadArchive(options.loadArchive,options.cleanup)
+        loadArchive(options.loadArchive, options.cleanup)
     elif options.loadNewestArchive:
         loadNewestArchive(options.cleanup)
     elif options.pruneDB:
@@ -424,12 +482,12 @@ if __name__ == '__main__':
         run_prog()
     except:
 
-        logger.log("%s"%sys.exc_info()[1],
+        logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,
                    traceback=True,
                    logfile="fill_jobsub_history")
 
-        logger.log("%s"%sys.exc_info()[1],
+        logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,
                    traceback=True,
                    logfile="error")

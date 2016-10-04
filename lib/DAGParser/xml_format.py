@@ -44,7 +44,8 @@ def complete_class_params(class_params):
 # internal, get header of a class
 
 
-def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params, text_params, leading_tab, debug_str):
+def class2head(inst, inst_name, params, dicts_params, lists_params,
+               tree_params, text_params, leading_tab, debug_str):
     inst_attrs = []
     dict_attrs = []
     list_attrs = []
@@ -56,17 +57,17 @@ def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params,
         el = params[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             head_arr.append(' %s="%s"' % (attr, cgi.escape(el, 1)))
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Param attr %s is not a simple type (%s)" % (
-                attr, debug_str)
+            raise RuntimeError("Param attr %s is not a simple type (%s)" % (
+                attr, debug_str))
 
-    if type(inst) == types.DictType:
+    if isinstance(inst, types.DictType):
         keys = inst.keys()  # dictionaries can be use like classes
     else:
         keys = dir(inst)
@@ -74,9 +75,9 @@ def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params,
         el = inst[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             if attr in text_params:
                 text_attrs.append(attr)
             else:
@@ -87,9 +88,9 @@ def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params,
             elif attr in dicts_params.keys():
                 dict_attrs.append(attr)
             else:
-                raise RuntimeError, "No params for list attr %s (%s)" % (
-                    attr, debug_str)
-        elif type(el) is types.DictType:
+                raise RuntimeError("No params for list attr %s (%s)" % (
+                    attr, debug_str))
+        elif isinstance(el, types.DictType):
             if attr in dicts_params.keys():
                 # print "%s is dict" % attr
                 dict_attrs.append(attr)
@@ -102,14 +103,15 @@ def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params,
             else:
                 # print "%s is class" % attr
                 inst_attrs.append(attr)
-        elif type(el) is types.InstanceType:
+        elif isinstance(el, types.InstanceType):
             inst_attrs.append(attr)
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Unsupported type (%s) for attr %s (%s)" % (
-                type(el), attr, debug_str)
-    if (len(inst_attrs) == 0) and (len(dict_attrs) == 0) and (len(list_attrs) == 0) and (len(tree_attrs) == 0) and (len(text_attrs) == 0):
+            raise RuntimeError("Unsupported type (%s) for attr %s (%s)" % (
+                type(el), attr, debug_str))
+    if (len(inst_attrs) == 0) and (len(dict_attrs) == 0) and (
+            len(list_attrs) == 0) and (len(tree_attrs) == 0) and (len(text_attrs) == 0):
         head_arr.append('/>')
         is_complete = 1
     else:
@@ -117,13 +119,15 @@ def class2head(inst, inst_name, params, dicts_params, lists_params, tree_params,
         is_complete = 0
     head_str = string.join(head_arr, '')
 
-    return (head_str, is_complete, inst_attrs, dict_attrs, list_attrs, tree_attrs, text_attrs)
+    return (head_str, is_complete, inst_attrs, dict_attrs,
+            list_attrs, tree_attrs, text_attrs)
 
 
 # Convert a class into an XML string
 # all the simple attributes will be put in the header
 # other dictionaries will be put into the body
-def class2string(inst, inst_name, params={}, subclass_params={}, dicts_params={}, lists_params={}, tree_params={}, text_params=[], indent_tab="   ", leading_tab="", debug_str=""):
+def class2string(inst, inst_name, params={}, subclass_params={}, dicts_params={}, lists_params={
+}, tree_params={}, text_params=[], indent_tab="   ", leading_tab="", debug_str=""):
     # return a pair (new_subclass_params,new_dict2list_params)
     def get_subclass_param(subclass_params, attr):
         if attr in subclass_params.keys():
@@ -166,7 +170,8 @@ def class2string(inst, inst_name, params={}, subclass_params={}, dicts_params={}
 # other dictionaries will be put into the body
 
 
-def class2file(fd, inst, inst_name, params={}, subclass_params={}, dicts_params={}, lists_params={}, tree_params={}, text_params=[], indent_tab="   ", leading_tab="", debug_str=""):
+def class2file(fd, inst, inst_name, params={}, subclass_params={}, dicts_params={}, lists_params={
+}, tree_params={}, text_params=[], indent_tab="   ", leading_tab="", debug_str=""):
     # return a pair (new_subclass_params,new_dict2list_params)
     def get_subclass_param(subclass_params, attr):
         if attr in subclass_params.keys():
@@ -219,7 +224,8 @@ def complete_dict_params(dict_params):
 # all elements should be of the same type, although this is not enforced
 
 
-def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="val", params={}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
+def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="val", params={
+}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
     res_arr = []
 
     head_arr = []
@@ -228,21 +234,21 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
         el = params[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             head_arr.append(' %s="%s"' % (attr, cgi.escape(el, 1)))
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Param attr %s is not a simple type (%s) (%s)" % (
-                attr, type(el), debug_str)
+            raise RuntimeError("Param attr %s is not a simple type (%s) (%s)" % (
+                attr, type(el), debug_str))
     head_arr.append('>')
     head_str = string.join(head_arr, '')
     res_arr.append(head_str)
     # print head_str
 
-    if type(dict) == types.DictType:
+    if isinstance(dict, types.DictType):
         keys = dict.keys()
     else:
         keys = range(len(dist))  # allow lists to be used as dictionaries
@@ -250,26 +256,26 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
     for idx in keys:
         el = dict[idx]
         if ((type(el) in (types.IntType, types.LongType, types.FloatType, types.StringType)) or
-                (el == None)):
-            if el == None:
+                (el is None)):
+            if el is None:
                 val = "None"
-            elif type(el) is types.StringType:
+            elif isinstance(el, types.StringType):
                 val = cgi.escape(el, 1)
-            elif type(el) is types.FloatType:
+            elif isinstance(el, types.FloatType):
                 val = "%.12g" % el
             else:
                 val = "%i" % el
             res_arr.append(leading_tab + indent_tab + ('<%s %s="%s" %s="%s"/>' %
                                                        (el_name, dict_attr_name, idx, el_attr_name, val)))
-        elif type(el) is types.InstanceType:
+        elif isinstance(el, types.InstanceType):
             if "class" in subtypes_params.keys():
                 c = complete_class_params(subtypes_params["class"])
                 res_arr.append(class2string(el, el_name, {dict_attr_name: idx}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                                "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx))))
             else:
-                raise RuntimeError, "No params for class (at idx %s) (%s)" % (
-                    idx, debug_str)
-        elif type(el) is types.DictType:
+                raise RuntimeError("No params for class (at idx %s) (%s)" % (
+                    idx, debug_str))
+        elif isinstance(el, types.DictType):
             #print (idx,subtypes_params.keys())
             if "dict" in subtypes_params.keys():
                 sp = complete_dict_params(subtypes_params["dict"])
@@ -284,8 +290,8 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
                 res_arr.append(class2string(el, el_name, {dict_attr_name: idx}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                                "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx))))
             else:
-                raise RuntimeError, "No params for dict (at idx %s) (%s)" % (
-                    idx, debug_str)
+                raise RuntimeError("No params for dict (at idx %s) (%s)" % (
+                    idx, debug_str))
         elif type(el) in (types.ListType, types.TupleType):
             if "list" in subtypes_params.keys():
                 sp = complete_list_params(subtypes_params["list"])
@@ -296,11 +302,11 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
                 res_arr.append(dict2string(el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {dict_attr_name: idx}, sp[
                                "subtypes_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx))))
             else:
-                raise RuntimeError, "No params for list (at idx %s) (%s)" % (
-                    idx, debug_str)
+                raise RuntimeError("No params for list (at idx %s) (%s)" % (
+                    idx, debug_str))
         else:
-            raise RuntimeError, "Unsupported type(%s) at idx %s (%s)" % (
-                type(el), idx, debug_str)
+            raise RuntimeError("Unsupported type(%s) at idx %s (%s)" % (
+                type(el), idx, debug_str))
 
     res_arr.append(leading_tab + ('</%s>' % dict_name))
 
@@ -310,28 +316,29 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
 # all elements should be of the same type, although this is not enforced
 
 
-def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name="val", params={}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
+def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name="val",
+              params={}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
     head_arr = []
     head_arr.append(leading_tab + ('<%s' % dict_name))
     for attr in params.keys():
         el = params[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             head_arr.append(' %s="%s"' % (attr, cgi.escape(el, 1)))
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Param attr %s is not a simple type (%s) (%s)" % (
-                attr, type(el), debug_str)
+            raise RuntimeError("Param attr %s is not a simple type (%s) (%s)" % (
+                attr, type(el), debug_str))
     head_arr.append('>\n')
     head_str = string.join(head_arr, '')
     fd.write(head_str)
     # print head_str
 
-    if type(dict) == types.DictType:
+    if isinstance(dict, types.DictType):
         keys = dict.keys()
     else:
         keys = range(len(dist))  # allow lists to be used as dictionaries
@@ -339,26 +346,26 @@ def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name=
     for idx in keys:
         el = dict[idx]
         if ((type(el) in (types.IntType, types.LongType, types.FloatType, types.StringType)) or
-                (el == None)):
-            if el == None:
+                (el is None)):
+            if el is None:
                 val = "None"
-            elif type(el) is types.StringType:
+            elif isinstance(el, types.StringType):
                 val = cgi.escape(el, 1)
-            elif type(el) is types.FloatType:
+            elif isinstance(el, types.FloatType):
                 val = "%.12g" % el
             else:
                 val = "%i" % el
             fd.write(leading_tab + indent_tab + ('<%s %s="%s" %s="%s"/>\n' %
                                                  (el_name, dict_attr_name, idx, el_attr_name, val)))
-        elif type(el) is types.InstanceType:
+        elif isinstance(el, types.InstanceType):
             if "class" in subtypes_params.keys():
                 c = complete_class_params(subtypes_params["class"])
                 class2file(fd, el, el_name, {dict_attr_name: idx}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                            "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx)))
             else:
-                raise RuntimeError, "No params for class (at idx %s) (%s)" % (
-                    idx, debug_str)
-        elif type(el) is types.DictType:
+                raise RuntimeError("No params for class (at idx %s) (%s)" % (
+                    idx, debug_str))
+        elif isinstance(el, types.DictType):
             #print (idx,subtypes_params.keys())
             if "dict" in subtypes_params.keys():
                 sp = complete_dict_params(subtypes_params["dict"])
@@ -373,8 +380,8 @@ def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name=
                 class2file(fd, el, el_name, {dict_attr_name: idx}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                            "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx)))
             else:
-                raise RuntimeError, "No params for dict (at idx %s) (%s)" % (
-                    idx, debug_str)
+                raise RuntimeError("No params for dict (at idx %s) (%s)" % (
+                    idx, debug_str))
         elif type(el) in (types.ListType, types.TupleType):
             if "list" in subtypes_params.keys():
                 sp = complete_list_params(subtypes_params["list"])
@@ -385,11 +392,11 @@ def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name=
                 dict2file(fd, el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {dict_attr_name: idx}, sp[
                           "subtypes_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s[%s]." % (dict_name, idx)))
             else:
-                raise RuntimeError, "No params for list (at idx %s) (%s)" % (
-                    idx, debug_str)
+                raise RuntimeError("No params for list (at idx %s) (%s)" % (
+                    idx, debug_str))
         else:
-            raise RuntimeError, "Unsupported type(%s) at idx %s (%s)" % (
-                type(el), idx, debug_str)
+            raise RuntimeError("Unsupported type(%s) at idx %s (%s)" % (
+                type(el), idx, debug_str))
 
     fd.write(leading_tab + ('</%s>\n' % dict_name))
 
@@ -411,7 +418,8 @@ def complete_list_params(list_params):
 # all elements should be of the same type, although this is not enforced
 
 
-def list2string(list, list_name, el_name, el_attr_name="val", params={}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
+def list2string(list, list_name, el_name, el_attr_name="val", params={
+}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
     res_arr = []
 
     head_arr = []
@@ -420,47 +428,49 @@ def list2string(list, list_name, el_name, el_attr_name="val", params={}, subtype
         el = params[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             head_arr.append(' %s="%s"' % (attr, cgi.escape(el, 1)))
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Param attr %s is not a simple type (%s) (%s)" % (
-                attr, type(el), debug_str)
+            raise RuntimeError("Param attr %s is not a simple type (%s) (%s)" % (
+                attr, type(el), debug_str))
     head_arr.append('>')
     head_str = string.join(head_arr, '')
     res_arr.append(head_str)
 
     # print head_str
 
-    if type(list) == types.DictType:
+    if isinstance(list, types.DictType):
         els = list.keys()  # Use only the keys of the dictionary
     else:
         els = list
 
     for el in els:
         if ((type(el) in (types.IntType, types.LongType, types.FloatType, types.StringType)) or
-                (el == None)):
-            if el == None:
+                (el is None)):
+            if el is None:
                 val = "None"
-            if type(el) is types.StringType:
+            if isinstance(el, types.StringType):
                 val = cgi.escape(el, 1)
-            elif type(el) is types.FloatType:
+            elif isinstance(el, types.FloatType):
                 val = "%.12g" % el
             else:
                 val = "%i" % el
             res_arr.append(leading_tab + indent_tab +
                            ('<%s %s="%s"/>' % (el_name, el_attr_name, val)))
-        elif type(el) is types.InstanceType:
+        elif isinstance(el, types.InstanceType):
             if "class" in subtypes_params.keys():
                 c = complete_class_params(subtypes_params["class"])
                 res_arr.append(class2string(el, el_name, {}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                                "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name)))
             else:
-                raise RuntimeError, "No params for class in list (%s)" % debug_str
-        elif type(el) is types.DictType:
+                raise RuntimeError(
+                    "No params for class in list (%s)" %
+                    debug_str)
+        elif isinstance(el, types.DictType):
             if "dict" in subtypes_params.keys():
                 sp = complete_dict_params(subtypes_params["dict"])
                 res_arr.append(dict2string(el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {}, sp[
@@ -474,7 +484,9 @@ def list2string(list, list_name, el_name, el_attr_name="val", params={}, subtype
                 res_arr.append(class2string(el, el_name, {}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                                "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name)))
             else:
-                raise RuntimeError, "No params for dict in list (%s)" % debug_str
+                raise RuntimeError(
+                    "No params for dict in list (%s)" %
+                    debug_str)
         elif type(el) in (types.ListType, types.TupleType):
             if "list" in subtypes_params.keys():
                 sp = complete_list_params(subtypes_params["list"])
@@ -485,10 +497,12 @@ def list2string(list, list_name, el_name, el_attr_name="val", params={}, subtype
                 res_arr.append(dict2string(el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {}, sp[
                                "subtypes_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name)))
             else:
-                raise RuntimeError, "No params for list in list (%s)" % debug_str
+                raise RuntimeError(
+                    "No params for list in list (%s)" %
+                    debug_str)
         else:
-            raise RuntimeError, "Unsupported type(%s) in list (%s)" % (
-                type(el), debug_str)
+            raise RuntimeError("Unsupported type(%s) in list (%s)" % (
+                type(el), debug_str))
 
     res_arr.append(leading_tab + ('</%s>' % list_name))
 
@@ -499,54 +513,57 @@ def list2string(list, list_name, el_name, el_attr_name="val", params={}, subtype
 # all elements should be of the same type, although this is not enforced
 
 
-def list2file(fd, list, list_name, el_name, el_attr_name="val", params={}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
+def list2file(fd, list, list_name, el_name, el_attr_name="val", params={
+}, subtypes_params={}, indent_tab="   ", leading_tab="", debug_str=""):
     head_arr = []
     head_arr.append(leading_tab + ('<%s' % list_name))
     for attr in params.keys():
         el = params[attr]
         if type(el) in (types.IntType, types.LongType):
             head_arr.append(' %s="%i"' % (attr, el))
-        elif type(el) is types.FloatType:
+        elif isinstance(el, types.FloatType):
             head_arr.append(' %s="%.12g"' % (attr, el))
-        elif type(el) is types.StringType:
+        elif isinstance(el, types.StringType):
             head_arr.append(' %s="%s"' % (attr, cgi.escape(el, 1)))
-        elif el == None:
+        elif el is None:
             head_arr.append(' %s="None"' % attr)
         else:
-            raise RuntimeError, "Param attr %s is not a simple type (%s) (%s)" % (
-                attr, type(el), debug_str)
+            raise RuntimeError("Param attr %s is not a simple type (%s) (%s)" % (
+                attr, type(el), debug_str))
     head_arr.append('>\n')
     head_str = string.join(head_arr, '')
     fd.write(head_str)
 
     # print head_str
 
-    if type(list) == types.DictType:
+    if isinstance(list, types.DictType):
         els = list.keys()  # Use only the keys of the dictionary
     else:
         els = list
 
     for el in els:
         if ((type(el) in (types.IntType, types.LongType, types.FloatType, types.StringType)) or
-                (el == None)):
-            if el == None:
+                (el is None)):
+            if el is None:
                 val = "None"
-            elif type(el) is types.StringType:
+            elif isinstance(el, types.StringType):
                 val = cgi.escape(el, 1)
-            elif type(el) is types.FloatType:
+            elif isinstance(el, types.FloatType):
                 val = "%.12g" % el
             else:
                 val = "%i" % el
             fd.write(leading_tab + indent_tab + ('<%s %s="%s"/>\n' %
                                                  (el_name, el_attr_name, val)))
-        elif type(el) is types.InstanceType:
+        elif isinstance(el, types.InstanceType):
             if "class" in subtypes_params.keys():
                 c = complete_class_params(subtypes_params["class"])
                 class2file(fd, el, el_name, {}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                            "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name))
             else:
-                raise RuntimeError, "No params for class in list (%s)" % debug_str
-        elif type(el) is types.DictType:
+                raise RuntimeError(
+                    "No params for class in list (%s)" %
+                    debug_str)
+        elif isinstance(el, types.DictType):
             if "dict" in subtypes_params.keys():
                 sp = complete_dict_params(subtypes_params["dict"])
                 dict2file(fd, el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {}, sp[
@@ -560,7 +577,9 @@ def list2file(fd, list, list_name, el_name, el_attr_name="val", params={}, subty
                 class2file(fd, el, el_name, {}, c["subclass_params"], c["dicts_params"], c["lists_params"], c[
                            "tree_params"], c["text_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name))
             else:
-                raise RuntimeError, "No params for dict in list (%s)" % debug_str
+                raise RuntimeError(
+                    "No params for dict in list (%s)" %
+                    debug_str)
         elif type(el) in (types.ListType, types.TupleType):
             if "list" in subtypes_params.keys():
                 sp = complete_list_params(subtypes_params["list"])
@@ -571,10 +590,12 @@ def list2file(fd, list, list_name, el_name, el_attr_name="val", params={}, subty
                 dict2file(fd, el, el_name, sp["el_name"], sp["dict_attr_name"], sp["el_attr_name"], {}, sp[
                           "subtypes_params"], indent_tab, leading_tab + indent_tab, debug_str + ("%s." % list_name))
             else:
-                raise RuntimeError, "No params for list in list (%s)" % debug_str
+                raise RuntimeError(
+                    "No params for list in list (%s)" %
+                    debug_str)
         else:
-            raise RuntimeError, "Unsupported type(%s) in list (%s)" % (
-                type(el), debug_str)
+            raise RuntimeError("Unsupported type(%s) in list (%s)" % (
+                type(el), debug_str))
 
     fd.write(leading_tab + ('</%s>\n' % list_name))
 
@@ -587,7 +608,8 @@ def list2file(fd, list, list_name, el_name, el_attr_name="val", params={}, subty
 # only simple attributes are allowed and will be put in the header
 
 
-def tree2string(tree, tree_name, child_element, indent_tab="   ", leading_tab="", debug_str=""):
+def tree2string(tree, tree_name, child_element,
+                indent_tab="   ", leading_tab="", debug_str=""):
     res = []
     line = leading_tab + '<' + tree_name
     for key in tree.keys():
@@ -596,7 +618,7 @@ def tree2string(tree, tree_name, child_element, indent_tab="   ", leading_tab=""
         line = line + (' %s="%s"' % (key, tree[key]))
 
     nr_childs = 0
-    if tree.has_key(child_element):
+    if child_element in tree:
         nr_childs = len(tree[child_element])
 
     if nr_childs > 0:
@@ -616,7 +638,8 @@ def tree2string(tree, tree_name, child_element, indent_tab="   ", leading_tab=""
 # only simple attributes are allowed and will be put in the header
 
 
-def tree2file(fd, tree, tree_name, child_element, indent_tab="   ", leading_tab="", debug_str=""):
+def tree2file(fd, tree, tree_name, child_element,
+              indent_tab="   ", leading_tab="", debug_str=""):
     line = leading_tab + '<' + tree_name
     for key in tree.keys():
         if key == child_element:
@@ -624,7 +647,7 @@ def tree2file(fd, tree, tree_name, child_element, indent_tab="   ", leading_tab=
         line = line + (' %s="%s"' % (key, tree[key]))
 
     nr_childs = 0
-    if tree.has_key(child_element):
+    if child_element in tree:
         nr_childs = len(tree[child_element])
 
     if nr_childs > 0:

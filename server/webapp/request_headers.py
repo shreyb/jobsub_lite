@@ -6,6 +6,7 @@
 import cherrypy
 import logger
 
+
 def get_client_dn():
     """
     Identify the client DN based on if the client is using a X509 cert-key
@@ -22,6 +23,7 @@ def get_client_dn():
         client_dn = issuer_dn
     return client_dn
 
+
 def path_info():
     """
     Returns a list of the path elements
@@ -32,6 +34,7 @@ def path_info():
     path = path.strip('/')
     p_list = path.split('/')
     return p_list
+
 
 def path_end():
     """

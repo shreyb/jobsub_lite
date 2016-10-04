@@ -68,7 +68,7 @@ class JobsubConfigParser(object):
     def get(self, sect, opt):
         itm = self.items(sect)
         valdict = dict(itm)
-        if valdict.has_key(opt):
+        if opt in valdict:
             val = valdict[opt]
             return val.strip("'")
         return None

@@ -20,6 +20,7 @@ from format import format_response
 class BetterAnalyzeResource(object):
     """Class Implementation of condor_q -better-analyze 'job_id'
     """
+
     def __init__(self):
         cherrypy.response.status = 501
 

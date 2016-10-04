@@ -5,7 +5,7 @@ import sys
 
 from format import format_response, rel_link
 #from condor_commands import ui_condor_q, constructFilter, condor_userprio
-import condor_commands 
+import condor_commands
 
 
 class UsersJobsResource(object):
@@ -106,9 +106,9 @@ class UsersJobsResource(object):
                         if nextIsAcctGroup and p is not None:
                             acctgroup = p
                             nextIsAcctGroup = False
-                        elif p in ['long', 'dags',]:
+                        elif p in ['long', 'dags', ]:
                             fmt = p
-                        elif p in ['hold', 'run', 'idle',]:
+                        elif p in ['hold', 'run', 'idle', ]:
                             jobStatus = p
                         elif p in ['acctgroup']:
                             nextIsAcctGroup = True

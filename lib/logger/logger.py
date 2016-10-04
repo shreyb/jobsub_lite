@@ -9,7 +9,8 @@ def whereAmI(nFramesUp=1):
     """ Create a string naming the function n frames up on the stack.
     """
     co = sys._getframe(nFramesUp + 1).f_code
-    return "[%s:%s:%s]" % (current_thread().ident, os.path.basename(co.co_filename), co.co_name)
+    return "[%s:%s:%s]" % (current_thread().ident,
+                           os.path.basename(co.co_filename), co.co_name)
     # return "[%s:%d %s]" % (os.path.basename(co.co_filename),
     # co.co_firstlineno,co.co_name)
 
@@ -29,7 +30,7 @@ def init_logger(logger_name, log_file, level=logging.INFO):
     return l
 
 
-def get_logger(logger_name,  level=logging.INFO):
+def get_logger(logger_name, level=logging.INFO):
     log_dir = os.environ.get('JOBSUB_LOG_DIR', '/var/log/jobsub')
     log_file = "%s/%s.log" % (log_dir, logger_name)
     l = init_logger(logger_name, log_file, level=level)
@@ -37,7 +38,8 @@ def get_logger(logger_name,  level=logging.INFO):
     return l
 
 
-def log(msg='', context='', severity=logging.INFO, traceback=False, logfile=None):
+def log(msg='', context='', severity=logging.INFO,
+        traceback=False, logfile=None):
     here = whereAmI()
     msg = '%s %s' % (here, msg)
     if logfile:

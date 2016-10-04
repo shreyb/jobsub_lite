@@ -224,8 +224,6 @@ def copy_user_krb5_caches():
                 logger.log("%s" % sys.exc_info()[1])
 
 
-
-
 def _check_auth(dn, acctgroup, role):
     """Private method  @check_auth decorator uses to call out
        to create_voms_proxy, which calls authenticate() and

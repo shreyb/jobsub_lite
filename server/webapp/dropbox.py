@@ -41,7 +41,7 @@ class DropboxResource(object):
                           "application/x-download", "attachment")
 
     def doPOST(self, acctgroup, kwargs):
-        """ Upload files to Dropbox service. Return JSON object 
+        """ Upload files to Dropbox service. Return JSON object
             describing location of files.
             API is /jobsub/acctgroups/<group_id>/dropbox/
         """

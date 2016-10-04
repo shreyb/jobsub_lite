@@ -20,7 +20,7 @@ from jobsub import execute_job_submit_wrapper
 class JobsubHelpResource(object):
 
     def doGET(self, acctgroup):
-        """ Executes the jobsub tools command with the help argument and 
+        """ Executes the jobsub tools command with the help argument and
             returns the output.
             API call is /jobsub/acctgroups/<group_id>/help
         """

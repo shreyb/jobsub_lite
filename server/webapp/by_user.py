@@ -45,7 +45,7 @@ class AccountJobsByUserResource(object):
                 elif cherrypy.request.method == 'PUT':
                     # hold/release
                     rc = doPUT(acctgroup, user=action_user,
-                                    job_id=job_id, **kwargs)
+                               job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
                     logger.log(err, severity=logging.ERROR)

@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-import os,sys,datetime,string
+import os
+import sys
+import datetime
+import string
 
-version_template="""
+version_template = """
 FILE = version
 PRODUCT = jobsub_client
 VERSION = %s
@@ -20,7 +23,7 @@ QUALIFIERS = ""
 
 """
 
-table_template="""
+table_template = """
 
 
 FILE=table
@@ -42,7 +45,7 @@ Action=setup
 
 """
 
-current_template="""
+current_template = """
 FILE = chain
 PRODUCT = jobsub_client
 CHAIN = current
@@ -65,12 +68,12 @@ if __name__ == "__main__":
     dstr = "%s-%s-%s %s.%s.%s GMT" % (gmt.year, gmt.month, gmt.day, gmt.hour,
                                       gmt.minute, gmt.second)
     user = os.environ.get('USER')
-    f = open("ups_db/jobsub_client/%s.table"%vers, 'w')
+    f = open("ups_db/jobsub_client/%s.table" % vers, 'w')
     f.write(table_template)
     f.close()
 
     version = version_template % (vers, user, dstr, user, dstr, vers, vers)
-    f = open("ups_db/jobsub_client/%s.version"%vers, 'w')    
+    f = open("ups_db/jobsub_client/%s.version" % vers, 'w')
     f.write(version)
     f.close()
 
@@ -78,4 +81,3 @@ if __name__ == "__main__":
     f = open("ups_db/jobsub_client/current.chain", 'w')
     f.write(current)
     f.close()
- 

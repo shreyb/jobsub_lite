@@ -70,7 +70,7 @@ class JobActionByConstraintResource(object):
             else:
                 # return error for unsupported acctgroup
                 err = 'AccountingGroup %s is not configured in jobsub' % \
-                        acctgroup
+                    acctgroup
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}

@@ -15,10 +15,9 @@ class QueuedJobStatusResource(object):
         self.jobstatus = jobstatus
         # logger.log('jobstatus=%s'%self.jobstatus)
 
-
     def doGET(self, jobstatus, kwargs):
-        logger.log('kwargs=%s'%kwargs)
-        logger.log('id=%s status=%s'%(self, jobstatus))
+        logger.log('kwargs=%s' % kwargs)
+        logger.log('id=%s status=%s' % (self, jobstatus))
         cherrypy.response.status = 200
         acctgroup = kwargs.get('acctgroup', None)
         user_id = kwargs.get('user', None)
@@ -34,7 +33,7 @@ class QueuedJobStatusResource(object):
     @format_response(output_format='pre')
     def index(self, **kwargs):
         cherrypy.response.status = 501
-        logger.log('kwargs=%s'%kwargs)
+        logger.log('kwargs=%s' % kwargs)
         jobstatus = request_headers.path_end()
         try:
             if cherrypy.request.method == 'GET':

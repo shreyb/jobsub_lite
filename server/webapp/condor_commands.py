@@ -1,4 +1,4 @@
-"""Module: 
+"""Module:
         condor_commands
    Purpose:
         utility file with implementation of various condor commands such as
@@ -16,7 +16,7 @@ import platform
 import subprocessSupport
 import socket
 import re
-from request_headers  import get_client_dn
+from request_headers import get_client_dn
 from random import randint
 
 
@@ -39,8 +39,8 @@ def ui_condor_userprio():
 
 
 def ui_condor_status_totalrunningjobs():
-    """condor_status -schedd   
-        -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")' 
+    """condor_status -schedd
+        -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'
         -af name totalrunningjobs
     """
     cmd = """condor_status -schedd"""
@@ -53,7 +53,7 @@ def ui_condor_status_totalrunningjobs():
 
 
 def ui_condor_queued_jobs_summary():
-    """ return a summary of all running and 
+    """ return a summary of all running and
         queued jobs on the server
     """
     try:
@@ -151,9 +151,8 @@ def condor_format(input_switch=None):
     return ' '.join(fmtList)
 
 
-
 def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
-    """generate a constraint for condor_q 
+    """generate a constraint for condor_q
     """
     if acctgroup == 'None':
         acctgroup = None
@@ -194,7 +193,6 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
     my_filter = " %s -constraint '%s && %s && %s && %s' " % (
         lorw, ac_cnst, usr_cnst, job_cnst, jstat_cnst)
     return my_filter
-
 
 
 def ui_condor_q(a_filter=None, a_format=None):

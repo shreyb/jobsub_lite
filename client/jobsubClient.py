@@ -775,8 +775,8 @@ class JobSubClient:
         them stored in self.schedd_list and change self.server to point to
         the least loaded one"""
         #
-        #test this, try to guard against unnecessary schedd queries
-        #if len(self.schedd_list):
+        # test this, try to guard against unnecessary schedd queries
+        # if len(self.schedd_list):
         #    return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)

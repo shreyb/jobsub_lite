@@ -66,8 +66,8 @@ class AccountingGroupsResource(object):
                     '<a href=sandboxes/>sandboxes for completed jobs</a>',
                     '<a href=help/>jobsub_submit help options for %s </a>' % g,
                     '<a href=sites/>OSG sites that accept jobs from %s </a>' % g,
+                    ]
                    ]
-                  ]
 
             rc = {'out': out}
             return rc

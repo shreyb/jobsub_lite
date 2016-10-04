@@ -38,5 +38,5 @@ grep  SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed s/SetEnv/export/ | sed 's/\
 source /tmp/jobsub_admin_env.sh
 
 if [ "$1" = "--refresh-proxies" ]; then
-     /opt/jobsub/server/webapp/auth.py --refresh-proxies $2
+     /usr/bin/python /opt/jobsub/server/webapp/auth.py --refresh-proxies $2
 fi

@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module implements various html formatting functions
+
+ Project:
+   JobSub
+
+ Author:
+   Nick Palumbo
+
+"""
 import cherrypy
 import json
 from functools import partial
@@ -81,9 +92,11 @@ def styleSheets():
 
 
 def _format_response(content_type, data, output_format=None):
-    #logger.log('Response Content-Type: %s' % content_type)
-    #logger.log('data: %s' % data)
-
+    """do the actual work of formatting output based on
+       content_type.
+       accepted values of content_type are:
+           'application/json', 'text/plain', or 'text/html'
+    """
     content_type_list = content_type.split(',')
     if 'application/json' in content_type_list:
         cherrypy.response.headers['Content-Type'] = 'application/json'
@@ -111,6 +124,14 @@ def _format_response(content_type, data, output_format=None):
 
 
 def format_response(func=None, output_format=None):
+    """entry point for @format_response decorator
+       args: output_format:
+                if output_format=="pre"
+                    return output wrapped with <pre></pre>
+                else
+                    return 'normal' html output
+                             
+    """
     if func is None:
         return partial(format_response, output_format=output_format)
 

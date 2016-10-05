@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module implements /jobsub/users/ and most of its sub leafs
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import cherrypy
 import logger
 import logging
@@ -10,7 +21,7 @@ import condor_commands
 
 class UsersJobsResource(object):
     """
-    Implementation of /jobsub/users/ and most of its sub leafs
+    Only class in module, see module docstring
     """
 
     def __init__(self):

@@ -1,3 +1,16 @@
+"""
+ Description:
+   This module implements jobsub_q --long, --dag
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+ TODO:
+   jobsub_q -af 'some fields' should go here at relatively low cost
+"""
 import cherrypy
 import logger
 import logging

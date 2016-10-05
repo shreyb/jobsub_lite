@@ -1,7 +1,7 @@
 """
 Module: queued_jobs
 Purpose: performs condor_q for jobsub server
-Author: Nick
+Author: Nick Palumbo
 """
 import cherrypy
 import logger
@@ -15,10 +15,8 @@ from summary import JobSummaryResource
 from jobid import QueuedJobsByJobIDResource
 from queued_outformat import QueuedFormattedOutputResource
 from queued_jobstatus import QueuedJobStatusResource
-#from queued_constraint import QueuedConstraintResource
 
 
-#@cherrypy.popargs('acctgroup')
 @cherrypy.popargs('user_id')
 @cherrypy.popargs('job_id')
 class QueuedJobsResource(object):

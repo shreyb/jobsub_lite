@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module implements jobsub_fetchlog --list-sandboxes
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import cherrypy
 import logger
 import logging

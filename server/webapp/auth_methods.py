@@ -1,3 +1,19 @@
+"""
+ Description:
+   Query supported authorization methods from jobsub.ini, returns a JSON
+   list object.  Written for transition period of DCAFI project
+   when groups transitioned to myproxy authentication on a group-by-group
+   basis
+   API is /acctgroups/<group>/authmethods/
+   API is /acctgroups/<group>/authmethods/<method_name>/
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import cherrypy
 import logger
 import logging
@@ -7,9 +23,12 @@ from format import format_response
 
 @cherrypy.popargs('auth_method')
 class AuthMethodsResource(object):
+    """see module documentation, only one class in file
+    """
 
     def doGET(self, auth_method, kwargs):
-        """ Query list of auth_methods. Returns a JSON list object.
+        """ http GET request on index.html of API
+            Query list of auth_methods. Returns a JSON list object.
             API is /acctgroups/<group>/authmethods/
             API is /acctgroups/<group>/authmethods/<method_name>/
         """
@@ -27,6 +46,8 @@ class AuthMethodsResource(object):
     @cherrypy.expose
     @format_response
     def index(self, auth_method=None, **kwargs):
+        """index.html, only GET implemented
+        """
         try:
             logger.log("auth_method %s" % auth_method)
             logger.log("kwargs %s" % kwargs)

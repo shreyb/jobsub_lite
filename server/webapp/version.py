@@ -1,3 +1,16 @@
+"""
+ Description:
+   This module returns jobsub server version extracted from the RPM
+   API is /jobsub/version
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+
+"""
 import cherrypy
 import logger
 import sys

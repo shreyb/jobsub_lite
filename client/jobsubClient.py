@@ -776,8 +776,8 @@ class JobSubClient:
         the least loaded one"""
         #
         # test this, try to guard against unnecessary schedd queries
-        # if len(self.schedd_list):
-        #    return
+        if len(self.schedd_list):
+            return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
@@ -821,11 +821,15 @@ class JobSubClient:
         response.close()
 
     def listConfiguredSites(self):
+        """ jobsub_status --sites
+        """
         list_url = constants.JOBSUB_CONFIGURED_SITES_URL_PATTERN %\
             (self.server, self.account_group)
         return self.changeJobState(list_url, 'GET')
 
     def listJobs(self, jobid=None, userid=None, outFormat=None):
+        """ jobsub_q
+        """
         jobid = self.checkID(jobid)
         constraint = self.extra_opts.get('constraint')
         if constraint:
@@ -862,6 +866,11 @@ class JobSubClient:
         return self.changeJobState(list_url, 'GET')
 
     def requiresFileUpload(self, uri):
+        """check uri to see if it is one
+           of the types that requires a
+           file upload to server.  Return
+           False if it does not
+        """
         if uri:
             protocol = '%s://' % (uri.split('://'))[0]
             if protocol in constants.JOB_EXE_SUPPORTED_URIs:
@@ -869,7 +878,8 @@ class JobSubClient:
         return False
 
     def help(self, helpType='jobsubHelp'):
-
+        """jobsub_submit --help or jobsub_submit_dag --help
+        """
         help_url = self.help_url
         if helpType == 'dag':
             help_url = self.dag_help_url

@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module queries an sqlite database for jobsub_history requests
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import sqlite3
 import re
 import socket

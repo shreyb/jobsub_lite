@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module implements jobsub_q --summary
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import cherrypy
 import logger
 import logging

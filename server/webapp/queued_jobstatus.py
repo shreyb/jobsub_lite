@@ -1,3 +1,18 @@
+"""
+ Description:
+   This module implements jobsub_q --hold, --run, --idle
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+ TODO:
+   the constructor has an unnecessary parameter which is 
+   ignored, take it out
+
+"""
 import cherrypy
 import logger
 import logging

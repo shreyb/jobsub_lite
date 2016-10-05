@@ -1,4 +1,4 @@
-class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifdhc_version, 
+class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifdhc_version,
                                String $jobsub_tools_version = $jobsub_server::vars::jobsub_tools_version,
                                String $ups_version = $jobsub_server::vars::ups_version,
                                String $ups_flavor = $jobsub_server::vars::ups_flavor ) {
@@ -75,7 +75,7 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
     package { 'jobsub':
       ensure          => $jobsub_server::vars::jobsub_server_version,
       install_options => '--enablerepo=jobsub',
-      require => Package['voms-clients-cpp'],
+      require         => Package['voms-clients-cpp'],
     }
 
     package { 'voms-clients-cpp':

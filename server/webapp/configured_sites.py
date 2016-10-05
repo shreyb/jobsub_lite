@@ -1,3 +1,15 @@
+"""
+ Description:
+   This module implements the server side of jobsub_status --sites
+   API is /jobsub/acctgroups/<grp>/configuredsites/
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+"""
 import cherrypy
 import logger
 import logging

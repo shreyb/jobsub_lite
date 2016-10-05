@@ -1,3 +1,21 @@
+"""
+ Description:
+   This module helps to implement primitive load balancing
+   by returning a list of running schedds and the total
+   number of running jobs per schedd
+
+
+ Project:
+   JobSub
+
+ Author:
+   Dennis Box
+
+ TODO:
+   The load balancing only looks at running jobs, it could do much
+   better.
+   It should be configurable from jobsub.ini or somewhere else
+"""
 import cherrypy
 import logger
 import logging

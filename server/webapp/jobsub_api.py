@@ -1,3 +1,14 @@
+"""
+ Description:
+   This module starts the root url of the jobsub server
+
+ Project:
+   JobSub
+
+ Author:
+   Nick Palumbo
+
+"""
 import cherrypy
 import os
 import getpass

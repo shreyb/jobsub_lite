@@ -1,3 +1,17 @@
+"""
+ Description:
+   This module contains various utility functions for html encoding
+   creating tar and zip files and the like
+   Also implements the guts of hold, release, remove queued jobs 
+
+ Project:
+   JobSub
+
+ Author:
+   Nick Palumbo
+
+
+"""
 import logger
 import logging
 import os

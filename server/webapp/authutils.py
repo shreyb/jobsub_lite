@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 """
  Description:
-   This module implements the JobSub webapp authN/authZ functionailty.
-   Some code and functionality is take from CDFCAF
+   This module implements the various kerberos and kx509
+   manipulations common to all the auth and auth_(some_method)
+   modules
 
  Project:
    JobSub
 
  Author:
    Parag Mhashilkar
+   refactored by Dennis Box
 
- TODO:
-   The code still has lot of hardcoded path and makes several assumptions.
-   This needs to be cleaned up.
 
 """
 
@@ -98,14 +97,16 @@ class AcctGroupNotConfiguredError(Exception):
 
 class Krb5Ticket(object):
     """ Kerberos 5 ticket
-
-        Args:
-            keytab   : kerberos5 keytab
-            krb5cc   : kerberos5 credential cache
-            principal: kerberos principal subject name
     """
 
     def __init__(self, keytab, krb5cc, principal):
+        """ Constructor
+
+            Args:
+                keytab   : kerberos5 keytab
+                krb5cc   : kerberos5 credential cache
+                principal: kerberos principal subject name
+        """
         cherrypy.request.keytab = keytab
         cherrypy.request.krb5cc = krb5cc
         cherrypy.request.principal = principal

@@ -1,4 +1,8 @@
 class jobsub_server::services{
+
+  $jobsub_jobhistory_count = $jobsub_server::vars::jobsub_jobhistory_count
+  $jobsub_basejobsdir = $jobsub_server::vars::jobsub_basejobsdir
+
   service{'httpd':
     ensure     => true,
     enable     => true,
@@ -12,7 +16,7 @@ class jobsub_server::services{
     hasrestart => true,
   }
 
- service{'iptables':
+  service{'iptables':
     ensure     => true,
     enable     => true,
     hasstatus  => true,
@@ -59,7 +63,7 @@ class jobsub_server::services{
     ensure  => present,
     command => "/opt/jobsub/server/admin/jobsub_preen.sh ${jobsub_basejobsdir}/dropbox  ${jobsub_jobhistory_count} >> /var/log/jobsub/jobsub_preen.log 2>&1",
     user    => root,
-    hour => '10',
+    hour    => '10',
     minute  => '34',
   }
   cron {'clean /var/lib/jobsub/tmp of leftover files from failed authentications':

@@ -197,12 +197,6 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/jobsub_help.py
 /opt/jobsub/server/webapp/jobsub_help.pyc
 /opt/jobsub/server/webapp/jobsub_help.pyo
-/opt/jobsub/server/webapp/not_implemented.py
-/opt/jobsub/server/webapp/not_implemented.pyc
-/opt/jobsub/server/webapp/not_implemented.pyo
-/opt/jobsub/server/webapp/queued_constraint.py
-/opt/jobsub/server/webapp/queued_constraint.pyc
-/opt/jobsub/server/webapp/queued_constraint.pyo
 /opt/jobsub/server/webapp/queued_outformat.py
 /opt/jobsub/server/webapp/queued_outformat.pyc
 /opt/jobsub/server/webapp/queued_outformat.pyo

@@ -1,3 +1,18 @@
+"""
+ Description:
+   This module implements the jobsub_fetchlog command
+
+ Project:
+   JobSub
+
+ Author:
+   Nick Palumbo
+
+ TODO:
+   implement cacheing so that if someone requests the same
+   sandbox a bunch of times in a row it just gets one and
+   doesnt tank the server tarring up the sandbox
+"""
 import os
 import cherrypy
 import logger

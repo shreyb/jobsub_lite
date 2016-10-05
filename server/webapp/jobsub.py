@@ -1,3 +1,14 @@
+"""
+ Description:
+ utility functions
+
+ Project:
+   JobSub
+
+ Author:
+   Parag Mhashilkar
+"""
+
 from condor_commands import schedd_name
 import logger
 import logging

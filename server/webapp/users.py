@@ -1,3 +1,19 @@
+"""
+ Description:
+   This module is currently 'glue' to connect parts of the jobsub REST API
+
+ Project:
+   JobSub
+
+ Author:
+   Nick Palumbo
+
+ TODO:
+   /acctgroups/<group>/users currently returns users jobs, it
+   should return info about users priorities, etc
+
+
+"""
 import cherrypy
 import logger
 import logging

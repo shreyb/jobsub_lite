@@ -130,7 +130,7 @@ def format_response(func=None, output_format=None):
                     return output wrapped with <pre></pre>
                 else
                     return 'normal' html output
-                             
+
     """
     if func is None:
         return partial(format_response, output_format=output_format)

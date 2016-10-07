@@ -1,6 +1,6 @@
 """
  Description:
-   This module implements server portion of jobsub_history commands 
+   This module implements server portion of jobsub_history commands
    it used to perform condor_history, but that was very slow and
    now it queries an SQLite database
 

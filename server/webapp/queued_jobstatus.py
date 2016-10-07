@@ -9,7 +9,7 @@
    Dennis Box
 
  TODO:
-   the constructor has an unnecessary parameter which is 
+   the constructor has an unnecessary parameter which is
    ignored, take it out
 
 """

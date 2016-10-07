@@ -2,7 +2,7 @@
  Description:
    This module contains various utility functions for html encoding
    creating tar and zip files and the like
-   Also implements the guts of hold, release, remove queued jobs 
+   Also implements the guts of hold, release, remove queued jobs
 
  Project:
    JobSub

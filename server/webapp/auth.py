@@ -196,7 +196,7 @@ def refresh_proxies(agelimit=3600):
 
 def copy_user_krb5_caches():
     jobsubConfig = jobsub.JobsubConfig()
-    krb5cc_dir = jobsubConfig.krb5ccDir
+    krb5cc_dir = jobsubConfig.krb5cc_dir
     cmd = spawn.find_executable('condor_q')
     if not cmd:
         raise Exception('Unable to find condor_q in the PATH')
@@ -346,9 +346,9 @@ def test():
 
 
 if __name__ == '__main__':
-    """Entry point for krbrefresh cron job.
-    """
-    # Quick dirty hack that needs fixing
+    #
+    #Entry point for krbrefresh cron job.
+    #
     if len(sys.argv) > 1:
         if sys.argv[1] == '--test':
             test()

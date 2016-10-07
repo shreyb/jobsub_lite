@@ -7,10 +7,24 @@ Client
 -------
 
 * Bug     12405 Kerberos tickets incorrectly parsed for RH7 variants, fixed.  
-                Also tested with Debian and OSX variants, parses correctly 
-                as there is no cigetcert for these architectures submission
-                from them still not possible.
- 
+                Fix other SL7 problems found by testing so submission works
+
+* Task    13897 use default location for grid proxy, /tmp/x509_up`uid` instead
+                of /tmp/jobsub_x509up`uid`_`gid -n` 
+
+* Bug     13954 setup jobsub_client leaves unnecessary /tmp/ups* files
+
+Server
+------
+
+* Bug     12063 jobsub_q show current run time instead of cumulative
+
+* Feature 13515 Allow superusers access to sandboxes
+
+* Feature 13516 Add global superusers for support staff
+
+* Maint.  14113 Refactor, document, and clean up code and modules
+
 ================================================================================
 v1.2.2
 ================================================================================

@@ -415,7 +415,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
     """
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     jobsubConfig = jobsub.JobsubConfig()
-    proxies_base_dir = jobsubConfig.proxiesDir
+    proxies_base_dir = jobsubConfig.proxies_dir
     creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
         os.makedirs(creds_dir, 0o755)
@@ -435,7 +435,7 @@ def refresh_krb5cc(username):
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         jobsubConfig = jobsub.JobsubConfig()
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        krb5cc_dir = jobsubConfig.krb5ccDir
+        krb5cc_dir = jobsubConfig.krb5cc_dir
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab' % username)
         real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s' % username)
         new_cache_file = NamedTemporaryFile(

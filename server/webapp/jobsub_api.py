@@ -1,6 +1,6 @@
 """
  Description:
-   This module starts the root url of the jobsub server
+   This module starts the ROOTURL of the jobsub server
 
  Project:
    JobSub
@@ -62,14 +62,14 @@ class Root(object):
                     '<a href=acctgroups/>Browse Accounting Groups</a>',
                     '<a href=users/>User Information</a>',
                     '<a href=scheddload/>Schedd Load </a>',
-                    ]
                    ]
+                  ]
 
-            rc = {'out': out}
-            return rc
+            r_code = {'out': out}
+            return r_code
         else:
-            rc = 'Unsupported method: %s' % cherrypy.request.method
-            return rc
+            r_code = 'Unsupported method: %s' % cherrypy.request.method
+            return r_code
 
 
 class RDirect(object):
@@ -84,7 +84,7 @@ class RDirect(object):
         #cherrypy.tree.mount(RDirect, '/')
 
 
-root = Root()
+ROOTURL = Root()
 cherrypy.tree.mount(RDirect(), '/')
 
 
@@ -95,13 +95,13 @@ def create_statedir(log):
     /var/lib/jobsub/tmp         : rexbatch : 700
     """
 
-    jobsubConfig = jobsub.JobsubConfig()
-    state_dir = jobsubConfig.stateDir
+    jobsub_config = jobsub.JobsubConfig()
+    state_dir = jobsub_config.state_dir
     err = ''
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)
 
-    for s_dir in jobsubConfig.stateDirLayout():
+    for s_dir in jobsub_config.state_dir_layout():
         if not os.path.isdir(s_dir[0]):
             try:
                 cmd = '%s mkdirsAsUser %s %s %s %s' % (
@@ -142,7 +142,7 @@ def application(environ, start_response):
         version = environ.get('JOBSUB_VERSION')
         if version is not None:
             script_name = os.path.join(script_name, appname)
-    app = cherrypy.tree.mount(root, script_name=script_name, config=None)
+    app = cherrypy.tree.mount(ROOTURL, script_name=script_name, config=None)
 
     log_dir = environ['JOBSUB_LOG_DIR']
     mkdir_p(log_dir)
@@ -165,4 +165,4 @@ def application(environ, start_response):
     return cherrypy.tree(environ, start_response)
 
 if __name__ == '__main__':
-    cherrypy.quickstart(root, '/jobsub')
+    cherrypy.quickstart(ROOTURL, '/jobsub')

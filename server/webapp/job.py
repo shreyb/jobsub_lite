@@ -139,7 +139,7 @@ class AccountJobsResource(object):
                     logger.log('command_file_path: %s' % command_file_path)
                     # First create a tmp file before moving the command file
                     # in place as correct user under the jobdir
-                    tmp_file_prefix = os.path.join(jobsubConfig.tmpDir,
+                    tmp_file_prefix = os.path.join(jobsubConfig.tmp_dir,
                                                    jobsub_command.filename)
                     tmp_cmd_fd = NamedTemporaryFile(prefix="%s_" % tmp_file_prefix,
                                                     delete=False)

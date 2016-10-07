@@ -104,7 +104,7 @@ class DagResource(object):
                     logger.log('payload_file_path: %s' % payload_file_path)
                     # First create a tmp file before moving the command file
                     # in place as correct user under the jobdir
-                    tmp_file_prefix = os.path.join(jscfg.tmpDir,
+                    tmp_file_prefix = os.path.join(jscfg.tmp_dir,
                                                    self.payload_filename)
                     tmp_payload_fd = NamedTemporaryFile(
                         prefix="%s_" % tmp_file_prefix,

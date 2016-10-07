@@ -26,14 +26,16 @@ from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
 
 
-def is_supported_accountinggroup(accountinggroup):
-    rc = False
+def is_supported_accountinggroup(acctgroup):
+    """Is acctgroup configured in jobsub.ini?
+    """
+    r_code = False
     try:
-        p = JobsubConfigParser()
-        groups = p.supportedGroups()
+        prs = JobsubConfigParser()
+        groups = prs.supportedGroups()
         logger.log("supported groups:%s accountinggroup:%s" %
-                   (groups, accountinggroup))
-        rc = (accountinggroup in groups)
+                   (groups, acctgroup))
+        r_code = (acctgroup in groups)
     except:
         logger.log('Failed to get accounting groups: ',
                    traceback=True, severity=logging.ERROR)
@@ -42,14 +44,21 @@ def is_supported_accountinggroup(accountinggroup):
                    severity=logging.ERROR,
                    logfile='error')
 
-    return rc
+    return r_code
 
 
 def group_superusers(acctgroup):
+    """return a list of superusers for acctgroup
+       group_superusers can hold,release,remove other
+       users jobs in that acctgroup and can browse
+       other users sandboxes regardless of other
+       settings
+    """
+
     g_list = []
-    p = JobsubConfigParser()
-    susers = p.get(acctgroup, 'group_superusers')
-    global_susers = p.get('default', 'global_superusers')
+    prs = JobsubConfigParser()
+    susers = prs.get(acctgroup, 'group_superusers')
+    global_susers = prs.get('default', 'global_superusers')
     if susers:
         for itm in susers.split():
             g_list.append(itm)
@@ -61,6 +70,8 @@ def group_superusers(acctgroup):
 
 
 def is_superuser_for_group(acctgroup, user):
+    """is user 'user' a superuser in acctgroup 'acctgroup'?
+    """
     logger.log('checking if %s in %s is group_superuser' % (user, acctgroup))
     su_list = group_superusers(acctgroup)
     logger.log('sulist is %s for %s' % (su_list, acctgroup))
@@ -68,12 +79,15 @@ def is_superuser_for_group(acctgroup, user):
 
 
 def sandbox_readable_by_group(acctgroup):
-    rc = False
+    """return True if anyone in acctgroup can read and fetch
+       others sandboxes.  Configured in jobsub.ini
+    """
+    r_code = False
     try:
-        p = JobsubConfigParser()
-        rc = p.get(acctgroup, 'sandbox_readable_by_group')
-        logger.log('sandbox_readable_by_group:%s is %s' % (acctgroup, rc))
-        return rc
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'sandbox_readable_by_group')
+        logger.log('sandbox_readable_by_group:%s is %s' % (acctgroup, r_code))
+        return r_code
     except:
         logger.log('Failed to get sandbox_readable_by_group: ',
                    traceback=True,
@@ -83,18 +97,22 @@ def sandbox_readable_by_group(acctgroup):
                    severity=logging.ERROR,
                    logfile='error')
 
-    return rc
+    return r_code
 
 
 def sandbox_allowed_browsable_file_types():
-    rc = []
+    """file extensions that are readable via the web browser
+       set in jobsub.ini
+    """
+    r_code = []
     try:
-        p = JobsubConfigParser()
-        s = p.get(p.submit_host, 'output_files_web_browsable_allowed_types')
-        if isinstance(s, str):
-            rc = s.split()
-        logger.log('output_files_web_browsable_allowed_types %s' % (rc))
-        return rc
+        prs = JobsubConfigParser()
+        extensions = prs.get(prs.submit_host,
+                     'output_files_web_browsable_allowed_types')
+        if isinstance(extensions, str):
+            r_code = extensions.split()
+        logger.log('output_files_web_browsable_allowed_types %s' % (r_code))
+        return r_code
     except:
         logger.log('Failed to get output_files_web_browsable_allowed_types: ',
                    traceback=True,
@@ -104,14 +122,17 @@ def sandbox_allowed_browsable_file_types():
                    severity=logging.ERROR,
                    logfile='error')
 
-    return rc
+    return r_code
 
 
 def get_supported_accountinggroups():
-    rc = list()
+    """return a list of all supported accounting groups
+       in jobsub.ini
+    """
+    r_code = list()
     try:
-        p = JobsubConfigParser()
-        rc = p.supportedGroups()
+        prs = JobsubConfigParser()
+        r_code = prs.supportedGroups()
     except:
         logger.log('Failed to get accounting groups: ',
                    traceback=True,
@@ -121,46 +142,56 @@ def get_supported_accountinggroups():
                    severity=logging.ERROR,
                    logfile='error')
 
-    return rc
+    return r_code
 
 
 def default_voms_role(acctgroup="default"):
+    """Return the default VOMS role for acctgroup
+       its usually 'Analysis' but can be set to something
+       else in jobsub.ini
+    """
 
-    rc = None
+    r_code = None
     try:
-        p = JobsubConfigParser()
-        rc = p.get(acctgroup, 'default_voms_role')
-        logger.log('default voms role for %s : %s' % (acctgroup, rc))
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'default_voms_role')
+        logger.log('default voms role for %s : %s' % (acctgroup, r_code))
     except:
-        logger.log('exception fetching voms role for acctgroup :%s' % acctgroup,
+        logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
                    severity=logging.ERROR,
                    traceback=True)
-        logger.log('exception fetching voms role for acctgroup :%s' % acctgroup,
+        logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
                    severity=logging.ERROR,
                    traceback=True,
                    logfile='error')
-    return rc
+    return r_code
 
 
 def sub_group_pattern(acctgroup):
-    p = JobsubConfigParser()
-    ac = acctgroup
+    """strings to feed to voms-proxy-init for subgroups
+       see mars subgroups in jobsub.ini
+    """
+    prs = JobsubConfigParser()
+    acg = acctgroup
     try:
-        sgp = p.get(acctgroup, 'sub_group_pattern')
+        sgp = prs.get(acctgroup, 'sub_group_pattern')
         if sgp:
-            ac = sgp
+            acg = sgp
     except:
         pass
-    return ac
+    return acg
 
 
 def get_authentication_methods(acctgroup):
-    rc = 'kca-dn'
+    """Scan jobsub.ini for authentication methods that acctgroup
+       uses, return as a list
+    """
+    r_code = 'kca-dn'
     try:
-        p = JobsubConfigParser()
-        if p.has_section(acctgroup):
-            if p.has_option(acctgroup, 'authentication_methods'):
-                rc = p.get(acctgroup, 'authentication_methods')
+        prs = JobsubConfigParser()
+        if prs.has_section(acctgroup):
+            if prs.has_option(acctgroup, 'authentication_methods'):
+                r_code = prs.get(acctgroup, 'authentication_methods')
     except:
         logger.log('Failed to get authentication_methods: ',
                    traceback=True,
@@ -171,28 +202,36 @@ def get_authentication_methods(acctgroup):
                    logfile='error')
 
     methods = list()
-    for m in rc.split(','):
+    for m in r_code.split(','):
         methods.append(m.strip())
     return methods
 
 
 def get_command_path_root():
-    rc = '/opt/jobsub/uploads'
-    p = JobsubConfigParser()
+    """return root directory of sandboxes
+       from jobsub.ini
+    """
+    cpr = '/opt/jobsub/uploads'
+    prs = JobsubConfigParser()
     submit_host = socket.gethostname()
-    if p.has_section(submit_host):
-        if p.has_option(submit_host, 'command_path_root'):
-            rc = p.get(submit_host, 'command_path_root')
+    if prs.has_section(submit_host):
+        if prs.has_option(submit_host, 'command_path_root'):
+            cpr = prs.get(submit_host, 'command_path_root')
 
-    return rc
+    return cpr
 
 
 def should_transfer_krb5cc(acctgroup):
+    """some acctgroups such as CDF and D0 still
+       need to transfer a kerberos ticket to the
+       worker node for file transfer.  Check if this
+       is in jobsub.ini
+    """
     can_transfer = False
-    p = JobsubConfigParser()
-    if p.has_section(acctgroup):
-        if p.has_option(acctgroup, 'transfer_krbcc_to_job'):
-            can_transfer = p.get(acctgroup, 'transfer_krbcc_to_job')
+    prs = JobsubConfigParser()
+    if prs.has_section(acctgroup):
+        if prs.has_option(acctgroup, 'transfer_krbcc_to_job'):
+            can_transfer = prs.get(acctgroup, 'transfer_krbcc_to_job')
             if can_transfer == 'False':
                 can_transfer = False
     if can_transfer:
@@ -205,29 +244,38 @@ def should_transfer_krb5cc(acctgroup):
 
 
 def get_dropbox_path_root():
-    rc = '/opt/jobsub/dropbox'
-    p = JobsubConfigParser()
+    """return root of dropbox path
+       from jobsub.ini
+    """
+    dpr = '/opt/jobsub/dropbox'
+    prs = JobsubConfigParser()
     submit_host = socket.gethostname()
-    if p.has_section(submit_host):
-        if p.has_option(submit_host, 'dropbox_path_root'):
-            rc = p.get(submit_host, 'dropbox_path_root')
+    if prs.has_section(submit_host):
+        if prs.has_option(submit_host, 'dropbox_path_root'):
+            dpr = prs.get(submit_host, 'dropbox_path_root')
 
-    return rc
+    return dpr
 
 
 def get_jobsub_wrapper(submit_type='job'):
 
+    exepath = '/opt/jobsub/server/webapp'
     wrapper = os.environ.get('JOBSUB_ENV_RUNNER',
-                             '/opt/jobsub/server/webapp/jobsub_env_runner.sh')
+                             os.path.join(exepath,
+                                          'jobsub_env_runner.sh'))
     if submit_type == 'dag':
         wrapper = os.environ.get('DAGMAN_ENV_RUNNER',
-                                 '/opt/jobsub/server/webapp/jobsub_dag_runner.sh')
+                                 os.path.join(exepath,
+                                              'jobsub_dag_runner.sh'))
     return wrapper
 
 
 def log_msg(acctgroup, username, jobsub_args, role=None,
             submit_type='job', jobsub_client_version='UNKNOWN',
             jobsub_client_krb5_principal='UNKNOWN'):
+    """create a 'submitted command X , jobsubjobid=Y' message
+       to be logged
+    """
     if jobsub_client_version in ['UNKNOWN', '__VERSION__']:
         jobsub_client_version = '?'
     if jobsub_client_krb5_principal == 'UNKNOWN':
@@ -248,7 +296,10 @@ def log_msg(acctgroup, username, jobsub_args, role=None,
         if '--export_env=' not in arg:
             short_args.append(os.path.basename(arg))
     log_str = "%s %s --group %s %s %s " % (log_str,
-                                           cmd, acctgroup, role_c, ' '.join(short_args))
+                                           cmd,
+                                           acctgroup,
+                                           role_c,
+                                           ' '.join(short_args))
     return log_str
 
 
@@ -284,18 +335,18 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         child_env['USER'] = username
         child_env['COMMAND_PATH_ROOT'] = jobsubConfig.commandPathRoot
         child_env['JOBSUB_CLIENT_DN'] = get_client_dn()
-        child_env['JOBSUB_CLIENT_IP_ADDRESS'] = cherrypy.request.headers.get(
-            'Remote-Addr')
+        rm_ip = cherrypy.request.headers.get('Remote-Addr')
+        child_env['JOBSUB_CLIENT_IP_ADDRESS'] = rm_ip
 
         if should_transfer_krb5cc(acctgroup):
-            src_cache_fname = os.path.join(jobsubConfig.krb5ccDir,
+            src_cache_fname = os.path.join(jobsubConfig.krb5cc_dir,
                                            'krb5cc_%s' % username)
             dst_cache_fname = os.path.join(
                 job_submit_dir, 'krb5cc_%s' % username)
 
             copy_file_as_user(src_cache_fname, dst_cache_fname, username)
-            logger.log('Adding %s for acctgroup %s to transfer_encrypt_files' % (
-                dst_cache_fname, acctgroup))
+            logger.log('Added %s for acctgroup %s to transfer_encrypt_files' %\
+                    (dst_cache_fname, acctgroup))
             child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
             child_env['KRB5CCNAME'] = dst_cache_fname
 
@@ -306,7 +357,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                               child_env=child_env)
 
     sub_msg = log_msg(acctgroup, username, jobsub_args, role,
-                      submit_type, jobsub_client_version, jobsub_client_krb5_principal)
+                      submit_type, jobsub_client_version,
+                      jobsub_client_krb5_principal)
 
     # Convert the output to list as in case of previous version of jobsub
     if (isinstance(out, type('string'))) and out.strip():
@@ -333,30 +385,35 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
 
 
 class JobsubConfig:
+    """Class representing and creating expected directory structure on
+       jobsub server
+    """
 
     def __init__(self):
+        """constructor
+        """
 
-        self.stateDir = os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
+        self.state_dir = os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
 
-        self.tmpDir = os.path.join(self.stateDir, 'tmp')
-        self.credsDir = os.path.join(self.stateDir, 'creds')
+        self.tmp_dir = os.path.join(self.state_dir, 'tmp')
+        self.creds_dir = os.path.join(self.state_dir, 'creds')
 
-        self.keytabsDir = os.path.join(self.credsDir, 'keytabs')
-        self.certsDir = os.path.join(self.credsDir, 'certs')
-        self.proxiesDir = os.path.join(self.credsDir, 'proxies')
-        self.krb5ccDir = os.path.join(self.credsDir, 'krb5cc')
+        self.keytabs_dir = os.path.join(self.creds_dir, 'keytabs')
+        self.certs_dir = os.path.join(self.creds_dir, 'certs')
+        self.proxies_dir = os.path.join(self.creds_dir, 'proxies')
+        self.krb5cc_dir = os.path.join(self.creds_dir, 'krb5cc')
 
         self.commandPathRoot = get_command_path_root()
 
-    def stateDirLayout(self):
+    def state_dir_layout(self):
         layout = [
-            (self.stateDir, '0755'),
-            (self.credsDir, '0755'),
-            (self.keytabsDir, '0755'),
-            (self.certsDir, '0755'),
-            (self.proxiesDir, '0755'),
-            (self.krb5ccDir, '0755'),
-            (self.tmpDir, '1777'),
+            (self.state_dir, '0755'),
+            (self.creds_dir, '0755'),
+            (self.keytabs_dir, '0755'),
+            (self.certs_dir, '0755'),
+            (self.proxies_dir, '0755'),
+            (self.krb5cc_dir, '0755'),
+            (self.tmp_dir, '1777'),
         ]
         return layout
 
@@ -377,7 +434,7 @@ class JobsubConfig:
             # Check and change ownership as required.
             # Only invoked after the upgrade from legacy code or
             # when there is a change in GUMS mapping
-            if (os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid):
+            if os.stat(user_dir).st_uid != pwd.getpwnam(username).pw_uid:
                 chown_as_user(user_dir, username)
         else:
             acctgroup_dir = self.commandPathAcctgroup(acctgroup)
@@ -392,6 +449,9 @@ class JobsubConfig:
 # TODO: Following should be converted to class and helper functions
 ############
 def get_jobsub_priv_exe():
+    """return priv_mode tool to create and move files and directories
+       as a given user
+    """
     # TODO: Need to find a proper library for this call
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
     exe = spawn.find_executable('jobsub_priv', path=path)
@@ -410,7 +470,8 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
-        err_str = 'Error creating dir as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        err_str = 'Error creating dir as user using command '
+        err_str += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         raise RuntimeError(err_str % (cmd, out, err, e))
         #raise RuntimeError, err_str % (cmd, out, err, e)
 
@@ -423,7 +484,8 @@ def move_file_as_user(src, dst, username):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
-        err_str = 'Error moving file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        err_str = 'Error moving file as user using command '
+        err_str += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         raise RuntimeError(err_str % (cmd, out, err, e))
 
 
@@ -435,7 +497,8 @@ def copy_file_as_user(src, dst, username):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
-        err_str = 'Error copying file as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        err_str = 'Error copying file as user using command '
+        err_str += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         raise RuntimeError(err_str % (cmd, out, err, e))
 
 
@@ -447,7 +510,8 @@ def chown_as_user(path, username):
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
-        err_str = 'Error changing ownership of path as user using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
+        err_str = 'Error changing ownership of path as user using '
+        err_str += 'command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         raise RuntimeError(err_str % (cmd, out, err, e))
 
 
@@ -461,21 +525,20 @@ def run_cmd_as_user(command, username, child_env={}):
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)
     except Exception as e:
-        err_str = 'Error running as user %s using command %s:\nSTDOUT:%s\nSTDERR:%s\nException:%s' % (
-            username, cmd, out, err, e)
+        err_fmt = 'Error running as user %s using command '
+        err_fmt += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s' 
+        err_str = err_fmt % (username, cmd, out, err, e)
         logger.log(err_str, severity=logging.ERROR)
         logger.log(err_str, severity=logging.ERROR, logfile='submit')
         logger.log(err_str, severity=logging.ERROR, logfile='error')
         err = err_str
-        #raise RuntimeError, err_str % (username, cmd, out, err, e)
-        pass
 
     return out, err
 
 
 def condor_bin(cmd):
     """
-    Return the full path to the HTCondor command
+    Return the full path to the HTCondor command 'cmd'
     """
 
     exe = spawn.find_executable(cmd)

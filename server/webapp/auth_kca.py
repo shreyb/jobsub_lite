@@ -56,7 +56,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     # privileged move on the file.
     x509_cache_fname = authutils.x509_proxy_fname(
         username, acctgroup, acctrole)
-    x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
+    x509_tmp_prefix = os.path.join(jobsubConfig.tmp_dir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,
                                        delete=False)
@@ -64,9 +64,9 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     x509_tmp_file.close()
     try:
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab' % username)
-        x509_user_cert = os.path.join(jobsubConfig.certsDir,
+        x509_user_cert = os.path.join(jobsubConfig.certs_dir,
                                       '%s.cert' % username)
-        x509_user_key = os.path.join(jobsubConfig.certsDir,
+        x509_user_key = os.path.join(jobsubConfig.certs_dir,
                                      '%s.key' % username)
 
         # If the x509_cache_fname is new enough skip everything and use it

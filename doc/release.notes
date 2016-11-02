@@ -8,6 +8,8 @@ Client
 
 * Bug     11975 jobsub_q --long doesn't work with constraints
 
+* Feature 12243 compress output from -L command if --compress option is included
+
 * Bug     12405 Kerberos tickets incorrectly parsed for RH7 variants, fixed.  
                 Fix other SL7 problems found by testing so submission works
 

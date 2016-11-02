@@ -9,16 +9,16 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
       gpgcheck => 0,
     }
 
-    package { 'epel-release-6':
+    package { 'epel-release.noarch':
       ensure   => 'installed',
       provider => 'rpm',
-      source   => 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm',
+      source   => "$jobsub_server::vars::epel_url",
     }
 
-    package { 'osg-release-3.3-5.osg33.el6.noarch':
+    package { 'osg-release.noarch':
       ensure   => 'installed',
       provider => 'rpm',
-      source   => 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm',
+      source   => "$jobsub_server::vars::osg_url",
       notify   => Exec['yum-clean-all'],
     }
 

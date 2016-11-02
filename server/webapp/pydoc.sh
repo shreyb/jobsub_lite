@@ -4,7 +4,7 @@
 module=webapp
 here=`pwd`
 outfile=${here}/pylint.out
-docdir=/var/www/html/pydoc/server/webapp/
+docdir=/var/www/html/pydoc/jobsub/server/webapp/
 
 if [ "$TEST_USER" = "" ]; then
    export TEST_USER=dbox

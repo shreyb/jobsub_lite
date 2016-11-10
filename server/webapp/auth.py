@@ -29,6 +29,7 @@ from functools import wraps, partial
 from distutils import spawn
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
+from request_headers import uid_from_client_dn
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -243,15 +244,66 @@ def check_auth(func=None, pass_through=None):
     @wraps(func)
     def wrapper(*args, **kwargs):
 
-        # see #8186, we need to be able to turn off authorization for certain http
-        # requests until we can restructure the code
+        # see #8186, we need to be able to turn off authorization for
+        # certain http requests until we can restructure the code
         #
         if pass_through and cherrypy.request.method in pass_through:
             logger.log(
-                "returning without checking authorization per request for http methods %s" % pass_through)
+                "returning without checking authorization per "+\
+                "request for http methods %s" % pass_through)
             return func(*args, **kwargs)
-
+        #
+        #check that acctgroup and role are valid
+        #
         acctgroup = kwargs.get('acctgroup')
+        role = jobsub.default_voms_role(acctgroup)
+        tokens = acctgroup.split('--ROLE--')
+        if len(tokens) > 1:
+            (acctgroup, role) = tokens[0:2]
+            kwargs['acctgroup'] = acctgroup
+            logger.log('found ROLE %s in %s' % (role, tokens))
+
+        default_roles = ['Analysis',
+                         'Calibration',
+                         'Data',
+                         'Production',
+                         ]
+        supported_roles = JobsubConfigParser().supportedRoles()
+        if not supported_roles:
+            supported_roles = default_roles
+        if role not in supported_roles:
+            err = "User authorization has failed: --role "
+            err += "'%s' not found. Configured roles are " % (role)
+            err += "%s . Check case and spelling." % supported_roles
+            cherrypy.response.status = 401
+            logger.log(err)
+            return {'err': err}
+
+        supported_groups = JobsubConfigParser().supportedGroups()
+        if acctgroup not in supported_groups:
+            err = "User authorization has failed: --group "
+            err += "'%s' not found. Configured groups are " % (
+                acctgroup)
+            err += "%s . Check case and spelling." % supported_groups
+            cherrypy.response.status = 401
+            logger.log(err)
+            return {'err': err}
+        #
+        # if we are a super user and we are doing anything except submitting
+        # a job then bypass authorization
+        #
+        if  cherrypy.request.method != 'POST':
+            uid = None
+            try:
+                uid = cherrypy.request.username
+            except:
+                pass
+            if not uid:
+                uid = uid_from_client_dn()
+            if uid and jobsub.is_superuser_for_group(acctgroup, uid):
+                return func(*args, **kwargs)
+
+        
         logger.log(traceback=True)
         logger.log("args = %s kwargs=%s " % (args, kwargs))
         logger.log("request method=%s" % cherrypy.request.method)
@@ -260,37 +312,6 @@ def check_auth(func=None, pass_through=None):
         if dn and acctgroup:
             logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
             try:
-                #role = 'Analysis'
-                role = jobsub.default_voms_role(acctgroup)
-                #logger.log('default voms role:%s' % role)
-                tokens = acctgroup.split('--ROLE--')
-                if len(tokens) > 1:
-                    (acctgroup, role) = tokens[0:2]
-                    kwargs['acctgroup'] = acctgroup
-                    logger.log('found ROLE %s in %s' % (role, tokens))
-
-                default_roles = ['Analysis',
-                                 'Calibration', 'Data', 'Production']
-                supported_roles = JobsubConfigParser().supportedRoles()
-                if not supported_roles:
-                    supported_roles = default_roles
-                if role not in supported_roles:
-                    err = "User authorization has failed: --role "
-                    err += "'%s' not found. Configured roles are " % (role)
-                    err += "%s . Check case and spelling." % supported_roles
-                    cherrypy.response.status = 401
-                    logger.log(err)
-                    return {'err': err}
-
-                supported_groups = JobsubConfigParser().supportedGroups()
-                if acctgroup not in supported_groups:
-                    err = "User authorization has failed: --group "
-                    err += "'%s' not found. Configured groups are " % (
-                        acctgroup)
-                    err += "%s . Check case and spelling." % supported_groups
-                    cherrypy.response.status = 401
-                    logger.log(err)
-                    return {'err': err}
 
                 username, voms_proxy = _check_auth(dn, acctgroup, role)
                 if username and voms_proxy:
@@ -336,7 +357,7 @@ def test():
 
     for group in dns:
         try:
-            create_voms_proxy(dns[group], group, 'Analysis')
+            create_voms_proxy(dns[group], group, jobsub.default_voms_role(group))
         except authutils.AuthenticationError as e:
             logger.log("Unauthenticated DN='%s' acctgroup='%s'" %
                        (e.dn, e.acctgroup))

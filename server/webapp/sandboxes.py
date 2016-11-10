@@ -19,6 +19,7 @@ import sys
 import subprocessSupport
 from auth import check_auth
 from request_headers import get_client_dn
+from request_headers import uid_from_client_dn
 from jobsub import get_command_path_root
 from jobsub import sandbox_readable_by_group
 from jobsub import sandbox_allowed_browsable_file_types
@@ -37,7 +38,6 @@ class SandboxesResource(object):
         command_path_root = get_command_path_root()
         if file_id or job_id:
             allowed_list = sandbox_allowed_browsable_file_types()
-            # if user_id != cherrypy.request.username:
             sandbox_dir = "%s/%s/%s/%s" %\
                 (command_path_root, cherrypy.request.acctgroup, user_id, job_id)
             make_sandbox_readable(sandbox_dir, user_id)
@@ -131,10 +131,11 @@ class SandboxesResource(object):
     @check_auth
     def index(self, acctgroup, **kwargs):
         try:
-            cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
-            requestor = cherrypy.request.username
-            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+            if kwargs.get('username'):
+                requestor = kwargs.get('username')
+            else:
+                requestor = uid_from_client_dn()
+
             cherrypy.request.acctgroup = acctgroup
             subject_dn = get_client_dn()
             user_id = kwargs.get('user_id')

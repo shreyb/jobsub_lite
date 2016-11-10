@@ -36,7 +36,7 @@ from condor_commands import constructFilter
 from condor_commands import iwd_condor_q
 from sqlite_commands import constructQuery
 from sqlite_commands import iwd_jobsub_history
-
+from request_headers import uid_from_client_dn
 
 def cleanup(zip_file, outfilename=None):
     """ Hook function to cleanup sandbox files after request has been processed
@@ -87,10 +87,6 @@ class SandboxResource(object):
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
     """
 
-    def __init__(self):
-        cherrypy.request.role = None
-        cherrypy.request.username = None
-        cherrypy.request.vomsProxy = None
 
     def findSandbox(self, path):
         """
@@ -109,6 +105,7 @@ class SandboxResource(object):
         """
         # set cherrypy.response.timeout to something bigger than 300 seconds
         timeout = 60 * 15
+        request_uid = uid_from_client_dn()
         try:
             prs = JobsubConfigParser()
             tim = prs.get('default', 'sandbox_timeout')
@@ -126,7 +123,7 @@ class SandboxResource(object):
         jobsubConfig = JobsubConfig()
         sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
         sbx_final_dir = jobsubConfig.commandPathUser(acctgroup,
-                                                     cherrypy.request.username)
+                                                     request_uid)
 
         if job_id is None:
             job_id = 'I_am_planning_on_failing'
@@ -196,13 +193,13 @@ class SandboxResource(object):
             cherrypy.request.hooks.attach('after_error_response', cleanup,
                                           zip_file=zip_file)
             owner = os.path.basename(os.path.dirname(zip_path))
-            if owner != cherrypy.request.username:
+            if owner != request_uid:
                 if sandbox_readable_by_group(acctgroup) \
                         or owner in group_superusers(acctgroup):
                     make_sandbox_readable(zip_path, owner)
                 else:
                     err = "User %s is not allowed  to read %s, owned by %s." % (
-                        cherrypy.request.username, job_id, owner)
+                        request_uid, job_id, owner)
                     err += " This is configurable, if you believe this to be "
                     err += "in error please open a service desk ticket."
                     cherrypy.response.status = 500
@@ -243,9 +240,6 @@ class SandboxResource(object):
         logger.log('job_id:%s' % job_id)
         logger.log('partial:%s' % partial)
         logger.log('kwargs:%s' % kwargs)
-        cherrypy.request.role = kwargs.get('role')
-        cherrypy.request.username = kwargs.get('username')
-        cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
 
         try:
             if job_id is None:

@@ -30,6 +30,7 @@ import re
 import cherrypy
 import authutils
 import socket
+import request_headers
 
 
 def encode_multipart_formdata(fields, files, outfile):
@@ -220,49 +221,46 @@ def doJobAction(acctgroup,
         logger.log(err, severity=logging.ERROR, logfile='error')
         return {'err': err}
 
-    cmd_user = cherrypy.request.username
-    cmd_proxy = cherrypy.request.vomsProxy
+    cmd_user = request_headers.uid_from_client_dn()
+    acctrole = jobsub.default_voms_role(acctgroup)
+    cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
+    child_env = os.environ.copy()
 
-    if user and user != cherrypy.request.username and \
+    if user and user != cmd_user and \
             not jobsub.is_superuser_for_group(acctgroup,
-                                              cherrypy.request.username):
+                                              cmd_user):
         err = '%s is not allowed to perform %s on jobs owned by %s ' %\
-            (cherrypy.request.username, job_action, user)
+            (cmd_user, job_action, user)
         logger.log(err)
         logger.log(err, logfile='condor_superuser')
         logger.log(err, logfile='condor_commands')
         logger.log(err, logfile='error', severity=logging.ERROR)
         return {'err': err}
 
-    if user and user != cherrypy.request.username and \
+    if user and user != cmd_user and \
             jobsub.is_superuser_for_group(acctgroup,
-                                          cherrypy.request.username):
-        cmd_user = user
-        acctrole = 'Analysis'
-        if acctgroup in user and 'pro' in user:
-            acctrole = 'Production'
-        cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
-        logger.log('proxy for %s is %s' % (cmd_user, cmd_proxy))
+                                          cmd_user):
+        #cmd_user = user
+        acctrole = jobsub.default_voms_role(acctgroup)
         msg = '[user: %s] %s jobs owned by %s with constraints (%s) ' %\
-            (cherrypy.request.username, job_action, cmd_user, constraint)
+            (cmd_user, job_action, user, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
         logger.log(msg, logfile='condor_superuser')
+        cmd_user = pwd.getpwuid(os.getuid())[0] 
+        child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
+        child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
     else:
         msg = '[user: %s] %s  jobs with constraint (%s)' %\
-            (cherrypy.request.username, job_action, constraint)
+            (cmd_user, job_action, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
+        child_env['X509_USER_PROXY'] = cmd_proxy
 
-    child_env = os.environ.copy()
-    child_env['X509_USER_PROXY'] = cmd_proxy
     out = err = ''
     expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
     expr2 = '.*ailed to connect*'
     expr3 = '.*all jobs matching constraint*'
-    # not needed now but if we ever want them.....
-    # expr+='(\d+)(\s+Not\s+Found,\s+)(\d+)(\s+Bad\s+Status,\s+)'
-    # expr+='(\d+)(\s+Already\s+Done,\s+)(\d+)(\s+Permission\s+Denied\s+)*'
     regex = re.compile(expr)
     regex2 = re.compile(expr2)
     regex3 = re.compile(expr3)
@@ -285,8 +283,9 @@ def doJobAction(acctgroup,
                 ]
                 if job_action == 'REMOVE' and kwargs.get('forcex'):
                     cmd.append('-forcex')
-                out, err = jobsub.run_cmd_as_user(
-                    cmd, cmd_user, child_env=child_env)
+                out, err = jobsub.run_cmd_as_user(cmd,
+                                                  cmd_user,
+                                                  child_env=child_env)
                 extra_err = err
             except:
                 # TODO: We need to change the underlying library to return
@@ -327,11 +326,12 @@ def doJobAction(acctgroup,
 
 def doDELETE(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
 
-    rc = doJobAction(
-        acctgroup, user=user, constraint=constraint,
-        job_id=job_id,
-        job_action='REMOVE',
-        **kwargs)
+    rc = doJobAction(acctgroup,
+                     user=user,
+                     constraint=constraint,
+                     job_id=job_id,
+                     job_action='REMOVE',
+                     **kwargs)
 
     return rc
 
@@ -345,10 +345,11 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     job_action = kwargs.get('job_action')
 
     if job_action and job_action.upper() in condorCommands():
-        rc = doJobAction(
-            acctgroup, user=user, constraint=constraint,
-            job_id=job_id,
-            job_action=job_action.upper())
+        rc = doJobAction(acctgroup,
+                         user=user,
+                         constraint=constraint,
+                         job_id=job_id,
+                         job_action=job_action.upper())
     else:
 
         rc['err'] = '%s is not a valid action on jobs' % job_action

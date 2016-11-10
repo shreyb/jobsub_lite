@@ -73,9 +73,11 @@ def is_superuser_for_group(acctgroup, user):
     """is user 'user' a superuser in acctgroup 'acctgroup'?
     """
     logger.log('checking if %s in %s is group_superuser' % (user, acctgroup))
-    su_list = group_superusers(acctgroup)
-    logger.log('sulist is %s for %s' % (su_list, acctgroup))
-    return user in su_list
+    if is_supported_accountinggroup(acctgroup):
+        su_list = group_superusers(acctgroup)
+        logger.log('sulist is %s for %s' % (su_list, acctgroup))
+        return user in su_list
+    raise Exception('group %s not supported' % acctgroup)
 
 
 def sandbox_readable_by_group(acctgroup):
@@ -289,7 +291,7 @@ def log_msg(acctgroup, username, jobsub_args, role=None,
     if submit_type == 'dag':
         cmd = " jobsub_submit_dag "
     role_c = ''
-    if role and role != 'Analysis':
+    if role and role != default_voms_role(acctgroup):
         role_c = " --role %s " % role
     short_args = []
     for arg in jobsub_args:

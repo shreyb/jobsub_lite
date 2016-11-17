@@ -24,6 +24,7 @@ import base64
 import json
 import hashlib
 import StringIO
+import pwd
 import jobsub
 import condor_commands
 import re

@@ -225,19 +225,17 @@ def mk_temp_fname(fname):
 
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
 
-    kx509_cmds = ['/usr/krb5/bin/kx509', spawn.find_executable("kx509")]
+    kx509_cmds = spawn.find_executable("kx509")
     tmp_x509_fname = mk_temp_fname(x509_fname)
     proxy_created = False
-    for kx509_cmd in kx509_cmds:
-        if not proxy_created:
-            try:
-                cmd = '%s -o %s' % (kx509_cmd, tmp_x509_fname)
-                cmd_env = {'KRB5CCNAME': krb5cc}
-                cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, cmd_env)
-                os.rename(tmp_x509_fname, x509_fname)
-                proxy_created = True
-            except:
-                pass
+    try:
+        cmd = '%s -o %s' % (kx509_cmd, tmp_x509_fname)
+        cmd_env = {'KRB5CCNAME': krb5cc}
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, cmd_env)
+        os.rename(tmp_x509_fname, x509_fname)
+        proxy_created = True
+    except:
+        pass
     if not proxy_created:
         raise CredentialsError("failed to create %s using kx509" % x509_fname)
 
@@ -349,12 +347,7 @@ def x509_lifetime(cert):
 
 
 def default_proxy_filename(acctGroup=None):
-    if acctGroup:
-        default_proxy_file = "%s_%s" %\
-            (constants.X509_PROXY_DEFAULT_FILE, acctGroup)
-    else:
-        default_proxy_file = constants.X509_PROXY_DEFAULT_FILE
-    return default_proxy_file
+    return constants.X509_PROXY_DEFAULT_FILE
 
 
 def proxy_issuer(proxy_fname):

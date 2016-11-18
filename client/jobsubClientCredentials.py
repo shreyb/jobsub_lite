@@ -225,7 +225,7 @@ def mk_temp_fname(fname):
 
 def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
 
-    kx509_cmds = spawn.find_executable("kx509")
+    kx509_cmd = spawn.find_executable("kx509")
     tmp_x509_fname = mk_temp_fname(x509_fname)
     proxy_created = False
     try:

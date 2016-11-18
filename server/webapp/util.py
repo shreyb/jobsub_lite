@@ -74,10 +74,16 @@ def encode_multipart_formdata(fields, files, outfile):
 
 
 def get_content_type(fnameame):
+    """
+    guess content type of fnameame
+    """
     return mimetypes.guess_type(fnameame)[0] or 'application/octet-stream'
 
 
 def mkdir_p(path):
+    """
+    mkdir -p
+    """
     try:
         os.makedirs(path)
     except OSError as exc:
@@ -87,33 +93,21 @@ def mkdir_p(path):
             raise
 
 
-def get_uid(subject_dn):
-    uid = 'unknown'
-    try:
-        uid = subject_dn.split(':')[1]
-    except:
-        logger.log('Exception getting uid: ',
-                   traceback=True, severity=logging.ERROR)
-        logger.log('Exception getting uid: ',
-                   traceback=True,
-                   severity=logging.ERROR,
-                   logfile='error')
-    return uid
 
 
-def zipdir(path, zip, job_id):
+def zipdir(path, zipf, job_id):
     for root, dirs, files in os.walk(path, followlinks=False):
         for file in files:
             if job_id:
-                zip.write(os.path.join(root, file), os.path.join(job_id, file))
+                zipf.write(os.path.join(root, file), os.path.join(job_id, file))
             else:
-                zip.write(os.path.join(root, file))
+                zipf.write(os.path.join(root, file))
 
 
 def create_zipfile(zip_file, zip_path, job_id=None, partial=None):
-    zip = zipfile.ZipFile(zip_file, 'w')
-    zipdir(zip_path, zip, job_id)
-    zip.close()
+    zipf = zipfile.ZipFile(zip_file, 'w')
+    zipdir(zip_path, zipf, job_id)
+    zipf.close()
 
 
 def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
@@ -195,14 +189,36 @@ def doJobAction(acctgroup,
                 job_action=None,
                 constraint=None,
                 **kwargs):
+    """
+    perform a job_action = [HOLD, RELEASE, or REMOVE]
+    subject to constraint = (constraint) or
+               constraint = (constructed from user, jobid, acctgroup)
+    """
 
     scheddList = []
+    cmd_user = request_headers.uid_from_client_dn()
+    orig_user = cmd_user
+    acctrole = jobsub.default_voms_role(acctgroup)
+    child_env = os.environ.copy()
+    is_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
+    if is_superuser:
+        cmd_user = pwd.getpwuid(os.getuid())[0]
+        child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
+        child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
+        msg = "user %s will perform %s  as queue_superuser %s" %\
+                   (orig_user, job_action, cmd_user)
+        logger.log(msg)
+
+    else:
+        cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
+        child_env['X509_USER_PROXY'] = cmd_proxy
+
     rc = {'out': None, 'err': None}
     if constraint:
         scheddList = condor_commands.schedd_list()
     elif job_id:
         # job_id is a jobsubjobid
-        constraint = 'regexp("group_%s.*",AccountingGroup)' % (acctgroup)
+        constraint = '(Jobsub_Group =?= "%s")' % (acctgroup)
         # Split the jobid to get cluster_id and proc_id
         stuff = job_id.split('@')
         schedd_name = '@'.join(stuff[1:])
@@ -213,23 +229,24 @@ def doJobAction(acctgroup,
         if (len(ids) > 1) and (ids[1]):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
     elif user:
-        constraint = '(Owner =?= "%s")&&regexp("group_%s.*",AccountingGroup)' %\
+        constraint = '(Owner =?= "%s") && (Jobsub_Group =?= "%s")' %\
             (user, acctgroup)
         scheddList = condor_commands.schedd_list()
     else:
-        err = "Failed to supply job_id or uid, cannot perform any action"
+        err = "Failed to supply constraint, job_id or uid, "
+        err += "cannot perform any action"
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')
         return {'err': err}
 
-    cmd_user = request_headers.uid_from_client_dn()
-    acctrole = jobsub.default_voms_role(acctgroup)
-    cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
-    child_env = os.environ.copy()
+    if is_superuser:
+        msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)'%\
+            (orig_user, cmd_user, job_action, user, constraint)
+        logger.log(msg)
+        logger.log(msg, logfile='condor_commands')
+        logger.log(msg, logfile='condor_superuser')
 
-    if user and user != cmd_user and \
-            not jobsub.is_superuser_for_group(acctgroup,
-                                              cmd_user):
+    if user and user != cmd_user and not is_superuser:
         err = '%s is not allowed to perform %s on jobs owned by %s ' %\
             (cmd_user, job_action, user)
         logger.log(err)
@@ -238,25 +255,11 @@ def doJobAction(acctgroup,
         logger.log(err, logfile='error', severity=logging.ERROR)
         return {'err': err}
 
-    if user and user != cmd_user and \
-            jobsub.is_superuser_for_group(acctgroup,
-                                          cmd_user):
-        #cmd_user = user
-        acctrole = jobsub.default_voms_role(acctgroup)
-        msg = '[user: %s] %s jobs owned by %s with constraints (%s) ' %\
-            (cmd_user, job_action, user, constraint)
-        logger.log(msg)
-        logger.log(msg, logfile='condor_commands')
-        logger.log(msg, logfile='condor_superuser')
-        cmd_user = pwd.getpwuid(os.getuid())[0] 
-        child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
-        child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
     else:
         msg = '[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
-        child_env['X509_USER_PROXY'] = cmd_proxy
 
     out = err = ''
     expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
@@ -267,8 +270,8 @@ def doJobAction(acctgroup,
     regex3 = re.compile(expr3)
     extra_err = ""
     failures = 0
-    retOut = ""
-    retErr = ""
+    ret_out = ""
+    ret_err = ""
 
     collector_host = condor_commands.collector_host()
     logger.log('collector_host is "%s"' % collector_host)
@@ -311,21 +314,24 @@ def doJobAction(acctgroup,
             for line in out2:
                 if regex.match(line):
                     grps = regex.match(line)
-                    retOut += line
+                    ret_out += line
             err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
             for line in err2:
                 if regex.match(line):
-                    retOut += line.replace('STDOUT:', '')
+                    ret_out += line.replace('STDOUT:', '')
                 if regex2.match(line):
-                    retErr += line
+                    ret_err += line
                 if regex3.match(line):
-                    retErr += line
-    if err and not retErr:
-        retErr = err
-    return {'out': retOut, 'err': retErr}
+                    ret_err += line
+    if err and not ret_err:
+        ret_err = err
+    return {'out': ret_out, 'err': ret_err}
 
 
 def doDELETE(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
+    """
+    Executed to remove jobs
+    """
 
     rc = doJobAction(acctgroup,
                      user=user,

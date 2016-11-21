@@ -1106,7 +1106,7 @@ def print_json_response(response, response_code, server, serving_server,
         print_msg(output)
 
     if error:
-        if 'all jobs matching constraint' in str(error):
+        if not verbose and 'all jobs matching constraint' in str(error):
             pass
         else:
             print "ERROR:"

@@ -9,7 +9,8 @@
    Parag Mhashilkar
 """
 
-from condor_commands import schedd_name
+import condor_commands
+import time
 import logger
 import logging
 import cherrypy
@@ -209,6 +210,18 @@ def get_authentication_methods(acctgroup):
     return methods
 
 
+def get_submit_delay_factor():
+    """return submit_delay_factor 
+       from jobsub.ini
+    """
+    sdf = 100
+    prs = JobsubConfigParser()
+    if prs.has_section('default'):
+        if prs.has_option('default', 'submit_delay_factor'):
+            sdf = prs.get('default', 'submit_delay_factor')
+    logger.log('submit_delay_factor=%s'%sdf)
+    return float(sdf) 
+
 def get_command_path_root():
     """return root directory of sandboxes
        from jobsub.ini
@@ -329,8 +342,13 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             jobsubConfig.commandPathUser(acctgroup, username),
             workdir_id)
 
+        schedd_nm = condor_commands.schedd_name(jobsub_args)
+        recent_duty_cycle = condor_commands.schedd_recent_duty_cycle(schedd_nm)
+        sleep_val = recent_duty_cycle * get_submit_delay_factor()
+        logger.log('sleeping %s seconds to protect schedd %s' %(sleep_val,schedd_nm))
+        time.sleep(sleep_val)
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
-        child_env['SCHEDD'] = schedd_name(jobsub_args)
+        child_env['SCHEDD'] = schedd_nm
         if role:
             child_env['ROLE'] = role
         child_env['WORKDIR_ID'] = workdir_id

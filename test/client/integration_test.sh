@@ -1,5 +1,6 @@
 #!/bin/sh 
 
+export TEST_FLAG=" -x "
 export OTHER_FLAGS=" --debug "
 
 function lg_echo {

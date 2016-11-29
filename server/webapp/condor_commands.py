@@ -21,7 +21,8 @@ from random import randint
 
 
 JOBSTATUS_DICT = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
-                  'removed': 3, 'completed': 4, 'held': 5, 'hold': 5, 'error': 6}
+                  'removed': 3, 'completed': 4, 'held': 5, 'hold': 5,
+                  'error': 6}
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
@@ -59,6 +60,8 @@ def ui_condor_queued_jobs_summary():
     try:
         all_queued1, cmd_err = subprocessSupport.iexe_cmd(
             'condor_status -submitter -wide')
+        if cmd_err:
+            logger_log('%s:%s'%(cmd, cmd_err))
         tmp = all_queued1.split('\n')
         idx = [i for i, item in enumerate(tmp)
                if re.search('^.\s+RunningJobs', item)]
@@ -70,10 +73,10 @@ def ui_condor_queued_jobs_summary():
         all_queued = "%s\n%s" % (all_queued1, all_queued2)
         return all_queued
     except:
-        tb = traceback.format_exc()
-        logger.log(tb)
-        logger.log(tb, severity=logging.ERROR, logfile='condor_commands')
-        logger.log(tb, severity=logging.ERROR, logfile='error')
+        tbk = traceback.format_exc()
+        logger.log(tbk)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
 def condor_header(input_switch=None):
@@ -176,9 +179,9 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
     if jobid is None:
         job_cnst = 'True'
     elif jobid.find('@') >= 0:
-        x = jobid.split('@')
-        clusterid = x[0]
-        host = '@'.join(x[1:])
+        spx = jobid.split('@')
+        clusterid = spx[0]
+        host = '@'.join(spx[1:])
         if clusterid.find('.') < 0:
             clusterid = clusterid + '.0'
         job_cnst = """regexp("%s#%s.*",GlobalJobId)""" % (host, clusterid)
@@ -356,6 +359,28 @@ def schedd_list():
         return schedds.split()
     except:
         tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
+
+def schedd_recent_duty_cycle(schedd_nm=None):
+    """
+    return condor_status -schedd -af RecentDaemonCoreDutyCycle 
+        -constraint 'Name=?="schedd_name"'
+    """
+
+    try:
+        if schedd_nm is None:
+            schedd_nm = schedd_name() 
+        cmd = """condor_status -schedd -af RecentDaemonCoreDutyCycle """
+        cmd += """-constraint 'Name=?="%s"'""" % schedd_nm
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        duty_cycle = float(cmd_out)
+        
+        return duty_cycle
+    except:
+        tbk = traceback.format_exc()
+        logger.log(cmd_err, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')

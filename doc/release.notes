@@ -21,6 +21,11 @@ Client
 Server
 ------
 
+* Feature 12534 Query RecentDaemonCoreDutyCycle of schedd, multiply it by
+                submit_delay_factor from jobsub.ini, and sleep that many
+                seconds prior to job submission.  Intent is to allow the
+                schedd some time to catch up if it is really busy.
+
 * Bug     12063 jobsub_q show current run time instead of cumulative
 
 * Feature 13515 Allow superusers access to sandboxes

@@ -1,15 +1,13 @@
-"""
- Description:
-   This module returns jobsub server version extracted from the RPM
-   API is /jobsub/version
+"""file: version.py
 
- Project:
-   JobSub
+    Purpose:
+        returns version string from installed rpm
 
- Author:
-   Dennis Box
+    Project:
+        JobSub
 
-
+    Author:
+        Dennis Box
 """
 import cherrypy
 import logger
@@ -20,8 +18,13 @@ from format import format_response
 
 
 class VersionResource(object):
-
+    """
+    Description:
+    This module returns jobsub server version extracted from the RPM
+    """
     def doGET(self, kwargs):
+        """ perform http GET of URL /jobsub/version
+        """
         tools_version = 'jobsub_tools now integrated into server'
         server_version = 'jobsub server rpm release: %s' %\
             os.environ.get('JOBSUB_SERVER_VERSION')
@@ -32,9 +35,11 @@ class VersionResource(object):
     @cherrypy.expose
     @format_response
     def index(self, **kwargs):
+        """index.html of /jobsub/version
+        """
         try:
             if cherrypy.request.method == 'GET':
-                rc = self.doGET(kwargs)
+                rcode = self.doGET(kwargs)
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err)
@@ -42,7 +47,7 @@ class VersionResource(object):
                            traceback=True,
                            severity=logging.ERROR,
                            logfile='error')
-                rc = {'err': err}
+                rcode = {'err': err}
         except:
             err = 'Exception on VersionResouce.index: %s' % sys.exc_info()[1]
             cherrypy.response.status = 500
@@ -51,6 +56,6 @@ class VersionResource(object):
                        traceback=True,
                        severity=logging.ERROR,
                        logfile='error')
-            rc = {'err': err}
+            rcode = {'err': err}
 
-        return rc
+        return rcode

@@ -1,10 +1,13 @@
-"""Module:
-        condor_commands
-   Purpose:
+"""file: condor_commands.py
+    Purpose:
         utility file with implementation of various condor commands such as
         condor_q, condor_status, etc
         no actual api implemented in this module
-   Author:
+
+    Project:
+        Jobsub
+
+    Author:
         Dennis Box
 """
 import cherrypy
@@ -26,7 +29,7 @@ JOBSTATUS_DICT = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
 if platform.system() == 'Linux':
     try:
         import htcondor as condor
-    except:
+    except ImportError:
         logger.log('Cannot import htcondor. Have the condor' +
                    ' python bindings been installed?')
 
@@ -36,6 +39,9 @@ def ui_condor_userprio():
     """
     all_users, cmd_err = subprocessSupport.iexe_cmd(
         'condor_userprio -allusers')
+    if cmd_err:
+        logger.log(cmd_err)
+        logger.log(cmd_err, severity=logging.ERROR, logfile='error')
     return all_users
 
 
@@ -49,6 +55,9 @@ def ui_condor_status_totalrunningjobs():
     cmd += """ -af name totalrunningjobs"""
 
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+    if cmd_err:
+        logger.log(cmd_err)
+        logger.log(cmd_err, severity=logging.ERROR, logfile='error')
 
     return all_jobs
 
@@ -61,7 +70,9 @@ def ui_condor_queued_jobs_summary():
         all_queued1, cmd_err = subprocessSupport.iexe_cmd(
             'condor_status -submitter -wide')
         if cmd_err:
-            logger_log('%s:%s'%(cmd, cmd_err))
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
+
         tmp = all_queued1.split('\n')
         idx = [i for i, item in enumerate(tmp)
                if re.search('^.\s+RunningJobs', item)]
@@ -70,6 +81,9 @@ def ui_condor_queued_jobs_summary():
         all_queued1 = '\n'.join(tmp)
         all_queued2, cmd_err = subprocessSupport.iexe_cmd(
             '/opt/jobsub/server/webapp/ifront_q.sh')
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         all_queued = "%s\n%s" % (all_queued1, all_queued2)
         return all_queued
     except:
@@ -217,6 +231,9 @@ def ui_condor_q(a_filter=None, a_format=None):
             else:
                 cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
+            if cmd_err:
+                logger.log(cmd_err)
+                logger.log(cmd_err, severity=logging.ERROR, logfile='error')
             c_dn = get_client_dn()
             pts = c_dn.split(':')
             user = pts[-1]
@@ -231,6 +248,7 @@ def ui_condor_q(a_filter=None, a_format=None):
         except:
             tb = traceback.format_exc()
             logger.log(tb, severity=logging.ERROR)
+            logger.log(tb, severity=logging.ERROR, logfile='error')
             no_jobs = "All queues are empty"
             if len(re.findall(no_jobs, tb)):
                 # return no_jobs
@@ -260,6 +278,9 @@ def condor_userprio():
     users = ''
     try:
         users, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         # logger.log("cmd=%s"%cmd)
         # logger.log("rslt=%s"%all_jobs)
         return users
@@ -277,6 +298,9 @@ def iwd_condor_q(a_filter, a_part='iwd'):
     iwd = ''
     try:
         iwd, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         # logger.log("cmd=%s"%cmd)
         # logger.log("rslt=%s"%all_jobs)
         return iwd
@@ -336,6 +360,9 @@ def collector_host():
     try:
         hosts, cmd_err = subprocessSupport.iexe_cmd(
             """condor_config_val collector_host """)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         host_x = hosts.split('\n')
         host_list = host_x[0].split(',')
         host = host_list[randint(0, len(host_list) - 1)]
@@ -356,6 +383,9 @@ def schedd_list():
     try:
         schedds, cmd_err = subprocessSupport.iexe_cmd(
             """condor_status -schedd -af name """)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         return schedds.split()
     except:
         tbk = traceback.format_exc()
@@ -365,18 +395,21 @@ def schedd_list():
 
 def schedd_recent_duty_cycle(schedd_nm=None):
     """
-    return condor_status -schedd -af RecentDaemonCoreDutyCycle 
+    return condor_status -schedd -af RecentDaemonCoreDutyCycle
         -constraint 'Name=?="schedd_name"'
     """
 
     try:
         if schedd_nm is None:
-            schedd_nm = schedd_name() 
+            schedd_nm = schedd_name()
         cmd = """condor_status -schedd -af RecentDaemonCoreDutyCycle """
         cmd += """-constraint 'Name=?="%s"'""" % schedd_nm
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         duty_cycle = float(cmd_out)
-        
+
         return duty_cycle
     except:
         tbk = traceback.format_exc()

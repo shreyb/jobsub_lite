@@ -1,12 +1,12 @@
-"""
- Description:
- utility functions
+"""file: jobsub.py
+    Description:
+        utility functions
 
- Project:
-   JobSub
+    Project:
+        JobSub
 
- Author:
-   Parag Mhashilkar
+    Author:
+        Parag Mhashilkar
 """
 
 import condor_commands
@@ -111,7 +111,7 @@ def sandbox_allowed_browsable_file_types():
     try:
         prs = JobsubConfigParser()
         extensions = prs.get(prs.submit_host,
-                     'output_files_web_browsable_allowed_types')
+                             'output_files_web_browsable_allowed_types')
         if isinstance(extensions, str):
             r_code = extensions.split()
         logger.log('output_files_web_browsable_allowed_types %s' % (r_code))
@@ -205,13 +205,13 @@ def get_authentication_methods(acctgroup):
                    logfile='error')
 
     methods = list()
-    for m in r_code.split(','):
-        methods.append(m.strip())
+    for meth in r_code.split(','):
+        methods.append(meth.strip())
     return methods
 
 
 def get_submit_delay_factor():
-    """return submit_delay_factor 
+    """return submit_delay_factor
        from jobsub.ini
     """
     sdf = 100
@@ -220,7 +220,7 @@ def get_submit_delay_factor():
         if prs.has_option('default', 'submit_delay_factor'):
             sdf = prs.get('default', 'submit_delay_factor')
     logger.log('submit_delay_factor=%s'%sdf)
-    return float(sdf) 
+    return float(sdf)
 
 def get_command_path_root():
     """return root directory of sandboxes
@@ -273,7 +273,10 @@ def get_dropbox_path_root():
 
 
 def get_jobsub_wrapper(submit_type='job'):
-
+    """find shell correct script wrapper
+       depending on
+       @submit_type = 'job' or 'dag'
+    """
     exepath = '/opt/jobsub/server/webapp'
     wrapper = os.environ.get('JOBSUB_ENV_RUNNER',
                              os.path.join(exepath,
@@ -324,7 +327,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                                jobsub_client_krb5_principal='UNKNOWN',
                                submit_type='job', priv_mode=True,
                                child_env=None):
-
+    """submit a job or dag
+    """
     envrunner = get_jobsub_wrapper(submit_type=submit_type)
     command = [envrunner] + jobsub_args
     logger.log('jobsub command: %s' % command)
@@ -345,7 +349,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         schedd_nm = condor_commands.schedd_name(jobsub_args)
         recent_duty_cycle = condor_commands.schedd_recent_duty_cycle(schedd_nm)
         sleep_val = recent_duty_cycle * get_submit_delay_factor()
-        logger.log('sleeping %s seconds to protect schedd %s' %(sleep_val,schedd_nm))
+        logger.log('sleeping %s seconds to protect schedd %s' %(sleep_val,
+                                                                schedd_nm))
         time.sleep(sleep_val)
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_nm
@@ -546,7 +551,7 @@ def run_cmd_as_user(command, username, child_env={}):
                                                    username=username)
     except Exception as e:
         err_fmt = 'Error running as user %s using command '
-        err_fmt += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s' 
+        err_fmt += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         err_str = err_fmt % (username, cmd, out, err, e)
         logger.log(err_str, severity=logging.ERROR)
         logger.log(err_str, severity=logging.ERROR, logfile='submit')

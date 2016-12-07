@@ -64,7 +64,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
             child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
             dn = authutils.clean_proxy_dn(dn)
-            cmd = "%s -n -l '%s' -s %s -t 24 -o %s" %\
+            cmd = """%s -n -l "%s" -s %s -t 24 -o %s""" %\
                 (myproxy_exe, dn, myproxy_server, x509_tmp_fname)
             logger.log('%s' % cmd)
             out, err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
@@ -75,13 +75,13 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             authutils.x509pair_to_vomsproxy(
                 x509_tmp_fname, x509_tmp_fname, x509_tmp_fname, acctgroup, acctrole)
 
-            cmd2 = "%s  -all -file %s " % (vomsproxy_exe, x509_tmp_fname)
+            cmd2 = """%s  -all -file %s """ % (vomsproxy_exe, x509_tmp_fname)
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)
             if not acctrole:
                 acctrole = jobsub.default_voms_role(acctgroup)
             sub_group_pattern = jobsub.sub_group_pattern(acctgroup)
-            search_pat = "%s/Role=%s/Capability" % (
+            search_pat = """%s/Role=%s/Capability""" % (
                 sub_group_pattern, acctrole)
 
             if (search_pat in out2) and ('VO' in out2):

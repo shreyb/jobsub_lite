@@ -120,7 +120,7 @@ class Krb5Ticket(object):
         except Exception:
             raise OtherAuthError("Unable to find command 'kinit' in the PATH.")
 
-        cmd = '%s -F -k -t %s -l %ih -r %ih -c %s %s' %\
+        cmd = """%s -F -k -t %s -l %ih -r %ih -c %s %s""" %\
             (kinit_exe, cherrypy.request.keytab,
              self.createLifetimeHours,
              self.renewableLifetimeHours,
@@ -171,7 +171,7 @@ def get_voms_attrs(acctgroup, acctrole=None):
     """
     fqan = get_voms(acctgroup)
     if acctrole:
-        fqan = '%s/Role=%s' % (fqan, acctrole)
+        fqan = """%s/Role=%s""" % (fqan, acctrole)
     return fqan
 
 
@@ -199,8 +199,8 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     voms_proxy_lifetime = p.get('default', 'voms_proxy_lifetime')
     if not voms_proxy_lifetime:
         voms_proxy_lifetime = '168:0'
-    cmd = "%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s -out\
-            %s -cert %s -key %s" %\
+    cmd = """%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s -out\
+            %s -cert %s -key %s""" %\
         (voms_proxy_init_exe, voms_proxy_lifetime,
          voms_attrs, tmp_proxy_fname, cert, key)
     logger.log(cmd)
@@ -231,7 +231,7 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     voms_proxy_lifetime = p.get('default', 'voms_proxy_lifetime')
     if not voms_proxy_lifetime:
         voms_proxy_lifetime = '168:0'
-    cmd = "%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s" %\
+    cmd = """%s -noregen -rfc -ignorewarn -valid %s -bits 1024 -voms %s""" %\
         (voms_proxy_init_exe, voms_proxy_lifetime, voms_attrs)
     cmd_env = {'X509_USER_PROXY': new_proxy_fname}
     logger.log(cmd)
@@ -284,7 +284,7 @@ def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname,
             os.remove(tmp_proxy_fname)
             raise
 
-    cmd = "%s -all -file %s " % (voms_proxy_info_exe, tmp_proxy_fname)
+    cmd = """%s -all -file %s """ % (voms_proxy_info_exe, tmp_proxy_fname)
     logger.log(cmd)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -338,7 +338,7 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s' % os.getuid()):
     # if not os.path.exists(kx509_exe):
     #    raise Exception("Unable to find command 'kx509' in the PATH.")
 
-    cmd = '%s -o %s' % (kx509_exe, x509_fname)
+    cmd = """%s -o %s""" % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
     logger.log(cmd)
     try:
@@ -375,9 +375,9 @@ def add_principal(principal, keytab_fname):
     """ add kerberos principal to kerberos database
     """
     logger.log('Adding principal %s to the krb5 database' % principal)
-    kadmin_command("addprinc -pw %s %s" % (kadmin_password(), principal))
+    kadmin_command("""addprinc -pw %s %s""" % (kadmin_password(), principal))
     logger.log('Adding keytab %s' % keytab_fname)
-    kadmin_command("ktadd -k %s %s" % (keytab_fname, principal))
+    kadmin_command("""ktadd -k %s %s""" % (keytab_fname, principal))
 
 
 def kadmin_command(command):
@@ -434,12 +434,12 @@ def refresh_krb5cc(username):
     try:
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
         jobsubConfig = jobsub.JobsubConfig()
-        principal = '%s/batch/fifegrid@FNAL.GOV' % username
+        principal = """%s/batch/fifegrid@FNAL.GOV""" % username
         krb5cc_dir = jobsubConfig.krb5cc_dir
-        keytab_fname = os.path.join(creds_base_dir, '%s.keytab' % username)
-        real_cache_fname = os.path.join(krb5cc_dir, 'krb5cc_%s' % username)
+        keytab_fname = os.path.join(creds_base_dir, """%s.keytab""" % username)
+        real_cache_fname = os.path.join(krb5cc_dir, """krb5cc_%s""" % username)
         new_cache_file = NamedTemporaryFile(
-            prefix="%s_" % real_cache_fname, delete=False)
+            prefix="""%s_""" % real_cache_fname, delete=False)
         new_cache_fname = new_cache_file.name
         new_cache_file.close()
         logger.log("new_cache_fname=%s" % new_cache_fname)
@@ -470,7 +470,7 @@ def is_valid_cache(cache_name):
     # is needed after krbrefresh to keep the jobs krb5 cache updated
     #
     klist_exe = spawn.find_executable("klist")
-    cmd = "%s -s -c %s" % (klist_exe, cache_name)
+    cmd = """%s -s -c %s""" % (klist_exe, cache_name)
     try:
         logger.log(cmd)
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)

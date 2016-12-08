@@ -10,7 +10,6 @@
 """
 
 import condor_commands
-import time
 import logger
 import logging
 import cherrypy
@@ -210,16 +209,16 @@ def get_authentication_methods(acctgroup):
     return methods
 
 
-def get_submit_delay_factor():
-    """return submit_delay_factor
+def get_submit_reject_threshold():
+    """return submit_reject_threshold
        from jobsub.ini
     """
-    sdf = 100
+    sdf = 0.85
     prs = JobsubConfigParser()
     if prs.has_section('default'):
-        if prs.has_option('default', 'submit_delay_factor'):
-            sdf = prs.get('default', 'submit_delay_factor')
-    logger.log('submit_delay_factor=%s'%sdf)
+        if prs.has_option('default', 'submit_reject_threshold'):
+            sdf = prs.get('default', 'submit_reject_threshold')
+    logger.log('submit_reject_threshold=%s'%sdf)
     return float(sdf)
 
 def get_command_path_root():
@@ -347,11 +346,18 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             workdir_id)
 
         schedd_nm = condor_commands.schedd_name(jobsub_args)
-        recent_duty_cycle = condor_commands.schedd_recent_duty_cycle(schedd_nm)
-        sleep_val = recent_duty_cycle * get_submit_delay_factor()
-        logger.log('sleeping %s seconds to protect schedd %s' %(sleep_val,
-                                                                schedd_nm))
-        time.sleep(sleep_val)
+        recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
+        srt = get_submit_reject_threshold()
+
+        if recent_duty_cycle > srt:
+            err = "schedd %s is overloaded " % schedd_nm
+            err += "at %s percent busy " % (100.0*recent_duty_cycle)
+            err += "rejecting job submission, try again in a few minutes"
+            result = {'err': err}
+            logger.log(err)
+            cherrypy.response.status = 500
+            return result
+
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_nm
         if role:

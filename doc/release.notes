@@ -21,11 +21,14 @@ Client
 Server
 ------
 
-* Feature 12534 Query RecentDaemonCoreDutyCycle of schedd, multiply it by
-                submit_delay_factor from jobsub.ini, and sleep that many
-                seconds prior to job submission.  Intent is to allow the
-                schedd some time to catch up if it is really busy.
-
+* Feature 12534 Protect the schedd from submissions when it 
+                is very busy with following algorithm:
+                - query RecentDaemonCoreDutyCycle of schedd
+                - read submit_reject_threshold from jobsub.ini
+                -if the first value is greater than the second,
+                     refuse to submit job and exit with informative
+                     error message and non zero exit code
+               
 * Bug     12063 jobsub_q show current run time instead of cumulative
 
 * Feature 13515 Allow superusers access to sandboxes
@@ -33,6 +36,8 @@ Server
 * Feature 13516 Add global superusers for support staff
 
 * Maint.  14113 Refactor, document, and clean up code and modules
+
+* Bug     14778 DN with apostrophe in it unable to authenticate
 
 ================================================================================
 v1.2.2

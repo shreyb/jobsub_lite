@@ -21,6 +21,7 @@
 import os
 import sys
 import re
+import pwd
 import time
 import traceback
 import cherrypy
@@ -28,6 +29,7 @@ import logger
 import logging
 import jobsub
 import subprocessSupport
+import hashlib
 
 from functools import wraps, partial
 from distutils import spawn
@@ -394,7 +396,7 @@ def get_gums_mapping(dn, fqan):
     return out
 
 
-def x509_proxy_fname(username, acctgroup, acctrole=None):
+def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     jobsubConfig = jobsub.JobsubConfig()
     proxies_base_dir = jobsubConfig.proxiesDir
@@ -404,6 +406,15 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
     if acctrole:
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s'%(username,acctrole))
+        if acctrole != jobsub.default_voms_role(acctgroup):
+            append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
+            if append_hashes:
+                if not dn:
+                    dn = clean_proxy_dn(get_client_dn())
+                dig = hashlib.sha1()
+                dig.update(dn)
+                x509_cache_fname = "%s_%s" % (x509_cache_fname, dig.hexdigest())
+
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
     logger.log('Using x509_proxy_name=%s'%x509_cache_fname)
@@ -528,7 +539,7 @@ def authorize_myproxy(dn, username, acctgroup, acctrole=None ,age_limit=3600):
     jobsubConfig = jobsub.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole)
+    x509_cache_fname = x509_proxy_fname(username, acctgroup, acctrole, dn)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmpDir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_'%x509_tmp_prefix,
@@ -655,9 +666,28 @@ def refresh_proxies(agelimit=3600):
                         queued_users.append(user)
                     grp=grp.replace("group_","")
                     proxy_name=os.path.basename(check[2])
-                    x,uid,role=proxy_name.split('_')
-                    print "checking proxy %s %s %s %s"%(dn,user,grp,role)
-                    authorize(dn,user,grp,role,agelimit)
+                    pfn = proxy_name.split('_')
+                    role=pfn[2]
+                    print "checking proxy %s %s %s %s"%(dn, user, grp, role)
+                    authorize(dn, user, grp, role, agelimit)
+                    x509_fpath = x509_proxy_fname(user, grp, role, dn)
+                    x509_fname = os.path.basename(x509_fpath)
+                    fpath = os.path.dirname(x509_fpath)
+
+                    if x509_fname != proxy_name:
+                        try:
+                            proxy_name = os.path.join(fpath, proxy_name)
+                            logger.log("copying %s to %s"%(x509_fpath, proxy_name))
+                            logger.log("copying %s to %s"%(x509_fpath, proxy_name),logfile='krbrefresh')
+                            stat_info = os.stat(x509_fpath)
+                            uid = stat_info.st_uid
+                            username = pwd.getpwuid(uid)[0]
+                            jobsub.copy_file_as_user(x509_fpath, proxy_name, username)
+                        except:
+                            err = sys.exc_info()[1]
+                            logger.log(err, severity=logging.ERROR)
+                            logger.log(err, severity=logging.ERROR, logfile='error')
+                            logger.log(err, severity=logging.ERROR, logfile='krbrefresh')
                 except:
                     err = "Error processing %s:%s"%(line, sys.exc_info()[1])
                     logger.log(err, severity=logging.ERROR)
@@ -836,7 +866,7 @@ def test():
 
     for group in dns:       
         try:
-            create_voms_proxy(dns[group], group)
+            create_voms_proxy(dns[group], group, None)
         except AuthenticationError, e:
             logger.log("Unauthenticated DN='%s' acctgroup='%s'" % (e.dn, e.acctgroup))
         except AuthorizationError, e:

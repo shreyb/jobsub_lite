@@ -14,6 +14,8 @@ Server
                         user 'b' s is named
                            x509cc_novapro_Production_<hash of b's DN>
 
+* Bug     14778 DN with apostrophe in it unable to authenticate
+
 ================================================================================
 v1.2.2
 ================================================================================

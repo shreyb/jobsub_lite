@@ -407,7 +407,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s'%(username,acctrole))
         if acctrole != jobsub.default_voms_role(acctgroup):
-            append_hashes = JobsubConfigParser().get(acctgroup,'append_hash_to_proxy_fname')
+            append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
             if append_hashes:
                 if not dn:
                     dn = clean_proxy_dn(get_client_dn())

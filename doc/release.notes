@@ -39,6 +39,21 @@ Server
 
 * Bug     14778 DN with apostrophe in it unable to authenticate
 
+* Bug     14830 DN in nova production proxy changing according to who last used it
+                As part of fix, is a new parameter introduced to jobsub.ini for
+                affected groups: hash_nondefault_proxy
+
+                If 'hash_nondefault_proxy = True'  is present in 'group' section 
+                for that group, append a hash of the submitters DN to the user 
+                proxy file name. 
+
+                For example user 'a' s   novaPro proxy is named
+                x509cc_novapro_Production_<hash of a's DN>
+
+                User 'b' s novaPro proxy is named
+                x509cc_novapro_Production_<hash of b's DN>
+
+
 ================================================================================
 v1.2.2
 ================================================================================

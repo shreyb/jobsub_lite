@@ -179,9 +179,29 @@ def refresh_proxies(agelimit=3600):
                         queued_users.append(user)
                     grp = grp.replace("group_", "")
                     proxy_name = os.path.basename(check[2])
-                    x, uid, role = proxy_name.split('_')
-                    print "checking proxy %s %s %s %s" % (dn, user, grp, role)
+                    pfn = proxy_name.split('_')
+                    role=pfn[2]
+                    print "checking proxy %s %s %s %s"%(dn, user, grp, role)
                     authorize(dn, user, grp, role, agelimit)
+                    x509_fpath = x509_proxy_fname(user, grp, role, dn)
+                    x509_fname = os.path.basename(x509_fpath)
+                    fpath = os.path.dirname(x509_fpath)
+
+                    if x509_fname != proxy_name:
+                        try:
+                            proxy_name = os.path.join(fpath, proxy_name)
+                            logger.log("copying %s to %s"%(x509_fpath, proxy_name))
+                            logger.log("copying %s to %s"%(x509_fpath, proxy_name),logfile='krbrefresh')
+                            stat_info = os.stat(x509_fpath)
+                            uid = stat_info.st_uid
+                            username = pwd.getpwuid(uid)[0]
+                            jobsub.copy_file_as_user(x509_fpath, proxy_name, username)
+                        except:
+                            err = sys.exc_info()[1]
+                            logger.log(err, severity=logging.ERROR)
+                            logger.log(err, severity=logging.ERROR, logfile='error')
+                            logger.log(err, severity=logging.ERROR, logfile='krbrefresh')
+
                 except:
                     err = "Error processing %s:%s" % (line, sys.exc_info()[1])
                     logger.log(err, severity=logging.ERROR)

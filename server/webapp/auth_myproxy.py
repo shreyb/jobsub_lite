@@ -43,7 +43,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     x509_cache_fname = authutils.x509_proxy_fname(
-        username, acctgroup, acctrole)
+        username, acctgroup, acctrole, dn)
     x509_tmp_prefix = os.path.join(jobsubConfig.tmp_dir,
                                    os.path.basename(x509_cache_fname))
     x509_tmp_file = NamedTemporaryFile(prefix='%s_' % x509_tmp_prefix,

@@ -25,10 +25,14 @@ import logger
 import logging
 import jobsub
 import subprocessSupport
+import pwd
+import hashlib
+
 
 from distutils import spawn
 from tempfile import NamedTemporaryFile
 from JobsubConfigParser import JobsubConfigParser
+from request_headers import get_client_dn
 
 
 class AuthenticationError(Exception):
@@ -410,7 +414,7 @@ def clean_proxy_dn(dn):
     return dn
 
 
-def x509_proxy_fname(username, acctgroup, acctrole=None):
+def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
     """generate file name to store x509 proxy
     """
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
@@ -422,6 +426,16 @@ def x509_proxy_fname(username, acctgroup, acctrole=None):
     if acctrole:
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s' % (username, acctrole))
+        if acctrole != jobsub.default_voms_role(acctgroup):
+            append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
+            if append_hashes:
+                if not dn:
+                    dn = clean_proxy_dn(get_client_dn())
+                dig = hashlib.sha1()
+                dig.update(dn)
+                x509_cache_fname = "%s_%s" % (x509_cache_fname, dig.hexdigest())
+
+
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s' % username)
     logger.log('Using x509_proxy_name=%s' % x509_cache_fname)

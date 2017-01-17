@@ -46,10 +46,15 @@ def required_args_present(options):
 
 def parse_opts(argv):
     usage = '%prog [Client Options]'
+    epi_text = """REQUIRED arguments to hold jobs are (-G AND  (--jobid OR """
+    epi_text += """--user OR --constraint) ).  Please direct questions, comments, or problems to the service desk.  """
+    epi_text += "For help on --jobid or --constraint see "
+    epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Frequently_Asked_Questions"""
+
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
-                                   epilog="""REQUIRED arguments to hold jobs are (-G AND   (--jobid OR --user --constraint) ).  Please direct questions, comments, or problems to the service desk""")
+                                   epilog=epi_text)
 
     opt_group = optparse.OptionGroup(parser, "Client Options")
 

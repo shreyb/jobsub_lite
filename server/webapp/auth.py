@@ -51,7 +51,9 @@ def authenticate(dn, acctgroup, acctrole):
             if method.lower() in ['gums', 'myproxy']:
                 try:
                     import auth_gums
-                    return auth_gums.authenticate(dn, acctgroup, acctrole)
+                    username = auth_gums.authenticate(dn, acctgroup, acctrole)
+                    cherrypy.request.username = username
+                    return username
                 except Exception as e:
                     logger.log('%s failed %s' % (method, e))
             elif method.lower() == 'kca-dn':

@@ -1,5 +1,20 @@
 
 ================================================================================
+v1.2.3.2 - bugfix for v1.2.3
+================================================================================
+Client
+------
+
+* Bug       15403 jobsub_rm drops role when constraint is specified   
+* Bug       15250 jobsub_cleint ups product needs to set up pycurl in certain 
+                  instances
+
+Server
+------
+* Bug       15413 setting X509_USER_PROXY to a managed proxy results in failure 
+                  to hold,release,remove
+
+================================================================================
 v1.2.3
 ================================================================================
 

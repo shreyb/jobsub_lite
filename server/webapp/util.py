@@ -196,7 +196,9 @@ def doJobAction(acctgroup,
     """
 
     scheddList = []
-    cmd_user = request_headers.uid_from_client_dn()
+    cmd_user = cherrypy.request.username
+    if not cmd_user:
+        cmd_user = request_headers.uid_from_client_dn()
     orig_user = cmd_user
     acctrole = jobsub.default_voms_role(acctgroup)
     child_env = os.environ.copy()

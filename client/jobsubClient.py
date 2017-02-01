@@ -517,8 +517,11 @@ class JobSubClient:
             rslts = []
             for schedd in self.schedd_list:
                 srv = "https://%s:8443" % schedd
+                acct = self.account_group
+                if self.acct_role:
+                    acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                    % (srv, self.account_group, urllib.quote(constraint))
+                    % (srv, acct, urllib.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print "Schedd: %s" % schedd
@@ -577,8 +580,11 @@ class JobSubClient:
             rslts = []
             for schedd in self.schedd_list:
                 srv = "https://%s:8443" % schedd
+                acct = self.account_group
+                if self.acct_role:
+                    acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                    % (srv, self.account_group, urllib.quote(constraint))
+                    % (srv, acct, urllib.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print "Schedd: %s" % schedd
@@ -637,8 +643,11 @@ class JobSubClient:
             rslts = []
             for schedd in self.schedd_list:
                 srv = "https://%s:8443" % schedd
+                acct = self.account_group
+                if self.acct_role:
+                    acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN\
-                    % (srv, self.account_group, urllib.quote(constraint))
+                    % (srv, acct, urllib.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print "Schedd: %s" % schedd

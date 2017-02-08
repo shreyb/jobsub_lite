@@ -134,7 +134,9 @@ class SandboxesResource(object):
             if kwargs.get('username'):
                 requestor = kwargs.get('username')
             else:
-                requestor = uid_from_client_dn()
+                requestor = cherrypy.request.username
+                if not requestor:
+                    requestor = uid_from_client_dn()
 
             cherrypy.request.acctgroup = acctgroup
             subject_dn = get_client_dn()

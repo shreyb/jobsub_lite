@@ -105,7 +105,9 @@ class SandboxResource(object):
         """
         # set cherrypy.response.timeout to something bigger than 300 seconds
         timeout = 60 * 15
-        request_uid = uid_from_client_dn()
+        request_uid = cherrypy.request.username
+        if not request_uid:
+            request_uid = uid_from_client_dn()
         try:
             prs = JobsubConfigParser()
             tim = prs.get('default', 'sandbox_timeout')

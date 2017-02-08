@@ -13,6 +13,8 @@ Server
 ------
 * Bug       15413 setting X509_USER_PROXY to a managed proxy results in failure 
                   to hold,release,remove
+* Bug       15500 fetchlog also not working with X509_USER_PROXY set to managed
+                  proxy
 
 ================================================================================
 v1.2.3

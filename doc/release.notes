@@ -6,7 +6,7 @@ Client
 ------
 
 * Bug       15403 jobsub_rm drops role when constraint is specified   
-* Bug       15250 jobsub_cleint ups product needs to set up pycurl in certain 
+* Bug       15250 jobsub_client ups product needs to set up pycurl in certain 
                   instances
 
 Server

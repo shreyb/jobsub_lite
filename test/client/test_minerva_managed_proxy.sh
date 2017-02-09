@@ -3,7 +3,8 @@
 export TEST_FLAG=" -x "
 export OTHER_FLAGS=" --debug "
 export OTHER_TEST_FLAGS=" --role Production $OTHER_TEST_FLAGS"
-export X509_USER_PROXY=/opt/minerva/minerva.Production.proxy
+export SUBMIT_FLAGS=" --role Production $SUBMIT_FLAGS"
+export X509_USER_PROXY=/opt/minervapro/minerva.Production.proxy
 export GROUP=minerva
 export OUTGROUP=minerva.Production
 
@@ -145,17 +146,6 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     pass_or_fail
     DAGROLEJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
     echo use $DAGROLEJID to retrieve dag submission results
-fi
-if [ "$SKIP_CDF_TEST" = "" ]; then
-    lg_echo testing cdf sam job
-    OUTFILE=`pwd`/$1.$GROUP.test_cdf_sam_job.log
-    cd cdf_dag_test
-    sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
-    pass_or_fail
-    CDFJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
-    GOTJID3=`echo $CDFJID | grep '[0-9].0@'`
-    echo use $CDFJID to retrieve cdf submission results
-    cd -
 fi
 
 lg_echo test --maxConcurrent submit

@@ -30,7 +30,7 @@ echo T6=$T6
 $EXEPATH/jobsub_q  --debug  $OTHER_TEST_FLAGS $SERVER_SPEC --user $USER --jobid $JOB
 T7=$?
 echo T7=$T7
-$EXEPATH/jobsub_q  --debug $SERVER_SPEC --summary $OTHER_TEST_FLAGS  
+$EXEPATH/jobsub_q  --debug $SERVER_SPEC --summary
 T8=$?
 echo T8=$T8
 $EXEPATH/jobsub_q  --debug $GROUP_SPEC $SERVER_SPEC  --user $USER $OTHER_TEST_FLAGS  

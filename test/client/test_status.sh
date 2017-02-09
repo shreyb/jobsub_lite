@@ -6,7 +6,7 @@ if [ "$1" = "" ]; then
 fi
 source ./setup_env.sh
 
-$EXEPATH/jobsub_status $GROUP_SPEC $SERVER_SPEC --sites $OTHER_TEST_FLAGS
+$EXEPATH/jobsub_status $GROUP_SPEC $SERVER_SPEC --sites 
 T1=$?
 TFINAL=$T1
 echo $0 exiting with status $TFINAL

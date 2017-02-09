@@ -25,7 +25,7 @@ T2=$?
 echo T2=$T2
 #test that bogus roles fail to authenticate
 $EXEPATH/jobsub_submit.py --role=bogus_role_that_will_fail  $GROUP_SPEC  \
-        $SERVER_SPEC $SUBMIT_FLAGS \
+        $SERVER_SPEC \
           -g  -e SERVER  file://role_Production.sh "$@"
 T3=$?
 test "$T3" -ne "0"

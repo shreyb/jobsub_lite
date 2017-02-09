@@ -22,7 +22,7 @@ if [ "$3" != "" ]; then
     ROLE=" --role $3 "
 fi
 OUTDIR=jobsubjobsection/${GROUP}/$CLUSTER
-try $EXEPATH/jobsub_fetchlog.py $ROLE --group $GROUP --jobsub-server $SERVER --jobid $CLUSTER --dest-dir $OUTDIR 
+try $EXEPATH/jobsub_fetchlog.py $ROLE $OTHER_TEST_FLAGS --group $GROUP --jobsub-server $SERVER --jobid $CLUSTER --dest-dir $OUTDIR 
 N1=`ls $OUTDIR/*.cmd | wc -l`
 N2=`grep JOBSUBJOBSECTION $OUTDIR/*.cmd | wc -l`
 N3=`grep JobsubJobSection $OUTDIR/*.cmd | wc -l`

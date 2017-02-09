@@ -11,13 +11,13 @@ $EXEPATH/jobsub_submit $SERVER_SPEC --help
 T1=$?
 $EXEPATH/jobsub_submit \
   $SERVER_SPEC \
-  $GROUP_SPEC  --help
+  $GROUP_SPEC   $SUBMIT_FLAGS --help
 T2=$?
 $EXEPATH/jobsub_submit_dag $SERVER_SPEC --help
 T3=$?
 $EXEPATH/jobsub_submit_dag \
   $SERVER_SPEC \
-  $GROUP_SPEC  --help
+  $GROUP_SPEC   $SUBMIT_FLAGS --help
 T4=$?
 
 

@@ -196,8 +196,9 @@ def doJobAction(acctgroup,
     """
 
     scheddList = []
-    cmd_user = cherrypy.request.username
-    if not cmd_user:
+    try:
+        cmd_user = cherrypy.request.username
+    except:
         cmd_user = request_headers.uid_from_client_dn()
     orig_user = cmd_user
     acctrole = jobsub.default_voms_role(acctgroup)
@@ -307,7 +308,7 @@ def doJobAction(acctgroup,
                 logger.log(msg, severity=logging.ERROR,
                            logfile='condor_commands')
                 logger.log(msg, severity=logging.ERROR, logfile='error')
-                if user and user != cherrypy.request.username:
+                if user and user != cmd_user:
                     logger.log(msg, severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err

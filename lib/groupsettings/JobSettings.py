@@ -136,7 +136,7 @@ class JobSettings(object):
         self.settings['useparrot'] = False
         self.settings['usedagman'] = False
         self.settings[
-            'requirements'] = '((Arch==\"X86_64\") || (Arch==\"INTEL\"))'
+            'requirements'] = '((target.Arch==\"X86_64\") || (target.Arch==\"INTEL\"))'
         fmt_str = 'CLUSTER=%s;PROCESS=%s;CONDOR_TMP=%s;CONDOR_EXEC=%s;DAGMANJOBID=%s'
         self.settings['environment'] = fmt_str % ('$(Cluster)',
                                                   '$(Process)',

@@ -144,7 +144,7 @@ log        = %s/returnOK_%s.log
 environment   = PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s
 rank       = Mips / 2 + Memory
 notification  = Error
-requirements  = ((Arch=="X86_64") || (Arch=="INTEL"))
+requirements  = ((target.Arch=="X86_64") || (target.Arch=="INTEL"))
 +RUN_ON_HEADNODE = TRUE
 
 queue

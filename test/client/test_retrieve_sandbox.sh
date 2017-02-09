@@ -31,12 +31,12 @@ for FMT in "zip" "tar"; do
   for JOBSPEC in "--job" "--jobid" "-J"; do
     cd $HERE/python/${GROUP}
     pwd
-        try $EXEPATH/jobsub_fetchlog.py $ROLE $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER 
+        try $EXEPATH/jobsub_fetchlog.py $ROLE $GROUP_SPEC --jobsub-server $SERVER --archive-format $FMT  $JOBSPEC $CLUSTER  $OTHER_TEST_FLAGS
     cd $HERE/unarchive/${GROUP}
     pwd
     for ARCHIVESPEC in "--unzipdir" "--destdir" "--dest-dir"; do 
         UNZIPDIR=`echo $JOBSPEC|sed 's/-//g'`"$FMT-$ARCHIVESPEC"
-        try $EXEPATH/jobsub_fetchlog.py $ROLE --group $GROUP --jobsub-server $SERVER $JOBSPEC $CLUSTER $ARCHIVESPEC $UNZIPDIR 
+        try $EXEPATH/jobsub_fetchlog.py $ROLE --group $GROUP --jobsub-server $SERVER $JOBSPEC $CLUSTER $ARCHIVESPEC $UNZIPDIR  $OTHER_TEST_FLAGS
     done
   done
 done

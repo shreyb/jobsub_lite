@@ -14,6 +14,7 @@ import re
 import cherrypy
 import logger
 import logging
+import request_headers
 
 from datetime import datetime
 from shutil import copyfileobj
@@ -39,8 +40,6 @@ class DagResource(object):
 
     def __init__(self):
         self.help = DAGHelpResource()
-        cherrypy.request.username = None
-        cherrypy.request.vomsProxy = None
         self.payload_filename = 'payload.tgz'
 
     def doPOST(self, acctgroup, job_id, kwargs):
@@ -71,7 +70,12 @@ class DagResource(object):
 
                 command_path_acctgroup = jscfg.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
-                uname = cherrypy.request.username
+                uname = None
+                try:
+                    uname = cherrypy.request.username
+                except:
+                    uname = request_headers.uid_from_client_dn()
+
                 command_path_user = jscfg.commandPathUser(acctgroup,
                                                           uname)
                 # Check if the user specific dir exist with correct
@@ -171,9 +175,12 @@ class DagResource(object):
     def index(self, acctgroup, job_id=None, **kwargs):
         try:
             cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-
+            #cherrypy.request.username should be set by @check_auth using GUMS
+            #but double check
+            if not hasattr(cherrypy.request, 'username') or \
+                    not cherrypy.request.username:
+                cherrypy.request.username = kwargs.get('username')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     rcode = self.doPOST(acctgroup, job_id, kwargs)

@@ -15,6 +15,8 @@ Server
                   to hold,release,remove
 * Bug       15500 fetchlog also not working with X509_USER_PROXY set to managed
                   proxy
+* Bug       15510 add target spec to generated condor jdf
+
 
 ================================================================================
 v1.2.3

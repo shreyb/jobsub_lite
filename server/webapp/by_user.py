@@ -32,9 +32,12 @@ class AccountJobsByUserResource(object):
            hopefully 3 will be better
         """
         try:
-            cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
-            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+            if kwargs.get('role'):
+                cherrypy.request.role = kwargs.get('role')
+            if kwargs.get('username'):
+                cherrypy.request.username = kwargs.get('username')
+            if kwargs.get('voms_proxy'):
+                cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             logger.log('action_user=%s' % (action_user))
             logger.log('kwargs=%s' % kwargs)
             if is_supported_accountinggroup(acctgroup):

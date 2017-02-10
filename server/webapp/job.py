@@ -44,9 +44,9 @@ class AccountJobsResource(object):
     def __init__(self):
         """ constructor
         """
-        cherrypy.request.role = None
-        cherrypy.request.username = None
-        cherrypy.request.vomsProxy = None
+        #cherrypy.request.role = None
+        #cherrypy.request.username = None
+        #cherrypy.request.vomsProxy = None
         self.sandbox = SandboxResource()
         self.history = HistoryResource()
         self.dag = DagResource()
@@ -202,9 +202,12 @@ class AccountJobsResource(object):
             logger.log('kwargs=%s ' % (kwargs))
             if not job_id:
                 job_id = kwargs.get('job_id')
-            cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
-            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+            if kwargs.get('role'):
+                cherrypy.request.role = kwargs.get('role')
+            if kwargs.get('username'):
+                cherrypy.request.username = kwargs.get('username')
+            if kwargs.get('voms_proxy'):
+                cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             if is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     # create job

@@ -96,7 +96,8 @@ class UsersJobsResource(object):
             users/<user>/jobs/<jobid>/acctgroup/<group>/dags/
             users/<user>/jobs/<jobid>/acctgroup/<group>/hold/
         """
-        cherrypy.request.username = kwargs.get('username')
+        if kwargs.get('username'):
+            cherrypy.request.username = kwargs.get('username')
         cherrypy.response.status = 501
         logger.log(
             "param1 %s param2 %s param3 %s param4 %s param5 %s param6 %s" % (

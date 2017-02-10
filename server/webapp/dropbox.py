@@ -115,9 +115,12 @@ class DropboxResource(object):
     @check_auth
     def index(self, acctgroup, box_id=None, filename=None, **kwargs):
         try:
-            cherrypy.request.role = kwargs.get('role')
-            cherrypy.request.username = kwargs.get('username')
-            cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
+            if kwargs.get('role'):
+                cherrypy.request.role = kwargs.get('role')
+            if kwargs.get('username'):
+                cherrypy.request.username = kwargs.get('username')
+            if kwargs.get('voms_proxy'):
+                cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
             subject_dn = get_client_dn()
             if subject_dn is not None:
                 logger.log('subject_dn: %s' % subject_dn)

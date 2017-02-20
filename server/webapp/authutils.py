@@ -430,7 +430,8 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
             append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
             if append_hashes:
                 if not dn:
-                    dn = clean_proxy_dn(get_client_dn())
+                    dn = get_client_dn()
+                dn = clean_proxy_dn(dn)
                 dig = hashlib.sha1()
                 dig.update(dn)
                 x509_cache_fname = "%s_%s" % (x509_cache_fname, dig.hexdigest())

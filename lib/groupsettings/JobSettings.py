@@ -1714,7 +1714,7 @@ class JobSettings(object):
         f = open(settings['cmdfile'], 'w')
         f.write("universe          = vanilla\n")
 
-        f.write("executable        = %s\n" % settings['wrapfile'])
+        f.write("executable        = %s\n" % os.path.basename(settings['wrapfile']))
         args = ""
         for arg in settings['script_args']:
             args = args + " " + arg + " "
@@ -1731,9 +1731,9 @@ class JobSettings(object):
             self.replaceLineSetting(
                 """+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n" % args)
-        f.write("output                = %s\n" % settings['outfile'])
-        f.write("error                 = %s\n" % settings['errfile'])
-        f.write("log                   = %s\n" % settings['logfile'])
+        f.write("output                = %s\n" % os.path.basename(settings['outfile']))
+        f.write("error                 = %s\n" % os.path.basename(settings['errfile']))
+        f.write("log                   = %s\n" % os.path.basename(settings['logfile']))
         f.write("environment   = %s\n" % env_list)
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = %s\n" %

@@ -393,6 +393,43 @@ def schedd_list():
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
+def best_schedd(AcctGroup=None):
+    """
+    return condor_status -schedd -af RecentDaemonCoreDutyCycle
+        -constraint 'Name=?="schedd_name"'
+    """
+
+    try:
+        cmd = """condor_status -schedd -af name RecentDaemonCoreDutyCycle """
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
+        cycle=100.0
+        schedd=""
+        logger.log('cmd_out:%s'%cmd_out)
+        for line in cmd_out.split('\n'):
+            logger.log('line:%s'%line)
+            vals = line.split(' ')
+            logger.log('vals:%s'%vals)
+            if vals[-1]:
+                nm = vals[0]
+                val = float(vals[-1])
+                logger.log('nm:%s val:%s'%(nm,val))
+                logger.log('schedd:%s cycle:%s'%(schedd,cycle))
+            if val <= cycle:
+                schedd = nm
+                cycle = val
+        logger.log('chose %s as best schedd'% schedd)
+        return schedd
+    except:
+        tbk = traceback.format_exc()
+        logger.log(cmd_err, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
+
+
 def schedd_recent_duty_cycle(schedd_nm=None):
     """
     return condor_status -schedd -af RecentDaemonCoreDutyCycle

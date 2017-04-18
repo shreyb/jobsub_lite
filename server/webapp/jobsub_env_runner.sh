@@ -90,7 +90,7 @@ OWN=" -l +Owner=\\\"$USER\\\" "
 JCKP=" -l +JobsubClientKerberosPrincipal=\\\"$JOBSUB_CLIENT_KRB5_PRINCIPAL\\\" "
 
 #JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"
-export JOBSUB_CMD="jobsub  $JCDN $JCIA $OWN $TEC $JSV $JCV $JCKP $@"
+export JOBSUB_CMD="jobsub  --schedd $SCHEDD $JCDN $JCIA $OWN $TEC $JSV $JCV $JCKP $@"
 
 if [ "$DEBUG_JOBSUB" != "" ]; then
    echo "reformulated: $JOBSUB_CMD "  >> $DEBUG_LOG

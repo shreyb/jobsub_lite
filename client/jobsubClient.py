@@ -788,6 +788,7 @@ class JobSubClient:
         if len(self.schedd_list):
             return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
+        print "listScheddsURL:%s"%listScheddsURL
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         best_schedd = self.server
@@ -812,6 +813,7 @@ class JobSubClient:
             # this will fail for secondary schedd with @ in name
             # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
+            print "best schedd is %s"%self.server
         except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)

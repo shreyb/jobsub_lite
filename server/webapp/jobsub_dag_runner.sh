@@ -91,10 +91,10 @@ if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
 fi
 
 JCKP=" -l +JobsubClientKerberosPrincipal=\\\"$JOBSUB_CLIENT_KRB5_PRINCIPAL\\\" "
-
+OWN=" -l +Owner=\\\"$USER\\\" -l +Jobsub_Submit_Host=\\\"$SUBMIT_HOST\\\" -l +Jobsub_Submit_Dir=\\\"$WORKDIR\\\" "
 JOBSUB_JOBID="\\\$(CLUSTER).\\\$(PROCESS)@$SCHEDD"
 export JOBSUBPARENTJOBID="\$(DAGManJobId)@$SCHEDD"
-export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\" -l +Owner=\\\"$USER\\\" -e JOBSUBPARENTJOBID  $TEC $JSV $JCV $JCDN $JCIA $JCKP "
+export JOBSUB_EXPORTS=" -l +JobsubParentJobId=\\\"$JOBSUBPARENTJOBID\\\" -l +JobsubJobId=\\\"$JOBSUB_JOBID\\\"  -e JOBSUBPARENTJOBID  $OWN $TEC $JSV $JCV $JCDN $JCIA $JCKP "
 
 export JOBSUB_CMD="$DAG_CMD -s  $@ "
 

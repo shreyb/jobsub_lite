@@ -86,7 +86,7 @@ if [ "$JOBSUB_CLIENT_IP_ADDRESS" != "" ]; then
     JCIA=" -l +JobsubClientIpAddress=\\\"$JOBSUB_CLIENT_IP_ADDRESS\\\" "
 fi
 
-OWN=" -l +Owner=\\\"$USER\\\" "
+OWN=" -l +Owner=\\\"$USER\\\" -l +Jobsub_Submit_Host=\\\"$SUBMIT_HOST\\\" -l +Jobsub_Submit_Dir=\\\"$WORKDIR\\\" "
 JCKP=" -l +JobsubClientKerberosPrincipal=\\\"$JOBSUB_CLIENT_KRB5_PRINCIPAL\\\" "
 
 #JOBSUB_JOBID="\$(CLUSTER).\$(PROCESS)@$SCHEDD"

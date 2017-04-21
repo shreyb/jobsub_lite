@@ -839,6 +839,8 @@ class JobRunner(object):
             subgroup = args.subgroup
 
         cmd += """ -append "+Owner=\\"%s\\"" """ % usr
+        cmd += """ -append "+Jobsub_Submit_Dir=\\"%s\\"" """ % condor_tmp
+        cmd += """ -append "+Jobsub_Submit_Host=\\"%s\\"" """ % args.submitHost
         if subgroup:
             cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """ %\
                 (grp, subgroup, usr)

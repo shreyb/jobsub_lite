@@ -415,6 +415,8 @@ def best_schedd(AcctGroup=None):
             if vals[-1]:
                 nm = vals[0]
                 val = float(vals[-1])
+                if val < 0:
+                    val *= -1.0
                 logger.log('nm:%s val:%s'%(nm,val))
                 logger.log('schedd:%s cycle:%s'%(schedd,cycle))
             if val <= cycle:

@@ -137,11 +137,11 @@ for detailed instructions on how to use:
 """
 cmd_file_dummy = """
 universe      = vanilla
-executable    = %s/returnOK_%s.sh
-output     = %s/returnOK_%s.out
-error      = %s/returnOK_%s.err
-log        = %s/returnOK_%s.log
-environment   = PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s
+executable    = returnOK_%s.sh
+output     = returnOK_%s.out
+error      = returnOK_%s.err
+log        = returnOK_%s.log
+environment   = PROCESS=$(Process)
 rank       = Mips / 2 + Memory
 notification  = Error
 requirements  = ((target.Arch=="X86_64") || (target.Arch=="INTEL"))
@@ -616,23 +616,14 @@ class DagParser(object):
 
     def writeDummyCmdFile(self):
 
-        condor_tmp = os.environ.get("CONDOR_TMP")
-        if condor_tmp is None:
-            print "ERROR, CONDOR_TMP env variable needs to be set!"
-            sys.exit(-1)
-
-        condor_exec = os.environ.get("CONDOR_EXEC")
-        if condor_exec is None:
-            print "ERROR, CONDOR_EXEC env variable needs to be set!"
-            sys.exit(-1)
-
         now = datetime.datetime.now()
-        filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
-                                                now.hour, now.minute, now.second)
-        cmd_file_name = "%s/dummy%s.cmd" % (condor_tmp, filebase)
-        wrap_file_name = "%s/returnOK_%s.sh" % (condor_exec, filebase)
-        cmd_file = cmd_file_dummy % (condor_exec, filebase, condor_tmp, filebase, condor_tmp,
-                                     filebase, condor_tmp, filebase, condor_tmp, condor_exec)
+        filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month,
+                                                now.day, now.hour,
+                                                now.minute, now.second)
+        cmd_file_name = "dummy%s.cmd" % (filebase)
+        wrap_file_name = "returnOK_%s.sh" % (filebase)
+        cmd_file = cmd_file_dummy % (filebase, filebase, 
+                                     filebase,  filebase)
 
         f = open(cmd_file_name, "w")
         f.write(cmd_file)
@@ -647,7 +638,7 @@ class DagParser(object):
     def generateDag(self, outputFile=None):
 
         f = open(outputFile, "w")
-        l = "DOT %s.dot UPDATE\n" % outputFile
+        l = "DOT %s.dot UPDATE\n" % os.path.basename(outputFile)
         f.write(l)
 
         if len(self.beginJobList) > 0:
@@ -662,7 +653,7 @@ class DagParser(object):
         for k in sorted(self.nodeDict.keys()):
             e = self.nodeDict[k]
             if e.tag == 'job':
-                f.write("JOB %s %s\n" % (k, e.attrib['cmd']))
+                f.write("JOB %s %s\n" % (k, os.path.basename(e.attrib['cmd'])))
 
         if len(self.finishJobList) > 0:
             time.sleep(1)
@@ -700,14 +691,12 @@ class ArgParser(object):
         self.viewDag = False
         self.maxJobs = 0
         self.passedArgs = None
+        self.schedd = os.environ.get("SCHEDD")
         self.submitHost = os.environ.get("SUBMIT_HOST")
-        self.condorSetup = cfp.get(self.submitHost, "condor_setup_cmd")
         self.group = os.environ.get("GROUP")
         self.subgroup = None
         self.passedArgs = []
         allowed = cfp.supportedGroups()
-        if len(self.condorSetup) > 0 and self.condorSetup.find(';') < 0:
-            self.condorSetup = self.condorSetup + ";"
 
         if self.group not in allowed:
             print "ERROR do not run this script as member of group %s" % self.group
@@ -803,19 +792,43 @@ class JobRunner(object):
     def __init__(self):
         pass
 
+
+
+    def munge_jdf(self,condor_jdf):
+        files = ",".join(os.listdir("."))
+        transfer_files = "transfer_input_files = %s" % files
+        orig_name = condor_jdf + ".orig"
+        os.rename(condor_jdf, orig_name)
+        fin = open(orig_name, "r")
+        fout = open(condor_jdf, "w")
+        for line in fin:
+            if  'queue' in line:
+                fout.write("%s\n" % transfer_files)
+            fout.write("%s" % line)
+        fin.close()
+        fout.close()
+
+
+
+
     def doSubmit(self, args=None):
         cmd = ""
         # commands=JobUtils()
         (retVal, host) = commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")
+        condor_tmp = os.environ.get("CONDOR_TMP")
+        os.chdir(condor_tmp)
+        remote_schedd = False
         if ups_shell is None:
             ups_shell = "sh"
-
-        if host == args.submitHost:
-            cmd = """condor_submit_dag -dont_suppress_notification  """
+        if args.schedd:
+            parts = args.schedd.split('@')
+            schedd_host = parts[-1]
+            if schedd_host != args.submitHost:
+                remote_schedd = True
         else:
-            cmd = """ssh %s "condor_submit_dag -dont_suppress_notification """\
-                % (args.submitHost)
+            args.schedd = args.submitHost
+        cmd = """condor_submit_dag -no_submit -dont_suppress_notification  """
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
         usr = os.environ.get("USER")
@@ -833,10 +846,26 @@ class JobRunner(object):
             cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
                 (grp, usr)
         cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
-            args.submitHost)
-        cmd += args.outputFile
-        if host != args.submitHost:
-            cmd += ' "'
+            args.schedd)
+        cmd += os.path.basename(args.outputFile)
+        print "executing %s " % cmd
+        (retVal, val) = commands.getstatusoutput(cmd)
+        if retVal:
+            print "ERROR executing %s" % cmd
+            print val
+            retVal = retVal % 256
+            if retVal == 0:
+                retVal = 1
+            #sys.exit(retVal)
+        #print val
+        condor_jdf = args.outputFile + ".condor.sub"
+        if remote_schedd:
+            self.munge_jdf(condor_jdf)
+            cmd = "condor_submit -remote %s %s"%(args.schedd, condor_jdf)
+        elif args.schedd:
+            cmd = "condor_submit -name %s %s"%(args.schedd, condor_jdf)
+        else:
+            cmd = "condor_submit  %s"%(condor_jdf)
         print "executing %s " % cmd
         (retVal, val) = commands.getstatusoutput(cmd)
         if retVal:
@@ -847,6 +876,7 @@ class JobRunner(object):
                 retVal = 1
             sys.exit(retVal)
         print val
+        
 
 
 if __name__ == '__main__':

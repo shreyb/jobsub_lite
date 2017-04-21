@@ -70,7 +70,11 @@ def doSubmit(settings):
     cmd = ""
 
     if settings.has_key('schedd') and settings['schedd'] is not None:
-        schedd_spec = "-name %s " % settings['schedd']
+        parts = settings['schedd'].split('@')
+        if parts[-1] == settings['submit_host']:
+            schedd_spec = "-name %s " % settings['schedd']
+        else:
+            schedd_spec = "-remote %s " % settings['schedd']
     else:
         schedd_spec = ""
 

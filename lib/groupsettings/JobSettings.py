@@ -204,8 +204,16 @@ class JobSettings(object):
         self.settings['jobsub_max_joblog_size'] = 5000000
         self.settings['drain'] = False
         self.settings['mail_domain'] = 'fnal.gov'
+        if not self.settings.get('schedd'):
+            self.settings['schedd'] = self.settings['submit_host']
         self.settings['jobsubjobid'] = "$(CLUSTER).$(PROCESS)@%s" % self.settings[
-            'submit_host']
+            'schedd']
+        schedd_host = self.settings.get('schedd').split('@')[-1]
+        if schedd_host != self.settings['submit_host']:
+            self.settings['local_schedd'] = False
+        else:
+            self.settings['local_schedd'] = True
+
         (stat, jobsub) = commands.getstatusoutput("which jobsub")
         self.settings['mail_summary'] = False
         self.settings['this_script'] = jobsub
@@ -811,7 +819,7 @@ class JobSettings(object):
 
         if settings['usedagman']:
             settings['jobsubparentjobid'] = "$(DAGManJobId).0@%s" % settings[
-                'submit_host']
+                'schedd']
             self.addToLineSetting(
                 """+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
 
@@ -1202,8 +1210,7 @@ class JobSettings(object):
 
     def makeDAGBeginFiles(self):
         settings = self.settings
-        dagbeginexe = "%s/%s.dagbegin.sh" % (
-            settings['condor_exec'], settings['filetag'])
+        dagbeginexe = "%s.dagbegin.sh" % (settings['filetag'])
         f = open(dagbeginexe, 'wx')
         f.write("#!/bin/sh -x\n")
         f.write("exit 0\n")
@@ -1449,7 +1456,7 @@ class JobSettings(object):
             n1 += 1
         f.write("child DAG_END\n")
         if samendfile:
-            f.write("FINAL SAM_END %s\n" % samendfile)
+            f.write("FINAL SAM_END %s\n" % os.path.basename(samendfile))
         if settings['mail_summary']:
             f.write("SCRIPT POST %s_END %s %s \n" %
                     (jobname, settings['summary_script'], os.path.basename(settings['dagendfile'])))

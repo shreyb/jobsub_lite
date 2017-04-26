@@ -345,7 +345,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             jobsubConfig.commandPathUser(acctgroup, username),
             workdir_id)
 
-        schedd_nm = condor_commands.best_schedd()
+        schedd_nm = condor_commands.best_schedd(acctgroup)
         #schedd_nm = condor_commands.schedd_name(jobsub_args)
         #recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
         #srt = get_submit_reject_threshold()

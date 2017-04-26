@@ -83,10 +83,11 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
         err_str = "Error running '%s'\nStdout:%s\nStderr:%s\nException OSError:%s"
         raise RuntimeError(err_str % (cmd, stdoutdata, stderrdata, e))
     if exitStatus:
-        raise CalledProcessError(exitStatus, cmd, output="\nEXITCODE:%s\nSTDOUT:%s\nSTDERR:%s" % (
-            exitStatus, stdoutdata, stderrdata))
-        # raise CalledProcessError(exitStatus, cmd,
-        # output="STDOUT:%s\nSTDERR:%s" %.join(stderrdata))
+        if child_env.get('JOBSUB_SUPROCESS_NO_RAISE_EXCEPTION'):
+            pass
+        else:
+            raise CalledProcessError(exitStatus, cmd, output="\nEXITCODE:%s\nSTDOUT:%s\nSTDERR:%s" % (
+                exitStatus, stdoutdata, stderrdata))
     return (stdoutdata, stderrdata)
 
 

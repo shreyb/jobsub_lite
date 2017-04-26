@@ -169,6 +169,7 @@ logit
 cleanup_files 
 job_end=$(date '+%s')
 total_elapsed=$(($job_end -$job_start))
+sleep 120
 logit "Wall time: $(($total_elapsed/60)) minutes ($total_elapsed seconds)"
 logit "-------------------------------------------"
 logit "JOB   ENDED: $(/bin/date)"

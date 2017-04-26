@@ -788,7 +788,6 @@ class JobSubClient:
         if len(self.schedd_list):
             return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
-        print "listScheddsURL:%s"%listScheddsURL
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         best_schedd = self.server

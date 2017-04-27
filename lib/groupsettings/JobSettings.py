@@ -311,6 +311,11 @@ class JobSettings(object):
                 (stat, rslt) = commands.getstatusoutput(cmd)
                 self.settings[x] = rslt
 
+    def schedd_callback(self, option, opt, value, p):
+        # print "callback opt=%s val=%s"%(opt,value)
+        self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"% value
+        self.settings['schedd']= value
+
     def resource_callback(self, option, opt, value, p):
         # print "callback opt=%s val=%s"%(opt,value)
         self.settings['resource_list'].append(value)
@@ -421,7 +426,7 @@ class JobSettings(object):
                 downtimes """))
 
         generic_group.add_option("--schedd", dest="schedd",
-                                 action="store", type="string",
+                                 action="callback", type="string",callback=self.schedd_callback,
                                  help="name of alternate schedd to submit to")
 
         generic_group.add_option("--OS", dest="os",

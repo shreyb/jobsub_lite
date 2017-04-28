@@ -315,6 +315,7 @@ class DAGManLogParser:
 
     #****************************************
     def write(self, long=0):
+        schedd = os.environ.get("SCHEDD", socket.gethostname())
         jids = sorted(self.jids.keys())
         for jid in jids:
             el = self.jids[jid]
@@ -323,7 +324,7 @@ class DAGManLogParser:
             cur = status_strings[el["current"]]
             if cur == "Completed":
                 cur = cur + " Exit Code:%s" % el["end"]["retcode"]
-            print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, socket.gethostname(), cur, el["section"])
+            print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, schedd, cur, el["section"])
             if long:
                 print "\tSubmitted: %s %s" % (el["submit"]["date"], el["submit"]["time"])
                 if "exe" in el:

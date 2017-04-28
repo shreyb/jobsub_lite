@@ -819,6 +819,7 @@ class JobRunner(object):
         condor_tmp = os.environ.get("CONDOR_TMP")
         os.chdir(condor_tmp)
         remote_schedd = False
+        local_schedd_name = ""
         if ups_shell is None:
             ups_shell = "sh"
         if args.schedd:
@@ -826,9 +827,21 @@ class JobRunner(object):
             schedd_host = parts[-1]
             if schedd_host != args.submitHost:
                 remote_schedd = True
+            else:
+                if parts[0] != parts[-1]:
+                    local_schedd_name = parts[0]
         else:
             args.schedd = args.submitHost
-        cmd = """condor_submit_dag -no_submit -dont_suppress_notification  """
+
+        if local_schedd_name:
+            cmd1 = "condor_config_val SCHEDD.%s.SCHEDD_ADDRESS_FILE" % local_schedd_name
+            cmd2 = "condor_config_val SCHEDD.%s.SCHEDD_DAEMON_AD_FILE" % local_schedd_name
+            (retVal, addr_file) = commands.getstatusoutput(cmd1)
+            (retVal, daemon_file) = commands.getstatusoutput(cmd2)
+            add_spec = " -schedd-address-file %s  -schedd-daemon-ad-file %s" % (addr_file, daemon_file)
+        else:
+            add_spec = ""
+        cmd = """condor_submit_dag %s -no_submit -dont_suppress_notification  """ % add_spec
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
         usr = os.environ.get("USER")

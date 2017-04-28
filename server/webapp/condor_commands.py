@@ -393,14 +393,16 @@ def schedd_list():
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
-def best_schedd(AcctGroup=None):
+def best_schedd(acctgroup=None):
     """
     return condor_status -schedd -af RecentDaemonCoreDutyCycle
         -constraint 'Name=?="schedd_name"'
     """
 
     try:
+        #fixme assumptions about classad naming conventions here
         cmd = """condor_status -schedd -af name RecentDaemonCoreDutyCycle """
+        cmd +=""" -constraint 'stringlistmember("%s",supportedvolist)&&indowntime=!=true'""" % acctgroup
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)

@@ -812,7 +812,7 @@ class JobSubClient:
             # this will fail for secondary schedd with @ in name
             # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
-            print "best schedd is %s"%self.server
+            #print "best schedd is %s"%self.server
         except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)

@@ -109,6 +109,8 @@ def doSubmit(settings):
             (settings['user'], settings['group'], settings['user'])
         append = """%s -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
             append, settings['schedd'])
+        append = """%s -append +Jobsub_Group=\\"%s\\" -append +Jobsub_Submit_Dir=\\"%s\\" -append +Jobsub_Submit_Host=\\"%s\\" """ %\
+                (append, settings['group'], settings['condor_tmp'], settings['submit_host'])
         if settings.has_key('maxConcurrent'):
             maxjobs = settings['maxConcurrent']
         else:

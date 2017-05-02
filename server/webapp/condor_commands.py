@@ -409,21 +409,17 @@ def best_schedd(acctgroup=None):
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         cycle=100.0
         schedd=""
-        logger.log('cmd_out:%s'%cmd_out)
+        logger.log('cmd: %s cmd_out:%s'%(cmd, cmd_out))
         for line in cmd_out.split('\n'):
-            logger.log('line:%s'%line)
             vals = line.split(' ')
-            logger.log('vals:%s'%vals)
             if vals[-1]:
                 nm = vals[0]
                 val = float(vals[-1])
                 if val < 0:
                     val *= -1.0
-                logger.log('nm:%s val:%s'%(nm,val))
-                logger.log('schedd:%s cycle:%s'%(schedd,cycle))
-            if val <= cycle:
-                schedd = nm
-                cycle = val
+                if val <= cycle:
+                    schedd = nm
+                    cycle = val
         logger.log('chose %s as best schedd'% schedd)
         return schedd
     except:

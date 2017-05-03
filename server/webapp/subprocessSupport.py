@@ -81,7 +81,10 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
 
     except OSError as e:
         err_str = "Error running '%s'\nStdout:%s\nStderr:%s\nException OSError:%s"
-        raise RuntimeError(err_str % (cmd, stdoutdata, stderrdata, e))
+        if child_env.get('JOBSUB_SUPROCESS_NO_RAISE_EXCEPTION'):
+            pass
+        else:
+            raise RuntimeError(err_str % (cmd, stdoutdata, stderrdata, e))
     if exitStatus:
         if child_env.get('JOBSUB_SUPROCESS_NO_RAISE_EXCEPTION'):
             pass

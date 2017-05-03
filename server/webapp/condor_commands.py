@@ -375,14 +375,25 @@ def collector_host():
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
-def schedd_list():
+def schedd_list(acctgroup=None,check_downtime=False):
     """
     return a list of all the schedds
     """
 
     try:
-        schedds, cmd_err = subprocessSupport.iexe_cmd(
-            """condor_status -schedd -af name """)
+        cmd = """condor_status -schedd -af name """
+        constraint=""
+        if acctgroup:
+            if constraint:
+                constraint +="&&"
+            constraint += """stringlistmember("%s", supportedvolist)""" % acctgroup
+        if check_downtime:
+            if constraint:
+                constraint +="&&"
+            constraint += """InDownTime=!=True"""
+        if constraint:
+            cmd = """%s -constraint '%s'""" % (cmd, constraint)
+        schedds, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
@@ -396,7 +407,6 @@ def schedd_list():
 def best_schedd(acctgroup=None):
     """
     return condor_status -schedd -af RecentDaemonCoreDutyCycle
-        -constraint 'Name=?="schedd_name"'
     """
 
     try:

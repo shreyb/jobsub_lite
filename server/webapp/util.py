@@ -219,7 +219,7 @@ def doJobAction(acctgroup,
 
     rc = {'out': None, 'err': None}
     if constraint:
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
     elif job_id:
         # job_id is a jobsubjobid
         constraint = '(Jobsub_Group =?= "%s")' % (acctgroup)
@@ -235,7 +235,7 @@ def doJobAction(acctgroup,
     elif user:
         constraint = '(Owner =?= "%s") && (Jobsub_Group =?= "%s")' %\
             (user, acctgroup)
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
     else:
         err = "Failed to supply constraint, job_id or uid, "
         err += "cannot perform any action"

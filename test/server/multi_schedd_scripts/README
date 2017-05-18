@@ -1,0 +1,5 @@
+files for setting up multiple schedds all reporting to central 
+collector.  
+Usage: ./ make_mapfiles.sh 00_cluster_hostnames.config 
+creates mapfiles and condor configurations for all the 
+machines listed in 00_cluster_hostnames.config 

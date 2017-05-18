@@ -1,0 +1,8 @@
+GSI "/DC=org/DC=cilogon/C=US/O=Fermi National Accelerator Laboratory/OU=People/CN=Dennis Box/CN=UID:dbox" dbox
+GSI "/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=fermicloud052.fnal.gov" rexbatch
+GSI "/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=fermicloud151.fnal.gov" rexbatch
+GSI "/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=fermicloud158.fnal.gov" rexbatch
+GSI "/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=fermicloud173.fnal.gov" rexbatch
+GSI "/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=fermicloud178.fnal.gov" rexbatch
+GSI (.*) anonymous
+FS (.*) \1

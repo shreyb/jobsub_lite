@@ -11,7 +11,6 @@ BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 
 BuildArch:      noarch
 
-Requires:       krb5-workstation
 Requires:       krb5-fermi-getcert
 Requires:       voms-clients
 Requires:       vo-client
@@ -20,7 +19,6 @@ Requires:       condor-python
 Requires:       openssl
 Requires:       mod_ssl
 Requires:       mod_wsgi
-#Requires:       osg-ca-certs
 Requires:       osg-ca-scripts
 Requires:       fetch-crl
 

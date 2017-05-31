@@ -355,7 +355,7 @@ def proxy_issuer(proxy_fname):
     issuer = ""
     if not openssl_cmd:
         raise Exception("Unable to find command 'openssl' in the PATH.")
-    cmd = '%s x509 -in %s -nooout -issuer' % (openssl_cmd, proxy_fname)
+    cmd = '%s x509 -in %s -noout -issuer' % (openssl_cmd, proxy_fname)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         issuer = cmd_out.strip()

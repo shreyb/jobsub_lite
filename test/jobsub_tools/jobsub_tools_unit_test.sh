@@ -4,15 +4,9 @@ grep  SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed s/SetEnv/export/ | sed 's/\
 export PYTHONPATH=$HOME/jobsub/lib/groupsettings:$HOME/jobsub/lib/logger:$HOME/jobsub/lib/JobsubConfigParser:$HOME/jobsub/server/webapp:$HOME/jobsub/server/tools:.
 echo PYTHONPATH=$PYTHONPATH >> $SOURCE_ME
 source $SOURCE_ME
+
 python TestJobSettings.py
 python TestNovaSettings.py
 python TestMinervaSettings.py
 python TestCdfSettings.py
 
-exit $?
-for P in *.py; do
-    python $P
-done
-
-STAT=$?
-exit $STAT

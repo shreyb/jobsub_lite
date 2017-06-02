@@ -51,6 +51,7 @@ class JobTest(unittest.TestCase):
         os.environ['CONDOR_EXEC']=self.tmpdir
         if not hasattr(self,'ns'):
             self.ioSetUp()
+            self.stdioOFF()
             setattr(self,'ns',JobSettings())
         self.ns.settings['condor_tmp']=self.tmpdir
         self.ns.settings['condor_exec']=self.tmpdir
@@ -120,7 +121,9 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['wrapper_cmd_array'],[])
         self.assertEqual(ns.settings['msopt'],"")
         self.assertNotEqual(ns.settings['generated_by'],"")
+        self.stdioOFF()
         self.assertEqual(ns.checkSanity(),True)
+        self.stdioON()
     
         
     def testGoodInput(self):
@@ -257,8 +260,9 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        (retVal,output)=commands.getstatusoutput("grep '^+JOB_EXPECTED_MAX_LIFETIME = 600'  %s"%ns.settings['cmdfile'])
-        self.assertEqual(retVal,0, ns.settings['cmdfile'])
+        cmd = "grep '^\s*+JOB_EXPECTED_MAX_LIFETIME\s*=\s*600\s*$' %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
 
     def testDiskFlag(self):
         """test --disk option"""
@@ -270,8 +274,9 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        (retVal,output)=commands.getstatusoutput("grep '^request_disk = 10GB'  %s"%ns.settings['cmdfile'])
-        self.assertEqual(retVal,0, ns.settings['cmdfile'])
+        cmd = "grep '^\s*request_disk\s*=\s*10GB\s*$'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
 
     def testMemoryFlag(self):
         """test --memory option"""
@@ -283,8 +288,59 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        (retVal,output)=commands.getstatusoutput("grep '^request_memory = 10GB'  %s"%ns.settings['cmdfile'])
-        self.assertEqual(retVal,0, ns.settings['cmdfile'])
+        cmd = "grep '^\s*request_memory\s*=\s*10GB\s*$'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+
+    def testCPUFlag(self):
+        """test --cpu option"""
+        ns = self.ns
+        ns.runCmdParser(['--cpu=4','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['cpu'],4)
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep '^\s*request_cpus\s*=\s*4\s*$'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+
+    def testOSFlag(self):
+        """test --OS option"""
+        ns = self.ns
+        ns.runCmdParser(['--OS=SL6,SL7','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['os'],"SL6,SL7")
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep -i '+desiredos'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+        self.assertTrue('"SL6,SL7"' in output)
+        cmd = "grep -i 'requirements'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertTrue('stringlistimember(Target.IFOS_installed,DesiredOS)'.upper() in output.upper())
+
+    def testResourceProvidesFlag(self):
+        """test --resource-provides option"""
+        ns = self.ns
+        ns.runCmdParser(['--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['resource_list'],['usage_model=DEDICATED,OPPORTUNISTIC'])
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep -i '+desired_usage_model'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+        self.assertTrue('"DEDICATED,OPPORTUNISTIC"' in output)
+        cmd = "grep -i 'requirements'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertTrue('stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model)'.upper() in output.upper())
 
     def testCPNCommands(self):
         """test CPN i/o from -d and -f flags"""
@@ -320,6 +376,7 @@ class JobTest(unittest.TestCase):
                                                  (ns.settings['wrapfile']))
 
         self.assertEqual(retVal,0,'gftp cant find input_file_1 in '+ns.settings['wrapfile'])
+
         
         (retVal,output)=commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s"%\
                                                  (ns.settings['wrapfile']))

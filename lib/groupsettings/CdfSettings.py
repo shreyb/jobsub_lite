@@ -227,9 +227,9 @@ class CdfSettings(JobSettings):
                 'you must supply an input tar ball using --tarFile')
         if 'sectionList' in settings:
             try:
-                # print 'sectionList %s'%settings['sectionList']
-                firstSection, lastSectioni = settings['sectionList'].split('-')
-                # print 'first: %s last:%s'%(firstSection,lastSection)
+                #print 'sectionList %s'%settings['sectionList']
+                firstSection, lastSection = settings['sectionList'].split('-')
+                #print 'first: %s last:%s'%(firstSection,lastSection)
                 firstSection = int(firstSection)
                 lastSection = int(lastSection)
                 settings['firstSection'] = firstSection

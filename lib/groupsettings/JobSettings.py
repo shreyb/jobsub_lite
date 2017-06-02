@@ -176,7 +176,7 @@ class JobSettings(object):
         self.settings['nologbuffer'] = False
         self.settings['wrapper_cmd_array'] = []
         self.settings['msopt'] = ""
-        self.settings['added_environment'] = ""
+        self.settings['added_environment'] = []
         self.settings['generated_by'] = "%s %s" % (
             self.settings['version'], self.settings['local_host'])
         self.settings['input_tar_dir'] = False
@@ -217,7 +217,7 @@ class JobSettings(object):
             'dummy_script'] = "%s/returnOK.sh" % (os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs'] = 10000
-        self.settings['job_expected_max_lifetime'] = 21600
+        #self.settings['job_expected_max_lifetime'] = '21600s'
         self.settings['set_expected_max_lifetime'] = None
 
         # for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -790,7 +790,7 @@ class JobSettings(object):
             err = "you must specify an input value for the log file with -L if you use --no_log_buffer"
             raise InitializationError(err)
 
-        if settings['compress_log'] and settings['joblogfile'] == "":
+        if 'compress_log' in settings and 'joblogfile' not in settings:
             err = "you must specify an input value for the log file with -L if you use --compress_log"
             raise InitializationError(err)
 

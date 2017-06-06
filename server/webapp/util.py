@@ -203,8 +203,9 @@ def doJobAction(acctgroup,
     orig_user = cmd_user
     acctrole = jobsub.default_voms_role(acctgroup)
     child_env = os.environ.copy()
-    is_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
-    if is_superuser:
+    is_group_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
+    is_global_superuser = jobsub.is_global_superuser(cmd_user)
+    if is_group_superuser or is_global_superuser:
         cmd_user = pwd.getpwuid(os.getuid())[0]
         child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
         child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
@@ -242,14 +243,14 @@ def doJobAction(acctgroup,
         logger.log(err, severity=logging.ERROR, logfile='error')
         return {'err': err}
 
-    if is_superuser:
+    if is_group_superuser or is_global_superuser:
         msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)'%\
             (orig_user, cmd_user, job_action, user, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
         logger.log(msg, logfile='condor_superuser')
 
-    if user and user != cmd_user and not is_superuser:
+    if user and user != cmd_user and not (is_group_superuser or is_global_superuser):
         err = '%s is not allowed to perform %s on jobs owned by %s ' %\
             (cmd_user, job_action, user)
         logger.log(err)
@@ -259,6 +260,9 @@ def doJobAction(acctgroup,
         return {'err': err}
 
     else:
+        if is_group_superuser:
+            if constraint and (acctgroup not in constraint or "JOBSUB_GROUP" not in constraint.upper()):
+                constraint = constraint + """&&(Jobsub_Group =?= "%s")""" % acctgroup
         msg = '[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
         logger.log(msg)

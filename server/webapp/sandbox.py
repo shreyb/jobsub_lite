@@ -26,7 +26,8 @@ from util import create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup
 from jobsub import sandbox_readable_by_group
-from jobsub import group_superusers
+from jobsub import is_superuser_for_group
+from jobsub import is_global_superuser
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
@@ -200,7 +201,8 @@ class SandboxResource(object):
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != request_uid:
                 if sandbox_readable_by_group(acctgroup) \
-                        or owner in group_superusers(acctgroup):
+                        or is_superuser_for_group(acctgroup,request_uid) \
+                        or is_global_superuser(request_uid):
                     make_sandbox_readable(zip_path, owner)
                 else:
                     err = "User %s is not allowed  to read %s, owned by %s." % (

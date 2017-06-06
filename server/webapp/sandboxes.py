@@ -23,7 +23,8 @@ from request_headers import uid_from_client_dn
 from jobsub import get_command_path_root
 from jobsub import sandbox_readable_by_group
 from jobsub import sandbox_allowed_browsable_file_types
-from jobsub import group_superusers
+from jobsub import is_superuser_for_group
+from jobsub import is_global_superuser
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 
@@ -147,8 +148,9 @@ class SandboxesResource(object):
             job_id = kwargs.get('job_id')
             file_id = kwargs.get('file_id')
             if user_id != requestor:
-                allowed = sandbox_readable_by_group(acctgroup) \
-                    or requestor in group_superusers(acctgroup)
+                allowed = sandbox_readable_by_group(acctgroup) or \
+                          is_superuser_for_group(acctgroup,requestor) or \
+                          is_global_superuser(requestor)
                 if not allowed:
                     if not user_id:
                         user_id = 'other user'

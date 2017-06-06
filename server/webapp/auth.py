@@ -322,7 +322,7 @@ def check_auth(func=None, pass_through=None):
                 pass
             if not uid:
                 uid = uid_from_client_dn()
-            if uid and jobsub.is_superuser_for_group(acctgroup, uid):
+            if uid and (jobsub.is_superuser_for_group(acctgroup, uid) or jobsub.is_global_superuser(uid)):
                 return func(*args, **kwargs)
 
         

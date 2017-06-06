@@ -47,23 +47,36 @@ def is_supported_accountinggroup(acctgroup):
     return r_code
 
 
-def group_superusers(acctgroup):
-    """return a list of superusers for acctgroup
-       group_superusers can hold,release,remove other
-       users jobs in that acctgroup and can browse
+def global_superusers():
+    """return a list of global_superusers 
+       global_superusers can hold,release,remove other
+       users jobs and browse 
        other users sandboxes regardless of other
        settings
     """
 
     g_list = []
     prs = JobsubConfigParser()
-    susers = prs.get(acctgroup, 'group_superusers')
     global_susers = prs.get('default', 'global_superusers')
-    if susers:
-        for itm in susers.split():
-            g_list.append(itm)
     if global_susers:
         for itm in global_susers.split():
+            g_list.append(itm)
+    logger.log('returning %s' % g_list)
+    return g_list
+
+def group_superusers(acctgroup):
+    """return a list of superusers for acctgroup
+       group_superusers can hold,release,remove other
+       users jobs in that acctgroup and can browse
+       other users sandboxes in that group regardless of other
+       settings
+    """
+
+    g_list = []
+    prs = JobsubConfigParser()
+    susers = prs.get(acctgroup, 'group_superusers')
+    if susers:
+        for itm in susers.split():
             g_list.append(itm)
     logger.log('returning %s' % g_list)
     return g_list
@@ -79,6 +92,9 @@ def is_superuser_for_group(acctgroup, user):
         return user in su_list
     raise Exception('group %s not supported' % acctgroup)
 
+def is_global_superuser(user):
+    gsu = global_superusers()
+    return user in gsu
 
 def sandbox_readable_by_group(acctgroup):
     """return True if anyone in acctgroup can read and fetch

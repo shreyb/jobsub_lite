@@ -250,6 +250,23 @@ class JobTest(unittest.TestCase):
         (retVal,output)=commands.getstatusoutput("grep '^timeout 5m $JOBSUB_EXE_SCRIPT'  %s"%ns.settings['wrapfile'])
         self.assertEqual(retVal,0,ns.settings['wrapfile'])
 
+    def testEnvFlag(self):
+        """test -e FOO=BAR option"""
+        ns = self.ns
+        ns.runCmdParser(['-e','FOO=BAR','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['added_environment'],['FOO'])
+        self.assertEqual(os.environ.get('FOO'),'BAR')
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep 'environment ' %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal,0,'envrionment = not in '+ns.settings['cmdfile'])
+        self.assertTrue('FOO=BAR' in output)
+
+
     def testExpectedLifetimeFlag(self):
         """test --expected-lifetime option"""
         ns = self.ns
@@ -262,7 +279,7 @@ class JobTest(unittest.TestCase):
         self.stdioON()
         cmd = "grep '^\s*+JOB_EXPECTED_MAX_LIFETIME\s*=\s*600\s*$' %s"%ns.settings['cmdfile']
         (retVal,output)=commands.getstatusoutput(cmd)
-        self.assertEqual(retVal, 0, cmd)
+        self.assertEqual(retVal, 0, 'JOB_EXPECTED_MAX_LIFETIME not in ' + ns.settings['cmdfile'])
 
     def testDiskFlag(self):
         """test --disk option"""
@@ -341,6 +358,24 @@ class JobTest(unittest.TestCase):
         cmd = "grep -i 'requirements'  %s"%ns.settings['cmdfile']
         (retVal,output)=commands.getstatusoutput(cmd)
         self.assertTrue('stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model)'.upper() in output.upper())
+
+    def testSiteFlag(self):
+        """test --site option"""
+        ns = self.ns
+        ns.runCmdParser(['--site=SITE_A,SITE_B','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['site'],'SITE_A,SITE_B')
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep -i '+DESIRED_Sites'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+        self.assertTrue('"SITE_A,SITE_B"' in output)
+        cmd = "grep -i 'requirements'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertTrue('stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)'.upper() in output.upper())
 
     def testCPNCommands(self):
         """test CPN i/o from -d and -f flags"""

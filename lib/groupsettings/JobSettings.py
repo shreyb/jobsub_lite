@@ -1665,13 +1665,13 @@ class JobSettings(object):
         if self.settings['dataset_definition'] != "":
             self.addEnv(samDict)
 
-    def addEnv(self, dict):
+    def addEnv(self, adict):
         envStr = self.settings['environment']
         l1 = len(envStr)
-        for key in dict.keys():
+        for key in adict.keys():
             k2 = key + "="
             if envStr.find(k2) < 0:
-                val = dict[key]
+                val = adict[key]
                 if val in self.settings and self.settings[val] != '':
                     envStr = "%s;%s=%s" % (envStr, key, self.settings[val])
         l2 = len(envStr)
@@ -1688,12 +1688,14 @@ class JobSettings(object):
             return settings['requirements']
         if settings['grid']:
             settings['requirements'] = settings['requirements'] +\
-                '&& (target.IS_Glidein==true) '
+                self.fileParser.get('default','glidein_requirement',
+                        '&& (target.IS_Glidein==true) ')
         if settings['site']:
-            desired_site_req = ' && (stringListIMember' +\
-                '(target.GLIDEIN_Site,my.DESIRED_Sites)) '
+            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)) '
             settings['requirements'] = settings[
-                'requirements'] + desired_site_req
+                'requirements'] +  self.fileParser.get('default',
+                                                        'desired_site_requirement',
+                                                        _default)
         if 'desired_os' in settings and len(settings['desired_os']) > 0:
             settings['requirements'] = settings[
                 'requirements'] + settings['desired_os']

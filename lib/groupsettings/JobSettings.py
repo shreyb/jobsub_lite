@@ -803,6 +803,15 @@ class JobSettings(object):
             err = "you must specify a --tar_file_name if you create a tar file using --input_tar_dir"
             raise InitializationError(err)
 
+        if settings.get('site') and settings.get('blacklist'):
+            siteset = set(settings.get('site').split(','))
+            blset = set(settings.get('blacklist').split(','))
+            intset = siteset & blset
+            if intset:
+                err = 'There are common sites in both --site and --blacklist %s your jobs will never start' % intsect
+                raise InitializationError(err)
+
+
         if 'nowrapfilex' in settings and settings['nowrapfilex']:
             print """WARNING the --nowrapfile option has been disabled at the request of
             the Grid Operations group.  Your jobs will be submitted with a wrapper and should still

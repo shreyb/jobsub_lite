@@ -377,6 +377,24 @@ class JobTest(unittest.TestCase):
         (retVal,output)=commands.getstatusoutput(cmd)
         self.assertTrue('stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)'.upper() in output.upper())
 
+    def testBlacklistFlag(self):
+        """test --blacklist option"""
+        ns = self.ns
+        ns.runCmdParser(['--blacklist=SITE_A,SITE_B','some_script'])
+        ns.checkSanity()
+        self.assertEqual(ns.settings['blacklist'],'SITE_A,SITE_B')
+        self.stdioOFF()
+        ns.checkSanity()
+        ns.makeCondorFiles()
+        self.stdioON()
+        cmd = "grep -i '+Blacklist_Sites'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertEqual(retVal, 0, cmd)
+        self.assertTrue('"SITE_A,SITE_B"' in output)
+        cmd = "grep -i 'requirements'  %s"%ns.settings['cmdfile']
+        (retVal,output)=commands.getstatusoutput(cmd)
+        self.assertTrue('stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites)=?=false'.upper() in output.upper())
+
     def testCPNCommands(self):
         """test CPN i/o from -d and -f flags"""
         ##jobsub -f input_file_1 -f input_file_2 -d FOO this_is_the_foo_dir -d BAR this_is_the_bar_dir (some_subclass)_CPNtest.sh

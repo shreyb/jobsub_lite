@@ -217,7 +217,7 @@ class JobSettings(object):
             'dummy_script'] = "%s/returnOK.sh" % (os.path.dirname(self.settings['this_script']))
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs'] = 10000
-        #self.settings['job_expected_max_lifetime'] = '21600s'
+        self.settings['job_expected_max_lifetime'] = 21600
         self.settings['set_expected_max_lifetime'] = None
 
         # for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -573,7 +573,12 @@ class JobSettings(object):
         invocation as desired"""))
 
         generic_group.add_option("--site", dest="site", action="store",
-                                 help="submit jobs to this site ")
+                                 metavar='COMMA,SEP,LIST,OF,SITES',
+                                 help="submit jobs to these sites ")
+
+        generic_group.add_option("--blacklist", dest="blacklist", action="store",
+                                 metavar='COMMA,SEP,LIST,OF,SITES',
+                                 help="ensure that jobs do not land at these sites ")
 
         file_group.add_option("--tar_file_name", dest="tar_file_name",
                               action="store",
@@ -1596,9 +1601,14 @@ class JobSettings(object):
             f.write("+DesiredOS =\"%s\"\n" % settings['os'])
         if 'drain' in settings:
             f.write("+Drain = %s\n" % settings['drain'])
+
         if 'site' in settings and settings['site']:
             if settings['site'] != 'LOCAL':
                 f.write("+DESIRED_Sites = \"%s\"\n" % settings['site'])
+
+        if 'blacklist' in settings and settings['blacklist']:
+            f.write("+Blacklist_Sites = \"%s\"\n" % settings['blacklist'])
+
         f.write("+GeneratedBy =\"%s\"\n" % settings['generated_by'])
         for res in settings['resource_list']:
             parts = res.split('=')
@@ -1680,34 +1690,56 @@ class JobSettings(object):
 
     def makeCondorRequirements(self):
         settings = self.settings
-        if not settings['needs_appending']:
+        if 'needs_appending' in settings and settings['needs_appending']==False:
             return settings['requirements']
         settings['needs_appending'] = False
+
         if 'overwriterequirements' in settings:
             settings['requirements'] = settings['overwriterequirements']
             return settings['requirements']
-        if settings['grid']:
-            settings['requirements'] = settings['requirements'] +\
-                self.fileParser.get('default','glidein_requirement',
-                        '&& (target.IS_Glidein==true) ')
-        if settings['site']:
+
+        bval = self.fileParser.get('default','requirements_base')
+        if bval:
+            settings['requirements'] = bval
+
+        if 'grid' in settings and settings['grid']:
+            _default = '&& (target.IS_Glidein==true) '
+            gval = self.fileParser.get('default','requirements_is_glidein')
+            if not gval:
+                gval = _default
+            settings['requirements'] = settings['requirements'] + gval
+
+
+        if 'site' in settings and settings['site']:
             _default = '&& (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)) '
-            settings['requirements'] = settings[
-                'requirements'] +  self.fileParser.get('default',
-                                                        'desired_site_requirement',
-                                                        _default)
-        if 'desired_os' in settings and len(settings['desired_os']) > 0:
+            sval = self.fileParser.get('default', 'requirements_site')
+            if not sval:
+                sval = _default
+            settings['requirements'] = settings['requirements'] +  sval
+
+        if 'blacklist' in settings and settings['blacklist']:
+            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites)) '
+            sval = self.fileParser.get('default', 'requirements_blacklist')
+            if not sval:
+                sval = _default
+            settings['requirements'] = settings['requirements'] +  sval
+
+        if 'desired_os' in settings and settings['desired_os']:
             settings['requirements'] = settings[
                 'requirements'] + settings['desired_os']
-        for x in settings['resource_list']:
-            (opt, val) = x.split('=')
-            settings['requirements'] = settings['requirements'] +\
-                """ && (stringListsIntersect(toUpper(target.HAS_%s),""" % (opt) +\
-                """ toUpper(my.DESIRED_%s)))""" % (opt)
+
+        if 'resource_list' in settings:
+            for x in settings['resource_list']:
+                (opt, val) = x.split('=')
+                settings['requirements'] = settings['requirements'] +\
+                    """ && (stringListsIntersect(toUpper(target.HAS_%s),""" % (opt) +\
+                    """ toUpper(my.DESIRED_%s)))""" % (opt)
+
         if 'append_requirements' in settings:
             for req in settings['append_requirements']:
                 settings['requirements'] = settings[
                     'requirements'] + " && %s " % req
+
         return settings['requirements']
 
     def makeCommandFile(self, job_iter=0):

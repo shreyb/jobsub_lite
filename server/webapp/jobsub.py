@@ -576,7 +576,7 @@ def run_cmd_as_user(command, username, child_env={}):
         err_fmt += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         err_str = err_fmt % (username, cmd, out, err, e)
         logger.log(err_str, severity=logging.ERROR)
-        logger.log(err_str, severity=logging.ERROR, logfile='submit')
+        logger.log(err_str, severity=logging.ERROR, logfile='condor_commands')
         logger.log(err_str, severity=logging.ERROR, logfile='error')
         err = err_str
 

@@ -1,3 +1,51 @@
+
+================================================================================
+v1.2.4
+================================================================================
+Client
+------
+* Feature   7513  --jobid-output-only flag for jobsub_submit an jobsub_submit_dag
+                  if submission is successful, only the jobsub_job_id is returned
+                  as output
+
+* Feature  11722  --blacklist=SITE1,SITE2,SITE3 ensures that submitted jobs do
+                  not land on SITE1, SITE3, or SITE3
+                  behavior configurable by 'requirements_blacklist' entry in
+                  jobsub.ini file
+
+* Bug      16564  typo in client mishadled existing user proxies 
+
+* Bug      16409  jobsub_q --hold stopped reporting holdreason for jobs
+
+Server
+-------
+
+* Feature  15674  job requirements configurable by operations, use 'requirements_base'
+                  line in jobsub.ini  
+
+* Feature  16630  remove 'Is_Glidein' from start requirements by modifying 
+                  'requirements_is_glidein' line in jobsub.ini
+
+
+* Feature  12022  jobsub_fetchlog output cached for 'max_logfile_cache_age' seconds
+                  from 'default' section of jobsub.ini.  If 'max_logfile_cache_age'
+                  is not configured, cache output for 1200 seconds.  This is to
+                  protect against jobsub_fetchlog denial of service attacks
+                  To clean up the cached tarfiles  a new jobsub_preen cron entry 
+                  is required
+                  29,59 * * * * /opt/jobsub/server/admin/jobsub_preen.sh /fife/local/scratch/uploads 1 doSubDirs 1
+
+* Bug      14262  hold/release/remove information incorrectly written to submit log
+        
+
+* Bug      16757  group_superusers have the same rights as global_superusers,
+                  and can hold/remove other groups jobs
+
+* Bug      15823  Users with underscores in their names not getting thier proxies
+                  refreshed
+
+
+
 ================================================================================
 v1.2.3.3 
 ================================================================================

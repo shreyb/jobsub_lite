@@ -181,7 +181,7 @@ gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e SAM_PROJECT5 \
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
-    -N 3  --start 4 \
+    -N 3   \
     --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT5 \

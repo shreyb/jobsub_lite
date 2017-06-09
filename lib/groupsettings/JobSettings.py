@@ -808,7 +808,7 @@ class JobSettings(object):
             blset = set(settings.get('blacklist').split(','))
             intset = siteset & blset
             if intset:
-                err = 'There are common sites in both --site and --blacklist %s your jobs will never start' % intsect
+                err = 'There are common sites in both --site and --blacklist %s your jobs will never start' % intset
                 raise InitializationError(err)
 
 

@@ -91,6 +91,7 @@ class AccountJobsResource(object):
             API is /jobsub/acctgroups/<group_id>/jobs/
         """
 
+        cherrypy.response.status = 500
         if job_id is None:
             child_env = os.environ.copy()
             jobsubConfig = JobsubConfig()
@@ -169,6 +170,7 @@ class AccountJobsResource(object):
                 if rcode.get('out'):
                     for line in rcode['out']:
                         if 'jobsubjobid' in line.lower():
+                            cherrypy.response.status = 200
                             logger.log(line)
                 if rcode.get('err'):
                     logger.log(rcode['err'], severity=logging.ERROR)

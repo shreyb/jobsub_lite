@@ -90,6 +90,9 @@ def split_client_server_args(parser, argv):
 
 def required_args_present(options):
     try:
+        if options.debug and options.jobid_output_only:
+            print "ERROR: --debug and --jobid_output_only are incompatible"
+            return False
         if (options.acctGroup and options.jobsubServer):
             return True
     except AttributeError:
@@ -182,6 +185,12 @@ def parse_opts(argv):
                          default=False,
                          help='Print debug messages including server contacted, http response, response time')
 
+    opt_group.add_option('--jobid-output-only',
+                         dest='jobid_output_only',
+                         action='store_true',
+                         default=False,
+                         help='Return only jobsub jobid in response to a successful submission')
+
     opt_group.add_option('-h', '--help',
                          dest='help',
                          action='store_true',
@@ -228,7 +237,7 @@ def print_acctgroup_help(options):
     """
 
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [
-    ], extra_opts={'debug': options.debug})
+        ], extra_opts={})
     response = js_client.help()
 
     out = response.get('out')
@@ -252,7 +261,9 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
-                             options.dropboxServer, options.dag, extra_opts={'debug': options.debug})
+                             options.dropboxServer, options.dag, 
+                             extra_opts={'debug': options.debug,
+                                         'jobid_output_only':options.jobid_output_only})
     rc = 1
     try:
         http_code = js_client.submit()

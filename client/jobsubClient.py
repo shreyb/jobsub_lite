@@ -932,6 +932,12 @@ class JobSubClient:
 
         content_type, code, value, serving_server =\
             self.extractResponseDetails(curl, response)
+        if self.extra_opts.get('jobid_output_only'):
+            matchObj = re.match( r'(.*)Use job id (.*) to retrieve (.*)',
+                       value, re.S|re.I)
+            if matchObj and matchObj.group(2):
+                print matchObj.group(2)
+                return
         suppress_server_details = False
         if (self.extra_opts.get('uid')
                 or self.extra_opts.get('constraint')) \

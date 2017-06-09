@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import subprocessSupport
 import logger
+import logging
 import os
 import time
 import sys
@@ -98,7 +99,10 @@ def findRmUserJobDirs(rootDir, ageInDays):
                         logger.log("%s" % sys.exc_info()[1])
 
 
-def rmOldFiles(rootDir, ageInDays, doSubDirs=False, rmEmptyDirs=False):
+def rmOldFiles(rootDir, ageInDays, doSubDirs=0, rmEmptyDirs=False):
+    #doSubDirs now contains depth information, recursively
+    #go into subdirs until doSubdirs==0
+    #if negative, recurse to bottom
     ageInSeconds = int(ageInDays) * 24 * 60 * 60
     now = time.time()
     if rmEmptyDirs:
@@ -108,7 +112,7 @@ def rmOldFiles(rootDir, ageInDays, doSubDirs=False, rmEmptyDirs=False):
         fname = os.path.join(rootDir, f)
         if os.path.isdir(fname):
             if doSubDirs:
-                rmOldFiles(fname, ageInDays, doSubDirs, rmEmptyDirs)
+                rmOldFiles(fname, ageInDays, doSubDirs-1, rmEmptyDirs)
         else:
             if os.stat(fname).st_mtime < now - ageInSeconds:
 
@@ -139,7 +143,10 @@ def print_help():
         if arg 3 is 'thisDirOnly':
            remove all files in <root_dir> older than <ageInDays>
         elif arg 3 is 'doSubDirs':
-           remove all files in <root_dir> and subdirs older than <ageInDays>
+           if arg 4 exists an is an integer:
+               remove files in <root_dir> and subdirs older than <ageInDays> down to depth 'arg 4' subdirs
+           else:      
+              remove all files in <root_dir> and subdirs older than <ageInDays>
         elif arg 3 is 'rmEmptySubdirs':
            remove all files in <root_dir> and subdirs older than <ageInDays>,
            also remove any empty subdirectories
@@ -155,11 +162,14 @@ def print_help():
 def run_prog():
     if len(sys.argv) == 3:
         findRmUserJobDirs(sys.argv[1], sys.argv[2])
-    elif len(sys.argv) == 4:
+    elif len(sys.argv) >= 4:
         if sys.argv[3] == 'thisDirOnly':
             rmOldFiles(sys.argv[1], sys.argv[2])
         elif sys.argv[3] == 'doSubDirs':
-            rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True)
+            if len(sys.argv)>=5  and isinstance(int(sys.argv[4]),(int,long)):
+            	rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=int(sys.argv[4]))
+            else:
+            	rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=-1)
         elif sys.argv[3] == 'rmEmptySubdirs':
             rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True,
                        rmEmptyDirs=True)
@@ -178,8 +188,7 @@ if __name__ == '__main__':
 
         logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,
-                   traceback=True,
-                   logfile="krbrefresh")
+                   traceback=True)
 
         logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,

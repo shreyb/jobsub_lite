@@ -17,7 +17,7 @@ test "$cnt" = "1"
 T1=$?
 jobid=`grep 'JobsubJobId of first job' $outfile | awk '{print $5}'`
 T2=$?
-$EXEPATH/jobsub_fetchlog -G $GROUP --jobsub-server $SERVER --jobid $jobid --dest-dir $GROUP/$jobid >>$outfile 2>&1
+$EXEPATH/jobsub_fetchlog -G $GROUP $OTHER_TEST_FLAGS --jobsub-server $SERVER --jobid $jobid --dest-dir $GROUP/$jobid >>$outfile 2>&1
 T3=$?
 grep '+Jobsub_Group' $GROUP/$jobid/*cmd >>$outfile 2>&1
 T4=$?

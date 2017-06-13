@@ -361,18 +361,19 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             jobsubConfig.commandPathUser(acctgroup, username),
             workdir_id)
 
-        schedd_nm = condor_commands.schedd_name(jobsub_args)
-        recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
-        srt = get_submit_reject_threshold()
+        schedd_nm = condor_commands.best_schedd(acctgroup)
+        #schedd_nm = condor_commands.schedd_name(jobsub_args)
+        #recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
+        #srt = get_submit_reject_threshold()
 
-        if recent_duty_cycle > srt:
-            err = "schedd %s is overloaded " % schedd_nm
-            err += "at %s percent busy " % (100.0*recent_duty_cycle)
-            err += "rejecting job submission, try again in a few minutes"
-            result = {'err': err}
-            logger.log(err)
-            cherrypy.response.status = 500
-            return result
+        #if recent_duty_cycle > srt:
+        #    err = "schedd %s is overloaded " % schedd_nm
+        #    err += "at %s percent busy " % (100.0*recent_duty_cycle)
+        #    err += "rejecting job submission, try again in a few minutes"
+        #    result = {'err': err}
+        #    logger.log(err)
+        #    cherrypy.response.status = 500
+        #    return result
 
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_nm

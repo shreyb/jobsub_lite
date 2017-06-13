@@ -203,6 +203,7 @@ def doJobAction(acctgroup,
     orig_user = cmd_user
     acctrole = jobsub.default_voms_role(acctgroup)
     child_env = os.environ.copy()
+    child_env['JOBSUB_SUPROCESS_NO_RAISE_EXCEPTION'] = 'True'
     is_group_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
     is_global_superuser = jobsub.is_global_superuser(cmd_user)
     if is_group_superuser or is_global_superuser:
@@ -219,7 +220,7 @@ def doJobAction(acctgroup,
 
     rc = {'out': None, 'err': None}
     if constraint:
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
     elif job_id:
         # job_id is a jobsubjobid
         constraint = '(Jobsub_Group =?= "%s")' % (acctgroup)
@@ -235,7 +236,7 @@ def doJobAction(acctgroup,
     elif user:
         constraint = '(Owner =?= "%s") && (Jobsub_Group =?= "%s")' %\
             (user, acctgroup)
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
     else:
         err = "Failed to supply constraint, job_id or uid, "
         err += "cannot perform any action"
@@ -269,7 +270,7 @@ def doJobAction(acctgroup,
         logger.log(msg, logfile='condor_commands')
 
     out = err = ''
-    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
+    expr = '(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)(\d+)(\s+Not Found,\s+)(\d+)(\s+Bad Status,\s+)(\d+)(\s+Already Done,\s+)(\d+)(\s+Permission Denied.*)'
     expr2 = '.*ailed to connect*'
     expr3 = '.*all jobs matching constraint*'
     regex = re.compile(expr)
@@ -277,6 +278,7 @@ def doJobAction(acctgroup,
     regex3 = re.compile(expr3)
     extra_err = ""
     failures = 0
+    successes = 0
     ret_out = ""
     ret_err = ""
 
@@ -316,22 +318,31 @@ def doJobAction(acctgroup,
                     logger.log(msg, severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err
-                return {'out': out, 'err': extra_err}
+                #return {'out': out, 'err': extra_err}
             out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
             for line in out2:
                 if regex.match(line):
-                    grps = regex.match(line)
-                    ret_out += line
+                    successes += int(regex.findall(line)[0][0])
+                    ret_out += "%s for %s\n" % (line.rstrip('\n'), schedd_name)
             err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
             for line in err2:
                 if regex.match(line):
                     ret_out += line.replace('STDOUT:', '')
                 if regex2.match(line):
+                    failures += 1
                     ret_err += line
                 if regex3.match(line):
                     ret_err += line
     if err and not ret_err:
         ret_err = err
+    if successes:
+        cherrypy.response.status = 200
+    else:
+        cherrypy.response.status = 500
+    if failures:
+        cherrypy.response.status = 500
+
+    logger.log('returning rc=%s'%rc)
     return {'out': ret_out, 'err': ret_err}
 
 

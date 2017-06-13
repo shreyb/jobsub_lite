@@ -52,6 +52,24 @@ def iterArgs():
     return job_settings
 
 
+
+def munge_jdf(condor_jdf,settings):
+    files = ",".join(os.listdir("."))
+    transfer_files = "transfer_input_files = %s" % files
+    if settings['transfer_input_files']:
+        transfer_files = "%s,%s" % (transfer_files, settings['transfer_input_files'])
+    orig_name = condor_jdf + ".orig"
+    os.rename(condor_jdf, orig_name)
+    fin = open(orig_name, "r")
+    fout = open(condor_jdf, "w")
+    for line in fin:
+        if  'queue' in line:
+            fout.write("%s\n" % transfer_files)
+        fout.write("%s" % line)
+    fin.close()
+    fout.close()
+
+
 def doSubmit(settings):
     print 'submitting....'
     #env_vars = settings['environment'].split(';')
@@ -68,31 +86,47 @@ def doSubmit(settings):
             else:
                 exports = exports + """export %s="%s";""" % (var, val)
     cmd = ""
-
+    remote_schedd = False
+    local_schedd_name = ""
     if settings.has_key('schedd') and settings['schedd'] is not None:
-        schedd_spec = "-name %s " % settings['schedd']
+        parts = settings['schedd'].split('@')
+        if parts[-1] == settings['submit_host']:
+            schedd_spec = "-name %s " % settings['schedd']
+            if parts[0] != parts[-1]:
+                local_schedd_name = parts[0]
+        else:
+            schedd_spec = "-remote %s " % settings['schedd']
+            remote_schedd = True
     else:
         schedd_spec = ""
 
-    if settings['usedagman'] == False:
-        cmd = "cd %s ; condor_submit %s  %s" % (settings['condor_tmp'],
-                                                schedd_spec,
-                                                settings['cmdfile'])
+    os.chdir(settings['condor_tmp'])
+    if not settings['usedagman']:
+        cmd = "condor_submit %s  %s" % (schedd_spec,
+                                        settings['cmdfile'])
     else:
         append = """-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
             (settings['user'], settings['group'], settings['user'])
         append = """%s -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
-            append, settings['submit_host'])
+            append, settings['schedd'])
+        append = """%s -append +Jobsub_Group=\\"%s\\" -append +Jobsub_Submit_Dir=\\"%s\\" -append +Jobsub_Submit_Host=\\"%s\\" """ %\
+                (append, settings['group'], settings['condor_tmp'], settings['submit_host'])
         if settings.has_key('maxConcurrent'):
             maxjobs = settings['maxConcurrent']
         else:
             maxjobs = 2000
-        cmd = "cd %s; condor_submit_dag -dont_suppress_notification -maxidle %s -maxjobs %s %s %s" %\
-            (settings['condor_tmp'], settings['job_count'],
-             maxjobs, append, settings['dagfile'])
+        if local_schedd_name:
+            cmd1 = "condor_config_val SCHEDD.%s.SCHEDD_ADDRESS_FILE" % local_schedd_name
+            cmd2 = "condor_config_val SCHEDD.%s.SCHEDD_DAEMON_AD_FILE" % local_schedd_name
+            (retVal, addr_file) = commands.getstatusoutput(cmd1)
+            (retVal, daemon_file) = commands.getstatusoutput(cmd2)
+            add_spec = " -schedd-address-file %s  -schedd-daemon-ad-file %s" % (addr_file, daemon_file)
+        else:
+            add_spec = ""
+        cmd = "condor_submit_dag  %s -no_submit -dont_suppress_notification -maxidle %s -maxjobs %s %s %s" %\
+            (add_spec, settings['job_count'],
+             maxjobs, append, os.path.basename(settings['dagfile']))
 
-    if settings['submit_host'] != settings['local_host']:
-        cmd = "ssh -akx %s \"%s\"" % (settings['submit_host'], cmd)
     if settings['verbose']:
         print "doSubmit: executing %s " % cmd
 
@@ -106,8 +140,23 @@ def doSubmit(settings):
         print "additional output: %s " % (output)
         print "if you need help with the above errors "
         print "please open a service desk ticket"
-    sys.exit(retVal)
+    if settings['usedagman']:
+        dag_jdf = os.path.basename(settings['dagfile']) + ".condor.sub"
+        if remote_schedd:
+            munge_jdf(dag_jdf,settings)
+        cmd = "condor_submit %s %s" % (schedd_spec, dag_jdf)
+        (retVal, output) = commands.getstatusoutput(cmd)
+        print output
+        if retVal != 0:
+            retVal = retVal % 256
+            if retVal == 0:
+                retVal = 1
+            print "%s returned status %s " % (cmd, retVal)
+            print "additional output: %s " % (output)
+            print "if you need help with the above errors "
+            print "please open a service desk ticket"
 
+    sys.exit(retVal)
 
 if __name__ == "__main__":
     try:

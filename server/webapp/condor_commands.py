@@ -19,6 +19,7 @@ import platform
 import subprocessSupport
 import socket
 import re
+import JobsubConfigParser
 from request_headers import get_client_dn
 from random import randint
 
@@ -47,12 +48,13 @@ def ui_condor_userprio():
 
 def ui_condor_status_totalrunningjobs():
     """condor_status -schedd
-        -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'
-        -af name totalrunningjobs
+        -constraint '(InDownTime =!= True)&&(InDownTime =!= "True")'
+        -af name TotalRunningJobs
     """
+
     cmd = """condor_status -schedd"""
-    cmd += """  -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'"""
-    cmd += """ -af name totalrunningjobs"""
+    cmd += """  -constraint '%s'""" % downtime_constraint()
+    cmd += """ -af name %s""" % schedd_load_metric()
 
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
@@ -375,14 +377,25 @@ def collector_host():
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
-def schedd_list():
+def schedd_list(acctgroup=None,check_downtime=False):
     """
     return a list of all the schedds
     """
 
     try:
-        schedds, cmd_err = subprocessSupport.iexe_cmd(
-            """condor_status -schedd -af name """)
+        cmd = """condor_status -schedd -af name """
+        constraint=""
+        if acctgroup:
+            if constraint:
+                constraint +="&&"
+            constraint += """stringlistmember("%s", supportedvolist)""" % acctgroup
+        if check_downtime:
+            if constraint:
+                constraint +="&&"
+            constraint += """InDownTime=!=True"""
+        if constraint:
+            cmd = """%s -constraint '%s'""" % (cmd, constraint)
+        schedds, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
@@ -392,6 +405,65 @@ def schedd_list():
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
+
+def downtime_constraint():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    dt_constraint = jcp.get('default','downtime_constraint')
+    if not dt_constraint:
+        dt_constraint = "InDownTime=!=True"
+    return dt_constraint
+
+def vo_constraint(acctgroup):
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    vo_list = jcp.get('default','supported_vo_list')
+    if not vo_list:
+        vo_list = "SupportedVOList"
+    voc = """stringlistmember("%s",%s)""" % (acctgroup,vo_list)
+    return voc
+
+def schedd_load_metric():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    metric = jcp.get('default','schedd_load_metric')
+    if not metric:
+	    metric = "TotalRunningJobs"
+    return metric
+
+def best_schedd(acctgroup=None):
+    """
+    return schedd with lowest load metric subject to constraints
+    """
+
+    try:
+        cmd = """condor_status -schedd -af name %s """ % schedd_load_metric()
+        cmd += """ -constraint '%s&&%s'""" % (vo_constraint(acctgroup),
+                                              downtime_constraint())
+        logger.log(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
+        cycle=100.0
+        schedd=""
+        logger.log('cmd: %s cmd_out:%s'%(cmd, cmd_out))
+        for line in cmd_out.split('\n'):
+            vals = line.split(' ')
+            if vals[-1]:
+                nm = vals[0]
+                val = float(vals[-1])
+                if val < 0:
+                    val *= -1.0
+                if val <= cycle:
+                    schedd = nm
+                    cycle = val
+        logger.log('chose %s as best schedd'% schedd)
+        return schedd
+    except:
+        tbk = traceback.format_exc()
+        #logger.log(cmd_err, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
+
 
 def schedd_recent_duty_cycle(schedd_nm=None):
     """

@@ -84,8 +84,8 @@ class JobActionByConstraintResource(object):
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
             rcode = {'err': err}
-        if rcode.get('err'):
-            cherrypy.response.status = 500
+        #if rcode.get('err'):
+        #    cherrypy.response.status = 500
         return rcode
 
     def doGET(self, constraint=None, **kwargs):

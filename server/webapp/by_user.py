@@ -1,7 +1,7 @@
 """Module:
         by_user
    Purpose
-        implements condor_q <username>
+        implements condor_hold, condor_release, condor_rm  <username>
         API /jobsub/acctgroups/<group_id>/jobs/user/<username>/
         API /jobsub/acctgroups/<group_id>/jobs/user/<username>/<jobsubjobid>
 """
@@ -18,8 +18,7 @@ from format import format_response
 @cherrypy.popargs('action_user', 'job_id')
 class AccountJobsByUserResource(object):
     """Class that implements above URLS
-       Only responds to http GET, only
-       index.html implemented
+       only responds to PUT and DELETE http requests
     """
 
     @cherrypy.expose
@@ -49,13 +48,16 @@ class AccountJobsByUserResource(object):
                     # hold/release
                     rc = doPUT(acctgroup, user=action_user,
                                job_id=job_id, **kwargs)
+                    logger.log('rc=%s'%rc)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method
+                    cherrypy.response.status = 500
                     logger.log(err, severity=logging.ERROR)
                     logger.log(err, severity=logging.ERROR, logfile='error')
                     rc = {'err': err}
             else:
                 # return error for unsupported acctgroup
+                cherrypy.response.status = 500
                 err = 'AccountingGroup %s is not configured in jobsub' % acctgroup
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
@@ -67,6 +69,6 @@ class AccountJobsByUserResource(object):
             logger.log(err, severity=logging.ERROR,
                        logfile='error', traceback=True)
             rc = {'err': err}
-        if rc.get('err'):
-            cherrypy.response.status = 500
+        #if rc.get('err'):
+        #    cherrypy.response.status = 500
         return rc

@@ -20,7 +20,8 @@ import cherrypy
 import logger
 import logging
 import sys
-from condor_commands import ui_condor_status_totalrunningjobs
+#from condor_commands import ui_condor_status_totalrunningjobs
+import socket
 
 from format import format_response
 
@@ -28,8 +29,9 @@ from format import format_response
 class ScheddLoadResource(object):
 
     def doGET(self, kwargs):
-        jobs = ui_condor_status_totalrunningjobs()
-        return {'out': jobs.split('\n')}
+        hostname = socket.gethostname()
+        #jobs = ui_condor_status_totalrunningjobs()
+        return {'out': ["%s  0" % hostname]}
 
     @cherrypy.expose
     @format_response

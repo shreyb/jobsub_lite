@@ -137,11 +137,9 @@ class JobSettings(object):
         self.settings['usedagman'] = False
         self.settings[
             'requirements'] = '((target.Arch==\"X86_64\") || (target.Arch==\"INTEL\"))'
-        fmt_str = 'CLUSTER=%s;PROCESS=%s;CONDOR_TMP=%s;CONDOR_EXEC=%s;DAGMANJOBID=%s'
+        fmt_str = 'CLUSTER=%s;PROCESS=%s;DAGMANJOBID=%s'
         self.settings['environment'] = fmt_str % ('$(Cluster)',
                                                   '$(Process)',
-                                                  self.settings['condor_tmp'],
-                                                  self.settings['condor_exec'],
                                                   '$(DAGManJobId)')
         self.settings['lines'] = []
         self.settings['group'] = os.environ.get("GROUP", "common")
@@ -206,8 +204,16 @@ class JobSettings(object):
         self.settings['jobsub_max_joblog_size'] = 5000000
         self.settings['drain'] = False
         self.settings['mail_domain'] = 'fnal.gov'
+        if not self.settings.get('schedd'):
+            self.settings['schedd'] = self.settings['submit_host']
         self.settings['jobsubjobid'] = "$(CLUSTER).$(PROCESS)@%s" % self.settings[
-            'submit_host']
+            'schedd']
+        schedd_host = self.settings.get('schedd').split('@')[-1]
+        if schedd_host != self.settings['submit_host']:
+            self.settings['local_schedd'] = False
+        else:
+            self.settings['local_schedd'] = True
+
         (stat, jobsub) = commands.getstatusoutput("which jobsub")
         self.settings['mail_summary'] = False
         self.settings['this_script'] = jobsub
@@ -304,6 +310,11 @@ class JobSettings(object):
                 cmd = "echo %s" % yp
                 (stat, rslt) = commands.getstatusoutput(cmd)
                 self.settings[x] = rslt
+
+    def schedd_callback(self, option, opt, value, p):
+        # print "callback opt=%s val=%s"%(opt,value)
+        self.settings['jobsubjobid']="$(CLUSTER).$(PROCESS)@%s"% value
+        self.settings['schedd']= value
 
     def resource_callback(self, option, opt, value, p):
         # print "callback opt=%s val=%s"%(opt,value)
@@ -415,7 +426,7 @@ class JobSettings(object):
                 downtimes """))
 
         generic_group.add_option("--schedd", dest="schedd",
-                                 action="store", type="string",
+                                 action="callback", type="string",callback=self.schedd_callback,
                                  help="name of alternate schedd to submit to")
 
         generic_group.add_option("--OS", dest="os",
@@ -827,7 +838,7 @@ class JobSettings(object):
 
         if settings['usedagman']:
             settings['jobsubparentjobid'] = "$(DAGManJobId).0@%s" % settings[
-                'submit_host']
+                'schedd']
             self.addToLineSetting(
                 """+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
 
@@ -1218,8 +1229,7 @@ class JobSettings(object):
 
     def makeDAGBeginFiles(self):
         settings = self.settings
-        dagbeginexe = "%s/%s.dagbegin.sh" % (
-            settings['condor_exec'], settings['filetag'])
+        dagbeginexe = "%s.dagbegin.sh" % (settings['filetag'])
         f = open(dagbeginexe, 'wx')
         f.write("#!/bin/sh -x\n")
         f.write("exit 0\n")
@@ -1237,12 +1247,12 @@ class JobSettings(object):
                                                            'dataset_definition'],
                                                        settings['project_name'], settings['user']))
 
-        f.write("output                = %s/dagbegin-%s.out\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("error                 = %s/dagbegin-%s.err\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("log                   = %s/dagbegin-%s.log\n" %
-                (settings['condor_tmp'], settings['filetag']))
+        f.write("output                = dagbegin-%s.out\n" %
+                (settings['filetag']))
+        f.write("error                 = dagbegin-%s.err\n" %
+                (settings['filetag']))
+        f.write("log                   = dagbegin-%s.log\n" %
+                (settings['filetag']))
 
         f.write("environment = %s\n" % settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
@@ -1259,8 +1269,7 @@ class JobSettings(object):
 
     def makeSAMBeginFiles(self):
         settings = self.settings
-        sambeginexe = "%s/%s.sambegin.sh" % (
-            settings['condor_exec'], settings['filetag'])
+        sambeginexe = "%s.sambegin.sh" % (settings['filetag'])
         f = open(sambeginexe, 'wx')
         f.write("#!/bin/sh -x\n")
         # f.write("%s\n"%JobUtils().logTruncateString())
@@ -1317,12 +1326,12 @@ class JobSettings(object):
                                                        settings[
                                                            'dataset_definition'],
                                                        settings['project_name'], settings['user']))
-        f.write("output                = %s/sambegin-%s.out\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("error                 = %s/sambegin-%s.err\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("log                   = %s/sambegin-%s.log\n" %
-                (settings['condor_tmp'], settings['filetag']))
+        f.write("output                = sambegin-%s.out\n" %
+                (settings['filetag']))
+        f.write("error                 = sambegin-%s.err\n" %
+                (settings['filetag']))
+        f.write("log                   = sambegin-%s.log\n" %
+                (settings['filetag']))
 
         f.write("environment = %s\n" % settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
@@ -1339,8 +1348,8 @@ class JobSettings(object):
 
     def makeDAGEndFiles(self):
         settings = self.settings
-        dagendexe = "%s/%s.dagend.sh" % (
-            settings['condor_exec'], settings['filetag'])
+        dagendexe = "%s.dagend.sh" % (
+            settings['filetag'])
         f = open(dagendexe, 'wx')
         f.write("#!/bin/sh -x\n")
         f.write("exit 0\n")
@@ -1349,12 +1358,12 @@ class JobSettings(object):
         f.write("universe          = vanilla\n")
         f.write("executable        = %s\n" % dagendexe)
         f.write("arguments         = %s \n" % (settings['project_name']))
-        f.write("output                = %s/dagend-%s.out\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("error                 = %s/dagend-%s.err\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("log                   = %s/dagend-%s.log\n" %
-                (settings['condor_tmp'], settings['filetag']))
+        f.write("output                = dagend-%s.out\n" %
+                (settings['filetag']))
+        f.write("error                 = dagend-%s.err\n" %
+                (settings['filetag']))
+        f.write("log                   = dagend-%s.log\n" %
+                (settings['filetag']))
         f.write("environment = %s\n" % settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
@@ -1373,8 +1382,7 @@ class JobSettings(object):
     def makeSAMEndFiles(self):
         self.makeDAGEndFiles()
         settings = self.settings
-        samendexe = "%s/%s.samend.sh" % (
-            settings['condor_exec'], settings['filetag'])
+        samendexe = "%s.samend.sh" % (settings['filetag'])
         f = open(samendexe, 'wx')
         f.write("#!/bin/sh -x\n")
         # f.write("%s\n"%JobUtils().logTruncateString())
@@ -1404,12 +1412,12 @@ class JobSettings(object):
         f.write("universe          = vanilla\n")
         f.write("executable        = %s\n" % samendexe)
         f.write("arguments         = %s \n" % (settings['project_name']))
-        f.write("output                = %s/samend-%s.out\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("error                 = %s/samend-%s.err\n" %
-                (settings['condor_tmp'], settings['filetag']))
-        f.write("log                   = %s/samend-%s.log\n" %
-                (settings['condor_tmp'], settings['filetag']))
+        f.write("output                = samend-%s.out\n" %
+                (settings['filetag']))
+        f.write("error                 = samend-%s.err\n" %
+                (settings['filetag']))
+        f.write("log                   = samend-%s.log\n" %
+                (settings['filetag']))
         f.write("environment = %s\n" % settings['environment'])
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("notification  = Error\n")
@@ -1435,8 +1443,8 @@ class JobSettings(object):
         print settings['dagfile']
 
         f = open(settings['dagfile'], 'w')
-        f.write("DOT %s.dot UPDATE\n" % settings['dagfile'])
-        f.write("JOB %s_START %s\n" % (jobname, settings['dagbeginfile']))
+        f.write("DOT %s.dot UPDATE\n" % os.path.basename(settings['dagfile']))
+        f.write("JOB %s_START %s\n" % (jobname, os.path.basename(settings['dagbeginfile'])))
         if 'firstSection' in settings:
             n = settings['firstSection']
             exe = 'Section'
@@ -1445,12 +1453,12 @@ class JobSettings(object):
             exe = os.path.basename(settings['exe_script'])
         nOrig = n
         for x in settings['cmd_file_list']:
-            f.write("JOB %s_%d %s\n" % (exe, n, x))
+            f.write("JOB %s_%d %s\n" % (exe, n, os.path.basename(x)))
             if settings['mail_summary']:
                 f.write("SCRIPT POST %s_%d %s  \n" %
                         (exe, n, settings['dummy_script']))
             n += 1
-        f.write("JOB DAG_END %s\n" % (settings['dagendfile']))
+        f.write("JOB DAG_END %s\n" % (os.path.basename(settings['dagendfile'])))
         samendfile = settings.get('samendfile')
         # if samendfile:
         #f.write("JOB SAM_END %s\n" % samendfile)
@@ -1467,10 +1475,10 @@ class JobSettings(object):
             n1 += 1
         f.write("child DAG_END\n")
         if samendfile:
-            f.write("FINAL SAM_END %s\n" % samendfile)
+            f.write("FINAL SAM_END %s\n" % os.path.basename(samendfile))
         if settings['mail_summary']:
             f.write("SCRIPT POST %s_END %s %s \n" %
-                    (jobname, settings['summary_script'], settings['dagendfile']))
+                    (jobname, settings['summary_script'], os.path.basename(settings['dagendfile'])))
 
         f.close()
 
@@ -1757,7 +1765,7 @@ class JobSettings(object):
         f = open(settings['cmdfile'], 'w')
         f.write("universe          = vanilla\n")
 
-        f.write("executable        = %s\n" % settings['wrapfile'])
+        f.write("executable        = %s\n" % os.path.basename(settings['wrapfile']))
         args = ""
         for arg in settings['script_args']:
             args = args + " " + arg + " "
@@ -1774,9 +1782,9 @@ class JobSettings(object):
             self.replaceLineSetting(
                 """+JobsubJobSection = \"%s\"\n""" % job_iter)
         f.write("arguments         = %s\n" % args)
-        f.write("output                = %s\n" % settings['outfile'])
-        f.write("error                 = %s\n" % settings['errfile'])
-        f.write("log                   = %s\n" % settings['logfile'])
+        f.write("output                = %s\n" % os.path.basename(settings['outfile']))
+        f.write("error                 = %s\n" % os.path.basename(settings['errfile']))
+        f.write("log                   = %s\n" % os.path.basename(settings['logfile']))
         f.write("environment   = %s\n" % env_list)
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = %s\n" %

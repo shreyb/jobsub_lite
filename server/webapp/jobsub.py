@@ -47,6 +47,17 @@ def is_supported_accountinggroup(acctgroup):
     return r_code
 
 
+def can_submit_remote():
+    """
+    """
+
+    prs = JobsubConfigParser()
+    csr = prs.get('default', 'enable_remote_schedd_submission')
+    if csr:
+        if csr.upper() == "TRUE":
+            return True
+    return False
+        
 def global_superusers():
     """return a list of global_superusers 
        global_superusers can hold,release,remove other
@@ -360,8 +371,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         job_submit_dir = os.path.join(
             jobsubConfig.commandPathUser(acctgroup, username),
             workdir_id)
-
-        schedd_nm = condor_commands.best_schedd(acctgroup)
+        schedd_nm = condor_commands.best_schedd(acctgroup, can_submit_remote())
         #schedd_nm = condor_commands.schedd_name(jobsub_args)
         #recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
         #srt = get_submit_reject_threshold()

@@ -11,34 +11,45 @@
  Author:
    Dennis Box
 
- TODO:
-   The load balancing only looks at running jobs, it could do much
-   better.
-   It should be configurable from jobsub.ini or somewhere else
+
 """
 import cherrypy
 import logger
 import logging
 import sys
-#from condor_commands import ui_condor_status_totalrunningjobs
+from condor_commands import ui_condor_status_totalrunningjobs
 import socket
-
+from JobsubConfigParser import JobsubConfigParser
 from format import format_response
 
 
+@cherrypy.popargs('acctgroup')
 class ScheddLoadResource(object):
 
-    def doGET(self, kwargs):
-        hostname = socket.gethostname()
-        #jobs = ui_condor_status_totalrunningjobs()
-        return {'out': ["%s  0" % hostname]}
+    def doGET(self, acctgroup, kwargs):
+
+        jcp = JobsubConfigParser()
+
+        #if 'ha_proxy_picks_schedd' in jobsub.ini, just return a 'dummy' answer
+        #that the client will accept, it will get steered to proper server
+        if jcp.get('default', 'ha_proxy_picks_schedd'):
+            hostname = socket.gethostname()
+            return {'out': ["%s  0" % hostname]}
+        else:
+            # return a list of schedds to client configurable by
+            # schedd_load_metric, vo_constraint, and downtime_constraint
+            # from jobsub.ini
+            jobs = ui_condor_status_totalrunningjobs(acctgroup=acctgroup,
+                                                     check_downtime=True)
+            return {'out': jobs.split('\n')}
 
     @cherrypy.expose
     @format_response
-    def index(self, **kwargs):
+    def index(self, acctgroup=None, **kwargs):
+        logger.log('acctgroup=%s, kwargs=%s' % (acctgroup, kwargs))
         try:
             if cherrypy.request.method == 'GET':
-                rc = self.doGET(kwargs)
+                rc = self.doGET(acctgroup, kwargs)
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err)

@@ -787,14 +787,22 @@ class JobSubClient:
         # test this, try to guard against unnecessary schedd queries
         if len(self.schedd_list):
             return
-        listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
-        curl, response = curl_secure_context(listScheddsURL, self.credentials)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
         best_schedd = self.server
         best_jobload = sys.maxsize
         try:
-            curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
+            listScheddsURLacct = listScheddsURL + self.account_group + "/"
+            try:
+                curl, response = curl_secure_context(listScheddsURLacct, self.credentials)
+                curl.setopt(curl.CUSTOMREQUEST, 'GET')
+                curl.perform()
+                http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            except:
+                curl, response = curl_secure_context(listScheddsURL, self.credentials)
+                curl.setopt(curl.CUSTOMREQUEST, 'GET')
+                curl.perform()
+                http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+
             #r = response.getvalue()
             schedd_list = json.loads(response.getvalue())
             for line in schedd_list['out']:

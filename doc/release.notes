@@ -35,6 +35,10 @@ Server
                   is required
                   29,59 * * * * /opt/jobsub/server/admin/jobsub_preen.sh /fife/local/scratch/uploads 1 doSubDirs 1
 
+* Feature  16887  modify schedd selection algorithm.  New jobsub.ini configuration parameters
+                  in 'default' section for this: 'schedd_load_metric', 'vo_constraint'
+                  'downtime_constraint', and 'ha_proxy_picks_schedd'
+
 * Bug      14262  hold/release/remove information incorrectly written to submit log
         
 

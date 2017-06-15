@@ -46,16 +46,27 @@ def ui_condor_userprio():
     return all_users
 
 
-def ui_condor_status_totalrunningjobs():
+def ui_condor_status_totalrunningjobs(acctgroup=None, check_downtime=True):
     """condor_status -schedd
         -constraint '(InDownTime =!= True)&&(InDownTime =!= "True")'
         -af name TotalRunningJobs
     """
 
     cmd = """condor_status -schedd"""
-    cmd += """  -constraint '%s'""" % downtime_constraint()
-    cmd += """ -af name %s""" % schedd_load_metric()
 
+    constraint=""
+    if acctgroup:
+        if constraint:
+            constraint +="&&"
+        constraint += vo_constraint(acctgroup)
+    if check_downtime:
+        if constraint:
+            constraint +="&&"
+        constraint += downtime_constraint()
+    if constraint:
+        cmd = """%s -constraint '%s'""" % (cmd, constraint)
+    cmd += """ -af name %s""" % schedd_load_metric()
+    logger.log(cmd)
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
         logger.log(cmd_err)
@@ -377,7 +388,7 @@ def collector_host():
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
-def schedd_list(acctgroup=None,check_downtime=False):
+def schedd_list(acctgroup=None,check_downtime=True):
     """
     return a list of all the schedds
     """
@@ -388,13 +399,14 @@ def schedd_list(acctgroup=None,check_downtime=False):
         if acctgroup:
             if constraint:
                 constraint +="&&"
-            constraint += """stringlistmember("%s", supportedvolist)""" % acctgroup
+            constraint += vo_constraint(acctgroup)
         if check_downtime:
             if constraint:
                 constraint +="&&"
-            constraint += """InDownTime=!=True"""
+            constraint += downtime_constraint()
         if constraint:
             cmd = """%s -constraint '%s'""" % (cmd, constraint)
+        logger.log(cmd)
         schedds, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
@@ -414,12 +426,13 @@ def downtime_constraint():
     return dt_constraint
 
 def vo_constraint(acctgroup):
+    if not acctgroup:
+        return "True"
     jcp = JobsubConfigParser.JobsubConfigParser()
-    vo_list = jcp.get('default','supported_vo_list')
-    if not vo_list:
-        vo_list = "SupportedVOList"
-    voc = """stringlistmember("%s",%s)""" % (acctgroup,vo_list)
-    return voc
+    voc = jcp.get('default','vo_constraint')
+    if not voc:
+        voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))""" 
+    return voc.format(acctgroup)
 
 def schedd_load_metric():
     jcp = JobsubConfigParser.JobsubConfigParser()
@@ -428,26 +441,33 @@ def schedd_load_metric():
 	    metric = "TotalRunningJobs"
     return metric
 
-def best_schedd(acctgroup=None):
+def best_schedd(acctgroup=None, check_remote_schedds=False):
     """
     return schedd with lowest load metric subject to constraints
     """
 
     try:
         cmd = """condor_status -schedd -af name %s """ % schedd_load_metric()
-        cmd += """ -constraint '%s&&%s'""" % (vo_constraint(acctgroup),
-                                              downtime_constraint())
+        constraint= """%s&&%s""" % (vo_constraint(acctgroup),
+                                    downtime_constraint())
+        if not check_remote_schedds:
+            _name = "%s" % socket.gethostname()
+            constraint +="""&&regexp(".*%s.*",Name)""" % _name
+
+        cmd += """ -constraint '%s'""" % constraint
+
         logger.log(cmd)
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
-        cycle=100.0
-        schedd=""
+        cycle = 1e+99
+        schedd = "no_schedds_meet_submission_criteria"
         logger.log('cmd: %s cmd_out:%s'%(cmd, cmd_out))
         for line in cmd_out.split('\n'):
             vals = line.split(' ')
-            if vals[-1]:
+            logger.log(vals)
+            if len(vals) == 2:
                 nm = vals[0]
                 val = float(vals[-1])
                 if val < 0:

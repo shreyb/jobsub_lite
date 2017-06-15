@@ -44,6 +44,8 @@ Server
                   works but is not robust.  New jobsub.in configuration parameter
                   in default section: 'can_submit_remote' should be absent or set
                   to 'false' until this is resolved.
+                  New classad attributes in condor jobs jdf: +jobsub_submit_host  
+                  and +jobsub_submit_dir to help fetchlog retrieve remote log files
 
 * Bug      14262  hold/release/remove information incorrectly written to submit log
         

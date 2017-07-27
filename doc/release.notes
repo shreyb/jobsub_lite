@@ -13,6 +13,8 @@ Client
                   behavior configurable by 'requirements_blacklist' entry in
                   jobsub.ini file
 
+* Bug      15047  jobsub_q sometimes over-matches and sometimes undermatches on jobsub jobid 
+
 * Bug      16564  typo in client mishadled existing user proxies 
 
 * Bug      16409  jobsub_q --hold stopped reporting holdreason for jobs

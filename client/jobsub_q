@@ -14,11 +14,8 @@
 
 import sys
 import os
-import getopt
 import optparse
-import time
 import traceback
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
@@ -37,24 +34,27 @@ def required_args_present(options):
     try:
         if options.summary:
             if options.outFormat == 'long':
-                err = 'ERROR: --summary and --long options conflict. Choose one, not both.'
+                err = 'ERROR: --summary and --long options conflict. '
+                err += 'Choose one, not both.'
                 print err
                 return False
 
             if options.outFormat == 'dags':
-                err = 'ERROR: --summary and --dag options conflict. Choose one, not both.'
+                err = 'ERROR: --summary and --dag options conflict. '
+                err += 'Choose one, not both.'
                 print err
                 return False
 
             if options.outFormat == 'hold':
-                err = 'ERROR: --summary and --hold options conflict. Choose one, not both.'
+                err = 'ERROR: --summary and --hold options conflict. '
+                err += 'Choose one, not both.'
                 print err
                 return False
 
             if options.help or options.better_analyze or options.uid or \
                     options.jobId or options.acctRole:
-                err =  """ERROR: --summary conflicts with all of (
-                --better-analyze, --user --jobid --role --dag --long)."""
+                err = """ERROR: --summary conflicts with all of ( -better"""
+                err += """-analyze, --user --jobid --role --dag --long)."""
                 print err
                 return False
 
@@ -74,9 +74,11 @@ def required_args_present(options):
 
 def parse_opts(argv):
     usage = '%prog [Client Options]'
-    epi_text="Please direct questions, comments, or problems to the service desk.  "
-    epi_text+="For help on --jobid or --constraint see "
-    epi_text+="""https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Frequently_Asked_Questions"""
+    epi_text = "Please direct questions, comments, or problems to the "
+    epi_text += "service desk. "
+    epi_text += "For help on --jobid or --constraint see "
+    epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
+    epi_text += """wiki/Frequently_Asked_Questions"""
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    conflict_handler="resolve",
@@ -91,7 +93,9 @@ def parse_opts(argv):
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
-                         help='Group/Experiment/Subgroup for priorities and accounting')
+                         help="".join(['Group/Experiment/Subgroup ',
+                                       'for priorities and accounting',
+                                      ]))
 
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
@@ -123,7 +127,15 @@ def parse_opts(argv):
                          callback=jid_callback,
                          metavar='<Job ID>',
                          default=None,
-                         help='Job Id (Cluster ID)  to query')
+                         help="".join(['Job Ids to query.  Job ',
+                                       'Ids have format of ',
+                                       '(cluster).(process)@(schedd_name). ',
+                                       'If Job id has a decimal point but no ',
+                                       'process ',
+                                       '(example) 1234.@fifebatch.fnal.gov ',
+                                       'then ALL job ids with that cluster ',
+                                       'and schedd name will be returned',
+                                      ]))
 
     opt_group.add_option('--long',
                          dest='outFormat',
@@ -224,16 +236,25 @@ def main(argv):
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
-    optDict = {'debug': options.debug, 'better_analyze': options.better_analyze,
+
+    optDict = {'debug': options.debug,
+               'better_analyze': options.better_analyze,
                'constraint': options.constraint}
+
     js_client = JobSubClient(options.jobsubServer,
-                             options.acctGroup, None, [], extra_opts=optDict)
+                             options.acctGroup,
+                             None,
+                             [],
+                             extra_opts=optDict)
     try:
+
         if options.summary:
             http_code = js_client.summary()
+
         else:
-            http_code = js_client.listJobs(
-                options.jobId, options.uid, options.outFormat)
+            http_code = js_client.listJobs(options.jobId,
+                                           options.uid,
+                                           options.outFormat)
         rc = http_code_to_rc(http_code)
     except JobSubClientError as e:
         print e

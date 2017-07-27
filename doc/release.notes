@@ -17,6 +17,9 @@ Client
 
 * Bug      16409  jobsub_q --hold stopped reporting holdreason for jobs
 
+* Bug      17023  improve jobsub_rm --jobid documentation (also jobsub_q, jobsub_hold,
+                  jobsub_release)
+
 Server
 -------
 

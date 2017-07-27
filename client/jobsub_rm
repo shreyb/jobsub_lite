@@ -14,12 +14,9 @@
 
 import sys
 import os
-import getopt
 import optparse
-import time
 import traceback
 
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
@@ -46,9 +43,12 @@ def required_args_present(options):
 
 def parse_opts(argv):
     usage = '%prog [Client Options]'
-    epi_text = """REQUIRED arguments to remove jobs  are (-G AND  (--jobid OR --user OR --constraint)).  Please direct questions, comments, or problems to the service desk.  """
+    epi_text = """REQUIRED arguments to remove jobs  are (-G AND  """
+    epi_text += """(--jobid OR --user OR --constraint)).  Please direct """
+    epi_text += """questions, comments, or problems to the service desk.  """
     epi_text += "For help on --jobid or --constraint see "
-    epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Frequently_Asked_Questions"""
+    epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
+    epi_text += """wiki/Frequently_Asked_Questions"""
 
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
@@ -64,8 +64,9 @@ def parse_opts(argv):
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
-                         help='Group/Experiment/Subgroup for priorities and accounting')
-
+                         help="".join(['Group/Experiment/Subgroup ',
+                                       'for priorities and accounting',
+                                      ]))
     # Optional args
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
@@ -88,13 +89,24 @@ def parse_opts(argv):
                          action='callback',
                          callback=jid_callback,
                          metavar='<Job ID>',
-                         help='CSV list of Job Ids to remove')
+                         help="".join(['CSV list of Job Ids to remove.  Job ',
+                                       'Ids have format of ',
+                                       '(cluster).(process)@(schedd_name). ',
+                                       'If Job id has a decimal point but no ',
+                                       'process ',
+                                       '(example) 1234.@fifebatch.fnal.gov ',
+                                       'then ALL job ids with that cluster ',
+                                       'and schedd name will be removed',
+                                      ]))
 
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
-                         help='Print debug messages including server contacted, http response, response time')
+                         help="".join(['Print debug messages including ',
+                                       'server contacted, http response, ',
+                                       'response time',
+                                      ]))
 
     opt_group.add_option('-h', '--help',
                          dest='help',

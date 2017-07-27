@@ -237,9 +237,11 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
 
-    optDict = {'debug': options.debug,
-               'better_analyze': options.better_analyze,
-               'constraint': options.constraint}
+    optDict = {'debug':options.debug,
+               'better_analyze':options.better_analyze,
+                'constraint':options.constraint,
+                'uid': options.uid
+              }
 
     js_client = JobSubClient(options.jobsubServer,
                              options.acctGroup,

@@ -196,9 +196,14 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
         spx = jobid.split('@')
         clusterid = spx[0]
         host = '@'.join(spx[1:])
-        if clusterid.find('.') < 0:
-            clusterid = clusterid + '.0'
-        job_cnst = """regexp("%s#%s.*",GlobalJobId)""" % (host, clusterid)
+        cluster_pts = clusterid.split('.')
+        if cluster_pts[-1] == '':
+            del cluster_pts[-1]
+        cluster_pts.append('.*')
+        job_cnst = """regexp("%s#%s\.%s#.*",GlobalJobId)""" % (host,
+                                                               cluster_pts[0],
+                                                               cluster_pts[1]
+                                                              )
     else:
         lorw = ' '
         job_cnst = 'ClusterID==%d' % (math.trunc(float(jobid)))

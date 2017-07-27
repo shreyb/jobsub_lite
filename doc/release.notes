@@ -44,6 +44,7 @@ Server
 * Bug      15823  Users with underscores in their names not getting thier proxies
                   refreshed
 
+* Bug      17074  JobSub ignores --user and --groups flags in favor of --constraint
 
 
 ================================================================================

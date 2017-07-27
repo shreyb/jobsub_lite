@@ -85,6 +85,13 @@ class JobSubClient:
         self.forcex = extra_opts.get('forcex', False)
         self.schedd_list = []
         serverParts = re.split(':', self.server)
+        constraint = self.extra_opts.get('constraint')
+        uid = self.extra_opts.get('uid')
+        if constraint and uid:
+            if uid not in constraint:
+                constraint = """Owner=?="%s"&&%s""" %(uid,constraint)
+                self.extra_opts['constraint'] = constraint
+
         if len(serverParts) != 3:
             if len(serverParts) == 1:
                 self.server = "https://%s:%s" % (

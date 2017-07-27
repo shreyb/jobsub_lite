@@ -220,6 +220,13 @@ def doJobAction(acctgroup,
     rc = {'out': None, 'err': None}
     if constraint:
         scheddList = condor_commands.schedd_list()
+
+        if user and user not in constraint:
+            constraint = """(Owner =?= "%s") && %s""" % (user, constraint)
+        if not is_global_superuser:
+            if acctgroup not in constraint:
+                constraint = """(Jobsub_Group =?= "%s")&& %s""" % (acctgroup,
+                                                                   constraint)
     elif job_id:
         # job_id is a jobsubjobid
         constraint = '(Jobsub_Group =?= "%s")' % (acctgroup)

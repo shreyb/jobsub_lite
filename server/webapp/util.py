@@ -218,6 +218,9 @@ def doJobAction(acctgroup,
         child_env['X509_USER_PROXY'] = cmd_proxy
 
     rc = {'out': None, 'err': None}
+
+    cgroup = """regexp("group_%s.*",AccountingGroup)""" % acctgroup
+
     if constraint:
         scheddList = condor_commands.schedd_list()
 
@@ -225,12 +228,14 @@ def doJobAction(acctgroup,
             constraint = """(Owner =?= "%s") && %s""" % (user, constraint)
         if not is_global_superuser:
             if acctgroup not in constraint:
-                constraint = """(Jobsub_Group =?= "%s")&& %s""" % (acctgroup,
-                                                                   constraint)
+                constraint = """%s && %s""" % (cgroup, constraint)
     elif job_id:
-        # job_id is a jobsubjobid
-        constraint = '(Jobsub_Group =?= "%s")' % (acctgroup)
-        # Split the jobid to get cluster_id and proc_id
+        if is_global_superuser:
+            constraint = 'True'
+        else:
+            constraint = cgroup
+        #job_id is a jobsubjobid
+        # Split the job_id to get cluster_id and proc_id
         stuff = job_id.split('@')
         schedd_name = '@'.join(stuff[1:])
         logger.log("schedd_name is %s" % schedd_name)
@@ -240,8 +245,12 @@ def doJobAction(acctgroup,
         if (len(ids) > 1) and (ids[1]):
             constraint = '%s && (ProcId == %s)' % (constraint, ids[1])
     elif user:
-        constraint = '(Owner =?= "%s") && (Jobsub_Group =?= "%s")' %\
-            (user, acctgroup)
+        if is_global_superuser:
+            constraint = 'True'
+        else:
+            constraint = cgroup
+
+        constraint = """%s && (Owner =?= "%s")""" % (constraint,user)
         scheddList = condor_commands.schedd_list()
     else:
         err = "Failed to supply constraint, job_id or uid, "

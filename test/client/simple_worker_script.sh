@@ -132,7 +132,7 @@ function cleanup_files {
 PGM=$0
 PID=$$
 job_start=$(date '+%s')
-
+sleep 30
 #--- verify important Grid variables exist ---
 if [ -z "$OSG_WN_TMP" ];then
   logerr "OSG_WN_TMP variable is empty"

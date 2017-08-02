@@ -135,6 +135,9 @@ def application(environ, start_response):
     os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
     os.environ['JOBSUB_SERVER_X509_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
     os.environ['JOBSUB_SERVER_X509_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
+    if environ.get('JOBSUB_SET_X509_CERT'):
+        os.environ['X509_USER_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
+        os.environ['X509_USER_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
     script_name = ''
     appname = environ.get('JOBSUB_APP_NAME')
     if appname is not None:

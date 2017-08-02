@@ -222,7 +222,7 @@ def doJobAction(acctgroup,
     cgroup = """regexp("group_%s.*",AccountingGroup)""" % acctgroup
 
     if constraint:
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
 
         if user and user not in constraint:
             constraint = """(Owner =?= "%s") && %s""" % (user, constraint)
@@ -251,7 +251,7 @@ def doJobAction(acctgroup,
             constraint = cgroup
 
         constraint = """%s && (Owner =?= "%s")""" % (constraint,user)
-        scheddList = condor_commands.schedd_list()
+        scheddList = condor_commands.schedd_list(acctgroup)
     else:
         err = "Failed to supply constraint, job_id or uid, "
         err += "cannot perform any action"
@@ -277,8 +277,8 @@ def doJobAction(acctgroup,
 
     else:
         if is_group_superuser:
-            if constraint and (acctgroup not in constraint or "JOBSUB_GROUP" not in constraint.upper()):
-                constraint = constraint + """&&(Jobsub_Group =?= "%s")""" % acctgroup
+            if constraint and (acctgroup not in constraint):
+                constraint = constraint + """&&(regexp("group_%s.*",AccountingGroup))""" % acctgroup
         msg = '[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
         logger.log(msg)

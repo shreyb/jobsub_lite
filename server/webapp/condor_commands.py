@@ -19,6 +19,7 @@ import platform
 import subprocessSupport
 import socket
 import re
+import JobsubConfigParser
 from request_headers import get_client_dn
 from random import randint
 
@@ -45,15 +46,27 @@ def ui_condor_userprio():
     return all_users
 
 
-def ui_condor_status_totalrunningjobs():
+def ui_condor_status_totalrunningjobs(acctgroup=None, check_downtime=True):
     """condor_status -schedd
-        -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'
-        -af name totalrunningjobs
+        -constraint '(InDownTime =!= True)&&(InDownTime =!= "True")'
+        -af name TotalRunningJobs
     """
-    cmd = """condor_status -schedd"""
-    cmd += """  -constraint '(Indowntime =!= True)&&(InDowntime =!= "True")'"""
-    cmd += """ -af name totalrunningjobs"""
 
+    cmd = """condor_status -schedd"""
+
+    constraint=""
+    if acctgroup:
+        if constraint:
+            constraint +="&&"
+        constraint += vo_constraint(acctgroup)
+    if check_downtime:
+        if constraint:
+            constraint +="&&"
+        constraint += downtime_constraint()
+    if constraint:
+        cmd = """%s -constraint '%s'""" % (cmd, constraint)
+    cmd += """ -af name %s""" % schedd_load_metric()
+    logger.log(cmd)
     all_jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
         logger.log(cmd_err)
@@ -115,7 +128,8 @@ def condor_format(input_switch=None):
 
     jobStatusStr = """'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))'"""
 
-    dagStatusStr = """'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'"""
+    dagStatusStr = """'ifthenelse(dagmanjobid =?= UNDEFINED, owner, dagnodename)'"""
+    dagProgressStr = """'ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string(" "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"")'"""
 
     runTimeStr = """ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(JobStatus==2,ServerTime-JobCurrentStartDate,EnteredCurrentStatus-JobCurrentStartDate))"""
 
@@ -128,7 +142,6 @@ def condor_format(input_switch=None):
         fmtList = [
             """ -dag """,
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
-            """ -format ' %-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("  "))'""",
             """ -format ' %-16s '""", dagStatusStr,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""", runTimeStr, """/(3600*24))'""",
@@ -139,6 +152,7 @@ def condor_format(input_switch=None):
             """ -format '%3d ' JobPrio """,
             """ -format ' %4.1f ' ImageSize/1024.0 """,
             """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            """ -format '%-10s' """, dagProgressStr,
             """ -format '\\n' Owner """,
         ]
     elif input_switch == "hold":
@@ -197,8 +211,8 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
         clusterid = spx[0]
         host = '@'.join(spx[1:])
         cluster_pts = clusterid.split('.')
-        if cluster_pts[-1] == '':
-            del cluster_pts[-1]
+        while '' in cluster_pts:
+            cluster_pts.remove('')
         cluster_pts.append('.*')
         job_cnst = """regexp("%s#%s\.%s#.*",GlobalJobId)""" % (host,
                                                                cluster_pts[0],
@@ -364,12 +378,13 @@ def collector_host():
     """
     try:
         hosts, cmd_err = subprocessSupport.iexe_cmd(
-            """condor_config_val collector_host """)
+            """condor_status -collector -af Machine""")
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
-        host_x = hosts.split('\n')
-        host_list = host_x[0].split(',')
+        host_list = hosts.split('\n')
+        while '' in host_list:
+            host_list.remove('')
         host = host_list[randint(0, len(host_list) - 1)]
         logger.log('choosing %s from %s' % (host, host_list))
         return host
@@ -380,20 +395,99 @@ def collector_host():
         logger.log(tbk, severity=logging.ERROR, logfile='error')
 
 
-def schedd_list():
+
+def schedd_list(acctgroup=None, check_downtime=True):
     """
     return a list of all the schedds
     """
 
     try:
-        schedds, cmd_err = subprocessSupport.iexe_cmd(
-            """condor_status -schedd -af name """)
+        cmd = """condor_status -schedd -af name """
+        constraint=""
+        if acctgroup:
+            if constraint:
+                constraint +="&&"
+            constraint += vo_constraint(acctgroup)
+        if check_downtime:
+            if constraint:
+                constraint +="&&"
+            constraint += downtime_constraint()
+        if constraint:
+            cmd = """%s -constraint '%s'""" % (cmd, constraint)
+        logger.log(cmd)
+        schedds, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         return schedds.split()
     except:
         tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
+
+def downtime_constraint():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    dt_constraint = jcp.get('default', 'downtime_constraint')
+    if not dt_constraint:
+        dt_constraint = "InDownTime=!=True"
+    return dt_constraint
+
+def vo_constraint(acctgroup):
+    if not acctgroup:
+        return "True"
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    voc = jcp.get('default', 'vo_constraint')
+    if not voc:
+        voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))""" 
+    return voc.format(acctgroup)
+
+def schedd_load_metric():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    metric = jcp.get('default', 'schedd_load_metric')
+    if not metric:
+        metric = "TotalRunningJobs"
+    return metric
+
+def best_schedd(acctgroup=None, check_remote_schedds=False):
+    """
+    return schedd with lowest load metric subject to constraints
+    """
+
+    try:
+        cmd = """condor_status -schedd -af name %s """ % schedd_load_metric()
+        constraint= """%s&&%s""" % (vo_constraint(acctgroup),
+                                    downtime_constraint())
+        if not check_remote_schedds:
+            _name = "%s" % socket.gethostname()
+            constraint +="""&&regexp(".*%s.*",Name)""" % _name
+
+        cmd += """ -constraint '%s'""" % constraint
+
+        logger.log(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        if cmd_err:
+            logger.log(cmd_err)
+            logger.log(cmd_err, severity=logging.ERROR, logfile='error')
+        cycle = 1e+99
+        schedd = "no_schedds_meet_submission_criteria"
+        logger.log('cmd: %s cmd_out:%s'%(cmd, cmd_out))
+        for line in cmd_out.split('\n'):
+            vals = line.split(' ')
+            logger.log(vals)
+            if len(vals) == 2:
+                nm = vals[0]
+                val = float(vals[-1])
+                if val < 0:
+                    val *= -1.0
+                if val <= cycle:
+                    schedd = nm
+                    cycle = val
+        logger.log('chose %s as best schedd'% schedd)
+        return schedd
+    except:
+        tbk = traceback.format_exc()
+        #logger.log(cmd_err, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')

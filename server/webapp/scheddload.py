@@ -11,37 +11,50 @@
  Author:
    Dennis Box
 
- TODO:
-   The load balancing only looks at running jobs, it could do much
-   better.
-   It should be configurable from jobsub.ini or somewhere else
 """
 import cherrypy
 import logger
 import logging
 import sys
 from condor_commands import ui_condor_status_totalrunningjobs
+import socket
+import os
 
 from format import format_response
 
 
+@cherrypy.popargs('acctgroup')
 class ScheddLoadResource(object):
 
-    def doGET(self, kwargs):
-        jobs = ui_condor_status_totalrunningjobs()
-        return {'out': jobs.split('\n')}
+    def doGET(self, acctgroup, kwargs):
+        """
+        perform http GET
+        """
+
+        if os.environ.get('JOBSUB_TURN_OFF_SCHEDD_BALANCE'):
+            hostname = socket.gethostname()
+            return {'out': ["%s  0" % hostname]}
+        else:
+            jobs = ui_condor_status_totalrunningjobs(acctgroup=acctgroup,
+                                                     check_downtime=True)
+            return {'out': jobs.split('\n')}
 
     @cherrypy.expose
     @format_response
-    def index(self, **kwargs):
+    def index(self, acctgroup=None, **kwargs):
+        """
+        index.html for jobsub/scheddload
+        """
+
+        logger.log('acctgroup=%s, kwargs=%s' % (acctgroup, kwargs))
         try:
             if cherrypy.request.method == 'GET':
-                rc = self.doGET(kwargs)
+                ret_code = self.doGET(acctgroup, kwargs)
             else:
                 err = 'Unimplemented method: %s' % cherrypy.request.method
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
-                rc = {'err': err}
+                ret_code = {'err': err}
         except:
             err = 'Exception on ScheddLoadResource.index: %s' % sys.exc_info()[
                 1]
@@ -51,6 +64,6 @@ class ScheddLoadResource(object):
                        traceback=True,
                        severity=logging.ERROR,
                        logfile='error')
-            rc = {'err': err}
+            ret_code = {'err': err}
 
-        return rc
+        return ret_code

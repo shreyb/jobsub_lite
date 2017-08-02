@@ -15,7 +15,7 @@ Client
 
 * Bug      15047  jobsub_q sometimes over-matches and sometimes undermatches on jobsub jobid 
 
-* Bug      16564  typo in client mishadled existing user proxies 
+* Bug      16564  typo in client mishandled existing user proxies 
 
 * Bug      16409  jobsub_q --hold stopped reporting holdreason for jobs
 
@@ -25,11 +25,39 @@ Client
 Server
 -------
 
-* Feature  15674  job requirements configurable by operations, use 'requirements_base'
-                  line in jobsub.ini  
+* Feature  15674  job requirements configurable by operations 
+                  new entry in jobsub.ini:  
 
-* Feature  16630  remove 'Is_Glidein' from start requirements by modifying 
-                  'requirements_is_glidein' line in jobsub.ini
+                  * requirements_base: job start requirements
+                  that will be appended to 
+                  requirements_base = '' is default if setting is absent
+                  
+
+* Feature  16630  make configurable to remove 'Is_Glidein' from start requirements 
+                  new entry in jobsub.ini:
+
+                  * requirements_is_glidein
+                  requirements_is_glidein = '&& (target.IS_Glidein==true) '
+                  is default if setting is absent
+                  to remove this from start requirements change to 
+                  requirements_is_glidein = ' '
+
+* Feature  16875  Modify schedd selection algorithm.  Schedd selection algorithm
+                  is tunable with the following new jobsub.ini entries:
+
+                  * schedd_load_metric: used to choose least loaded schedd to submit to
+                  good choices are TotalRunningJobs, RecentDaemonCoreDutyCycle, TotalJobAds
+                  schedd_load_metric = TotalRunningJobs is  default
+
+                  * downtime_constraint: used to select usable schedds from all available 
+                  downtime_constraint = '(InDownTime=!=True&&InDownTime=!="True")' is default
+
+                  * vo_constraint: used to match schedds to supported vos
+                  default value is 
+                  vo_constraint = '(supportedvolist=?=Null || stringlistimember("{0}",supportedvolist)=?=true)'
+
+                  If all of these settings are absent from jobsub.ini the schedd selection algorithm
+                  will give the same results as previous release 1.2.3.3
 
 
 * Feature  12022  jobsub_fetchlog output cached for 'max_logfile_cache_age' seconds

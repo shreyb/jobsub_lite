@@ -142,6 +142,7 @@ def condor_format(input_switch=None):
         fmtList = [
             """ -dag """,
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+            """ -format ' %-1s '""", """string(" ")""", 
             """ -format ' %-16s '""", dagStatusStr,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""", runTimeStr, """/(3600*24))'""",
@@ -243,12 +244,13 @@ def ui_condor_q(a_filter=None, a_format=None):
     fmt = condor_format(a_format)
     s_list = schedd_list()
     all_jobs = hdr
+    cqef = condor_q_extra_flags()
     for schedd in s_list:
         try:
             if a_filter is None:
-                cmd = 'condor_q -name %s  %s ' % (schedd, fmt)
+                cmd = 'condor_q %s -name %s  %s ' % (cqef, schedd, fmt)
             else:
-                cmd = 'condor_q -name %s %s %s' % (schedd, fmt, a_filter)
+                cmd = 'condor_q %s -name %s %s %s' % (cqef, schedd, fmt, a_filter)
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
             if cmd_err:
                 logger.log(cmd_err)
@@ -425,6 +427,14 @@ def schedd_list(acctgroup=None, check_downtime=True):
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
+
+
+def condor_q_extra_flags():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    cqef = jcp.get('default', 'condor_q_extra_flags')
+    if not cqef:
+        cqef = ''
+    return cqef
 
 def downtime_constraint():
     jcp = JobsubConfigParser.JobsubConfigParser()

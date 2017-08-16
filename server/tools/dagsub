@@ -14,9 +14,12 @@ docString = """
  $Id$
 """
 manual = """
-INTRODUCTION
-============
-%s is a script which generates and optionally runs a condor 
+
+Server input options: --maxConcurrent  maximum number of DAG nodes that can be run simultaneously
+
+USER_SCRIPT FORMAT:
+
+jobsub_submit_dag generates and optionally runs a condor 
 DAG (directed acyclic graph) of condor jobs.  For illustration, suppose
 that you have 5 jobs A,B,C,D,E, that you want to run using condor. 
 Job B requires A to run first, C and D require the output form B, 
@@ -31,103 +34,29 @@ A graphic representation would be:
                      \ /
                       E
 
-Further suppose for illustration that job A is submitted to condor 
-using the command jobsub -g jobA.sh, job B by jobsub -g jobB.sh, etc.
-The jobsub script has a '-n' option, which generates but does not submit
-the condor command file. When this option is added, the condor command file
-is sent to stdout.  My output for the command 'jobsub -g -n jobA.sh' was:
+Job A can be submitted to the batch system 
+using the command 
+jobsub_submit file://jobA.sh, job B by jobsub_submit file://jobB.sh, etc.
 
- /minerva/app/users/condor-tmp/dbox/jobA.sh_20110830_105651_1.cmd
 
-THIS SCRIPT REQUIRES THAT ONE OR MORE CONDOR COMMAND FILES OF THE FORM
-/path/to/my/command/file/runMyJob.cmd  are sent to stdout, this
-is captured and put in the condor DAG command file
-
-INPUT FILE BASICS
-=================
 The input file for the DAG generator in this example would look like this:
+
 <serial>
-jobsub -g -n jobA.sh
-jobsub -g -n jobB.sh
+jobsub_submit file://jobA.sh
+jobsub_submit file://jobB.sh
 </serial>
 <parallel>
-jobsub -g -n jobC.sh
-jobsub -g -n jobD.sh
+jobsub_submit file://jobC.sh
+jobsub_submit file://jobD.sh
 </parallel>
 <serial>
-jobsub -g -n jobE.sh
+jobsub_submit file://jobE.sh
 </serial>
 
-INPUT FILE MACROS
-============
-It is common for scripts to have inputs to 'sweep' through a set of parameters.
-Let us suppose that the jobA.sh et al accept input paramters like so:
+If this input file is saved as 'user_script', the command to 
+generate and submit a DAG would be
 
-./jobA.sh -firstRun (some_number) -lastRun (some_bigger_number) -title (something arbitrary but meaningful to user)
-
-The 'macros' section of the input file handles this requirement like so:
-
-<macros>
-$first = 1
-$last = 100
-$formatted_date=`%s`
-$current_directory  = `pwd`
-$whatever = 'some string that has significance elsewhere'
-</macros>
-<serial>
-jobsub -g -n $current_directory/jobA.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n $current_directory/jobB.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-<parallel>
-jobsub -g -n jobC.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n jobD.sh -firstRun $first -lastRun $last -title $whatever
-</parallel>
-<serial>
-jobsub -g -n jobE.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-
-IT IS IMPORTANT that EACH COMMAND GENERATE THE SAME NUMBER OF CONDOR CMD
-FILES, or the resultant dag will be incorrect.
-
-BEGINJOB AND FINISHJOB SCRIPTS
-=============================
-
-Users have the option of running a pre-staging script prior to thier dag
-and a cleanup script afterwards using the <beginjob> and <finishjob> tags.
-The scripts specified this way run on the submission machine and not on the 
-condor worker nodes as the serial and parallel jobs do.
-
-An example script using these tags follows:
-
-<macros>
-$project_name = 'project_3'
-$dataset_def = 'dataset_5'
-$first = 1
-$last = 100
-$whatever  = Joes Third Attempt At Running This
-</macros>
-<beginjob>
-startSAMProject.sh $dataset_def $project_name
-</beginjob>
-<serial>
-jobsub -g -n jobA.sh -project_name $project_name
-</serial><parallel>
-jobsub -g -n jobC.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n jobD.sh -firstRun $first -lastRun $last -title $whatever
-</parallel>
-<serial>
-jobsub -g -n jobE.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-<finishjob>
-clean_up_SAM_project.sh $project_name
-</finishjob>
-
-
-RUNNING A DAG
-==============
-%s -input_file (inputFile) -s will submit your generated DAG to condor.  The -m (pos_integer) 
-flag will ensure that only (pos_integer) number of your jobs will run at the same time, which
-is intended to prevent overwhelming shared resources such as databases.
+jobsub_submit_dag [Client Options] [Server Options] file://user_script 
 """
 usage = """
 usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ]
@@ -477,6 +406,8 @@ class DagParser(object):
             for line in f:
                 line = line.strip()
                 line = r.sub('', line)
+                line = line.replace('jobsub_submit', 'jobsub')
+                line = line.replace('jobsub ', 'jobsub -n ')
                 # print "input line " , line
                 if 'jobsub ' not in line and len(line) > 0:
                     x.write("%s\n" % line)
@@ -791,10 +722,10 @@ class ArgParser(object):
         sys.exit(0)
 
     def printManual(self):
-        m = os.path.basename(sys.argv[0])
-        df = """date +%Y%m%d_%H%M%S_%N"""
-        manFile = manual % (m, df, m)
-        print manFile
+        #m = os.path.basename(sys.argv[0])
+        #df = """date +%Y%m%d_%H%M%S_%N"""
+        #manFile = manual 
+        print manual
         sys.exit(0)
 
 

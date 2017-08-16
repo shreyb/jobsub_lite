@@ -132,7 +132,7 @@ def parse_server_args(option, opt_str, value, parser):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options] [Server Options] user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
+    usage = '%prog [Client Options] [Server Options] file://user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
     parser = optparse.OptionParser(usage=usage,
                                    version=version_string(),
                                    add_help_option=False,

@@ -4,6 +4,9 @@ v1.2.4
 ================================================================================
 Client
 ------
+* Feature  16975  jobsub_submit_dag input files now accept 'jobsub_submit' in place
+                  of 'jobsub -n'.  Removed unsupported features from online help.
+
 * Feature   7513  --jobid-output-only flag for jobsub_submit an jobsub_submit_dag
                   if submission is successful, only the jobsub_job_id is returned
                   as output
@@ -15,6 +18,14 @@ Client
 
 * Bug      17435  Holding one job in cluster causes entire cluster to disappear
                   from jobsub_q
+                  new entry in jobsub.ini:
+                  * condor_q_extra_flags:  if condor_version >= 8.7, this must
+                    be set for jobsub_q to work correctly
+
+                    condor_q_extra_flags = -allusers -nobatch
+
+                    otherwise can be absent or blank, i.e.
+                    condor_q_extra_flags = ''
 
 * Bug      15047  jobsub_q sometimes over-matches and sometimes undermatches on jobsub jobid 
 
@@ -70,6 +81,10 @@ Server
                   To clean up the cached tarfiles  a new jobsub_preen cron entry 
                   is required
                   29,59 * * * * /opt/jobsub/server/admin/jobsub_preen.sh /fife/local/scratch/uploads 1 doSubDirs 1
+
+* Feature  16875  modify schedd selection algorithm.  New jobsub.ini configuration parameters
+                  in 'default' section for this: 'schedd_load_metric', 'vo_constraint'
+                  'downtime_constraint', and 'ha_proxy_picks_schedd'
 
 * Bug      14262  hold/release/remove information incorrectly written to submit log
         

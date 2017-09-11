@@ -1,3 +1,19 @@
+================================================================================
+v1.2.4.1
+================================================================================
+Client
+------
+
+* Feature  17679  Handle failure modes more robustly
+
+* Bug      16891  jobsub client commands should not fail when one of several servers 
+
+Server
+------
+
+* 17604  Bug New Normal  Provide better error message when condor_q fails  
+
+
 
 ================================================================================
 v1.2.4

@@ -277,8 +277,10 @@ def ui_condor_q(a_filter=None, a_format=None):
                 all_jobs += empty
             else:
                 cherrypy.response.status = 500
-                if 'ailed to connect' in tb:
-                    err = 'Failed to connect to condor schedd %s' % schedd
+                if 'CEDAR' in tb or 'SECMAN' in tb:
+                    err = 'HTCondor schedd %s appears to be too busy ' % schedd
+                    err += 'to respond. Please try again in a few minutes. '
+                    err += tb[-1]
                     logger.log(err, severity=logging.ERROR,
                                logfile='condor_commands')
                     logger.log(err, severity=logging.ERROR, logfile='error')

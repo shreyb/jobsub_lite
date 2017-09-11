@@ -33,6 +33,7 @@ import socket
 import time
 import shutil
 import urllib
+import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 
@@ -85,6 +86,7 @@ class JobSubClient:
         self.forcex = extra_opts.get('forcex', False)
         self.schedd_list = []
         serverParts = re.split(':', self.server)
+
         constraint = self.extra_opts.get('constraint')
         uid = self.extra_opts.get('uid')
         if constraint and uid:
@@ -96,17 +98,23 @@ class JobSubClient:
             if len(serverParts) == 1:
                 self.server = "https://%s:%s" % (
                     serverParts[0], self.serverPort)
+                self.serverHost = serverParts[0]
+
             if len(serverParts) == 2:
                 if serverParts[0].find('http') >= 0:
                     self.server = "%s:%s:%s" % (serverParts[0],
                                                 serverParts[1],
                                                 self.serverPort)
+                    self.serverHost = serverParts[1].replace("//","")
                 else:
                     self.server = "https://%s:%s" % (serverParts[0],
                                                      serverParts[1])
+                    self.serverHost = serverParts[0]
         else:
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
+                self.serverHost = serverParts[1].replace("//","")
+        self.serverAliases = get_jobsub_server_aliases(self.server) 
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
@@ -130,6 +138,7 @@ class JobSubClient:
         self.serverargs_b64en = None
 
     def init_submission(self):
+        self.probeSchedds()
 
         if self.server_argv:
             self.job_exe_uri = get_jobexe_uri(self.server_argv)
@@ -189,8 +198,8 @@ class JobSubClient:
                             if values is not None:
                                 if self.dropboxServer is None:
                                     srv_argv[idx] = values.get('path')
-                                    actual_server = "https://%s:8443/" % \
-                                        str(values.get('host'))
+                                    #actual_server = "https://%s:8443/" % \
+                                    #    str(values.get('host'))
                                 else:
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % \
@@ -240,16 +249,13 @@ class JobSubClient:
         result = dict()
         post_data = list()
         orig_server = self.server
-        self.probeSchedds()
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN %\
             (self.dropboxServer or self.server, self.account_group)
-
         # Create curl object and set curl options to use
         curl, response = curl_secure_context(dropboxURL, self.credentials)
         curl.setopt(curl.POST, True)
-        if self.server != orig_server:
-            curl.setopt(curl.SSL_VERIFYHOST, 0)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
 
         # If it is a local file upload the file
         for file_name, key in self.dropbox_uri_map.items():
@@ -293,9 +299,9 @@ class JobSubClient:
 
     def submit_dag(self):
         self.init_submission()
-        if (not self.dropbox_uri_map) or self.dropboxServer:
-            self.probeSchedds()
-        self.serverAuthMethods()
+        #if (not self.dropbox_uri_map) or self.dropboxServer:
+        #    self.probeSchedds()
+        #self.serverAuthMethods()
         if self.acct_role:
             self.submit_url = \
                 constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE %\
@@ -400,9 +406,9 @@ class JobSubClient:
 
     def submit(self):
         self.init_submission()
-        if (not self.dropbox_uri_map) or self.dropboxServer:
-            self.probeSchedds()
-        self.serverAuthMethods()
+        #if (not self.dropbox_uri_map) or self.dropboxServer:
+        #    self.probeSchedds()
+        #self.serverAuthMethods()
 
         if self.acct_role:
             self.submit_url = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE %\
@@ -470,7 +476,7 @@ class JobSubClient:
         return http_code
 
     def changeJobState(self, url, http_custom_request, post_data=None,
-                       ssl_verifyhost=True):
+                       ssl_verifyhost=False):
         """
         Generic API to perform job actions like remove/hold/release
         """
@@ -742,6 +748,12 @@ class JobSubClient:
 
         if not acct_group:
             acct_group = self.account_group
+        #check for down servers DNS RR
+        for server in self.serverAliases:
+            if is_port_open(server, self.serverPort):
+                self.server = server
+                break
+
         auth_method_url = constants.JOBSUB_AUTHMETHODS_URL_PATTERN %\
             (self.server, acct_group)
         curl, response = curl_secure_context(auth_method_url, self.credentials)
@@ -797,6 +809,7 @@ class JobSubClient:
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
         best_schedd = self.server
         best_jobload = sys.maxsize
         try:
@@ -809,13 +822,14 @@ class JobSubClient:
                 if len(pts[:1]) and len(pts[-1:]):
                     schedd = pts[:1][0]
                     if schedd not in self.schedd_list:
-                        self.schedd_list.append(schedd)
-                    jobload = long(pts[-1:][0])
-                    if schedd.find('@') > 0 and ignore_secondary_schedds:
-                        continue
-                    if jobload < best_jobload:
-                        best_schedd = schedd
-                        best_jobload = jobload
+                        if is_port_open(schedd, self.serverPort) and is_port_open(schedd, 9615):
+                            self.schedd_list.append(schedd)
+                            jobload = long(pts[-1:][0])
+                            if schedd.find('@') > 0 and ignore_secondary_schedds:
+                                continue
+                            if jobload < best_jobload:
+                                best_schedd = schedd
+                                best_jobload = jobload
             # this will fail for secondary schedd with @ in name
             # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
@@ -901,6 +915,7 @@ class JobSubClient:
             help_url = self.dag_help_url
 
         curl, response = curl_secure_context(help_url, self.credentials)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
         return_value = None
 
         try:
@@ -968,10 +983,30 @@ class JobSubClient:
                                      verbose=self.verbose,
                                      suppress_server_details=suppress_server_details)
 
+            
+def is_port_open(server, port):
+    is_open = False
+    server =  server.strip().replace('https://', '')
+    sp = server.split(':')
+    server = sp[0]
+    if len(sp) == 2 and not port:
+        port = sp[1]
+
+    try:
+        serverIP = socket.gethostbyname(server)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = s.connect_ex((serverIP, int(port)))
+        s.close()
+        if result == 0:
+            is_open = True
+    except:
+        pass
+    return is_open
+
 
 def get_jobsub_server_aliases(server):
     # Set of hosts in the HA mode
-    aliases = set()
+    aliases = []
 
     host_port = server.replace('https://', '')
     host_port = host_port.replace('/', '')
@@ -989,11 +1024,14 @@ def get_jobsub_server_aliases(server):
             ip, p = info[4]
             js_s = constants.JOBSUB_SERVER_URL_PATTERN % (
                 socket.gethostbyaddr(ip)[0], p)
-            aliases.add(js_s)
+            if is_port_open(socket.gethostbyaddr(ip)[0], p):
+                aliases.append(js_s)
 
     if not aliases:
         # Just return the default one
-        aliases.add(server)
+        aliases.append(server)
+    if len(aliases) > 1:
+        random.shuffle(aliases)
 
     return aliases
 

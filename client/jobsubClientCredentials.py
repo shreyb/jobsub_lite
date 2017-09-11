@@ -10,7 +10,6 @@ import traceback
 import logSupport
 import constants
 import subprocessSupport
-import jobsubUtils
 import jobsubClient
 
 
@@ -297,11 +296,26 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     cmd_out = cmd_err = ""
     child_env = os.environ.copy()
     child_env['X509_CERT_DIR'] = jobsubClient.get_capath()
-    try:
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
-    except:
-        err = "%s %s" % (cmd_err, sys.exc_info()[1])
-        raise CredentialsNotFoundError(err)
+    cmd_out = 1
+    itry = 0
+    ntries = 3
+    #a flaky web server behind DNS RR or HAProxy RR can cause cigetcert to fail, retry
+    #'ntries' times in hopes of hitting a good one
+    #
+    while cmd_out != 0 and itry <= ntries:
+        itry += 1
+        err = ''
+        try:
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
+            break
+        except:
+            print ' cigetcert try %s of %s failed' % (itry,ntries)
+            err = "%s %s" % (cmd_err, sys.exc_info()[1])
+            print err
+            
+    if err:
+        raise CredentialsError(err)
+
     logSupport.dprint("stdout: %s" % cmd_out)
     logSupport.dprint("stderr: %s" % cmd_err)
     if len(cmd_err):

@@ -6,13 +6,6 @@ WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_dag_runner.log
 
 
-if [ -e "$JOBSUB_UPS_LOCATION" ]; then
-	source $JOBSUB_UPS_LOCATION > /dev/null 2>&1
-else
-	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
-	exit -1
-fi
-
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
@@ -49,6 +42,13 @@ if [ "$USE_UPS_JOBSUB_TOOLS" = "" ]; then
     export PATH=/opt/jobsub/server/tools:$PATH
     DAG_CMD="dagsub"
 else
+    if [ -e "$JOBSUB_UPS_LOCATION" ]; then
+    	source $JOBSUB_UPS_LOCATION > /dev/null 2>&1
+    else
+    	echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
+	exit -1
+    fi
+
     setup jobsub_tools
     DAG_CMD="dagNabbit.py"
 fi

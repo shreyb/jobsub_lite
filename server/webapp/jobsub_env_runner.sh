@@ -5,13 +5,6 @@ WORKDIR_ROOT=${COMMAND_PATH_ROOT}/${GROUP}/${USER}
 DEBUG_LOG=${WORKDIR}/jobsub_env_runner.log
 export JOBSUB_INI_FILE=/opt/jobsub/server/conf/jobsub.ini
 
-if [ -e "$JOBSUB_UPS_LOCATION" ]; then
-   source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
-else
-   echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
-   exit -1
-fi
-
 export LOGNAME=$USER
 export SUBMIT_HOST=$HOSTNAME
 
@@ -39,6 +32,13 @@ if [ "$USE_UPS_JOBSUB_TOOLS" = "" ]; then
     export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
     export PATH=/opt/jobsub/server/tools:$PATH
 else
+     if [ -e "$JOBSUB_UPS_LOCATION" ]; then
+        source $JOBSUB_UPS_LOCATION >/dev/null 2>&1
+     else
+        echo "ERROR \$JOBSUB_UPS_LOCATION not set in jobsub_api.conf!"
+        exit -1
+     fi
+
      setup jobsub_tools
 fi 
 

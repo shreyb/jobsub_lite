@@ -166,6 +166,7 @@ def refresh_proxies(agelimit=3600):
         logger.log(err, severity=logging.ERROR, logfile='error')
         raise Exception(err)
     lines = cmd_out.split("\n")
+    supported_roles = JobsubConfigParser().supportedRoles()
     for line in lines:
         if line not in already_processed:
             already_processed.append(line)
@@ -182,7 +183,12 @@ def refresh_proxies(agelimit=3600):
                     grp = grp.replace("group_", "")
                     proxy_name = os.path.basename(check[2])
                     pfn = proxy_name.split('_')
-                    role=pfn[-1]
+                    role = ''
+                    #for some reason it won't let me iterate on pfn 
+                    if pfn[-1] in supported_roles:
+                        role = pfn[-1]
+                    elif pfn[-2] in supported_roles:
+                        role = pfn[-2]
                     print "checking proxy %s %s %s %s"%(dn, user, grp, role)
                     authorize(dn, user, grp, role, agelimit)
                     x509_fpath = authutils.x509_proxy_fname(user, grp, role, dn)

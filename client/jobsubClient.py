@@ -810,8 +810,9 @@ class JobSubClient:
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         curl.setopt(curl.SSL_VERIFYHOST, 0)
-        best_schedd = self.server
+        best_schedd = self.server.replace("https://","").split(":")[0]
         best_jobload = sys.maxsize
+        condor_port = int(os.environ.get("JOBSUB_CONDOR_PORT","9615"))
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -821,12 +822,17 @@ class JobSubClient:
                 pts = line.split()
                 if len(pts[:1]) and len(pts[-1:]):
                     schedd = pts[:1][0]
+                    if schedd.find('@') > 0 and ignore_secondary_schedds:
+                        continue
                     if schedd not in self.schedd_list:
-                        if is_port_open(schedd, self.serverPort) and is_port_open(schedd, 9615):
+                        schedd_host = schedd.split('@')[-1]
+                        if not is_port_open(schedd_host, self.serverPort):
+                            print 'ERROR jobsub server on %s port %s not responding' % (schedd_host, serverPort)
+                        elif not is_port_open(schedd_host, condor_port):
+                            print 'ERROR condor on  %s port %s not responding' % (schedd_host, condor_port)
+                        else:
                             self.schedd_list.append(schedd)
                             jobload = long(pts[-1:][0])
-                            if schedd.find('@') > 0 and ignore_secondary_schedds:
-                                continue
                             if jobload < best_jobload:
                                 best_schedd = schedd
                                 best_jobload = jobload

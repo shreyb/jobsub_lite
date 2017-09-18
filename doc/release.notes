@@ -11,11 +11,21 @@ Client
 Server
 ------
 
-* Bug 17548  voms-proxy-init errors (Role problem) when using hashed production proxy
+* Bug       17548  voms-proxy-init errors (Role problem) when using hashed production proxy
 
-* Bug 17604  New Normal  Provide better error message when condor_q fails  
+* Bug       17604  Provide better error message when condor_q fails  
 
-* Bug 17697  Still a ups dependency in jobsub
+* Bug       17697  Still a ups dependency in jobsub
+
+* Feature   17736  Enable caching of http GETS through jobsub.ini settings  
+                   NEW jobsub.ini settings:
+                   enable_http_cache = (True || False)  default is False
+                                       if True, cache http GETS to server
+                                       for 'http_cache_duration' seconds
+                   http_cache_duration = (integer)
+                                       cache GETs from server for this many
+                                       seconds.  Default is 120
+            
 
  
 

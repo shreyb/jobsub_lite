@@ -710,11 +710,11 @@ class JobSubClient:
                 "remove requires either a jobid or uid or constraint")
 
     def history(self, userid=None, jobid=None, outFormat=None):
-        servers = get_jobsub_server_aliases(self.server)
         jobid = self.checkID(jobid)
-
+        self.probeSchedds()
         rc = 0
-        for server in servers:
+        for schedd in self.schedd_list:
+            server = "https://%s:8443" % schedd
             hist_URL = constants.JOBSUB_HISTORY_URL_PATTERN % (
                 server, self.account_group)
             if userid:

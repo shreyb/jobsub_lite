@@ -24,6 +24,7 @@ from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
 from threading import current_thread
 from format import format_response
+from JobsubConfigParser import JobsubConfigParser
 import jobsub
 
 
@@ -151,17 +152,32 @@ def application(environ, start_response):
     mkdir_p(log_dir)
     access_log = os.path.join(log_dir, 'access.log')
     error_log = os.path.join(log_dir, 'debug.log')
+    jcp = JobsubConfigParser()
+    cache_on = False
+    cache_duration = 120
+    try:
+        jcp_c = jcp.get('default','enable_http_cache')
+        if jcp_c:
+            if jcp_c == True or jcp_c.lower() == 'true':
+                cache_on = True
+        jcp_d = jcp.get('default','http_cache_duration')
+        if jcp_d:
+            cache_duration = int(jcp_d)
+    except:
+        pass
 
     cherrypy.config.update({
         'environment': 'embedded',
         'log.screen': False,
         'log.error_file': error_log,
-        'log.access_file': access_log
+        'log.access_file': access_log,
+        'tools.caching.on': cache_on,
+        'tools.caching.delay':cache_duration,
     })
 
-    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE: %s' %
+    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE:%s cacheing:%s cache_duration:%s seconds' %
                   (current_thread().ident,
-                   os.environ.get('JOBSUB_INI_FILE')))
+                   os.environ.get('JOBSUB_INI_FILE'),cache_on,cache_duration))
 
     initialize(app.log)
 

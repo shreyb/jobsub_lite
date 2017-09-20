@@ -1442,7 +1442,7 @@ class JobSettings(object):
             exe = 'Section'
         else:
             n = 1
-            exe = os.path.basename(settings['exe_script'])
+            exe = os.path.basename(settings['exe_script']).replace('.','_').replace('+','_')
         nOrig = n
         for x in settings['cmd_file_list']:
             f.write("JOB %s_%d %s\n" % (exe, n, x))

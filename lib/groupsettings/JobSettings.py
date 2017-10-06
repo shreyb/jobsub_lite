@@ -126,7 +126,11 @@ class JobSettings(object):
 
         self.settings['istestjob'] = False
         self.settings['needafs'] = False
-        self.settings['notify'] = 1
+        notify_setting = self.fileParser.get('default','condor_mail_notify')
+        if notify_setting is None:
+            notify_setting = 0
+        self.settings['notify'] = notify_setting
+
         self.settings['submit'] = True
         self.settings['grid'] = False
 
@@ -475,19 +479,34 @@ class JobSettings(object):
                                  attributes and '&&(CVMFS==\"OSG\")' to the
                                  job requirements"""))
 
-        generic_group.add_option("-M", "--mail_always", dest="notify",
-                                 action="store_const", const=2,
-                                 help="send mail when job completes or fails")
 
-        generic_group.add_option("-q", "--mail_on_error", dest="notify",
-                                 action="store_const", const=1,
-                                 help=re.sub('  \s+', ' ', """send mail only
-                                 when job fails due to error (default)"""))
+        condor_mail_actions = ['never send mail about job results ',
+                               'send mail only when job fails due to error ',
+                               'send mail when job completes or fails ',
+                              ]   
+        condor_mail_notify = self.fileParser.get('default','condor_mail_notify')
+        if condor_mail_notify is None:
+            condor_mail_notify = 0
+        condor_mail_notify = int(condor_mail_notify)
 
+
+        m_act = 0
         generic_group.add_option("-Q", "--mail_never", dest="notify",
-                                 action="store_const", const=0,
-                                 help=re.sub('  \s+', ' ', """
-                    never send mail (default is to send mail on error)"""))
+                                 action="store_const", const=int(m_act),
+                                 help="%s%s"%(condor_mail_actions[m_act],
+                                 "(default)" if condor_mail_notify==m_act else " "))
+
+        m_act = 1
+        generic_group.add_option("-q", "--mail_on_error", dest="notify",
+                                 action="store_const", const=int(m_act),
+                                 help="%s%s"%(condor_mail_actions[m_act],
+                                 "(default)" if condor_mail_notify==m_act else " "))
+
+        m_act = 2
+        generic_group.add_option("-M", "--mail_always", dest="notify",
+                                 action="store_const", const=int(m_act),
+                                 help="%s%s"%(condor_mail_actions[m_act],
+                                 "(default)" if condor_mail_notify==m_act else " "))
 
         # generic_group.add_option("-T","--test_queue", dest="istestjob",
         #    action="store_true",default=False,

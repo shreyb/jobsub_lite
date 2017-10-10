@@ -24,8 +24,31 @@ def sql_header():
     return hdr
 
 
+
+def handle_jobid(jid):
+    """@param jid: a jobsubjobid '123.0@schedd1@jobsub.fnal.gov'
+    """
+    jidl = jid.split('@')
+    if jidl[0] == jidl[-1]:
+        return 'malformed'
+    at_schedd = '@'.join(jidl[1:])
+    cl_pr = jidl[0].split('.')
+    if len(cl_pr) == 2:
+        if cl_pr[-1]:
+            jid_q = "jobsubjobid = '%s'" % jid
+        else:
+            jid_q = "jobsubjobid like '%s.%s@%s'" %(cl_pr[0], '%', at_schedd)
+    elif len(cl_pr) == 1:
+        jid_q = "jobsubjobid like '%s.%s@%s'" %(cl_pr[0], '%', at_schedd)
+    else:
+        return 'malformed'
+    return jid_q
+
+
 def constructQuery(acctgroup=None, uid=None, jobid=None,
                    qdate_ge=None, qdate_le=None, limit=10000):
+    """construct an sqlite query for the jobsub history database
+    """
     if acctgroup == 'None':
         acctgroup = None
     if uid == 'None':
@@ -49,7 +72,7 @@ def constructQuery(acctgroup=None, uid=None, jobid=None,
             flt += " and "
         else:
             flt += " where "
-        flt += ' jobsubjobid = "%s" ' % jobid
+        flt += handle_jobid(jobid)
     if qdate_ge:
         if cnt > 0:
             flt += " and "
@@ -72,7 +95,8 @@ def iwd_jobsub_history(query, a_col='iwd'):
     p = JobsubConfigParser.JobsubConfigParser()
     history_db = p.get(hostname, 'history_db')
     if not history_db:
-        history_db = "/fife/local/scratch/history/%s/jobsub_history.db" % hostname
+        history_db = "/fife/local/scratch/history/%s/jobsub_history.db" %\
+                     hostname
     conn = sqlite3.connect(history_db)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -89,7 +113,8 @@ def jobsub_history(query):
     p = JobsubConfigParser.JobsubConfigParser()
     history_db = p.get(hostname, 'history_db')
     if not history_db:
-        history_db = "/fife/local/scratch/history/%s/jobsub_history.db" % hostname
+        history_db = "/fife/local/scratch/history/%s/jobsub_history.db" %\
+                     hostname
     conn = sqlite3.connect(history_db)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()

@@ -126,7 +126,11 @@ class JobSettings(object):
 
         self.settings['istestjob'] = False
         self.settings['needafs'] = False
-        self.settings['notify'] = 1
+        notify_setting = self.fileParser.get('default','condor_mail_notify')
+        if notify_setting is None:
+            notify_setting = 'Never'
+        self.settings['notify'] = notify_setting
+
         self.settings['submit'] = True
         self.settings['grid'] = False
 
@@ -475,19 +479,39 @@ class JobSettings(object):
                                  attributes and '&&(CVMFS==\"OSG\")' to the
                                  job requirements"""))
 
-        generic_group.add_option("-M", "--mail_always", dest="notify",
-                                 action="store_const", const=2,
-                                 help="send mail when job completes or fails")
 
-        generic_group.add_option("-q", "--mail_on_error", dest="notify",
-                                 action="store_const", const=1,
-                                 help=re.sub('  \s+', ' ', """send mail only
-                                 when job fails due to error (default)"""))
+        cmd_help = ['never send mail about job results ',
+                    'send mail only when job fails due to error ',
+                    'always  mail when job completes or fails ',
+                    ]   
+        cm_cmd = ['never','error','always']
 
+        cm_ntfy = self.fileParser.get('default','condor_mail_notify')
+
+        if cm_ntfy is None:
+            cm_ntfy = 'Never'
+        if cm_ntfy.lower() not in cm_cmd:
+            cm_ntfy = 'Never'
+
+
+        dft = '(default)'
+        idx = 0
         generic_group.add_option("-Q", "--mail_never", dest="notify",
-                                 action="store_const", const=0,
-                                 help=re.sub('  \s+', ' ', """
-                    never send mail (default is to send mail on error)"""))
+                                 action="store_const", const=cm_cmd[idx],
+                                 help="%s%s"%(cmd_help[idx],
+                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
+
+        idx = 1
+        generic_group.add_option("-q", "--mail_on_error", dest="notify",
+                                 action="store_const", const=cm_cmd[idx],
+                                 help="%s%s"%(cmd_help[idx],
+                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
+
+        idx = 2
+        generic_group.add_option("-M", "--mail_always", dest="notify",
+                                 action="store_const", const=cm_cmd[idx],
+                                 help="%s%s"%(cmd_help[idx],
+                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
 
         # generic_group.add_option("-T","--test_queue", dest="istestjob",
         #    action="store_true",default=False,
@@ -831,6 +855,9 @@ class JobSettings(object):
             self.addToLineSetting(
                 """+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
 
+        if settings['notify'].lower() not in ['never','error','always']:
+            err = "mail_notification setting '%s' must be one of %s" %(settings['notify'],['never','error','always'])
+            raise InitializationError(err)
         return True
 
     def makeParrotFile(self):
@@ -1664,7 +1691,7 @@ class JobSettings(object):
         return settings['requirements']
 
     def completeEnvList(self):
-        envDict = {
+        env_dict = {
             'GRID_USER': 'user',
             'EXPERIMENT': 'group',
             'IFDH_BASE_URI': 'ifdh_base_uri',
@@ -1672,7 +1699,7 @@ class JobSettings(object):
             'JOBSUBJOBID': 'jobsubjobid',
             'JOBSUBPARENTJOBID': 'jobsubparentjobid',
         }
-        samDict = {
+        sam_dict = {
             'SAM_USER': 'user',
             'SAM_GROUP': 'group',
             'SAM_STATION': 'group',
@@ -1680,22 +1707,22 @@ class JobSettings(object):
             'SAM_PROJECT': 'project_name',
             'SAM_PROJECT_NAME': 'project_name',
         }
-        self.addEnv(envDict)
+        self.addEnv(env_dict)
         if self.settings['dataset_definition'] != "":
-            self.addEnv(samDict)
+            self.addEnv(sam_dict)
 
     def addEnv(self, adict):
-        envStr = self.settings['environment']
-        l1 = len(envStr)
+        env_str = self.settings['environment']
+        l1 = len(env_str)
         for key in adict.keys():
             k2 = key + "="
-            if envStr.find(k2) < 0:
+            if env_str.find(k2) < 0:
                 val = adict[key]
                 if val in self.settings and self.settings[val] != '':
-                    envStr = "%s;%s=%s" % (envStr, key, self.settings[val])
-        l2 = len(envStr)
+                    env_str = "%s;%s=%s" % (env_str, key, self.settings[val])
+        l2 = len(env_str)
         if l2 > l1:
-            self.settings['environment'] = envStr
+            self.settings['environment'] = env_str
 
     def makeCondorRequirements(self):
         settings = self.settings
@@ -1781,13 +1808,7 @@ class JobSettings(object):
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = %s\n" %
                 settings.get('job_lease_duration', '7200'))
-
-        if settings['notify'] == 0:
-            f.write("notification  = Never\n")
-        elif settings['notify'] == 1:
-            f.write("notification  = Error\n")
-        else:
-            f.write("notification  = Always\n")
+        f.write("notification = %s\n"%settings.get('notify','Never'))
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         f.write("transfer_output                 = True\n")
         f.write("transfer_output_files = .empty_file\n")

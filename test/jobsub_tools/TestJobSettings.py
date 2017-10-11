@@ -129,15 +129,10 @@ class JobTest(unittest.TestCase):
     def testGoodInput(self):
 
         
-        """test  JobSettings correct  input flags"""
-        #self.setUp()
+        """give command parser good input, check values in JobSettings"""
 
         ns = self.ns
-        #ns = JobSettings()
         
-        #ns.runCmdParser(["-ooutput_dir1","--output=output_dir2","my_script"],None)
-        #self.assertEqual(ns.settings['output'],['output_dir1','output_dir2'])
-        #ns.runCmdParser(["-a","my_script"], None)
         self.assertEqual(ns.settings['needafs'],False)
         self.assertEqual(ns.settings['drain'],False)
         ns.runCmdParser(['--drain','dummy_script'])
@@ -158,6 +153,8 @@ class JobTest(unittest.TestCase):
         self.assertEqual(ns.settings['joblogfile'],logfile)
         ns.runCmdParser(['-g','some_script'])
         self.assertEqual(ns.settings['grid'],True)
+        ns.runCmdParser(["--email-to", "someone@somewhere.com" ,'some_script'])
+        self.assertEqual(ns.settings['notify_user'],"someone@somewhere.com" )
         #del ns
         
     def testBadInput(self):
@@ -169,6 +166,22 @@ class JobTest(unittest.TestCase):
         self.assertRaises(SystemExit,ns.runCmdParser,
                           ['--deliberately_bogus_option','lalalala'],2)
     
+        ns.runCmdParser(['--disk','0','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--disk','0MB','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--disk','10ZB','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--memory','0','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--memory','0MB','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--memory','10ZB','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--cpu','0','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
+        ns.runCmdParser(['--expected-lifetime','thursday','a_script'])
+        self.assertRaises(SystemExit, ns.checkSanity)
         self.stdioON()
         
     def testMakingDagFiles(self):

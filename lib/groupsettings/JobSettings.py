@@ -218,7 +218,7 @@ class JobSettings(object):
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs'] = 10000
         self.settings['job_expected_max_lifetime'] = 21600
-        self.settings['set_expected_max_lifetime'] = None
+        #self.settings['set_expected_max_lifetime'] = None
 
         # for w in sorted(self.settings,key=self.settings.get,reverse=True):
         #        print "%s : %s"%(w,self.settings[w])
@@ -674,7 +674,8 @@ class JobSettings(object):
     def timeFormatOK(self, a_str):
         try:
             i = int(a_str)
-            print "Warning: --timeout=%s had no units! Valid units are 's','m','h','d'. Assuming seconds" % a_str
+            print "Warning: --timeout=%s had no units!" % a_str
+            print "Valid units are 's','m','h','d'. Assuming seconds"
             return True
         except ValueError:
             try:
@@ -688,30 +689,63 @@ class JobSettings(object):
 
     def diskFormatOK(self, a_str):
         try:
-            i = int(a_str)
-            print "Warning: --disk=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming KB" % a_str
+            mem  = float(a_str)
+            if mem <= 0:
+                print "you asked for %s disk, too low. Exiting" % mem
+                return False
+            print "Warning: --disk=%s had no units!" % a_str
+            print "Valid units are 'KB','MB','GB','TB'.  Assuming KB"
             return True
         except ValueError:
             try:
                 units = a_str[-2:].upper()
+                mem = a_str[:-2]
                 if units in ['KB', 'MB', 'GB', 'TB']:
-                    return True
+                    try:
+                        mem = float(mem)
+                        if mem <= 0:
+                            print "you asked for %s%s disk, too low. Exiting"%\
+                                  (mem, units)
+                            return False
+
+                        return True
+                    except ValueError:
+                        return False
                 else:
+                    print "units '%s' not accepted.  Must be one of %s"%\
+                           (units, ['KB', 'MB', 'GB', 'TB'])
                     return False
             except:
                 return False
 
     def memFormatOK(self, a_str):
         try:
-            i = int(a_str)
-            print "Warning: --memory=%s had no units! Valid units are 'KB','MB','GB','TB'.  Assuming MB" % a_str
+            mem = float(a_str)
+            if mem <= 0:
+                print "you asked for %s memory, which makes no sense. Exiting"%\
+                       mem
+                return False
+            print "Warning: --memory=%s had no units! " % a_str
+            print "Valid units are 'KB','MB','GB','TB'.  Assuming MB"
             return True
         except ValueError:
             try:
                 units = a_str[-2:].upper()
+                mem = a_str[:-2]
                 if units in ['KB', 'MB', 'GB', 'TB']:
-                    return True
+                    try:
+                        mem = float(mem)
+                        if mem <= 0:
+                            print "you asked for %s%s memory which is <0"%\
+                                  (mem, units)
+                            return False
+
+                        return True
+                    except ValueError:
+                        return False
                 else:
+                    print "units '%s' not accepted.  Must be one of %s " %\
+                            (units, ['KB', 'MB', 'GB', 'TB'])
                     return False
             except:
                 return False
@@ -721,7 +755,7 @@ class JobSettings(object):
         for i, arg in enumerate(settings['added_environment']):
             if '=' in arg or (arg in os.environ) == False:
                 if (arg in os.environ) == False and '=' not in arg:
-                    err = "you used -e %s , but $%s must be set first for this to work!" % (
+                    err = "you used -e %s , but $%s must be set first!" % (
                         arg, arg)
                     raise InitializationError(err)
                 elif '=' in arg:
@@ -740,20 +774,31 @@ class JobSettings(object):
                     err = 'error setting up running environment'
                     raise InitializationError(err)
 
-        if settings.get('memory') and not self.memFormatOK(settings['memory']):
+        if 'memory' in settings and not self.memFormatOK(settings['memory']):
             err = "--memory '%s' format incorrect" % settings['memory']
             raise InitializationError(err)
 
-        if settings.get('disk') and not self.diskFormatOK(settings['disk']):
+        if 'disk' in settings and not self.diskFormatOK(settings['disk']):
             err = "--disk '%s' format incorrect" % settings['disk']
             raise InitializationError(err)
 
-        if settings.get('timeout') and not self.timeFormatOK(
+        if 'cpu' in settings:
+            try:
+                ncpu = int(settings['cpu'])
+                if ncpu < 1:
+                    err = "--cpu must be >=1"
+                    raise InitializationError(err)
+            except:
+                err = 'could not parse --cpu=%s.  Must be an integer >=1' %\
+                       settings['cpu']
+                raise InitializationError(err)
+
+        if 'timeout' in settings and not self.timeFormatOK(
                 settings['timeout']):
             err = "--timeout '%s' format incorrect" % settings['timeout']
             raise InitializationError(err)
 
-        if settings.get('set_expected_max_lifetime'):
+        if 'set_expected_max_lifetime' in settings:
             if not self.expectedLifetimeOK(
                     settings['set_expected_max_lifetime']):
                 err = "--expected-lifetime '%s' format incorrect" % settings[
@@ -763,7 +808,7 @@ class JobSettings(object):
             default_lifetime = settings.get(
                 'job_expected_max_lifetime_default')
             if not default_lifetime:
-                default_lifetime = 6 * 60 * 60
+                default_lifetime = '21600s'
             if not self.expectedLifetimeOK(default_lifetime):
                 err = 'default lifetime="%s" is not allowed' % default_lifetime
                 raise InitializationError(err)

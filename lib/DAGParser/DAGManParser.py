@@ -321,7 +321,7 @@ class DAGManLogParser:
             if long == 2:
                 print "jid=%s el=%s el[keys]=%s" % (jid, el, el.keys())
             cur = status_strings[el["current"]]
-            if cur == "Completed":
+            if cur == "Completed" and "end" in el and "retcode" in el["end"] :
                 cur = cur + " Exit Code:%s" % el["end"]["retcode"]
             print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, socket.gethostname(), cur, el["section"])
             if long:

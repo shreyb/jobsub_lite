@@ -2,10 +2,16 @@
 ================================================================================
 v1.2.5
 ================================================================================
-* Bug        17833 make jobsub_history --jobid wildcards act like other client commands
-* Feature    17835 make condor_mail default action configurable
+Client
+------
 * Feature    17787 check for jobsub_submit conditions that will result in jobs 
                    never starting (ex request_memory=0), warn user, exit
+* Bug        17833 make jobsub_history --jobid wildcards act like other client commands
+
+Server
+------
+* Bug        17829 email summary script failing on key error when job removed
+* Feature    17835 make condor_mail default action configurable
 
 ================================================================================
 v1.2.4.2

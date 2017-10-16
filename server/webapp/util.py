@@ -285,7 +285,8 @@ def doJobAction(acctgroup,
         logger.log(msg, logfile='condor_commands')
 
     out = err = ''
-    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+)*'
+    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
+    expr += '(\s+)(\d+)(\s+Permission Denied).*'
     expr2 = '.*ailed to connect*'
     expr3 = '.*all jobs matching constraint*'
     regex = re.compile(expr)
@@ -314,6 +315,9 @@ def doJobAction(acctgroup,
                                                   cmd_user,
                                                   child_env=child_env)
                 extra_err = err
+                #logger.log('cmd=%s'%cmd)
+                #logger.log('out=%s'%out)
+                #logger.log('err=%s'%err)
             except:
                 # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
@@ -332,16 +336,27 @@ def doJobAction(acctgroup,
                     logger.log(msg, severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err
-                return {'out': out, 'err': extra_err}
+                #return {'out': out, 'err': extra_err}
             out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
             for line in out2:
                 if regex.match(line):
-                    grps = regex.match(line)
                     ret_out += line
             err2 = StringIO.StringIO('%s\n' % err.rstrip('\n')).readlines()
             for line in err2:
                 if regex.match(line):
                     ret_out += line.replace('STDOUT:', '')
+                    grps = regex.match(line)
+                    logger.log('condor_stdout=%s succeeded=%s failed=%s denied=%s'%\
+                               (grps.group(),grps.group(1),grps.group(3),grps.group(6)))
+                    if grps.group(1) == '0':
+                        #0 Succeeded, return error
+                        cherrypy.response.status = 500
+                    if grps.group(3) != '0':
+                        #non-0 Failed, return error
+                        cherrypy.response.status = 500
+                    if grps.group(6) != '0':
+                        #non-0 Permission Denied, return error
+                        cherrypy.response.status = 500
                 if regex2.match(line):
                     ret_err += line
                 if regex3.match(line):

@@ -168,17 +168,22 @@ def main(argv):
         if options.jobId:
             for jid in options.jobId.split(','):
                 print 'Releasing job with jobid=%s' % jid
-                http_code = js_client.release(jid, uid=options.uid)
-                tmp_rc += http_code_to_rc(http_code)
-
+                http_code = js_client.release(jid,
+                                              uid=options.uid,
+                                              constraint=options.constraint)
+                if isinstance(http_code, list):
+                    for code in http_code:
+                        tmp_rc += http_code_to_rc(code)
+                else:
+                    tmp_rc += http_code_to_rc(http_code)
             rc = tmp_rc
         else:
             if options.uid:
                 print 'Releasing jobs owned by %s' % options.uid
             if options.constraint:
                 print 'Releasing jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.release(
-                uid=options.uid, constraint=options.constraint)
+            http_code_list = js_client.release(uid=options.uid,
+                                               constraint=options.constraint)
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
                 if tmp_rc == 0:

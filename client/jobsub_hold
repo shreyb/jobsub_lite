@@ -167,8 +167,14 @@ def main(argv):
         if options.jobId:
             for jid in options.jobId.split(','):
                 print 'Holding job with jobid=%s' % jid
-                http_code = js_client.hold(jid, uid=options.uid)
-                tmp_rc += http_code_to_rc(http_code)
+                http_code = js_client.hold(jid,
+                                           uid=options.uid,
+                                           constraint=options.constraint)
+                if isinstance(http_code, list):
+                    for code in http_code:
+                        tmp_rc += http_code_to_rc(code)
+                else:
+                    tmp_rc += http_code_to_rc(http_code)
 
             rc = tmp_rc
         else:
@@ -176,8 +182,8 @@ def main(argv):
                 print 'Holding jobs owned by %s' % options.uid
             if options.constraint:
                 print 'Holding jobs with constraint=%s' % options.constraint
-            http_code_list = js_client.hold(
-                uid=options.uid, constraint=options.constraint)
+            http_code_list = js_client.hold(uid=options.uid,
+                                            constraint=options.constraint)
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
                 if tmp_rc == 0:

@@ -1,6 +1,6 @@
 # author Dennis Box, dbox@fnal.gov
 class jobsub_server::vars{
-    $jobsub_server_version = '1.2.3-0.1.rc1'
+    $jobsub_server_version = 'latest'
     $jobsub_tools_version = 'v1_4_6'
     $jobsub_user = 'rexbatch'
     $jobsub_user_uid = 47535
@@ -23,7 +23,7 @@ class jobsub_server::vars{
     $jenkins_key = '/etc/grid-security/jenkins/jenkinskey.pem'
     $jenkins_admin_email = 'dbox@fnal.gov'
     $ups_version = 'v5_1_4'
-    $ifdhc_version = 'v1_8_7'
+    $ifdhc_version = 'v2_0_9'
     $release_major = $::os['release']['major']
     case $::os['release']['major']{
       '5' : {
@@ -40,7 +40,7 @@ class jobsub_server::vars{
         $epel_release = 'epel-release-6'
         $epel_url = 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm'
         $osg_release = 'osg-release.noarch'
-        $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm'
+        $osg_url = 'https://repo.grid.iu.edu/osg/3.4/osg-3.4-el6-release-latest.rpm'
         $wget_opt = ''
         $yum_priorities = 'yum-plugin-priorities'
       }
@@ -49,7 +49,7 @@ class jobsub_server::vars{
         $epel_release = 'epel-release-7'
         $epel_url = 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
         $osg_release = 'osg-release.noarch'
-        $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm'
+        $osg_url = 'https://repo.grid.iu.edu/osg/3.4/osg-3.4-el7-release-latest.rpm'
         $wget_opt = ''
         $yum_priorities = 'yum-plugin-priorities'
       }

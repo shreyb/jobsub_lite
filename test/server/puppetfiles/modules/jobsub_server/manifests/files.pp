@@ -26,7 +26,6 @@ class jobsub_server::files{
   exec { 'setupCA':
     command => '/usr/sbin/osg-ca-manage setupCA --location root --url osg',
     require => [ Package['osg-ca-scripts'] ],
-    creates => "${esg}/certificates/FNAL-SLCS.pem",
   }
   
   exec { 'makebasedir':

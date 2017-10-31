@@ -28,68 +28,110 @@ class jobsub_server::users{
 
     user { 'dbox':
       ensure     => present,
-      managehome => true,
-      uid        => 8351,
       shell      => '/bin/bash',
     }
-    #getent passwd | grep pro: | perl -ne '@a=split(":"); $g="_$a[0]_"; $u="_$a[0]_"; $g=~s/pro//; print "     group{ $g: ensure=> present, gid=> $a[3], }\n     user { $u: ensure => present, uid => $a[2], gid => $a[3], require => Group[$g], }\n";' | sed "s/_/\'/g"
-    group{ 'nova': ensure=> present, gid=> 47552, }
-    user { 'novapro': ensure => present, uid => 47552, gid => 47552, require => Group['nova'], }
-    group{ 'auger': ensure=> present, gid=> 5314, }
-    user { 'augerpro': ensure => present, uid => 42418, gid => 5314, require => Group['auger'], }
-    group{ 'argoneut': ensure=> present, gid=> 9874, }
-    user { 'argoneutpro': ensure => present, uid => 44544, gid => 9874, require => Group['argoneut'], }
-    group{ 'ilc': ensure=> present, gid=> 9243, }
-    user { 'ilcpro': ensure => present, uid => 46464, gid => 9243, require => Group['ilc'], }
-    group{ 'mu2e': ensure=> present, gid=> 9914, }
-    user { 'mu2epro': ensure => present, uid => 44592, gid => 9914, require => Group['mu2e'], }
-    group{ 'lariat': ensure=> present, gid=> 9225, }
-    user { 'lariatpro': ensure => present, uid => 48337, gid => 9225, require => Group['lariat'], }
-    group{ 'minerva': ensure=> present, gid=> 9555, }
-    user { 'minervapro': ensure => present, uid => 43567, gid => 9555, require => Group['minerva'], }
-    group{ 'darkside': ensure=> present, gid=> 9985, }
-    user { 'darksidepro': ensure => present, uid => 47823, gid => 9985, require => Group['darkside'], }
-    group{ 'mipp': ensure=> present, gid=> 6409, }
-    user { 'mipppro': ensure => present, uid => 42412, gid => 6409, require => Group['mipp'], }
-    group{ 'test': ensure=> present, gid=> 9954, }
-    user { 'testpro': ensure => present, uid => 42415, gid => 9954, require => Group['test'], }
-    group{ 'orka': ensure=> present, gid=> 9211, }
-    user { 'orkapro': ensure => present, uid => 47664, gid => 9211, require => Group['orka'], }
-    group{ 'belle': ensure=> present, gid=> 10043, }
-    user { 'bellepro': ensure => present, uid => 48347, gid => 10043, require => Group['belle'], }
-    group{ 'minbn': ensure=> present, gid=> 5468, }
-    user { 'minbnpro': ensure => present, uid => 42410, gid => 5468, require => Group['minbn'], }
-    group{ 'dzero': ensure=> present, gid=> 1507, }
-    user { 'dzeropro': ensure => present, uid => 42706, gid => 1507, require => Group['dzero'], }
-    group{ 'fermi': ensure=> present, gid=> 9767, }
-    user { 'fermipro': ensure => present, uid => 43373, gid => 9767, require => Group['fermi'], }
-    group{ 'lbne': ensure=> present, gid=> 9960, }
-    user { 'lbnepro': ensure => present, uid => 44539, gid => 9960, require => Group['lbne'], }
-    group{ 'map': ensure=> present, gid=> 9990, }
-    user { 'mappro': ensure => present, uid => 44628, gid => 9990, require => Group['map'], }
-    group{ 'coupp': ensure=> present, gid=> 9645, }
-    user { 'coupppro': ensure => present, uid => 48270, gid => 9645, require => Group['coupp'], }
-    group{ 'cdms': ensure=> present, gid=> 5442, }
-    user { 'cdmspro': ensure => present, uid => 42407, gid => 5442, require => Group['cdms'], }
-    group{ 'icecube': ensure=> present, gid=> 9851, }
-    user { 'icecubepro': ensure => present, uid => 44890, gid => 9851, require => Group['icecube'], }
-    group{ 'minos': ensure=> present, gid=> 5111, }
-    user { 'minospro': ensure => present, uid => 42411, gid => 5111, require => Group['minos'], }
-    group{ 'lar1': ensure=> present, gid=> 9263, }
-    user { 'lar1pro': ensure => present, uid => 48311, gid => 9263, require => Group['lar1'], }
-    group{ 'genie': ensure=> present, gid=> 9356, }
-    user { 'geniepro': ensure => present, uid => 49563, gid => 9356, require => Group['genie'], }
-    group{ 'accel': ensure=> present, gid=> 1570, }
-    user { 'accelpro': ensure => present, uid => 42405, gid => 1570, require => Group['accel'], }
-    group{ 'gm2': ensure=> present, gid=> 9950, }
-    user { 'gm2pro': ensure => present, uid => 45651, gid => 9950, require => Group['gm2'], }
-    group{ 'theo': ensure=> present, gid=> 1540, }
-    user { 'theopro': ensure => present, uid => 42416, gid => 1540, require => Group['theo'], }
-    group{ 'uboone': ensure=> present, gid=> 9937, }
-    user { 'uboonepro': ensure => present, uid => 45225, gid => 9937, require => Group['uboone'], }
-    group{ 'patri': ensure=> present, gid=> 9511, }
-    user { 'patripro': ensure => present, uid => 42414, gid => 9511, require => Group['patri'], }
-    group{ 'seaquest': ensure=> present, gid=> 6269, }
-    user { 'seaquestpro': ensure => present, uid => 47670, gid => 6269, require => Group['seaquest'], }
+    #getent passwd | grep pro: | perl -ne '@a=split(":"); $g="_$a[0]_"; $u="_$a[0]_"; $g=~s/pro//; print "     group{ $g: ensure=> present, }\n     user { $u: ensure => present, require => Group[$g], }\n";' | sed "s/_/\'/g"
+     group{ 'k': ensure=> present, }
+     user { 'kpro': ensure => present, require => Group['k'], }
+     group{ 'e898': ensure=> present, }
+     user { 'e898pro': ensure => present, require => Group['e898'], }
+     group{ 'hcallumi': ensure=> present, }
+     user { 'hcallumipro': ensure => present, require => Group['hcallumi'], }
+     group{ 'accel': ensure=> present, }
+     user { 'accelpro': ensure => present, require => Group['accel'], }
+     group{ 'astro': ensure=> present, }
+     user { 'astropro': ensure => present, require => Group['astro'], }
+     group{ 'cdms': ensure=> present, }
+     user { 'cdmspro': ensure => present, require => Group['cdms'], }
+     group{ 'hypcp': ensure=> present, }
+     user { 'hypcppro': ensure => present, require => Group['hypcp'], }
+     group{ 'minbn': ensure=> present, }
+     user { 'minbnpro': ensure => present, require => Group['minbn'], }
+     group{ 'minos': ensure=> present, }
+     user { 'minospro': ensure => present, require => Group['minos'], }
+     group{ 'mipp': ensure=> present, }
+     user { 'mipppro': ensure => present, require => Group['mipp'], }
+     group{ 'numi': ensure=> present, }
+     user { 'numipro': ensure => present, require => Group['numi'], }
+     group{ 'test': ensure=> present, }
+     user { 'testpro': ensure => present, require => Group['test'], }
+     group{ 'nova': ensure=> present, }
+     user { 'novapro': ensure => present, require => Group['nova'], }
+     group{ 'auger': ensure=> present, }
+     user { 'augerpro': ensure => present, require => Group['auger'], }
+     group{ 'dzero': ensure=> present, }
+     user { 'dzeropro': ensure => present, require => Group['dzero'], }
+     group{ 'fermi': ensure=> present, }
+     user { 'fermipro': ensure => present, require => Group['fermi'], }
+     group{ 'minerva': ensure=> present, }
+     user { 'minervapro': ensure => present, require => Group['minerva'], }
+     group{ 'lbne': ensure=> present, }
+     user { 'lbnepro': ensure => present, require => Group['lbne'], }
+     group{ 'argoneut': ensure=> present, }
+     user { 'argoneutpro': ensure => present, require => Group['argoneut'], }
+     group{ 'mu2e': ensure=> present, }
+     user { 'mu2epro': ensure => present, require => Group['mu2e'], }
+     group{ 'map': ensure=> present, }
+     user { 'mappro': ensure => present, require => Group['map'], }
+     group{ 'icecube': ensure=> present, }
+     user { 'icecubepro': ensure => present, require => Group['icecube'], }
+     group{ 'uboone': ensure=> present, }
+     user { 'uboonepro': ensure => present, require => Group['uboone'], }
+     group{ 'gm2': ensure=> present, }
+     user { 'gm2pro': ensure => present, require => Group['gm2'], }
+     group{ 'ilc': ensure=> present, }
+     user { 'ilcpro': ensure => present, require => Group['ilc'], }
+     group{ 'orka': ensure=> present, }
+     user { 'orkapro': ensure => present, require => Group['orka'], }
+     group{ 'seaquest': ensure=> present, }
+     user { 'seaquestpro': ensure => present, require => Group['seaquest'], }
+     group{ 'darkside': ensure=> present, }
+     user { 'darksidepro': ensure => present, require => Group['darkside'], }
+     group{ 'coupp': ensure=> present, }
+     user { 'coupppro': ensure => present, require => Group['coupp'], }
+     group{ 'lar1': ensure=> present, }
+     user { 'lar1pro': ensure => present, require => Group['lar1'], }
+     group{ 'lariat': ensure=> present, }
+     user { 'lariatpro': ensure => present, require => Group['lariat'], }
+     group{ 'belle': ensure=> present, }
+     user { 'bellepro': ensure => present, require => Group['belle'], }
+     group{ 'genie': ensure=> present, }
+     user { 'geniepro': ensure => present, require => Group['genie'], }
+     group{ 'lsst': ensure=> present, }
+     user { 'lsstpro': ensure => present, require => Group['lsst'], }
+     group{ 'lar1nd': ensure=> present, }
+     user { 'lar1ndpro': ensure => present, require => Group['lar1nd'], }
+     group{ 'numix': ensure=> present, }
+     user { 'numixpro': ensure => present, require => Group['numix'], }
+     group{ 'holometer': ensure=> present, }
+     user { 'holometerpro': ensure => present, require => Group['holometer'], }
+     group{ 'chips': ensure=> present, }
+     user { 'chipspro': ensure => present, require => Group['chips'], }
+     group{ 'marsaccel': ensure=> present, }
+     user { 'marsaccelpro': ensure => present, require => Group['marsaccel'], }
+     group{ 'annie': ensure=> present, }
+     user { 'anniepro': ensure => present, require => Group['annie'], }
+     group{ 'dune': ensure=> present, }
+     user { 'dunepro': ensure => present, require => Group['dune'], }
+     group{ 'gendetrd': ensure=> present, }
+     user { 'gendetrdpro': ensure => present, require => Group['gendetrd'], }
+     group{ 'cdf': ensure=> present, }
+     user { 'cdfpro': ensure => present, require => Group['cdf'], }
+     group{ 'captmnv': ensure=> present, }
+     user { 'captmnvpro': ensure => present, require => Group['captmnv'], }
+     group{ 'redtop': ensure=> present, }
+     user { 'redtoppro': ensure => present, require => Group['redtop'], }
+     group{ 'sbnd': ensure=> present, }
+     user { 'sbndpro': ensure => present, require => Group['sbnd'], }
+     group{ 'next': ensure=> present, }
+     user { 'nextpro': ensure => present, require => Group['next'], }
+     group{ 'noble': ensure=> present, }
+     user { 'noblepro': ensure => present, require => Group['noble'], }
+     group{ 'icarus': ensure=> present, }
+     user { 'icaruspro': ensure => present, require => Group['icarus'], }
+     group{ 'des': ensure=> present, }
+     user { 'despro': ensure => present, require => Group['des'], }
+     group{ 'admx': ensure=> present, }
+     user { 'admxpro': ensure => present, require => Group['admx'], }
 
 }

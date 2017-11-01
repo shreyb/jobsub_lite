@@ -30,6 +30,10 @@ class jobsub_server::users{
       ensure     => present,
       shell      => '/bin/bash',
     }
+    user { 'sbaht':
+      ensure     => present,
+      shell      => '/bin/bash',
+    }
     #getent passwd | grep pro: | perl -ne '@a=split(":"); $g="_$a[0]_"; $u="_$a[0]_"; $g=~s/pro//; print "     group{ $g: ensure=> present, }\n     user { $u: ensure => present, require => Group[$g], }\n";' | sed "s/_/\'/g"
      group{ 'k': ensure=> present, }
      user { 'kpro': ensure => present, require => Group['k'], }

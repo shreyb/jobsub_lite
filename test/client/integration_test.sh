@@ -2,7 +2,6 @@
 
 export TEST_FLAG=" -x "
 export OTHER_FLAGS=" --debug "
-
 function lg_echo {
   echo "$@"
   echo "$@" >> $TESTLOGFILE
@@ -63,7 +62,7 @@ if [ "$USE_JOBSUB_CLIENT_VERSION" != "" ]; then
 fi
 
 echo "minos nova minerva dune" | grep $GROUP > /dev/null 2>&1
-if [ "$?" != "0" ]; then
+if [ $? -ne 0 ]; then
    export SKIP_PRODUCTION_TEST="YES"
 fi
 lg_echo test a verbose job to test output file truncation
@@ -152,6 +151,14 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     pass_or_fail
     DAGROLEJID=`grep 'se job id' $OUTFILE | awk '{print $4}'`
     echo use $DAGROLEJID to retrieve dag submission results
+fi
+#hack hack hack, very few people can run cdf tests 
+#see INC000000898600
+if [ "$SKIP_CDF_TEST" = "" ]; then
+    echo "willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey " | grep $USER > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        export SKIP_CDF_TEST="YES"
+    fi
 fi
 if [ "$SKIP_CDF_TEST" = "" ]; then
     lg_echo testing cdf sam job

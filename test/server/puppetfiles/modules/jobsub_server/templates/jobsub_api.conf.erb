@@ -13,8 +13,8 @@ LogLevel info
     SetEnv JOBSUB_LOG_DIR /var/log/jobsub
     SetEnv JOBSUB_APP_NAME jobsub
     SetEnv JOBSUB_ENV_RUNNER /opt/jobsub/server/webapp/jobsub_env_runner.sh
-    SetEnv JOBSUB_CREDENTIALS_DIR ~/.security
-    SetEnv KADMIN_PASSWD_FILE ~/.security/kadmin_passwd
+    SetEnv JOBSUB_CREDENTIALS_DIR /var/lib/jobsub/creds/keytabs
+    SetEnv KADMIN_PASSWD_FILE ~/nope
     SetEnv KCA_DN_PATTERN_LIST  '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$),^/DC=gov/DC=fnal/O=Fermilab/OU=Robots/CN.*/CN=cron/CN.*/CN=UID:(.*$)'
     SetEnv JOBSUB_SERVER_X509_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
     SetEnv JOBSUB_SERVER_X509_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>

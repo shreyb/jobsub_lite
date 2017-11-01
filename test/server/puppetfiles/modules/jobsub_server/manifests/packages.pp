@@ -37,12 +37,12 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
 
     package { 'llrun':
       ensure          => present,
-      install_options => '--enablerepo=osg-development',
+      install_options => '--enablerepo=osg',
     }
 
     package { 'lcmaps-plugins-gums-client':
       ensure          => present,
-      install_options => '--enablerepo=osg-development',
+      install_options => '--enablerepo=osg',
     }
 
     package { 'lcmaps-without-gsi':
@@ -79,7 +79,7 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
     }
 
     package { 'voms-clients-cpp':
-      install_options => '--enablerepo=osg-development',
+      install_options => '--enablerepo=osg',
     }
 
     package { 'osg-ca-scripts':

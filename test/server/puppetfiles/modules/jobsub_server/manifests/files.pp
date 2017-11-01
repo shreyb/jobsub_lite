@@ -304,7 +304,7 @@ class jobsub_server::files{
     owner   => $jobsub_user,
     group   => $jobsub_group,
     mode    => '0600',
-    content => 'rsync $1:.security/* $HOME/.security; rsync $1:/var/lib/jobsub/creds/certs/* /var/lib/jobsub/creds/certs/'
+    content => 'for uid in willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey; do rsync $1:.security/$uid.keytab  /var/lib/jobsub/creds/keytabs/; done;  rsync $1:/var/lib/jobsub/creds/certs/* /var/lib/jobsub/creds/certs/'
   }
 
   file { '/etc/condor/config.d/99.local.config':

@@ -268,8 +268,11 @@ class JobSettings(object):
         if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
             settings['grid'] = True
         if settings['tar_file_name']:
-            settings['tar_file_basename'] = os.path.basename(
+            raw_basename = os.path.basename(
                 settings['tar_file_name'])
+            settings['tar_file_basename'] = raw_basename 
+                if not os.path.isdir(settings['tar_file_name'])
+                else raw_basename + '.tar'
 
     def findConfigFile(self):
         if 'jobsub_ini_file' in self.settings:

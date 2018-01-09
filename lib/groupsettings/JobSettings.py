@@ -268,11 +268,12 @@ class JobSettings(object):
         if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
             settings['grid'] = True
         if settings['tar_file_name']:
-            raw_basename = os.path.basename(
-                settings['tar_file_name'])
-            settings['tar_file_basename'] = raw_basename 
-                if not os.path.isdir(settings['tar_file_name'])
-                else raw_basename + '.tar'
+            raw_basename = os.path.basename(settings['tar_file_name'])
+            settings['tar_file_basename'] = raw_basename \
+                if re.search('.tar', raw_basename) is not None  \
+                else raw_basename + '.tar '  # We're assuming that jobsub will always be dealing with .tar file.  I don't think that's actually true.
+            print "tar_file_name is ", settings['tar_file_name']
+            print "tar_file_basename set to", settings['tar_file_basename']
 
     def findConfigFile(self):
         if 'jobsub_ini_file' in self.settings:

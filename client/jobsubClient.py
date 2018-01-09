@@ -191,6 +191,7 @@ class JobSubClient:
                 # replace uri with path on server
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
+                    print "Arg is: ", arg 
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
                         key = self.dropbox_uri_map.get(arg)
                         if key is not None:

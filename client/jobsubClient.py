@@ -133,6 +133,7 @@ class JobSubClient:
         self.submit_url = None
         self.dropbox_uri_map = {}
         self.directory_tar_map = {}
+        self.is_tardir = False 
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
@@ -227,13 +228,16 @@ class JobSubClient:
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
 
+            if self.is_tardir:
+                srv_argv.append('--is_tardir')
+                
             if server_env_exports:
                 srv_env_export_b64en = \
                     base64.urlsafe_b64encode(server_env_exports)
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverargs_b64en = base64.urlsafe_b64encode(
-                ' '.join(srv_argv))
+                ' '.join(srv_argv)) 
 
     def get_directory_tar_map(self, argv):
 
@@ -247,6 +251,7 @@ class JobSubClient:
                 tar_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
+                self.is_tardir = True
 
     def dropbox_upload(self):
         result = dict()

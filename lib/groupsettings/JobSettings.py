@@ -4,6 +4,7 @@ import os
 import sys
 import datetime
 import re
+from tarfile import is_tarfile
 from JobUtils import JobUtils
 from optparse import OptionParser
 from optparse import OptionGroup
@@ -270,8 +271,9 @@ class JobSettings(object):
         if settings['tar_file_name']:
             raw_basename = os.path.basename(settings['tar_file_name'])
             settings['tar_file_basename'] = raw_basename \
-                if re.search('.tar', raw_basename) is not None  \
-                else raw_basename + '.tar '  # We're assuming that jobsub will always be dealing with .tar file.  I don't think that's actually true.
+                if re.search('\.tar$', raw_basename) is not None \
+                else raw_basename + '.tar'  
+            # DEBUG Statements.  Get rid of these
             print "tar_file_name is ", settings['tar_file_name']
             print "tar_file_basename set to", settings['tar_file_basename']
 
@@ -1214,6 +1216,7 @@ class JobSettings(object):
             "tar czvf %s/%s.tgz * " % (tmpdir, base))
         if iret:
             raise Exception(ires)
+	# Should we have f.close() corresponding to line 1205?
         f = open('%s/xtract.sh' % tmpdir, 'w')
         f.write(ju.untar_sh())
         f.close()

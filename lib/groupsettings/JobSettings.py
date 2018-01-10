@@ -4,7 +4,6 @@ import os
 import sys
 import datetime
 import re
-from tarfile import is_tarfile
 from JobUtils import JobUtils
 from optparse import OptionParser
 from optparse import OptionGroup

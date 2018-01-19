@@ -385,7 +385,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         rm_ip = cherrypy.request.headers.get('Remote-Addr')
         child_env['JOBSUB_CLIENT_IP_ADDRESS'] = rm_ip
 
-        if should_transfer_krb5cc(acctgroup):
+        if '--sendtkt' in jobsub_args and should_transfer_krb5cc(acctgroup):
             src_cache_fname = os.path.join(jobsubConfig.krb5cc_dir,
                                            'krb5cc_%s' % username)
             dst_cache_fname = os.path.join(

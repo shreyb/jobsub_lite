@@ -225,6 +225,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/summary.py
 /opt/jobsub/server/webapp/summary.pyc
 /opt/jobsub/server/webapp/summary.pyo
+/opt/jobsub/server/webapp/tardir_dropbox_location.py
+/opt/jobsub/server/webapp/tardir_dropbox_location.pyc
+/opt/jobsub/server/webapp/tardir_dropbox_location.pyo
 /opt/jobsub/server/webapp/users.py
 /opt/jobsub/server/webapp/users.pyc
 /opt/jobsub/server/webapp/users.pyo

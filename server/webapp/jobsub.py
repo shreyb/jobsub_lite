@@ -21,7 +21,6 @@ from distutils import spawn
 import subprocessSupport
 import StringIO
 
-
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
 
@@ -210,6 +209,12 @@ def get_tardir_dropbox(acctgroup):
         if prs.has_section(acctgroup):
             if prs.has_option(acctgroup, 'tardir_dropbox_location'):
                 r_code = prs.get(acctgroup, 'tardir_dropbox_location')
+                try:
+                    r_code_sub = r_code % acctgroup
+                    r_code = r_code_sub
+                except TypeError:
+                    # Substitution failed, so return original r_code
+                    pass
     except:
         logger.log('Failed to get tardir_dropbox_location: ',
                    traceback=True,

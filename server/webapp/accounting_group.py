@@ -23,6 +23,7 @@ from jobsub_help import JobsubHelpResource
 from sandboxes import SandboxesResource
 from configured_sites import ConfiguredSitesResource
 from auth_methods import AuthMethodsResource
+from tardir_dropbox_location import TarballDropboxLocationResource
 
 
 @cherrypy.popargs('acctgroup')
@@ -49,6 +50,7 @@ class AccountingGroupsResource(object):
         self.sandboxes = SandboxesResource()
         self.sites = ConfiguredSitesResource()
         self.authmethods = AuthMethodsResource()
+        self.tardirdropboxlocation = TarballDropboxLocationResource()
 
     def doGET(self, acctgroup):
         """ Query list of accounting groups. Returns a JSON list object.

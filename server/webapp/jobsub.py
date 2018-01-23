@@ -200,11 +200,32 @@ def sub_group_pattern(acctgroup):
     return acg
 
 
+def get_tardir_dropbox(acctgroup):
+    """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
+       uses, return a string
+    """
+    r_code = None
+    try:
+        prs = JobsubConfigParser()
+        if prs.has_section(acctgroup):
+            if prs.has_option(acctgroup, 'tardir_dropbox_location'):
+                r_code = prs.get(acctgroup, 'tardir_dropbox_location')
+    except:
+        logger.log('Failed to get tardir_dropbox_location: ',
+                   traceback=True,
+                   severity=logging.ERROR)
+        logger.log('Failed to get tardir_dropbox_location: ',
+                   traceback=True,
+                   severity=logging.ERROR,
+                   logfile='error')
+    return r_code
+
+
+
 def get_authentication_methods(acctgroup):
     """Scan jobsub.ini for authentication methods that acctgroup
        uses, return as a list
     """
-    r_code = 'kca-dn'
     try:
         prs = JobsubConfigParser()
         if prs.has_section(acctgroup):

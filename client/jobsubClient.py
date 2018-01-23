@@ -121,6 +121,7 @@ class JobSubClient:
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acct_role = get_acct_role(acct_role, cert)
         self.serverAuthMethods()
+        self.tardir_dropbox_location = self.tardirDropboxLocation()
 
         # Help URL
         fmt_pattern = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN
@@ -752,6 +753,49 @@ class JobSubClient:
         list_url = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(list_url, 'GET')
 
+    def tardirDropboxLocation(self, acct_group=None):
+        """Get location of dropbox for tardirs from server"""	
+        if not acct_group:
+            acct_group = self.account_group
+        #check for down servers DNS RR
+        for server in self.serverAliases:
+            if is_port_open(server, self.serverPort):
+                self.server = server
+                break
+
+        tardir_dropbox_url = constants.JOBSUB_TARDIR_DROPBOX_LOCATION_URL_PATTERN %\
+            (self.server, acct_group)
+        
+        curl, response = curl_secure_context(tardir_dropbox_url, self.credentials)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
+        curl.setopt(curl.CUSTOMREQUEST, 'GET')
+        curl.setopt(curl.CAPATH, get_capath())
+
+        try:
+            curl.perform()
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r = response.getvalue()
+            doc = json.loads(response.getvalue())
+            location = doc.get('out')
+            return location
+        except pycurl.error as error:
+            errno, errstr = error
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" % (
+                http_code, errno, errstr)
+            # logSupport.dprint(traceback.format_exc(limit=10))
+            # traceback.print_stack()
+            raise JobSubClientError(err)
+        # except:
+            # probably called a server that doesnt support this URL, just continue
+            # and let round robin do its thing
+            #err = "Error: %s "% sys.exc_info()[0]
+            # logSupport.dprint(err)
+            # raise
+
+        curl.close()
+        response.close()
+
     def serverAuthMethods(self, acct_group=None):
 
         if not acct_group:
@@ -764,10 +808,12 @@ class JobSubClient:
 
         auth_method_url = constants.JOBSUB_AUTHMETHODS_URL_PATTERN %\
             (self.server, acct_group)
+
         curl, response = curl_secure_context(auth_method_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         curl.setopt(curl.CAPATH, get_capath())
+
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -777,7 +823,6 @@ class JobSubClient:
             for m in method_list.get('out'):
                 methods.append(str(m))
             if 'myproxy' in methods:
-
                 cred = jobsubClientCredentials.cigetcert_to_x509(
                     self.initial_server,
                     acct_group,

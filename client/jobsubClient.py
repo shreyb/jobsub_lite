@@ -37,6 +37,8 @@ import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 
+import ifdh
+
 
 def version_string():
     ver = constants.__rpmversion__
@@ -121,7 +123,6 @@ class JobSubClient:
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acct_role = get_acct_role(acct_role, cert)
         self.serverAuthMethods()
-        self.tardir_dropbox_location = self.tardirDropboxLocation()
 
         # Help URL
         fmt_pattern = constants.JOBSUB_ACCTGROUP_HELP_URL_PATTERN
@@ -182,10 +183,15 @@ class JobSubClient:
                         raise JobSubClientError(err)
 
                 except:
-
                     raise JobSubClientError(err)
-
-            if self.dropbox_uri_map:
+            
+            if self.dropbox_uri_map and self.is_tardir:
+                self.tardir_dropbox_location = self.tardirDropboxLocation()
+                ifdh_exit_code = self.ifdh_upload_tardir()
+                if ifdh_exit_code:
+                    print "IFDH Upload failed with exit code %s" % ifdh_exit_code 
+                    raise JobSubClientSubmissionError
+            elif self.dropbox_uri_map:
                 actual_server = self.server
                 tfiles = []
                 # upload the files
@@ -253,7 +259,28 @@ class JobSubClient:
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
                 self.is_tardir = True
+                print self.dropbox_uri_map, self.directory_tar_map
 
+    def ifdh_upload_tardir(self):
+        exit_code = 0
+        i = ifdh.ifdh()
+        os.environ['IFDH_CP_MAXRETRIES'] = "0"
+        orig_dir = os.getcwd()
+        try:
+            for dropbox in self.directory_tar_map.itervalues():
+                src_tarfile = uri2path(dropbox)
+                srcpath = os.path.join(orig_dir, src_tarfile)
+                destpath = os.path.join(self.tardir_dropbox_location,
+                    self.dropbox_uri_map[dropbox], uri2path(dropbox))
+                print srcpath, destpath
+                i.cp([str(srcpath), str(destpath)])
+		# Do stuff to upload to pnfs.  Use self.tardir_dropbox_location        
+        except Exception as error: 
+            err = "Error uploading tarred directory using ifdh: %s" % error
+            raise JobSubClientSubmissionError(err)
+        return exit_code
+
+	 
     def dropbox_upload(self):
         result = dict()
         post_data = list()
@@ -786,6 +813,10 @@ class JobSubClient:
             # logSupport.dprint(traceback.format_exc(limit=10))
             # traceback.print_stack()
             raise JobSubClientError(err)
+        finally:
+	    curl.close()
+	    response.close()
+
         # except:
             # probably called a server that doesnt support this URL, just continue
             # and let round robin do its thing
@@ -793,8 +824,6 @@ class JobSubClient:
             # logSupport.dprint(err)
             # raise
 
-        curl.close()
-        response.close()
 
     def serverAuthMethods(self, acct_group=None):
 

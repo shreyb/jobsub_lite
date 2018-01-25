@@ -263,6 +263,8 @@ class JobSubClient:
 
     def ifdh_upload_tardir(self):
         exit_code = 0
+        print self.credentials
+        print os.environ.get('X509_USER_PROXY')
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         orig_dir = os.getcwd()
@@ -270,11 +272,16 @@ class JobSubClient:
             for dropbox in self.directory_tar_map.itervalues():
                 src_tarfile = uri2path(dropbox)
                 srcpath = os.path.join(orig_dir, src_tarfile)
-                destpath = os.path.join(self.tardir_dropbox_location,
-                    self.dropbox_uri_map[dropbox], uri2path(dropbox))
+                destdir = os.path.join(self.tardir_dropbox_location,
+                    self.dropbox_uri_map[dropbox])
+                i.mkdir_p(str(destdir))
+                destpath = os.path.join(destdir, uri2path(dropbox))
                 print srcpath, destpath
                 i.cp([str(srcpath), str(destpath)])
+                if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
+                    print "File already exists.  Skipping upload"
 		# Do stuff to upload to pnfs.  Use self.tardir_dropbox_location        
+        	# exit(0)
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
             raise JobSubClientSubmissionError(err)
@@ -1386,7 +1393,7 @@ def get_capath():
     return ca_dir
 
 
-def create_tarfile(tar_file, tar_path, tar_type="tgz"):
+def create_tarfile(tar_file, tar_path, tar_type="bz2"):
     orig_dir = os.getcwd()
     logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
                       (tar_file, tar_path, orig_dir))

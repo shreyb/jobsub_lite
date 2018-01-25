@@ -263,8 +263,6 @@ class JobSubClient:
 
     def ifdh_upload_tardir(self):
         exit_code = 0
-        print self.credentials
-        print os.environ.get('X509_USER_PROXY')
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         orig_dir = os.getcwd()
@@ -276,12 +274,13 @@ class JobSubClient:
                     self.dropbox_uri_map[dropbox])
                 i.mkdir_p(str(destdir))
                 destpath = os.path.join(destdir, uri2path(dropbox))
-                print srcpath, destpath
                 i.cp([str(srcpath), str(destpath)])
                 if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
                     print "File already exists.  Skipping upload"
-                elif i.getErrorText() is not None:
+                elif i.getErrorText(): 
                     raise Exception(i.getErrorText())
+                else:
+                    logSupport.dprint("File %s uploaded to %s" % (srcpath, destpath))
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
             raise JobSubClientSubmissionError(err)

@@ -135,7 +135,7 @@ class JobSubClient:
         self.submit_url = None
         self.dropbox_uri_map = {}
         self.directory_tar_map = {}
-        self.is_tardir = False 
+        # self.is_tardir = False 
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
@@ -153,6 +153,7 @@ class JobSubClient:
                     self.server_argv[d_idx + 1:]
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
+            print self.dropbox_uri_map, self.directory_tar_map
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -185,17 +186,14 @@ class JobSubClient:
                 except:
                     raise JobSubClientError(err)
             
-            if self.dropbox_uri_map and self.is_tardir:
+            if self.dropbox_uri_map:
                 self.tardir_dropbox_location = self.tardirDropboxLocation()
-                ifdh_exit_code = self.ifdh_upload_tardir()
-                if ifdh_exit_code:
-                    print "IFDH Upload failed with exit code %s" % ifdh_exit_code 
-                    raise JobSubClientSubmissionError
-            elif self.dropbox_uri_map:
-                actual_server = self.server
-                tfiles = []
+                ifdh_dest = self.ifdh_upload() ### FIX THIS TO WORK WITH ALL FILES
+            #elif self.dropbox_uri_map:
+                # actual_server = self.server
+                # tfiles = []
                 # upload the files
-                result = self.dropbox_upload()
+                # result = self.dropbox_upload()
                 # replace uri with path on server
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
@@ -205,38 +203,38 @@ class JobSubClient:
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
                         key = self.dropbox_uri_map.get(arg)
                         if key is not None:
-                            values = result.get(key)
-                            if values is not None:
-                                if self.dropboxServer is None:
-                                    srv_argv[idx] = values.get('path')
+                            # values = result.get(key)
+#                            if values is not None:
+#                                if self.dropboxServer is None:
+			    srv_argv[idx] = ifdh_dest 
                                     #actual_server = "https://%s:8443/" % \
                                     #    str(values.get('host'))
-                                else:
-                                    url = values.get('url')
-                                    srv_argv[idx] = '%s%s' % \
-                                        (self.dropboxServer, url)
-                                if srv_argv[idx] not in tfiles:
-                                    tfiles.append(srv_argv[idx])
-                            else:
-                                print "Dropbox upload failed with error:"
-                                print json.dumps(result)
-                                raise JobSubClientSubmissionError
-                if len(tfiles) > 0:
-                    transfer_input_files = ','.join(tfiles)
-                    fmt_str = "export TRANSFER_INPUT_FILES=%s;%s"
-                    server_env_exports = fmt_str % (transfer_input_files,
-                                                    server_env_exports)
-                    if self.dropboxServer is None and \
-                            self.server != actual_server:
-                        self.server = actual_server
+#                                else:
+#                                    url = values.get('url')
+#                                    srv_argv[idx] = '%s%s' % \
+#                                        (self.dropboxServer, url)
+#                                if srv_argv[idx] not in tfiles:
+#                                    tfiles.append(srv_argv[idx])
+#                            else:
+#                                print "Dropbox upload failed with error:"
+#                                print json.dumps(result)
+#                                raise JobSubClientSubmissionError
+#                if len(tfiles) > 0:
+#                    transfer_input_files = ','.join(tfiles)
+#                    fmt_str = "export TRANSFER_INPUT_FILES=%s;%s"
+#                    server_env_exports = fmt_str % (transfer_input_files,
+#                                                    server_env_exports)
+#                    if self.dropboxServer is None and \
+#                            self.server != actual_server:
+#                        self.server = actual_server
 
             if self.job_exe_uri and self.job_executable:
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
 
-            if self.is_tardir:
-                srv_argv.append('--is_tardir')
+#            if self.is_tardir:
+#                srv_argv.append('--is_tardir')
                 
             if server_env_exports:
                 srv_env_export_b64en = \
@@ -250,6 +248,7 @@ class JobSubClient:
 
         for arg in argv:
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                print "tardir arg", arg
                 tarpath = uri2path(arg)
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
@@ -258,22 +257,30 @@ class JobSubClient:
                 tar_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
-                self.is_tardir = True
-                print self.dropbox_uri_map, self.directory_tar_map
+                # self.is_tardir = True
 
-    def ifdh_upload_tardir(self):
-        exit_code = 0
+    def ifdh_upload(self):
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         orig_dir = os.getcwd()
         try:
-            for dropbox in self.directory_tar_map.itervalues():
-                src_tarfile = uri2path(dropbox)
-                srcpath = os.path.join(orig_dir, src_tarfile)
-                destdir = os.path.join(self.tardir_dropbox_location,
-                    self.dropbox_uri_map[dropbox])
+#            for dropbox in self.directory_tar_map.itervalues():
+            for dropbox_uri, file_hash in self.dropbox_uri_map.iteritems():
+
+                if dropbox_uri in self.directory_tar_map.itervalues():
+                    src_tarfile = uri2path(dropbox_uri)
+                    srcpath = os.path.join(orig_dir, src_tarfile)
+                else:
+                    srcpath = uri2path(dropbox_uri)
+                print os.stat(srcpath)
+                print srcpath
+	        destdir = os.path.join(self.tardir_dropbox_location, 
+                    file_hash)
                 i.mkdir_p(str(destdir))
-                destpath = os.path.join(destdir, uri2path(dropbox))
+                destpath = os.path.join(destdir, os.path.basename(uri2path(dropbox_uri)))
+                print os.stat(srcpath)
+                print destpath
+                # WHY IS THIS FILE SIZE 0  if we're moving a tar file directly?)
                 i.cp([str(srcpath), str(destpath)])
                 if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
                     print "File already exists.  Skipping upload"
@@ -284,7 +291,7 @@ class JobSubClient:
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
             raise JobSubClientSubmissionError(err)
-        return exit_code
+        return destpath 
 
 	 
     def dropbox_upload(self):
@@ -1544,12 +1551,15 @@ def get_dropbox_uri_map(argv):
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
             map[arg] = digest_for_file(uri2path(arg))
+            print "found arg!", uri2path(arg)
     return map
 
 
 def digest_for_file(fileName, block_size=2**20):
+    print os.stat(fileName)
     dig = hashlib.sha1()
     f = open(fileName, 'r')
+    print os.stat(fileName)
     while True:
         data = f.read(block_size)
         if not data:

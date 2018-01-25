@@ -280,8 +280,8 @@ class JobSubClient:
                 i.cp([str(srcpath), str(destpath)])
                 if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
                     print "File already exists.  Skipping upload"
-		# Do stuff to upload to pnfs.  Use self.tardir_dropbox_location        
-        	# exit(0)
+                elif i.getErrorText() is not None:
+                    raise Exception(i.getErrorText())
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
             raise JobSubClientSubmissionError(err)

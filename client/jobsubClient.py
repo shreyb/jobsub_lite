@@ -153,7 +153,7 @@ class JobSubClient:
                     self.server_argv[d_idx + 1:]
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
-            print self.dropbox_uri_map, self.directory_tar_map
+            # print self.dropbox_uri_map, self.directory_tar_map
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -188,7 +188,7 @@ class JobSubClient:
             
             if self.dropbox_uri_map:
                 self.tardir_dropbox_location = self.tardirDropboxLocation()
-                ifdh_dest = self.ifdh_upload() ### FIX THIS TO WORK WITH ALL FILES
+                ifdh_dest = self.ifdh_upload() 
             #elif self.dropbox_uri_map:
                 # actual_server = self.server
                 # tfiles = []
@@ -272,15 +272,10 @@ class JobSubClient:
                     srcpath = os.path.join(orig_dir, src_tarfile)
                 else:
                     srcpath = uri2path(dropbox_uri)
-                print os.stat(srcpath)
-                print srcpath
-	        destdir = os.path.join(self.tardir_dropbox_location, 
+	        destdir = os.path.join(self.tardir_dropbox_location,
                     file_hash)
                 i.mkdir_p(str(destdir))
                 destpath = os.path.join(destdir, os.path.basename(uri2path(dropbox_uri)))
-                print os.stat(srcpath)
-                print destpath
-                # WHY IS THIS FILE SIZE 0  if we're moving a tar file directly?)
                 i.cp([str(srcpath), str(destpath)])
                 if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
                     print "File already exists.  Skipping upload"
@@ -1551,15 +1546,12 @@ def get_dropbox_uri_map(argv):
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
             map[arg] = digest_for_file(uri2path(arg))
-            print "found arg!", uri2path(arg)
     return map
 
 
 def digest_for_file(fileName, block_size=2**20):
-    print os.stat(fileName)
     dig = hashlib.sha1()
     f = open(fileName, 'r')
-    print os.stat(fileName)
     while True:
         data = f.read(block_size)
         if not data:

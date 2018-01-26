@@ -18,6 +18,7 @@ from auth import check_auth
 from request_headers import get_client_dn
 from format import format_response
 from jobsub import get_dropbox_path_root
+from jobsub import get_tardir_dropbox
 from util import mkdir_p
 from util import digest_for_file
 
@@ -41,9 +42,37 @@ class DropboxResource(object):
                           "application/x-download", "attachment")
 
     def doPOST(self, acctgroup, kwargs):
+        """Pretend to upload files to Dropbox service
+        they now go elsewhere
+        TODO need a way to identify older clients and
+        flag to them that thier files weren't uploaded
+        """
+        dropbox_path_root = get_tardir_dropbox(acctgroup)
+        file_map = dict()
+        for arg_name, arg_value in kwargs.items():
+            logger.log("arg_name=%s arg_value=%s" % (arg_name, arg_value))
+            if hasattr(arg_value, 'file'):
+                if arg_name.find('file') < 0:
+                    supplied_digest = arg_name
+                    phldr = arg_name
+                drpbx_fpath = os.path.join(
+                    dropbox_path_root, arg_value.filename)
+                dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' %\
+                    (acctgroup, phldr, arg_value.filename)
+                file_map[arg_name] = {
+                    'path': drpbx_fpath,
+                    'url': dropbox_url,
+                    'host': socket.gethostname()
+                }
+        return file_map
+
+
+
+    def doPOST_OLD(self, acctgroup, kwargs):
         """ Upload files to Dropbox service. Return JSON object
             describing location of files.
             API is /jobsub/acctgroups/<group_id>/dropbox/
+            not used 
         """
         box_id = str(uuid.uuid4())
         dropbox_path_root = get_dropbox_path_root()

@@ -10,7 +10,7 @@ if [ ! -d "${GROUP}_stuff" ]; then
   mkdir -p ${GROUP}_stuff
 fi
 cp simple_worker_script.sh ${GROUP}_dropbox.sh
-cp *.sh ${GROUP}_stuff
+cp test*.sh ${GROUP}_stuff
 
 export SERVER=https://${MACH}:8443
 

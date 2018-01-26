@@ -37,7 +37,11 @@ import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 
-import ifdh
+try:
+    import ifdh
+except:
+    sys.stderr.write("unable to import ifdh. source setups.sh; setup ifdh \n")
+    sys.stderr.write("so that tarball submission will work\n")
 
 
 def version_string():
@@ -185,17 +189,29 @@ class JobSubClient:
                 except:
                     raise JobSubClientError(err)
             
-            if self.dropbox_uri_map and self.is_tardir:
-                self.tardir_dropbox_location = self.tardirDropboxLocation()
-                ifdh_exit_code = self.ifdh_upload_tardir()
-                if ifdh_exit_code:
-                    print "IFDH Upload failed with exit code %s" % ifdh_exit_code 
-                    raise JobSubClientSubmissionError
-            elif self.dropbox_uri_map:
+            #if self.dropbox_uri_map and self.is_tardir:
+            #    self.tardir_dropbox_location = self.tardirDropboxLocation()
+            #    ifdh_exit_code = self.ifdh_upload_tardir()
+            #    if ifdh_exit_code:
+            #        print "IFDH Upload failed with exit code %s" % ifdh_exit_code 
+            #        raise JobSubClientSubmissionError
+            #elif self.dropbox_uri_map:
+            if self.dropbox_uri_map:
                 actual_server = self.server
                 tfiles = []
                 # upload the files
-                result = self.dropbox_upload()
+                self.tardir_dropbox_location = self.tardirDropboxLocation()
+                logSupport.dprint('calling ifdh_upload_tardir')
+                result = self.ifdh_upload_tardir()
+                logSupport.dprint('ifdh_upload_tardir result=%s'%result)
+                if not result:
+                    raise JobSubClientSubmissionError('ifdh_upload_tardir failed')
+
+                #result: {u'a8c36cfec4a0d81da084ebbaafc27687562b96e8': 
+                #{u'url': u'/jobsub/acctgroups/annie/dropbox/a8c36cfec4a0d81da084ebbaafc27687562b96e8/annie_stuff.tar', 
+                #u'path': u'/pnfs/annie/scratch/jobsub_tarballs/annie_stuff.tar', 
+                #u'host': u'fermicloud042.fnal.gov'}}
+                #print "result: %s" % result
                 # replace uri with path on server
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
@@ -223,7 +239,7 @@ class JobSubClient:
                                 raise JobSubClientSubmissionError
                 if len(tfiles) > 0:
                     transfer_input_files = ','.join(tfiles)
-                    fmt_str = "export TRANSFER_INPUT_FILES=%s;%s"
+                    fmt_str = "export PNFS_INPUT_FILES=%s;%s"
                     server_env_exports = fmt_str % (transfer_input_files,
                                                     server_env_exports)
                     if self.dropboxServer is None and \
@@ -259,29 +275,78 @@ class JobSubClient:
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
                 self.is_tardir = True
-                print self.dropbox_uri_map, self.directory_tar_map
+                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%(self.dropbox_uri_map, self.directory_tar_map))
 
+
+    #
+    #dropbox_uri_map={'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'} 
+    #directory_tar_map={'tardir://annie_stuff': 'dropbox://annie_stuff.tar'}
+    #
     def ifdh_upload_tardir(self):
+        """
+        upload files from dropbox_uri_map to tardir_dropbox_location
+        via ifdh
+        dropbox_uri_map has form:
+        {'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
+
+        RETURNS dictionary result of form after upload:
+        {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43': 
+        {'path': '/pnfs/annie/scratch/d618fa5ff463c6e4070ebebc7bc0058e9b644d43/annie_stuff.tar', 
+         'host': 'fermicloud042.fnal.gov'}}
+
+        """
         exit_code = 0
+        result={}
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         orig_dir = os.getcwd()
+        logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
+        logSupport.dprint('self.dropbox_urir_map=%s'%self.dropbox_uri_map)
         try:
-            for dropbox in self.directory_tar_map.itervalues():
+            for dropbox in self.dropbox_uri_map.iterkeys():
+                val={}
                 src_tarfile = uri2path(dropbox)
                 srcpath = os.path.join(orig_dir, src_tarfile)
                 destpath = os.path.join(self.tardir_dropbox_location,
                     self.dropbox_uri_map[dropbox], uri2path(dropbox))
-                print srcpath, destpath
-                i.cp([str(srcpath), str(destpath)])
+                val['path'] = destpath
+                val['host'] = self.server
+                result[self.dropbox_uri_map[dropbox]] = val
+                logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
+                try:
+                    err = "ifdh mkdir %s attempt: %s"%(self.tardir_dropbox_location, '')
+                    logSupport.dprint(err)
+                    i.mkdir(str(self.tardir_dropbox_location))
+                except Exception as error:
+                    err = "ifdh mkdir %s failed: %s"%(self.tardir_dropbox_location, error)
+                    logSupport.dprint(err)
+                try:
+                    err = "ifdh mkdir %s attempt: %s"%(os.path.join(self.tardir_dropbox_location, self.dropbox_uri_map[dropbox]), '')
+                    logSupport.dprint(err)
+                    i.mkdir(str(os.path.join(self.tardir_dropbox_location, self.dropbox_uri_map[dropbox])))
+                except Exception as error:
+                    err = "ifdh mkdir %s failed: %s"%(os.path.join(self.tardir_dropbox_location, self.dropbox_uri_map[dropbox]), error)
+                    logSupport.dprint(err)
+                try:                
+                    err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
+                    logSupport.dprint(err)
+                    i.cp([str(srcpath), str(destpath)])
+                except Exception as error:
+                    err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
+                    logSupport.dprint(err)
 		# Do stuff to upload to pnfs.  Use self.tardir_dropbox_location        
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
-            raise JobSubClientSubmissionError(err)
-        return exit_code
+            logSupport.dprint(err)
+
+        return result
 
 	 
     def dropbox_upload(self):
+        """
+        upload a tarball or file to the dropbox server
+        currently not used
+        """
         result = dict()
         post_data = list()
         orig_server = self.server
@@ -1386,10 +1451,23 @@ def get_capath():
     return ca_dir
 
 
-def create_tarfile(tar_file, tar_path, tar_type="tgz"):
+
+def create_tarfile(tar_file, tar_path, tar_type="tar"):
+    """
+    create a compressed tarfile
+        Args:
+            tar_file (string): full pathname of tarfile to be created
+            tar_path (string): directory to be tarred up into 'tar_file'
+            tar_type (string, optional): if "tgz": gzipped tarfile
+                                                  otherwise bzipped tarfile
+        Returns:
+            bool: True if successful, False otherwise.
+        Raises:
+            None
+    """
     orig_dir = os.getcwd()
-    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
-                      (tar_file, tar_path, orig_dir))
+    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %\
+        (tar_file, tar_path, orig_dir))
     if tar_type == "tgz":
         tar = tarfile.open(tar_file, 'w:gz')
     else:
@@ -1398,23 +1476,29 @@ def create_tarfile(tar_file, tar_path, tar_type="tgz"):
     tar_dir = os.getcwd()
     print('creating tar of %s' % tar_dir)
     failed_file_list = []
-    f0 = os.path.realpath(tar_dir)
+    ftar_d = os.path.realpath(tar_dir)
     files = os.listdir(tar_dir)
 
     for fname in files:
-        f1 = os.path.join(f0, fname)
+        ftar_n = os.path.join(ftar_d, fname)
         try:
-            tar.add(f1, fname)
+            tar.add(ftar_n, fname)
 
-        except:
+        except StandardError:
             failed_file_list.append(fname)
-    if len(failed_file_list) > 0:
+    tar.close()
+    os.chdir(orig_dir)
+    if failed_file_list:
         for fname in failed_file_list:
             print(
                 "failed to add to tarfile: %s Permissions problem?\n" %
                 fname)
-    tar.close()
-    os.chdir(orig_dir)
+        return False
+    return True
+
+
+
+
 
 ##########################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
@@ -1541,17 +1625,50 @@ def get_dropbox_uri_map(argv):
     return map
 
 
-def digest_for_file(fileName, block_size=2**20):
+
+def digest_for_file(file_name, block_size=2**20, write_chunks=False):
+    """
+    compute  sha1 digest or a file
+        Args:
+            file_name (str): file to be digested
+            block_size (int): size of 'chunks' to be read from file_name
+            write_chunks (bool): if True, create files of size 'block_size'
+                in /tmp/(sha1_digest_of_file_name/) which can be re-assembled 
+                into a file with 'cat * > file_name' .  Chunks can be sized to
+                spread across cacheing systems such as squid or dcache
+        Returns:
+            sha1 digest of file_name (string)
+        Raises:
+    """
     dig = hashlib.sha1()
-    f = open(fileName, 'r')
+    fhdl = open(file_name, 'r')
+    block_size = int(block_size)
+    if write_chunks:
+        dirpath = tempfile.mkdtemp()
+        dirtemp = os.path.dirname(dirpath)
+        f_cnt = int('a00000', 16)
+        #chunks will be named 'a00000, a00001, a00002, etc
+        chunk_name = os.path.join(dirpath, str(hex(f_cnt))[2:])
     while True:
-        data = f.read(block_size)
+        data = fhdl.read(block_size)
         if not data:
             break
         dig.update(data)
-    f.close()
-    x = dig.hexdigest()
-    return x
+        if write_chunks:
+            chdl = open(chunk_name, 'wb')
+            chdl.write(data)
+            chdl.close()
+            f_cnt += 1
+            chunk_name = os.path.join(dirpath, str(hex(f_cnt))[2:])
+    fhdl.close()
+    hashd = dig.hexdigest()
+    if write_chunks:
+        newdir = os.path.join(dirtemp, hashd)
+        if  os.path.exists(newdir):
+            shutil.rmtree(dirpath)
+        else:
+            os.rename(dirpath, newdir)
+    return hashd
 
 
 def check_id(jobid):
@@ -1596,6 +1713,47 @@ def date_callback(option, opt, value, p):
         setattr(p.values, option.dest, value)
     else:
         sys.exit(
-            """invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'""" %
-            value)
+            """invalid date format for '%s'.  Must be of the form """ % value +\
+            """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """+\
+            """example: '2015-03-01 01:59:03'""")
     return p
+
+
+if __name__ == '__main__':
+    #put anything you want to test without using the entire client here
+
+    if len(sys.argv) == 1 or 'help' in sys.argv[1].lower():
+        print "".join(("\n", "usage:", "\n",
+                       "%s --help\n"% sys.argv[0],
+                       "%s TEST_TAR_FUNCS output_tarfile "% sys.argv[0],
+                       "input_directory[write_chunks (1|0)]  [block_size (int)]\n",
+                       "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
+
+    elif sys.argv[1] == "TEST_TAR_FUNCS":
+        create_tarfile(sys.argv[1+1], sys.argv[2+1])
+        WRITE_CHUNKS = False
+        if len(sys.argv) >= 6:
+            WRITE_CHUNKS = True
+            DIG = digest_for_file(sys.argv[2],
+                                  write_chunks=int(sys.argv[4]),
+                                  block_size=int(sys.argv[5]))
+        else:
+            DIG = digest_for_file(sys.argv[2], write_chunks=int(sys.argv[4]))
+        print "digest for %s is %s" % (sys.argv[2], DIG)
+        if WRITE_CHUNKS:
+            print "to test directory /tmp/%s contents use commands " % DIG
+            print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
+                    (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+
+    elif sys.argv[1] == "TEST_DATE_CALLBACK":
+        P_DUCK = lambda: None
+        P_DUCK.values = lambda: None
+        OPT_DUCK = lambda: None
+        OPT_DUCK.dest = "values"
+        if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
+            print "date format OK"
+        
+
+    else:
+        print "syntax error for command input:  %s" % sys.argv
+        print "try:  %s --help" % sys.argv[0]

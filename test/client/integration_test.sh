@@ -162,6 +162,7 @@ if [ "$SKIP_CDF_TEST" = "" ]; then
 fi
 if [ "$SKIP_CDF_TEST" = "" ]; then
     lg_echo testing cdf sam job
+    unset JOBSUB_SETUP_SOURCED
     OUTFILE=`pwd`/$1.$GROUP.test_cdf_sam_job.log
     cd cdf_dag_test
     sh ${TEST_FLAG} ./cdf_sam_test.sh $SERVER >$OUTFILE 2>&1
@@ -170,6 +171,7 @@ if [ "$SKIP_CDF_TEST" = "" ]; then
     GOTJID3=`echo $CDFJID | grep '[0-9].0@'`
     echo use $CDFJID to retrieve cdf submission results
     cd -
+    unset JOBSUB_SETUP_SOURCED
 fi
 
 lg_echo test --maxConcurrent submit

@@ -1,11 +1,16 @@
-source /fnal/ups/etc/setups.sh
-setup cigetcert
-setup kx509
-#unset X509_USER_CERT
-#unset X509_USER_KEY
-#export X509_USER_PROXY=/tmp/x509up_u${UID}
-export KRB5CCNAME=`ls -lart /tmp/krb5cc_${UID}* | tail -1 | awk '{print $9}'`
-kx509
-#export X509_USER_CERT=/tmp/x509up_u${UID}
-#export X509_USER_KEY=/tmp/x509up_u${UID}
-#unset X509_USER_PROXY
+#!/bin/bash -x
+if [ "$JOBSUB_SETUP_SOURCED" = "" ]; then
+    export JOBSUB_SETUP_SOURCED=1
+    for F in /cvmfs/fermilab.opensciencegrid.org/products/common/setups /grid/fermiapp/products/common/etc/setups /fnal/ups/etc/setups; do
+        if [ -e "$F" ]; then
+            source $F
+            break
+        fi
+    done
+    setup cigetcert
+    setup kx509
+    export KRB5CCNAME=`ls -lart /tmp/krb5cc_${UID}* | tail -1 | awk '{print $9}'`
+    kx509
+    export EXPERIMENT=$GROUP
+    setup ifdhc
+fi

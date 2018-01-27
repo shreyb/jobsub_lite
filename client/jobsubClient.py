@@ -189,30 +189,17 @@ class JobSubClient:
                 except:
                     raise JobSubClientError(err)
             
-            #if self.dropbox_uri_map and self.is_tardir:
-            #    self.tardir_dropbox_location = self.tardirDropboxLocation()
-            #    ifdh_exit_code = self.ifdh_upload_tardir()
-            #    if ifdh_exit_code:
-            #        print "IFDH Upload failed with exit code %s" % ifdh_exit_code 
-            #        raise JobSubClientSubmissionError
-            #elif self.dropbox_uri_map:
             if self.dropbox_uri_map:
                 actual_server = self.server
                 tfiles = []
                 # upload the files
                 self.tardir_dropbox_location = self.tardirDropboxLocation()
-                logSupport.dprint('calling ifdh_upload_tardir')
-                result = self.ifdh_upload_tardir()
-                logSupport.dprint('ifdh_upload_tardir result=%s'%result)
+                logSupport.dprint('calling ifdh_upload')
+                result = self.ifdh_upload()
+                logSupport.dprint('ifdh_upload result=%s'%result)
                 if not result:
-                    raise JobSubClientSubmissionError('ifdh_upload_tardir failed')
+                    raise JobSubClientSubmissionError('ifdh_upload failed')
 
-                #result: {u'a8c36cfec4a0d81da084ebbaafc27687562b96e8': 
-                #{u'url': u'/jobsub/acctgroups/annie/dropbox/a8c36cfec4a0d81da084ebbaafc27687562b96e8/annie_stuff.tar', 
-                #u'path': u'/pnfs/annie/scratch/jobsub_tarballs/annie_stuff.tar', 
-                #u'host': u'fermicloud042.fnal.gov'}}
-                #print "result: %s" % result
-                # replace uri with path on server
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
                     print "Arg is: ", arg 
@@ -278,11 +265,7 @@ class JobSubClient:
                 logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%(self.dropbox_uri_map, self.directory_tar_map))
 
 
-    #
-    #dropbox_uri_map={'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'} 
-    #directory_tar_map={'tardir://annie_stuff': 'dropbox://annie_stuff.tar'}
-    #
-    def ifdh_upload_tardir(self):
+    def ifdh_upload(self):
         """
         upload files from dropbox_uri_map to tardir_dropbox_location
         via ifdh

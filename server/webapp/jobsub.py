@@ -203,18 +203,20 @@ def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
     """
-    r_code = None
+    r_code = None 
     try:
         prs = JobsubConfigParser()
-        if prs.has_section(acctgroup):
-            if prs.has_option(acctgroup, 'dropbox_location'):
-                r_code = prs.get(acctgroup, 'dropbox_location')
-                try:
-                    r_code_sub = r_code % acctgroup
-                    r_code = r_code_sub
-                except TypeError:
-                    # Substitution failed, so return original r_code
-                    pass
+        r_code = prs.get(acctgroup, 'dropbox_location')
+        try:
+            # First, check to see if dropbox is turned "off" in jobsub.ini.
+            r_code = prs.getboolean(acctgroup, 'dropbox_location')
+        except ValueError:
+            try:
+                r_code_sub = r_code % acctgroup
+                r_code = r_code_sub
+            except TypeError:
+                # Substitution failed, so return original r_code
+           	pass
     except:
         logger.log('Failed to get dropbox_location: ',
                    traceback=True,
@@ -233,7 +235,9 @@ def get_authentication_methods(acctgroup):
     """
     try:
         prs = JobsubConfigParser()
-        r_code = prs.get(acctgroup, 'authentication_methods')
+        if prs.has_section(acctgroup):
+            if prs.has_option(acctgroup, 'authentication_methods'):
+                r_code = prs.get(acctgroup, 'authentication_methods')
     except:
         logger.log('Failed to get authentication_methods: ',
                    traceback=True,

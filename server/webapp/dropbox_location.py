@@ -19,7 +19,6 @@ import jobsub
 from format import format_response
 
 
-# @cherrypy.popargs('dropbox_dir')
 class DropboxLocationResource(object):
     """see module documentation, only one class in file
     """
@@ -32,7 +31,11 @@ class DropboxLocationResource(object):
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
         dropbox = jobsub.get_dropbox_location(acctgroup)
-        if not dropbox:
+        if dropbox == False:
+            cherrypy.response.status = 403
+            return {'err': 'Dropbox location is NOT available for %s'
+                % acctgroup}
+        elif not dropbox:
             cherrypy.response.status = 404
             return {'err': 'Dropbox location is NOT found for %s'
                 % acctgroup}

@@ -858,6 +858,7 @@ class JobSubClient:
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.FAILONERROR, True)
 
         try:
             curl.perform()
@@ -871,6 +872,9 @@ class JobSubClient:
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (
                 http_code, errno, errstr)
+            if http_code == 403:
+                msg = "Dropbox upload for %s has been turned off.\n"%acct_group
+                print msg
             # logSupport.dprint(traceback.format_exc(limit=10))
             # traceback.print_stack()
             raise JobSubClientError(err)

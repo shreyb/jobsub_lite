@@ -58,4 +58,4 @@ fi
 if [ "$POOL" = "" ]; then
     export POOL=$MACH
 fi
-
+source jenkins_test_configs.sh 

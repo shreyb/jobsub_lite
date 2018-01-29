@@ -170,7 +170,7 @@ T5=$?
 echo exit status of last command $T5
 
 
-tar cvzf input4.tgz I_will_fail.sh 
+tar cvjf input4.tgz I_will_fail.sh 
 
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --debug

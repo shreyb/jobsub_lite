@@ -37,7 +37,11 @@ import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 
-import ifdh
+try:
+    import ifdh
+except:
+    sys.stderr.write("unable to import ifdh. source setups.sh; setup ifdh \n")
+    sys.stderr.write("so that tarball submission will work\n")
 
 
 def version_string():
@@ -153,7 +157,6 @@ class JobSubClient:
                     self.server_argv[d_idx + 1:]
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
-            # print self.dropbox_uri_map, self.directory_tar_map
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -188,53 +191,55 @@ class JobSubClient:
             
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
-                ifdh_dest = self.ifdh_upload() 
-            #elif self.dropbox_uri_map:
-                # actual_server = self.server
-                # tfiles = []
+                actual_server = self.server
+                tfiles = []
+
                 # upload the files
-                # result = self.dropbox_upload()
-                # replace uri with path on server
+                logSupport.dprint('calling ifdh_upload')
+                result = self.ifdh_upload()
+                logSupport.dprint('ifdh_upload result=%s'%result)
+                if not result:
+                    raise JobSubClientSubmissionError('ifdh_upload failed')
+
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
-                    print "Arg is: ", arg 
                     if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: 
                         arg = self.directory_tar_map[arg]
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
                         key = self.dropbox_uri_map.get(arg)
                         if key is not None:
-                            # values = result.get(key)
-#                            if values is not None:
-#                                if self.dropboxServer is None:
-			    srv_argv[idx] = ifdh_dest 
+                            values = result.get(key)
+                            if values is not None:
+                                if self.dropboxServer is None:
+                                    srv_argv[idx] = values.get('path')
                                     #actual_server = "https://%s:8443/" % \
                                     #    str(values.get('host'))
-#                                else:
-#                                    url = values.get('url')
-#                                    srv_argv[idx] = '%s%s' % \
-#                                        (self.dropboxServer, url)
-#                                if srv_argv[idx] not in tfiles:
-#                                    tfiles.append(srv_argv[idx])
-#                            else:
-#                                print "Dropbox upload failed with error:"
-#                                print json.dumps(result)
-#                                raise JobSubClientSubmissionError
-#                if len(tfiles) > 0:
-#                    transfer_input_files = ','.join(tfiles)
-#                    fmt_str = "export TRANSFER_INPUT_FILES=%s;%s"
-#                    server_env_exports = fmt_str % (transfer_input_files,
-#                                                    server_env_exports)
-#                    if self.dropboxServer is None and \
-#                            self.server != actual_server:
-#                        self.server = actual_server
+                                else:
+                                    url = values.get('url')
+                                    srv_argv[idx] = '%s%s' % \
+                                        (self.dropboxServer, url)
+                                if srv_argv[idx] not in tfiles:
+                                    tfiles.append(srv_argv[idx])
+                            else:
+                                print "Dropbox upload failed with error:"
+                                print json.dumps(result)
+                                raise JobSubClientSubmissionError
+                if len(tfiles) > 0:
+                    transfer_input_files = ','.join(tfiles)
+                    fmt_str = "export PNFS_INPUT_FILES=%s;%s"
+                    server_env_exports = fmt_str % (transfer_input_files,
+                                                    server_env_exports)
+                    if self.dropboxServer is None and \
+                            self.server != actual_server:
+                        self.server = actual_server
 
             if self.job_exe_uri and self.job_executable:
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
 
-#            if self.is_tardir:
-#                srv_argv.append('--is_tardir')
+            # if self.is_tardir:
+            #    srv_argv.append('--is_tardir')
                 
             if server_env_exports:
                 srv_env_export_b64en = \
@@ -257,38 +262,87 @@ class JobSubClient:
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
                 # self.is_tardir = True
+                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%(self.dropbox_uri_map, self.directory_tar_map))
+
 
     def ifdh_upload(self):
+        """
+        upload files from dropbox_uri_map to dropbox_location
+        via ifdh
+        dropbox_uri_map has form:
+        {'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
+
+        RETURNS dictionary result of form after upload:
+        {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43': 
+        {'path': '/pnfs/annie/scratch/d618fa5ff463c6e4070ebebc7bc0058e9b644d43/annie_stuff.tar', 
+         'host': 'fermicloud042.fnal.gov'}}
+
+        """
+        result={}
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         orig_dir = os.getcwd()
+        logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
+        logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
         try:
-#            for dropbox in self.directory_tar_map.itervalues():
-            for dropbox_uri, file_hash in self.dropbox_uri_map.iteritems():
+            for dropbox in self.dropbox_uri_map.iterkeys():
+                val={}
 
-                if dropbox_uri in self.directory_tar_map.itervalues():
-                    src_tarfile = uri2path(dropbox_uri)
-                    srcpath = os.path.join(orig_dir, src_tarfile)
-                else:
-                    srcpath = uri2path(dropbox_uri)
-	        destdir = os.path.join(self.dropbox_location,
-                    file_hash)
-                i.mkdir_p(str(destdir))
-                destpath = os.path.join(destdir, os.path.basename(uri2path(dropbox_uri)))
-                i.cp([str(srcpath), str(destpath)])
-                if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
-                    print "File already exists.  Skipping upload"
-                elif i.getErrorText(): 
-                    raise Exception(i.getErrorText())
-                else:
-                    logSupport.dprint("File %s uploaded to %s" % (srcpath, destpath))
+                srcpath = uri2path(dropbox)
+                # If we've tarred up the dir, we need to look in the CWD for 
+                # the tar file
+                if dropbox in self.directory_tar_map.itervalues():
+                    srcpath = os.path.join(orig_dir, srcpath)
+
+                destpath = os.path.join(self.dropbox_location, 
+                    self.dropbox_uri_map[dropbox], 
+                    os.path.basename(uri2path(dropbox)))
+
+                val['path'] = destpath
+                val['host'] = self.server
+                result[self.dropbox_uri_map[dropbox]] = val
+                logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
+#                try:
+#                    err = "ifdh mkdir %s attempt: %s"%(self.tardir_dropbox_location, '')
+#                    logSupport.dprint(err)
+#                    i.mkdir(str(self.tardir_dropbox_location))
+#                except Exception as error:
+#                    err = "ifdh mkdir %s failed: %s"%(self.tardir_dropbox_location, error)
+#                    logSupport.dprint(err)
+                try:
+                    err = "ifdh mkdir_p %s attempt: %s"%(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox]), '')
+                    logSupport.dprint(err)
+                    i.mkdir_p(str(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox])))
+                except Exception as error:
+                    err = "ifdh mkdir %s failed: %s"%(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox]), error)
+                    logSupport.dprint(err)
+                try:                
+                    err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
+                    logSupport.dprint(err)
+                    i.cp([str(srcpath), str(destpath)])
+                    # If the file already exists, catch that error from ifdhc and move on
+                    if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
+                        msg = "File %s already exists.  Skipping upload" % srcpath
+                        logSupport.dprint(msg)
+                    elif i.getErrorText(): 
+                        raise Exception(i.getErrorText())
+                    else:
+                        logSupport.dprint("File %s uploaded to %s" % (srcpath, destpath))
+                except Exception as error:
+                    err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
+                    logSupport.dprint(err)
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
-            raise JobSubClientSubmissionError(err)
-        return destpath 
+            logSupport.dprint(err)
+
+        return result
 
 	 
     def dropbox_upload(self):
+        """
+        upload a tarball or file to the dropbox server
+        currently not used
+        """
         result = dict()
         post_data = list()
         orig_server = self.server
@@ -1393,10 +1447,23 @@ def get_capath():
     return ca_dir
 
 
-def create_tarfile(tar_file, tar_path, tar_type="bz2"):
+
+def create_tarfile(tar_file, tar_path, tar_type="tar"):
+    """
+    create a compressed tarfile
+        Args:
+            tar_file (string): full pathname of tarfile to be created
+            tar_path (string): directory to be tarred up into 'tar_file'
+            tar_type (string, optional): if "tgz": gzipped tarfile
+                                                  otherwise bzipped tarfile
+        Returns:
+            bool: True if successful, False otherwise.
+        Raises:
+            None
+    """
     orig_dir = os.getcwd()
-    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
-                      (tar_file, tar_path, orig_dir))
+    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %\
+        (tar_file, tar_path, orig_dir))
     if tar_type == "tgz":
         tar = tarfile.open(tar_file, 'w:gz')
     else:
@@ -1405,23 +1472,29 @@ def create_tarfile(tar_file, tar_path, tar_type="bz2"):
     tar_dir = os.getcwd()
     print('creating tar of %s' % tar_dir)
     failed_file_list = []
-    f0 = os.path.realpath(tar_dir)
+    ftar_d = os.path.realpath(tar_dir)
     files = os.listdir(tar_dir)
 
     for fname in files:
-        f1 = os.path.join(f0, fname)
+        ftar_n = os.path.join(ftar_d, fname)
         try:
-            tar.add(f1, fname)
+            tar.add(ftar_n, fname)
 
-        except:
+        except StandardError:
             failed_file_list.append(fname)
-    if len(failed_file_list) > 0:
+    tar.close()
+    os.chdir(orig_dir)
+    if failed_file_list:
         for fname in failed_file_list:
             print(
                 "failed to add to tarfile: %s Permissions problem?\n" %
                 fname)
-    tar.close()
-    os.chdir(orig_dir)
+        return False
+    return True
+
+
+
+
 
 ##########################################################################
 # INTERNAL - DO NOT USE OUTSIDE THIS CLASS
@@ -1548,17 +1621,50 @@ def get_dropbox_uri_map(argv):
     return map
 
 
-def digest_for_file(fileName, block_size=2**20):
+
+def digest_for_file(file_name, block_size=2**20, write_chunks=False):
+    """
+    compute  sha1 digest or a file
+        Args:
+            file_name (str): file to be digested
+            block_size (int): size of 'chunks' to be read from file_name
+            write_chunks (bool): if True, create files of size 'block_size'
+                in /tmp/(sha1_digest_of_file_name/) which can be re-assembled 
+                into a file with 'cat * > file_name' .  Chunks can be sized to
+                spread across cacheing systems such as squid or dcache
+        Returns:
+            sha1 digest of file_name (string)
+        Raises:
+    """
     dig = hashlib.sha1()
-    f = open(fileName, 'r')
+    fhdl = open(file_name, 'r')
+    block_size = int(block_size)
+    if write_chunks:
+        dirpath = tempfile.mkdtemp()
+        dirtemp = os.path.dirname(dirpath)
+        f_cnt = int('a00000', 16)
+        #chunks will be named 'a00000, a00001, a00002, etc
+        chunk_name = os.path.join(dirpath, str(hex(f_cnt))[2:])
     while True:
-        data = f.read(block_size)
+        data = fhdl.read(block_size)
         if not data:
             break
         dig.update(data)
-    f.close()
-    x = dig.hexdigest()
-    return x
+        if write_chunks:
+            chdl = open(chunk_name, 'wb')
+            chdl.write(data)
+            chdl.close()
+            f_cnt += 1
+            chunk_name = os.path.join(dirpath, str(hex(f_cnt))[2:])
+    fhdl.close()
+    hashd = dig.hexdigest()
+    if write_chunks:
+        newdir = os.path.join(dirtemp, hashd)
+        if  os.path.exists(newdir):
+            shutil.rmtree(dirpath)
+        else:
+            os.rename(dirpath, newdir)
+    return hashd
 
 
 def check_id(jobid):
@@ -1603,6 +1709,47 @@ def date_callback(option, opt, value, p):
         setattr(p.values, option.dest, value)
     else:
         sys.exit(
-            """invalid date format for '%s'.  Must be of the form 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  example: '2015-03-01 01:59:03'""" %
-            value)
+            """invalid date format for '%s'.  Must be of the form """ % value +\
+            """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """+\
+            """example: '2015-03-01 01:59:03'""")
     return p
+
+
+if __name__ == '__main__':
+    #put anything you want to test without using the entire client here
+
+    if len(sys.argv) == 1 or 'help' in sys.argv[1].lower():
+        print "".join(("\n", "usage:", "\n",
+                       "%s --help\n"% sys.argv[0],
+                       "%s TEST_TAR_FUNCS output_tarfile "% sys.argv[0],
+                       "input_directory[write_chunks (1|0)]  [block_size (int)]\n",
+                       "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
+
+    elif sys.argv[1] == "TEST_TAR_FUNCS":
+        create_tarfile(sys.argv[1+1], sys.argv[2+1])
+        WRITE_CHUNKS = False
+        if len(sys.argv) >= 6:
+            WRITE_CHUNKS = True
+            DIG = digest_for_file(sys.argv[2],
+                                  write_chunks=int(sys.argv[4]),
+                                  block_size=int(sys.argv[5]))
+        else:
+            DIG = digest_for_file(sys.argv[2], write_chunks=int(sys.argv[4]))
+        print "digest for %s is %s" % (sys.argv[2], DIG)
+        if WRITE_CHUNKS:
+            print "to test directory /tmp/%s contents use commands " % DIG
+            print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
+                    (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+
+    elif sys.argv[1] == "TEST_DATE_CALLBACK":
+        P_DUCK = lambda: None
+        P_DUCK.values = lambda: None
+        OPT_DUCK = lambda: None
+        OPT_DUCK.dest = "values"
+        if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
+            print "date format OK"
+        
+
+    else:
+        print "syntax error for command input:  %s" % sys.argv
+        print "try:  %s --help" % sys.argv[0]

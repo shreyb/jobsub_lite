@@ -18,7 +18,7 @@ from auth import check_auth
 from request_headers import get_client_dn
 from format import format_response
 from jobsub import get_dropbox_path_root
-from jobsub import get_tardir_dropbox
+from jobsub import get_dropbox_location
 from util import mkdir_p
 from util import digest_for_file
 
@@ -47,7 +47,7 @@ class DropboxResource(object):
         TODO need a way to identify older clients and
         flag to them that thier files weren't uploaded
         """
-        dropbox_path_root = get_tardir_dropbox(acctgroup)
+        dropbox_path_root = get_dropbox_location(acctgroup)
         file_map = dict()
         for arg_name, arg_value in kwargs.items():
             logger.log("arg_name=%s arg_value=%s" % (arg_name, arg_value))

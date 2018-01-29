@@ -1,11 +1,9 @@
 """
  Description:
-   Query dropbox location to use for an experiment to drop tarballs.  Written
-   as a part of the transition to unmount Bluearc from the grid worker nodes.
+   Query dropbox location to use for an experiment to drop tarballs and other files.  
+   Written as a part of the transition to unmount Bluearc from the grid worker nodes.
 
-   # API is /acctgroups/<group>/authmethods/
-   API is /acctgroups/<group>/tardirdropboxlocation/
-   # API is /acctgroups/<group>/authmethods/<method_name>/
+   API is /acctgroups/<group>/dropboxlocation/
 
  Project:
    JobSub
@@ -22,25 +20,23 @@ from format import format_response
 
 
 # @cherrypy.popargs('dropbox_dir')
-class TarballDropboxLocationResource(object):
+class DropboxLocationResource(object):
     """see module documentation, only one class in file
     """
 
     def doGET(self, kwargs):
         """ http GET request on index.html of API
-            Query tarball dropbox location. Returns a JSON list object.
-            API is /acctgroups/<group>/tardirdropboxlocation/ 
-            # API is /acctgroups/<group>/authmethods/
-            # API is /acctgroups/<group>/authmethods/<method_name>/
+            Query dropbox location. Returns a JSON list object.
+            API is /acctgroups/<group>/dropboxlocation/ 
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-        tar_dropbox = jobsub.get_tardir_dropbox(acctgroup)
-        if not tar_dropbox:
+        dropbox = jobsub.get_dropbox_location(acctgroup)
+        if not dropbox:
             cherrypy.response.status = 404
-            return {'err': 'Dropbox location for tarball is NOT found for %s'
+            return {'err': 'Dropbox location is NOT found for %s'
                 % acctgroup}
-        return {'out': tar_dropbox}
+        return {'out': dropbox}
 
     @cherrypy.expose
     @format_response
@@ -58,7 +54,7 @@ class TarballDropboxLocationResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
         except:
-            err = 'Exception on TarballDropboxLocationResource.index'
+            err = 'Exception on DropboxLocationResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,

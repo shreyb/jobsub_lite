@@ -41,7 +41,7 @@ JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/job
 
 JOBSUB_AUTHMETHODS_URL_PATTERN = '%s/jobsub/acctgroups/%s/authmethods/'
 
-JOBSUB_TARDIR_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/tardirdropboxlocation/' 
+JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/' 
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
 JOBSUB_Q_USERID_URL_PATTERN = '%s/jobsub/users/%s/jobs/'

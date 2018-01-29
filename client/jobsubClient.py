@@ -187,7 +187,7 @@ class JobSubClient:
                     raise JobSubClientError(err)
             
             if self.dropbox_uri_map:
-                self.tardir_dropbox_location = self.tardirDropboxLocation()
+                self.dropbox_location = self.dropboxLocation()
                 ifdh_dest = self.ifdh_upload() 
             #elif self.dropbox_uri_map:
                 # actual_server = self.server
@@ -248,7 +248,6 @@ class JobSubClient:
 
         for arg in argv:
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
-                print "tardir arg", arg
                 tarpath = uri2path(arg)
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
@@ -272,7 +271,7 @@ class JobSubClient:
                     srcpath = os.path.join(orig_dir, src_tarfile)
                 else:
                     srcpath = uri2path(dropbox_uri)
-	        destdir = os.path.join(self.tardir_dropbox_location,
+	        destdir = os.path.join(self.dropbox_location,
                     file_hash)
                 i.mkdir_p(str(destdir))
                 destpath = os.path.join(destdir, os.path.basename(uri2path(dropbox_uri)))
@@ -788,8 +787,8 @@ class JobSubClient:
         list_url = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(list_url, 'GET')
 
-    def tardirDropboxLocation(self, acct_group=None):
-        """Get location of dropbox for tardirs from server"""	
+    def dropboxLocation(self, acct_group=None):
+        """Get location of dropbox from server"""	
         if not acct_group:
             acct_group = self.account_group
         #check for down servers DNS RR
@@ -798,10 +797,10 @@ class JobSubClient:
                 self.server = server
                 break
 
-        tardir_dropbox_url = constants.JOBSUB_TARDIR_DROPBOX_LOCATION_URL_PATTERN %\
+        dropbox_url = constants.JOBSUB_DROPBOX_LOCATION_URL_PATTERN %\
             (self.server, acct_group)
         
-        curl, response = curl_secure_context(tardir_dropbox_url, self.credentials)
+        curl, response = curl_secure_context(dropbox_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         curl.setopt(curl.CAPATH, get_capath())

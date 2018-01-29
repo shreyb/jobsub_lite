@@ -199,7 +199,7 @@ def sub_group_pattern(acctgroup):
     return acg
 
 
-def get_tardir_dropbox(acctgroup):
+def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
     """
@@ -207,8 +207,8 @@ def get_tardir_dropbox(acctgroup):
     try:
         prs = JobsubConfigParser()
         if prs.has_section(acctgroup):
-            if prs.has_option(acctgroup, 'tardir_dropbox_location'):
-                r_code = prs.get(acctgroup, 'tardir_dropbox_location')
+            if prs.has_option(acctgroup, 'dropbox_location'):
+                r_code = prs.get(acctgroup, 'dropbox_location')
                 try:
                     r_code_sub = r_code % acctgroup
                     r_code = r_code_sub
@@ -216,10 +216,10 @@ def get_tardir_dropbox(acctgroup):
                     # Substitution failed, so return original r_code
                     pass
     except:
-        logger.log('Failed to get tardir_dropbox_location: ',
+        logger.log('Failed to get dropbox_location: ',
                    traceback=True,
                    severity=logging.ERROR)
-        logger.log('Failed to get tardir_dropbox_location: ',
+        logger.log('Failed to get dropbox_location: ',
                    traceback=True,
                    severity=logging.ERROR,
                    logfile='error')

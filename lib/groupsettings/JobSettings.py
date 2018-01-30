@@ -269,9 +269,8 @@ class JobSettings(object):
         if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
             settings['grid'] = True
         if settings['tar_file_name']:
-            raw_basename = os.path.basename(settings['tar_file_name'])
-            settings['tar_file_basename'] = raw_basename \
-                if not settings['is_tardir'] else raw_basename + '.tar'  
+            settings['tar_file_basename'] = os.path.basename(
+                settings['tar_file_name'])
             # DEBUG Statements.  Get rid of these
             print "tar_file_name is ", settings['tar_file_name']
             print "tar_file_basename set to", settings['tar_file_basename']
@@ -618,10 +617,6 @@ class JobSettings(object):
                     transfer_input_files list. TAR_FILE will be accessible
                     to the user job on the worker node via the environment
                     variable  $INPUT_TAR_FILE.  """))
-
-        file_group.add_option("--is_tardir", dest="is_tardir", 
-                              action="store_true", default=False, 
-                              help=SUPPRESS_HELP)
 
         generic_group.add_option("-n", "--no_submit", dest="submit",
                                  action="store_false", default=True,

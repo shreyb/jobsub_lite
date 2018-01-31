@@ -36,6 +36,8 @@ import urllib
 import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
+import subprocessSupport
+
 
 try:
     import ifdh
@@ -97,7 +99,7 @@ class JobSubClient:
         uid = self.extra_opts.get('uid')
         if constraint and uid:
             if uid not in constraint:
-                constraint = """Owner=?="%s"&&%s""" %(uid,constraint)
+                constraint = """Owner=?="%s"&&%s""" %(uid, constraint)
                 self.extra_opts['constraint'] = constraint
 
         if len(serverParts) != 3:
@@ -111,7 +113,7 @@ class JobSubClient:
                     self.server = "%s:%s:%s" % (serverParts[0],
                                                 serverParts[1],
                                                 self.serverPort)
-                    self.serverHost = serverParts[1].replace("//","")
+                    self.serverHost = serverParts[1].replace("//", "")
                 else:
                     self.server = "https://%s:%s" % (serverParts[0],
                                                      serverParts[1])
@@ -119,8 +121,8 @@ class JobSubClient:
         else:
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
-                self.serverHost = serverParts[1].replace("//","")
-        self.serverAliases = get_jobsub_server_aliases(self.server) 
+                self.serverHost = serverParts[1].replace("//", "")
+        self.serverAliases = get_jobsub_server_aliases(self.server)
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
@@ -139,7 +141,7 @@ class JobSubClient:
         self.submit_url = None
         self.dropbox_uri_map = {}
         self.directory_tar_map = {}
-        # self.is_tardir = False 
+        # self.is_tardir = False
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
@@ -188,9 +190,10 @@ class JobSubClient:
 
                 except:
                     raise JobSubClientError(err)
-            
+
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
+                self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
                 tfiles = []
 
@@ -203,7 +206,7 @@ class JobSubClient:
 
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
-                    if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: 
+                    if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
                         arg = self.directory_tar_map[arg]
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
                         key = self.dropbox_uri_map.get(arg)
@@ -240,14 +243,14 @@ class JobSubClient:
 
             # if self.is_tardir:
             #    srv_argv.append('--is_tardir')
-                
+
             if server_env_exports:
                 srv_env_export_b64en = \
                     base64.urlsafe_b64encode(server_env_exports)
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverargs_b64en = base64.urlsafe_b64encode(
-                ' '.join(srv_argv)) 
+                ' '.join(srv_argv))
 
     def get_directory_tar_map(self, argv):
 
@@ -284,59 +287,83 @@ class JobSubClient:
         orig_dir = os.getcwd()
         logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
-        try:
-            for dropbox in self.dropbox_uri_map.iterkeys():
-                val={}
+        for dropbox in self.dropbox_uri_map.iterkeys():
+            val={}
+            srcpath = uri2path(dropbox)
+            file_size = int(os.stat(srcpath).st_size) 
+            if file_size > self.dropbox_max_size : 
+                err = "%s is too large %s " %(srcpath, file_size)
+                err +="max allowed size is %s " % self.dropbox_max_size
+                err += "job submission failed"
+                raise JobSubClientSubmissionError(err)
 
-                srcpath = uri2path(dropbox)
-                # If we've tarred up the dir, we need to look in the CWD for 
-                # the tar file
-                if dropbox in self.directory_tar_map.itervalues():
-                    srcpath = os.path.join(orig_dir, srcpath)
+            # If we've tarred up the dir, we need to look in the CWD for 
+            # the tar file
+            if dropbox in self.directory_tar_map.itervalues():
+                srcpath = os.path.join(orig_dir, srcpath)
 
-                destpath = os.path.join(self.dropbox_location, 
-                    self.dropbox_uri_map[dropbox], 
-                    os.path.basename(uri2path(dropbox)))
+            destpath = os.path.join(self.dropbox_location, 
+                self.dropbox_uri_map[dropbox], 
+                os.path.basename(uri2path(dropbox)))
 
-                val['path'] = destpath
-                val['host'] = self.server
-                result[self.dropbox_uri_map[dropbox]] = val
-                logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
-#                try:
-#                    err = "ifdh mkdir %s attempt: %s"%(self.tardir_dropbox_location, '')
-#                    logSupport.dprint(err)
-#                    i.mkdir(str(self.tardir_dropbox_location))
-#                except Exception as error:
-#                    err = "ifdh mkdir %s failed: %s"%(self.tardir_dropbox_location, error)
-#                    logSupport.dprint(err)
-                try:
-                    err = "ifdh mkdir_p %s attempt: %s"%(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox]), '')
-                    logSupport.dprint(err)
-                    i.mkdir_p(str(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox])))
-                except Exception as error:
-                    err = "ifdh mkdir %s failed: %s"%(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox]), error)
-                    logSupport.dprint(err)
-                try:                
-                    err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
-                    logSupport.dprint(err)
-                    i.cp([str(srcpath), str(destpath)])
-                    # If the file already exists, catch that error from ifdhc and move on
-                    if re.search(constants.IFDH_FILE_EXISTS_PATTERN, i.getErrorText()):
-                        msg = "File %s already exists.  Skipping upload" % srcpath
-                        logSupport.dprint(msg)
-                    elif i.getErrorText(): 
-                        raise Exception(i.getErrorText())
-                    else:
-                        logSupport.dprint("File %s uploaded to %s" % (srcpath, destpath))
-                except Exception as error:
-                    err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
-                    logSupport.dprint(err)
-        except Exception as error: 
-            err = "Error uploading tarred directory using ifdh: %s" % error
-            logSupport.dprint(err)
+            #todo hardcoded a very fnal specific url here
+            dpl = destpath.split('/')
+            nfp = ["pnfs","fnal.gov","usr"]
+            nfp.extend(dpl[2:])
+            guc_path = '/'.join(nfp)
+            globus_url_cp_cmd = [ "globus-url-copy", "-rst-retries",
+            "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
+            "30", "-len", "16",  "gsiftp://fndca1.fnal.gov/%s" % guc_path, 
+            "/dev/null", ]
 
+            val['path'] = destpath
+            val['host'] = self.server
+            result[self.dropbox_uri_map[dropbox]] = val
+            logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
+            try:
+                err = "ifdh mkdir_p %s attempt: %s"%\
+                        (os.path.join(self.dropbox_location,
+                            self.dropbox_uri_map[dropbox]), '')
+                logSupport.dprint(err)
+                i.mkdir_p(str(os.path.join(self.dropbox_location,
+                    self.dropbox_uri_map[dropbox])))
+            except Exception as error:
+                err = "ifdh mkdir %s failed: %s"%\
+                        (os.path.join(self.dropbox_location,
+                            self.dropbox_uri_map[dropbox]), error)
+                logSupport.dprint(err)
+            try:                
+                err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
+                logSupport.dprint(err)
+                i.cp([str(srcpath), str(destpath)])
+                with stdchannel_redirected(sys.stderr, os.devnull):
+                    error_text = i.getErrorText()
+                # If the file already exists, catch that error 
+                #from ifdhc and move on
+                if error_text and 'File exists' in error_text:
+                    msg = "File %s already exists.  Skipping upload" %\
+                           srcpath
+                    logSupport.dprint(msg)
+                elif error_text and 'File exists' not in error_text:
+                    raise Exception("caught ifdh error:%s" % error_text)
+
+                else:
+                    logSupport.dprint("File %s uploaded to %s" %\
+                            (srcpath, destpath))
+            except Exception as error:
+                print "caught exception from ifdh cp  error=%s" % error 
+                print "i.getErrorText() %s " % i.getErrorText()
+                err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
+                logSupport.dprint(err)
+            #read back 16 bytes of destfile to game the LRU in dcache
+            try:
+                logSupport.dprint("try: %s "% (" ".join(globus_url_cp_cmd)))
+                subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
+            except:
+                print "%s failed %s" % (" ".join(globus_url_cp_cmd),
+                                                sys.exc_info()[1] )
         return result
-
+ 
 	 
     def dropbox_upload(self):
         """
@@ -841,6 +868,38 @@ class JobSubClient:
         list_url = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(list_url, 'GET')
 
+    def dropboxSize(self, acct_group=None):
+        """Get max size of file allowed in dropbox location from server"""	
+        if not acct_group:
+            acct_group = self.account_group
+        #check for down servers DNS RR
+        for server in self.serverAliases:
+            if is_port_open(server, self.serverPort):
+                self.server = server
+                break
+
+        dropbox_url = constants.JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN %\
+            (self.server, acct_group)
+        
+        curl, response = curl_secure_context(dropbox_url, self.credentials)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
+        curl.setopt(curl.CUSTOMREQUEST, 'GET')
+        curl.setopt(curl.CAPATH, get_capath())
+        default_size = '1073741824'
+
+        try:
+            curl.perform()
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r = response.getvalue()
+            doc = json.loads(response.getvalue())
+            size = doc.get('out')
+            return size
+        except:
+            return default_size
+        finally:
+            curl.close()
+            response.close()
+
     def dropboxLocation(self, acct_group=None):
         """Get location of dropbox from server"""	
         if not acct_group:
@@ -879,15 +938,9 @@ class JobSubClient:
             # traceback.print_stack()
             raise JobSubClientError(err)
         finally:
-	    curl.close()
-	    response.close()
+            curl.close()
+            response.close()
 
-        # except:
-            # probably called a server that doesnt support this URL, just continue
-            # and let round robin do its thing
-            #err = "Error: %s "% sys.exc_info()[0]
-            # logSupport.dprint(err)
-            # raise
 
 
     def serverAuthMethods(self, acct_group=None):
@@ -1474,7 +1527,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar"):
         tar = tarfile.open(tar_file, 'w:bz2')
     os.chdir(tar_path)
     tar_dir = os.getcwd()
-    print('creating tar of %s' % tar_dir)
+    #print('creating tar of %s' % tar_dir)
     failed_file_list = []
     ftar_d = os.path.realpath(tar_dir)
     files = os.listdir(tar_dir)
@@ -1719,6 +1772,33 @@ def date_callback(option, opt, value, p):
     return p
 
 
+import contextlib
+
+
+@contextlib.contextmanager
+def stdchannel_redirected(stdchannel, dest_filename):
+    """
+    A context manager to temporarily redirect stdout or stderr
+
+    e.g.:
+
+
+    with stdchannel_redirected(sys.stderr, os.devnull):
+        if compiler.has_function('clock_gettime', libraries=['rt']):
+            libraries.append('rt')
+    """
+
+    try:
+        oldstdchannel = os.dup(stdchannel.fileno())
+        dest_file = open(dest_filename, 'w')
+        os.dup2(dest_file.fileno(), stdchannel.fileno())
+
+        yield
+    finally:
+        if oldstdchannel is not None:
+            os.dup2(oldstdchannel, stdchannel.fileno())
+        if dest_file is not None:
+            dest_file.close()
 if __name__ == '__main__':
     #put anything you want to test without using the entire client here
 

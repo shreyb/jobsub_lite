@@ -223,6 +223,7 @@ class JobSettings(object):
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs'] = 10000
         self.settings['job_expected_max_lifetime'] = 21600
+        self.settings['input_file_classad_list'] = []
         #self.settings['set_expected_max_lifetime'] = None
 
         # for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -271,9 +272,6 @@ class JobSettings(object):
         if settings['tar_file_name']:
             settings['tar_file_basename'] = os.path.basename(
                 settings['tar_file_name'])
-            # DEBUG Statements.  Get rid of these
-            print "tar_file_name is ", settings['tar_file_name']
-            print "tar_file_basename set to", settings['tar_file_basename']
 
     def findConfigFile(self):
         if 'jobsub_ini_file' in self.settings:
@@ -1163,7 +1161,6 @@ class JobSettings(object):
         transfer_file_list = []
         if settings['transfer_input_files'] is not None:
             transfer_file_list = settings['transfer_input_files'].split(',')
-
         for idir in settings['input_dir_array']:
             if idir in transfer_file_list:
                 ifile = os.path.basename(idir)
@@ -1658,6 +1655,7 @@ class JobSettings(object):
                     tInputFiles = eScript
         if settings['tar_file_name']:
             t = settings['tar_file_name']
+            #this won't work if tar_file in pnfs
             if t not in tInputFiles and os.path.exists(t):
                 if len(tInputFiles) > 0:
                     tInputFiles = tInputFiles + ",%s" % t
@@ -1679,9 +1677,9 @@ class JobSettings(object):
 
     def addToLineSetting(self, thingy):
         settings = self.settings
+        if 'lines' not in settings:
+            settings['lines'] = []
         if settings['needs_appending']:
-            if 'lines' not in settings:
-                settings['lines'] = []
             if thingy not in settings['lines']:
                 settings['lines'].append(thingy)
 
@@ -1741,6 +1739,24 @@ class JobSettings(object):
                         raise InitializationError(err)
                     else:
                         f.write("""+DESIRED_%s = "%s"\n""" % (opt, val))
+
+    def populate_pnfs_classad_list(self):
+        settings = self.settings
+
+        for idir in settings['input_dir_array']:
+            if '/pnfs/' in idir:
+                if '/scratch/' in idir or '/resilient/' in idir:
+                    settings['input_file_classad_list'].append(idir)
+        if 'tar_file_name' in settings:
+            tfn = settings['tar_file_name']
+            if '/pnfs/' in tfn:
+                if '/scratch/' in tfn or '/resilient/' in tfn:
+                    settings['input_file_classad_list'].append(tfn)
+
+        if settings['input_file_classad_list']:
+            pnfs_input_setting="""+PNFS_INPUT_FILES = "%s" """ %\
+                    (",".join(settings['input_file_classad_list']))
+            self.addToLineSetting(pnfs_input_setting)
 
     def condorRequirements(self):
         # print "condorRequirements
@@ -1840,6 +1856,7 @@ class JobSettings(object):
 
     def makeCommandFile(self, job_iter=0):
         settings = self.settings
+        self.populate_pnfs_classad_list()
         settings['cmd_file_list'].append(settings['cmdfile'])
         f = open(settings['cmdfile'], 'w')
         f.write("universe          = vanilla\n")

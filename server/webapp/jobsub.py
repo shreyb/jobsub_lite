@@ -199,6 +199,26 @@ def sub_group_pattern(acctgroup):
     return acg
 
 
+def get_dropbox_max_size(acctgroup):
+    """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
+       uses, return a string
+    """
+    r_code_default = '1073741824'
+    logger.log("default = %s attempting to find dropbox_max_size"%r_code_default)
+    try:
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'dropbox_max_size')
+        logger.log("r_code = %s"%r_code)
+    except:
+        logger.log('Failed to get dropbox_max_size: ',
+                   traceback=True,
+                   severity=logging.ERROR)
+    if r_code:
+        return r_code
+    else:
+        return r_code_default
+
+
 def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string

@@ -610,11 +610,14 @@ class JobSettings(object):
                               action="store",
                               metavar="dropbox://PATH/TO/TAR_FILE",
                               help=re.sub('  \s+', ' ', """specify tarball
-                    to transfer to worker node. TAR_FILE
-                    will be copied to the jobsub server and added to the
-                    transfer_input_files list. TAR_FILE will be accessible
-                    to the user job on the worker node via the environment
-                    variable  $INPUT_TAR_FILE.  """))
+                    or directory (use tardir:///PATH/TO/DIR) to be tarred up 
+                    and transferred to worker node. TAR_FILE will be copied 
+                    to an area specified in the jobsub server configuration, 
+                    transferred to the job and unpacked there.  TAR_FILE will 
+                    be accessible to the user job on the worker node via the 
+                    environment variable $INPUT_TAR_FILE.  The unpacked 
+                    contents will be in the same directory as 
+                    $INPUT_TAR_FILE.""")) 
 
         generic_group.add_option("-n", "--no_submit", dest="submit",
                                  action="store_false", default=True,

@@ -33,3 +33,27 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
+
+def splitall(path):
+    """
+    Split a path into its components, rather than just 
+    into a filename and the rest of the path.
+    
+    Note that os.path.join(*splitall(path)) = path
+
+    @return: List containing path components
+    @rtype: list
+    """
+    path_parts = []
+    while True:
+        sp = os.path.split(path)
+        if sp[0] == path:   # Absolute path root
+            path_parts.insert(0, sp[0])
+            break
+        elif sp[1] == path:  # Relative path root
+            path_parts.insert(0, sp[1])
+            break
+        else:
+            path_parts.insert(0, sp[1])
+            path = sp[0]
+    return path_parts

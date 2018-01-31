@@ -34,8 +34,11 @@ import time
 import shutil
 import urllib
 import random
+from distutils import spawn
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
+import subprocessSupport
+import jobsubUtils
 
 try:
     import ifdh
@@ -281,6 +284,8 @@ class JobSubClient:
         result={}
         i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
+        
+
         orig_dir = os.getcwd()
         logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
@@ -302,13 +307,6 @@ class JobSubClient:
                 val['host'] = self.server
                 result[self.dropbox_uri_map[dropbox]] = val
                 logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
-#                try:
-#                    err = "ifdh mkdir %s attempt: %s"%(self.tardir_dropbox_location, '')
-#                    logSupport.dprint(err)
-#                    i.mkdir(str(self.tardir_dropbox_location))
-#                except Exception as error:
-#                    err = "ifdh mkdir %s failed: %s"%(self.tardir_dropbox_location, error)
-#                    logSupport.dprint(err)
                 try:
                     err = "ifdh mkdir_p %s attempt: %s"%(os.path.join(self.dropbox_location, self.dropbox_uri_map[dropbox]), '')
                     logSupport.dprint(err)
@@ -331,6 +329,48 @@ class JobSubClient:
                 except Exception as error:
                     err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
                     logSupport.dprint(err)
+
+                # This is what IFDH automatically creates a voms proxy.
+                # We'll unset X509_USER_PROXY later - we need this for 
+		# globus-url-copy
+                try:
+                    old_x509_user_proxy = os.environ['X509_USER_PROXY'] 
+                except KeyError:
+                    old_x509_user_proxy = None
+                acct_role = self.acct_role if self.acct_role is not None else "Analysis"
+                os.environ['X509_USER_PROXY'] = '/tmp/x509up_voms_%s_%s_%s' % \
+                    (self.account_group, acct_role, os.getuid())
+
+                try:
+                    msg = "Attempting to reset access time for file %s" % destpath
+                    logSupport.dprint(msg)
+
+                    globus_cmd = spawn.find_executable('globus-url-copy') 
+                    if not globus_cmd:
+                       raise Exception("Could not find globus-url-copy")
+                   
+                    destpath_parts = jobsubUtils.splitall(destpath)
+                    for idx in range(len(destpath_parts)):
+                        if destpath_parts[idx] == 'pnfs':
+                            for add_part in ('usr', 'fnal.gov'):
+                                destpath_parts.insert(idx+1, add_part)
+                            break 
+                    readpath = "gsiftp://fndca1.fnal.gov/%s" % \
+                        os.path.join(*destpath_parts) 
+                    cmd = ("%s -rst-retries 1 -gridftp2 -nodcau -restart "
+                           "-stall-timeout 30 -len 16 %s /dev/null") % (
+                               globus_cmd, readpath)
+                    logSupport.dprint(cmd)
+                    cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+                except Exception as e:
+                    err = "Failed to reset access time for file %s. %s" % (destpath,e)
+                    logSupport.dprint(err)
+                    pass
+                finally:
+                    if old_x509_user_proxy is not None:
+                        os.environ['X509_USER_PROXY'] = old_x509_user_proxy
+                    else:
+                        del os.environ['X509_USER_PROXY'] 
         except Exception as error: 
             err = "Error uploading tarred directory using ifdh: %s" % error
             logSupport.dprint(err)

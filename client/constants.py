@@ -40,6 +40,7 @@ JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/job
 JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/dag/'
 
 JOBSUB_AUTHMETHODS_URL_PATTERN = '%s/jobsub/acctgroups/%s/authmethods/'
+JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxsize/'
 
 JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/' 
 

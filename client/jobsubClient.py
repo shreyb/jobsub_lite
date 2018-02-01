@@ -323,17 +323,31 @@ class JobSubClient:
             result[self.dropbox_uri_map[dropbox]] = val
             logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
             try:
+                dropbox_dir = os.path.join(self.dropbox_location,
+                    self.dropbox_uri_map[dropbox])
                 err = "ifdh mkdir_p %s attempt: %s"%\
-                        (os.path.join(self.dropbox_location,
-                            self.dropbox_uri_map[dropbox]), '')
+                        (dropbox_dir, '')
                 logSupport.dprint(err)
-                i.mkdir_p(str(os.path.join(self.dropbox_location,
-                    self.dropbox_uri_map[dropbox])))
+                i.mkdir_p(str(dropbox_dir))
+                with stdchannel_redirected(sys.stderr, os.devnull):
+                    error_text = i.getErrorText()
+                # This case should be redundant here, but just in case
+                if error_text and 'File exists' in error_text:
+                    msg = "File %s already exists.  Skipping mkdir" %\
+                        dropbox_dir 
+                    logSupport.dprint(msg)
+                # Catch any errors and exit
+                elif error_text and 'File exists' not in error_text:
+                    raise Exception("caught ifdh error:%s" % error_text)
+                else:
+                    logSupport.dprint("ifdh mkdir_p %s successful" % 
+                        dropbox_dir)
             except Exception as error:
                 err = "ifdh mkdir %s failed: %s"%\
                         (os.path.join(self.dropbox_location,
                             self.dropbox_uri_map[dropbox]), error)
                 logSupport.dprint(err)
+                raise JobSubClientError(err) 
             try:                
                 err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
                 logSupport.dprint(err)
@@ -356,6 +370,7 @@ class JobSubClient:
                 print "i.getErrorText() %s " % i.getErrorText()
                 err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
                 logSupport.dprint(err)
+                raise JobSubClientError(err) 
 
             # This is where IFDH automatically creates a voms proxy.
             # We'll unset X509_USER_PROXY later - we need this for 

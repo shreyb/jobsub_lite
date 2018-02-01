@@ -25,6 +25,10 @@ if [ "$3" != "" ]; then
 fi
 OUTDIR=jobsubjobsection/${GROUP}/$CLUSTER
 mkdir -p $OUTDIR
+while $EXEPATH/jobsub_q   $OTHER_TEST_FLAGS $ROLE --group $GROUP --jobsub-server $SERVER --jobid $CLUSTER | grep $CLUSTER > /dev/null 2>&1 ; do
+    echo waiting for job $CLUSTER to finish....
+    sleep 60
+done
 try $EXEPATH/jobsub_fetchlog.py  $OTHER_TEST_FLAGS $ROLE --group $GROUP --jobsub-server $SERVER --jobid $CLUSTER --dest-dir $OUTDIR 
 TRUNCATED_FILE=`ls $OUTDIR/*.out`
 P1="jobsub:---- truncated after $JOBSUB_MAX_JOBLOG_HEAD_SIZE bytes--"

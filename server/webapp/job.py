@@ -105,6 +105,9 @@ class AccountJobsResource(object):
                 jobsub_args = base64.urlsafe_b64decode(
                     str(jobsub_args)).rstrip()
                 logger.log('jobsub_args: %s' % jobsub_args)
+                for arg in jobsub_args.split():
+                    if '/pnfs/' in arg:
+                        logger.log(arg,logfile='dropbox')
                 jobsub_command = kwargs.get('jobsub_command')
                 role = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %

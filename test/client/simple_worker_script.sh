@@ -1,4 +1,7 @@
 #!/bin/bash 
+if [ "$_CONDOR_SCRATCH_DIR" = "" ]; then
+    export $_CONDOR_SCRATCH_DIR = /tmp
+fi
 cd $_CONDOR_SCRATCH_DIR
 ###################################################
 function logit {
@@ -132,7 +135,13 @@ function cleanup_files {
 PGM=$0
 PID=$$
 job_start=$(date '+%s')
-sleep 30
+sleepval = 30
+if [ "$1" != "" ]; then
+    sleepval = $1
+fi
+echo sleeping $sleepval seconds
+
+sleep $sleepval
 #--- verify important Grid variables exist ---
 if [ -z "$OSG_WN_TMP" ];then
   logerr "OSG_WN_TMP variable is empty"

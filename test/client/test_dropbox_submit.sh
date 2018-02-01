@@ -11,6 +11,9 @@ if [ ! -d "${GROUP}_stuff" ]; then
 fi
 
 #DEBUG="--debug"
+if [ "$SLEEPVAL" = "" ]; then
+    export SLEEPVAL=10  #job sleeps 10 minutes by default
+fi
 
 cp simple_worker_script.sh ${GROUP}_dropbox.sh
 cp test*.sh ${GROUP}_stuff
@@ -19,7 +22,7 @@ export SERVER=https://${MACH}:8443
 
 $EXEPATH/jobsub_submit.py $GROUP_SPEC $DEBUG \
        $SERVER_SPEC $SUBMIT_FLAGS \
-              --tar_file_name tardir://${GROUP}_stuff file://"${GROUP}_dropbox.sh"
+              --tar_file_name tardir://${GROUP}_stuff file://"${GROUP}_dropbox.sh" $SLEEPVAL
 T1=$?
 echo T1:$T1
 $EXEPATH/jobsub_submit.py $GROUP_SPEC $DEBUG \

@@ -255,9 +255,7 @@ def get_authentication_methods(acctgroup):
     """
     try:
         prs = JobsubConfigParser()
-        if prs.has_section(acctgroup):
-            if prs.has_option(acctgroup, 'authentication_methods'):
-                r_code = prs.get(acctgroup, 'authentication_methods')
+        r_code = prs.get(acctgroup, 'authentication_methods')
     except:
         logger.log('Failed to get authentication_methods: ',
                    traceback=True,

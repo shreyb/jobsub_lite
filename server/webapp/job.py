@@ -93,6 +93,7 @@ class AccountJobsResource(object):
 
         cherrypy.response.status = 500
         if job_id is None:
+            pnfs_list = []
             child_env = os.environ.copy()
             jobsubConfig = JobsubConfig()
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
@@ -107,7 +108,8 @@ class AccountJobsResource(object):
                 logger.log('jobsub_args: %s' % jobsub_args)
                 for arg in jobsub_args.split():
                     if '/pnfs/' in arg:
-                        logger.log(arg,logfile='dropbox')
+                        pnfs_list.append(arg)
+                        #logger.log(arg,logfile='dropbox')
                 jobsub_command = kwargs.get('jobsub_command')
                 role = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %
@@ -175,6 +177,10 @@ class AccountJobsResource(object):
                         if 'jobsubjobid' in line.lower():
                             cherrypy.response.status = 200
                             logger.log(line)
+                            parts = line.strip().split()
+                            jid = parts[-1]
+                            for pnfs in pnfs_list:
+                                logger.log("%s %s " % (jid, pnfs), logfile='dropbox')
                 if rcode.get('err'):
                     logger.log(rcode['err'], severity=logging.ERROR)
                     logger.log(rcode['err'], severity=logging.ERROR,

@@ -114,6 +114,13 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/jobsub_preen.pyo
 /opt/jobsub/server/admin/jobsub_preen.sh
 /opt/jobsub/server/admin/krbrefresh.sh
+/opt/jobsub/server/admin/refresh_pnfs.sh
+/opt/jobsub/server/admin/refresh_pnfs.py
+/opt/jobsub/server/admin/refresh_pnfs.pyc
+/opt/jobsub/server/admin/refresh_pnfs.pyo
+/opt/jobsub/server/admin/use_myproxy.py
+/opt/jobsub/server/admin/use_myproxy.pyc
+/opt/jobsub/server/admin/use_myproxy.pyo
 /opt/jobsub/server/admin/test_krbrefresh.sh
 /opt/jobsub/server/tools/dagsub
 /opt/jobsub/server/tools/jobsub

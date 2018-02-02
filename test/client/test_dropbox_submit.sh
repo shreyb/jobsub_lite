@@ -10,7 +10,7 @@ if [ ! -d "${GROUP}_stuff" ]; then
   mkdir -p ${GROUP}_stuff
 fi
 
-#DEBUG="--debug"
+DEBUG="--debug"
 if [ "$SLEEPVAL" = "" ]; then
     export SLEEPVAL=10  #job sleeps 10 minutes by default
 fi

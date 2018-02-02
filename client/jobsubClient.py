@@ -286,10 +286,11 @@ class JobSubClient:
         
 
         orig_dir = os.getcwd()
-        logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
-        logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
+        #logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
+        #logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
         for dropbox in self.dropbox_uri_map.iterkeys():
+            already_existed = False
             val={}
             srcpath = uri2path(dropbox)
             file_size = int(os.stat(srcpath).st_size) 
@@ -315,8 +316,8 @@ class JobSubClient:
             guc_path = '/'.join(nfp)
             globus_url_cp_cmd = [ "globus-url-copy", "-rst-retries",
             "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
-            "30", "-len", "16",  "gsiftp://fndca1.fnal.gov/%s" % guc_path, 
-            "/dev/null", ]
+            "30", "-len", "16", "-tcp-bs", "16", 
+            "gsiftp://fndca1.fnal.gov/%s" % guc_path, "/dev/null", ]
 
             val['path'] = destpath
             val['host'] = self.server
@@ -328,8 +329,8 @@ class JobSubClient:
                 err = "ifdh mkdir_p %s attempt: %s"%\
                         (dropbox_dir, '')
                 logSupport.dprint(err)
-                i.mkdir_p(str(dropbox_dir))
                 with stdchannel_redirected(sys.stderr, os.devnull):
+                    i.mkdir_p(str(dropbox_dir))
                     error_text = i.getErrorText()
                 # This case should be redundant here, but just in case
                 if error_text and 'File exists' in error_text:
@@ -349,10 +350,11 @@ class JobSubClient:
                 logSupport.dprint(err)
                 raise JobSubClientError(err) 
             try:                
+                already_existed = False
                 err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
                 logSupport.dprint(err)
-                i.cp([str(srcpath), str(destpath)])
                 with stdchannel_redirected(sys.stderr, os.devnull):
+                    i.cp([str(srcpath), str(destpath)])
                     error_text = i.getErrorText()
                 # If the file already exists, catch that error 
                 #from ifdhc and move on
@@ -360,11 +362,13 @@ class JobSubClient:
                     msg = "File %s already exists.  Skipping upload" %\
                            srcpath
                     logSupport.dprint(msg)
+                    already_exists = True
                 elif error_text and 'File exists' not in error_text:
                     raise Exception("caught ifdh error:%s" % error_text)
                 else:
                     logSupport.dprint("File %s uploaded to %s" %\
                             (srcpath, destpath))
+                    already_exists = False
             except Exception as error:
                 print "caught exception from ifdh cp  error=%s" % error 
                 print "i.getErrorText() %s " % i.getErrorText()
@@ -372,29 +376,30 @@ class JobSubClient:
                 logSupport.dprint(err)
                 raise JobSubClientError(err) 
 
-            # This is where IFDH automatically creates a voms proxy.
-            # We'll unset X509_USER_PROXY later - we need this for 
-	    # globus-url-copy
-            try:
-                old_x509_user_proxy = os.environ['X509_USER_PROXY'] 
-            except KeyError:
-                old_x509_user_proxy = None
-            acct_role = self.acct_role if self.acct_role is not None else "Analysis"
-            os.environ['X509_USER_PROXY'] = '/tmp/x509up_voms_%s_%s_%s' % \
-                (self.account_group, acct_role, os.getuid())
-
-           #read back 16 bytes of destfile to game the LRU in dcache
-            try:
-                logSupport.dprint("try: %s "% (" ".join(globus_url_cp_cmd)))
-                subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
-            except:
-                print "%s failed %s" % (" ".join(globus_url_cp_cmd),
-                                                sys.exc_info()[1] )
-            finally:
-                if old_x509_user_proxy is not None:
-                    os.environ['X509_USER_PROXY'] = old_x509_user_proxy
-                else:
-                    del os.environ['X509_USER_PROXY'] 
+            if already_exists:
+                #read back 16 bytes of destfile to game the LRU in dcache
+                # This is where IFDH automatically creates a voms proxy.
+                # We'll unset X509_USER_PROXY later - we need this for 
+    	        # globus-url-copy
+                try:
+                    old_x509_user_proxy = os.environ['X509_USER_PROXY'] 
+                except KeyError:
+                    old_x509_user_proxy = None
+                acct_role = self.acct_role if self.acct_role is not None else "Analysis"
+                os.environ['X509_USER_PROXY'] = '/tmp/x509up_voms_%s_%s_%s' % \
+                    (self.account_group, acct_role, os.getuid())
+    
+                try:
+                    logSupport.dprint("executing: %s "% (" ".join(globus_url_cp_cmd)))
+                    subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
+                except:
+                    print "%s failed %s" % (" ".join(globus_url_cp_cmd),
+                                                    sys.exc_info()[1] )
+                finally:
+                    if old_x509_user_proxy is not None:
+                        os.environ['X509_USER_PROXY'] = old_x509_user_proxy
+                    else:
+                        del os.environ['X509_USER_PROXY'] 
 
         return result
  

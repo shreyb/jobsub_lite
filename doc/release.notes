@@ -11,6 +11,16 @@ Client
                    default Condor working directory.  The tarball will no longer 
                    be transferred to the jobsub server itself.
 
+                    NEW jobsub.ini settings:
+
+                   dropbox_location = (some location that ifdh can reach)
+                   files are now sent to this location on submission and
+                   user jobs load files from this area instead of dropbox
+                   file system on jobsub server
+                
+                   dropbox_max_size = max size of file in bytes that will
+                   be transported to the new location and on to user job
+
 * Bug	     18291 Warning message from jobsub_fetchlog is now corrected to 
                    reflect new jobsub server naming convention. 
 

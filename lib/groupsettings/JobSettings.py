@@ -967,7 +967,7 @@ class JobSettings(object):
         f.write("""redirect_output_start\n""")
 
         f.write("\n")
-        f.write(JobUtils().krb5ccNameString())
+        #f.write(JobUtils().krb5ccNameString())
         f.write("\n")
         f.write("setup_ifdh_env\n")
         if 'set_up_ifdh' in settings and settings['set_up_ifdh']:

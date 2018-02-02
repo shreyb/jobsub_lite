@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # $Id$
 import os
-import sys
 import re
-from JobSettings import JobSettings, UnknownInputError, IllegalInputError, InitializationError
+from JobSettings import JobSettings
+from JobSettings import InitializationError
+from JobSettings import JobUtils
 
 from optparse import OptionGroup
 
@@ -21,11 +22,19 @@ class CdfSettings(JobSettings):
 
         self.cdf_group.add_option("--tarFile", dest="tar_file_name",
                                   action="store", type="string",
-                                  help="path for tar file to be submitted (e.g. dropbox://./submitme.tar.gz)")
+                                  help="path for tar file to be submitted "+\
+                                       "(e.g. dropbox://./submitme.tar.gz)")
+
+        self.cdf_group.add_option("--sendtkt", dest="send_kb_tkt",
+                                  action="store_true", 
+                                  default=False,
+                                  help="send kerberos ticket to worker"+\
+                                       " nodes (default==False)")
 
         self.cdf_group.add_option("--outLocation", dest="outLocation",
                                   action="store", type="string",
-                                  help="full path for output file (e.g. me@ncdfxx.fnal.gov:/home/me/out.tgz)")
+                                  help="full path for output file (e.g. "+\
+                                       "me@ncdfxx.fnal.gov:/home/me/out.tgz)")
 
         self.cdf_group.add_option("--procType", dest="procType",
                                   action="store", type="string",
@@ -41,14 +50,22 @@ class CdfSettings(JobSettings):
 
         self.cdf_group.add_option("--sections", dest="sectionList",
                                   action="store", type="string",
-                                  help="segment range (e.g. 1-100)) start-end, use instead of --start --end")
+                                  help="segment range (e.g. 1-100)) "+\
+                                       "start-end, use instead of "+\
+                                       "--start --end")
 
         self.cdf_group.add_option("--dhaccess", dest="dhaccess",
                                   action="store", type="string",
-                                  help="method for dataset access, options are SAM,userSAM,dcache,diskpool,MCGen,rootd,fcp/rcp, None")
+                                  help="method for dataset access, "+\
+                                       "options are SAM,userSAM,dcache,"+\
+                                       "diskpool,MCGen,rootd,fcp/rcp, None")
+
         self.cdf_group.add_option("--sam_station", dest="sam_station",
                                   action="store", type="string",
-                                  help="=qualifier:version:station. To use a sam station different from the default,to specify only if dhaccess=SAM  is used (default is SAM) ")
+                                  help="=qualifier:version:station. To "+\
+                                       "use a sam station different from "+\
+                                       "the default,to specify only if "+\
+                                       "dhaccess=SAM is used (default is SAM)")
 
         self.cdf_group.add_option("--maxParallelSec", dest="maxConcurrent",
                                   action="store", type="string",
@@ -119,6 +136,8 @@ class CdfSettings(JobSettings):
             "set -- ${ARGS[@]}",
         ]
         f = open(settings['wrapfile'], 'a')
+        if settings['send_kb_tkt']:
+            f.write(JobUtils().krb5ccNameString())
         if settings['verbose']:
             f.write("###### BEGIN CDFSettings.makeWrapFilePreamble\n")
         self.writeToWrapFile(preWrapCommands, f)
@@ -151,7 +170,7 @@ class CdfSettings(JobSettings):
         settings = self.settings
         num_transfer_tries = settings.get('num_transfer_tries', '8')
         sleep_random = settings.get('sleep_random', '1800')
-        postWrapCommands = [
+        postWrapCommands_tkt = [
             "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
             "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
             "tar cvzf ${OUTPUT_TAR_FILE} * ",
@@ -182,10 +201,37 @@ class CdfSettings(JobSettings):
             """  exit $cpy_stat""",
             """fi """
         ]
+        postWrapCommands_no_tkt = [
+            "cp ${JSB_TMP}/JOBSUB_LOG_FILE ./job_${CAF_SECTION}.out",
+            "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
+            "tar cvzf ${OUTPUT_TAR_FILE} * ",
+            """cpy_out="${JSB_TMP}/ifdh.sh cp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
+            """
+            out_dir=`dirname ${OUTPUT_DESTINATION}`
+            ${JSB_TMP}/ifdh.sh ls  $out_dir 0 > /dev/null 2>&1 
+            if [ $? -ne 0 ]; then
+                ${JSB_TMP}/ifdh.sh mkdir $out_dir
+                if [ $? -ne 0 ]; then
+                    echo "output location $out_dir appears to not exist. Exiting"
+                    exit 1
+                fi
+            fi
+            date
+            echo executing:$cpy_out
+            $cpy_out
+            cpy_stat=$?
+            """,
+            """exiting with status $cpy_stat"  """,
+            """exit $cpy_stat""",
+        ]
         f = open(settings['wrapfile'], 'a')
         if settings['verbose']:
             f.write("###### BEGIN CDFSettings.makeWrapFilePostamble\n")
-        self.writeToWrapFile(postWrapCommands, f)
+        if settings['send_kb_tkt']:
+            self.writeToWrapFile(postWrapCommands_tkt, f)
+        else:
+            self.writeToWrapFile(postWrapCommands_no_tkt, f)
+
         if settings['verbose']:
             f.write("###### END CDFSettings.makeWrapFilePostmble\n")
         f.close()
@@ -218,10 +264,14 @@ class CdfSettings(JobSettings):
         default_output_host = settings.get('default_output_host',
                                            'fcdflnxgpvm01.fnal.gov')
         if 'outLocation' not in settings:
-            settings['outLocation'] = "%s@%s:%s_$.tgz" %\
+            if settings['send_kb_tkt']:
+                settings['outLocation'] = "%s@%s:%s_$.tgz" %\
                                       (settings['user'],
                                        default_output_host,
                                        settings['local_host'])
+            else:
+                settings['outLocation']="/pnfs/cdf/scratch/%s/%s_$.tgz"%\
+                                        (settings['user'],settings['local_host'])
         if 'tar_file_name' not in settings:
             raise Exception(
                 'you must supply an input tar ball using --tarFile')

@@ -32,6 +32,7 @@ if [ "$IS_FIFEBATCH" = "0" ]; then
 fi
 #if [ 1 = 0 ]; then
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_GROUP \
@@ -56,6 +57,7 @@ T0=$?
 
 export SAM_DATASET=`head -$(($RANDOM%$DFN_CNT+1)) test_definition_list | tail -1`
 gCMD2="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_USER \
@@ -80,6 +82,7 @@ T1=$?
 
 export SAM_DATASET=`head -$(($RANDOM%$DFN_CNT+1)) test_definition_list | tail -1`
 gCMD3="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_USER \
@@ -103,6 +106,7 @@ T2=$?
 
 export SAM_DATASET=`head -$(($RANDOM%$DFN_CNT+1)) test_definition_list | tail -1`
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_USER \
@@ -127,6 +131,7 @@ T3=$?
 echo exit status of last command $T3
 
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
@@ -146,6 +151,7 @@ echo exit status of last command $T4
 
 export SAM_DATASET=`head -$(($RANDOM%$DFN_CNT+1)) test_definition_list | tail -1`
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_GROUP \
@@ -173,6 +179,7 @@ echo exit status of last command $T5
 tar cvjf input4.tgz I_will_fail.sh 
 
 gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
+    $CDF_EXTRA \
     --debug
     -e SAM_STATION \
     -e SAM_GROUP \

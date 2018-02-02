@@ -1,6 +1,6 @@
 # author Dennis Box, dbox@fnal.gov
 class jobsub_server::vars{
-    $jobsub_server_version = '1.2.3-0.1.rc1'
+    $jobsub_server_version = 'latest'
     $jobsub_tools_version = 'v1_4_6'
     $jobsub_user = 'rexbatch'
     $jobsub_user_uid = 47535
@@ -23,7 +23,7 @@ class jobsub_server::vars{
     $jenkins_key = '/etc/grid-security/jenkins/jenkinskey.pem'
     $jenkins_admin_email = 'dbox@fnal.gov'
     $ups_version = 'v5_1_4'
-    $ifdhc_version = 'v1_8_7'
+    $ifdhc_version = 'v2_0_9'
     $release_major = $::os['release']['major']
     case $::os['release']['major']{
       '5' : {

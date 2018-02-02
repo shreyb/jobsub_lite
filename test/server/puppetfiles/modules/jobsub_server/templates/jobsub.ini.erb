@@ -1,4 +1,4 @@
-;; This page documents behavior of entries in the jobsub.ini file
+;;This page documents behavior of entries in the jobsub.ini file
 ;;ini file for jobsub_tools and jobsub-server
 ;;order of searching for location of this file :
 ;;first $JOBSUB_INI_FILE
@@ -22,6 +22,14 @@
 ;;substitutes them in
 
 [default]
+;;RecentDaemonCoreDutyCycle is a number between 0 and 1
+;;if RecentDaemonCoreDutyCycle > submit_reject_threshold then submission
+;;will fail with an error message to try again later
+submit_reject_threshold = .95
+requirements_is_glidein = ' '
+;;global_superusers can hold/release/remove anyones job and view thier sandboxes
+global_superusers = 'ahandres mfattoru boyd mazzacan kherner kretzke sbhat coimbra lisa vito kuropat illingwo stoughto natasha ivm mengel kirby tlevshin '
+
 ;;becomes job_lease_duration in submitted jobs jdf
 job_lease_duration = 3600
 ;;input to -valid flag in voms-proxy-init
@@ -44,7 +52,11 @@ jobsub_max_joblog_head_size = 1000000
 site_ignore_list = 'Fermigrid fcdfosgt2 fcdfosgt3'
 default_voms_role = Analysis
 krbrefresh_query_format = ' -af:, "strcat(jobsub_group,string(\".\"),owner)" x509userproxysubject x509userproxy -constraint "JobUniverse=?=5&&X509UserProxySubject=!=UNDEFINED" '
+#uncomment if condor_version > 8.5
+#condor_q_extra_flags = -allusers -nobatch
+requirements = 'target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2'
 
+[admx]
 [annie]
 sandbox_readable_by_group = True
 [argoneut]
@@ -58,7 +70,6 @@ num_transfer_tries = 10
 sleep_random = 1200
 #default host that cdf jobs try to scp data back to
 default_output_host = fcdflnxgpvm01.fnal.gov
-#
 [cdms]
 [chips]
 [coupp]
@@ -67,18 +78,21 @@ default_output_host = fcdflnxgpvm01.fnal.gov
 voms = des:/des
 [dune]
 voms = dune:/dune
+group_superusers = 'anorman trj'
+sandbox_readable_by_group = True
 [dzero]
 voms = dzero:/dzero/users
 transfer_krbcc_to_job = True
+sub_group_pattern = dzero/users
 [fermilab]
 voms = fermilab:/fermilab
 [genie]
 [gm2]
+sandbox_readable_by_group = True
+[icarus]
 [lar1]
 [lar1nd]
 [lariat]
-[lbne]
-voms = lbne:/lbne
 [lsst]
 voms = lsst:/lsst
 [marsaccel]
@@ -95,26 +109,34 @@ voms = fermilab:/fermilab/mars/mu2e
 sub_group_pattern = mars/mu2e
 ;set_up_ifdh = True
 [minerva]
-group_superusers = 'rodriges drut1186 drimal'
+group_superusers = 'rodriges drut1186 drimal jyhan'
 [miniboone]
 [minos]
 sandbox_readable_by_group = True
 [mu2e]
 sandbox_readable_by_group = True
 ;set_up_ifdh = True
+group_superusers = 'kutschke gandr rlc'
 [numix]
+[noble]
 [nova]
+group_superusers = 'dbox jwolcott karlwarb'
 sandbox_readable_by_group = True
+;;Should be set to 'True' for groups that use Production role but do not use
+;;managed proxies distribued by discompsupp
+hash_nondefault_proxy = True
 [patriot]
+[sbnd]
 [seaquest]
 [test]
-authentication_methods = myproxy
 [uboone]
 sandbox_readable_by_group = True
 
 ;;submit_host section
 ;;these will overwrite the experiment settings above
 ;;
+
+
 [<%= scope.lookupvar('::fqdn') %>]
 output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
 ;;max value for jobsub_submit -N
@@ -138,10 +160,12 @@ job_expected_max_lifetime_default = 8h
 condor_tmp = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
 condor_exec = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
 history_db = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/history/jobsub_history.db
-x509_user_proxy = /var/lib/jobsub/creds/proxies/${GROUP}/x509cc_${LOGNAME}
+x509_user_proxy = /fife/local/home/rexbatch/.security/${GROUP}/x509cc_${LOGNAME}
 storage_group = <%= scope.lookupvar('jobsub_server::vars::jobsub_group') %>
-supported_groups = 'annie argoneut captmnv cdf cdms chips coupp darkside des dune dzero fermilab genie gm2 lar1 lar1nd lariat lbne lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos mu2e numix nova patriot seaquest test uboone'
+supported_groups = 'admx annie argoneut captmnv cdf cdms chips coupp darkside des dune dzero fermilab genie gm2 icarus lar1 lar1nd lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos mu2e numix noble nova patriot sbnd seaquest test uboone'
+supported_roles = 'Analysis Calibration DESGW Data Production Online'
 transfer_wrapfile = True
 always_run_on_grid = True
 has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER
 default_grid_site = False
+

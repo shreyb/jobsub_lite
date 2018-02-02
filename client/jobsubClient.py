@@ -1785,7 +1785,7 @@ def jid_callback(option, opt, value, p):
     if '@' not in value:
 
         err = "jobid (%s) is missing an '@', it must be of the " % value
-        err += "form number@server, i.e. 313100.0@fifebatch.fnal.gov"
+        err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
         sys.exit(err)
     setattr(p.values, option.dest, value)
 

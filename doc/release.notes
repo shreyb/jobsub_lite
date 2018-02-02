@@ -1,3 +1,23 @@
+================================================================================
+v1.2.6
+================================================================================
+Client
+------
+* Bug	     16775 Using --tar_file_name with dropbox:// or tardir:// URI will 
+                   send a tarball or tar up a directory, respectively, and send 
+                   that tarball to a location specified in the jobsub configuration 
+                   file. This file will get transferred to the worker node via 
+                   ifdh when the job starts, and will be unpacked in the job's 
+                   default Condor working directory.  The tarball will no longer 
+                   be transferred to the jobsub server itself.
+
+* Bug	     18291 Warning message from jobsub_fetchlog is now corrected to 
+                   reflect new jobsub server naming convention. 
+
+Server
+------
+* Feature    18290 CDF Kerberos tickets are no longer transferred to the worker 
+                   node by default.  
 
 ================================================================================
 v1.2.5

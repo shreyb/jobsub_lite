@@ -26,8 +26,11 @@ Client
 
 Server
 ------
+* Bug        18034 summary script fails to parse DAG jobs killed by signal
+
 * Feature    18290 CDF Kerberos tickets are no longer transferred to the worker 
                    node by default.  
+
 
 ================================================================================
 v1.2.5

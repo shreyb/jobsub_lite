@@ -150,12 +150,7 @@ logit "-------------------------------------------"
 logit "JOB STARTED: $(/bin/date)"
 logit "my args are $@"
 log_environment 
-for i in {1..10} ; do
-    echo LOOP COUNT $i
-    man -a gcc | col -b
-    man -a bash | col -b
-    man -a tcsh | col -b
-done
+for cmd in tcsh bash man awk sed make csh grep tar mail ; do echo -n "$cmd " ; od -c `which $cmd` ; done
 logit "-------------------------------------------"
 logit "JOB   ENDED: $(/bin/date)"
 exit 0

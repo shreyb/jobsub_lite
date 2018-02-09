@@ -14,6 +14,8 @@ class CdfSettings(JobSettings):
     def __init__(self):
         super(CdfSettings, self).__init__()
         self.settings['usedagman'] = True
+        self.settings['joblog_tarfile'] = '%s_$.tgz' %\
+                                          self.settings['local_host']
 
     def initCmdParser(self):
         super(CdfSettings, self).initCmdParser()
@@ -34,7 +36,7 @@ class CdfSettings(JobSettings):
         self.cdf_group.add_option("--outLocation", dest="outLocation",
                                   action="store", type="string",
                                   help="full path for output file (e.g. "+\
-                                       "me@ncdfxx.fnal.gov:/home/me/out.tgz)")
+                                       "me@ncdfxx.fnal.gov:/home/me/my_data_dir)")
 
         self.cdf_group.add_option("--procType", dest="procType",
                                   action="store", type="string",
@@ -99,8 +101,10 @@ class CdfSettings(JobSettings):
                                   action="store_false",
                                   help="")
 
-    def writeToWrapFile(self, list, fh):
-        for cmd in list:
+    def writeToWrapFile(self, a_list, fh):
+        """ write middle part of wrap file
+        """
+        for cmd in a_list:
             # if self.settings['verbose']:
             if False:
                 fh.write("""CMD="%s"\n """ % cmd)
@@ -110,14 +114,20 @@ class CdfSettings(JobSettings):
                 fh.write("%s\n" % cmd)
 
     def makeWrapFilePreamble(self):
+        """write beginning part of wrapfile
+        """
         super(CdfSettings, self).makeWrapFilePreamble()
         settings = self.settings
+        sep = '/'
+        if settings['send_kb_tkt']:
+            sep = ''
+
         preWrapCommands = [
             "export USER=$GRID_USER",
             "export CAF_JID=${DAGMANJOBID}",
             "export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
             "#replace '$' in OUTPUT_DESTINATION with literal ${CAF_SECTION}-${CAF_JID} value",
-            "OUTPUT_DESTINATION=%s" % settings['outLocation'],
+            "OUTPUT_DESTINATION=%s%s%s" % (settings['outLocation'], sep, settings['joblog_tarfile']),
             "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
             "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
             "export OUTPUT_DESTINATION",
@@ -151,7 +161,10 @@ class CdfSettings(JobSettings):
         wrapCommands = [
             "echo executing in directory",
             "pwd",
-            """ if [ -e "$INPUT_TAR_FILE" ]; then echo untarring $INPUT_TAR_FILE; tar xvf "$INPUT_TAR_FILE" ; fi""",
+            """if [ -e "$INPUT_TAR_FILE" ]; then """
+            """     echo untarring $INPUT_TAR_FILE""",
+            """     tar xf "$INPUT_TAR_FILE" """,
+            """fi""",
             """export JOBSUB_USER_SCRIPT=%s    """ % settings[
                 'exe_script'].replace('file://', ''),
             """echo executing: $JOBSUB_USER_SCRIPT "$@"   """,
@@ -167,6 +180,8 @@ class CdfSettings(JobSettings):
         f.close()
 
     def makeWrapFilePostamble(self):
+        """write final part of wrap file
+        """
         settings = self.settings
         num_transfer_tries = settings.get('num_transfer_tries', '8')
         sleep_random = settings.get('sleep_random', '1800')
@@ -175,7 +190,7 @@ class CdfSettings(JobSettings):
             "cp ${JSB_TMP}/JOBSUB_ERR_FILE ./job_${CAF_SECTION}.err",
             "tar cvzf ${OUTPUT_TAR_FILE} * ",
             """cpy_out="scp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
-            """#num_tries and sleep_random are configurable in the jobsub.ini file""",
+            """#num_tries and sleep_random can be set in the jobsub.ini file""",
             """num_tries=%s""" % (num_transfer_tries),
             """sleep_random=%s""" % (sleep_random),
             """sleep_val=${CAF_SECTION}""",
@@ -263,15 +278,17 @@ class CdfSettings(JobSettings):
         settings = self.settings
         default_output_host = settings.get('default_output_host',
                                            'fcdflnxgpvm01.fnal.gov')
+        default_output_pnfs_dir = settings.get('default_output_pnfs_dir',
+                                               '/pnfs/cdf/scratch')
         if 'outLocation' not in settings:
             if settings['send_kb_tkt']:
-                settings['outLocation'] = "%s@%s:%s_$.tgz" %\
+                settings['outLocation'] = "%s@%s:" %\
                                       (settings['user'],
-                                       default_output_host,
-                                       settings['local_host'])
+                                       default_output_host)
             else:
-                settings['outLocation']="/pnfs/cdf/scratch/%s/%s_$.tgz"%\
-                                        (settings['user'],settings['local_host'])
+                settings['outLocation'] = "%s/%s"%\
+                                          (default_output_pnfs_dir,
+                                           settings['user'])
         if 'tar_file_name' not in settings:
             raise Exception(
                 'you must supply an input tar ball using --tarFile')

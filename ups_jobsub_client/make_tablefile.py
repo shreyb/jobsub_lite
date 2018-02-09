@@ -41,6 +41,7 @@ Action=setup
     #envSet(JOBSUB_CLIENT_DIR, ${UPS_PROD_DIR})
 
     setupRequired(cigetcert)
+    setupRequired(ifdhc)
     Execute( "which python "  , NO_UPS_ENV, JOBSUB_PYVER )
     If( test "$JOBSUB_PYVER" != "/usr/bin/python" )
            Execute( "ups setup pycurl",  NO_UPS_ENV, JOBSUB_PYCURL_SET_SOURCE )

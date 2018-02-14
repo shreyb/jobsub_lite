@@ -5,6 +5,7 @@ import re
 from JobSettings import JobSettings
 from JobSettings import InitializationError
 from JobSettings import JobUtils
+from JobSettings import InitializationError
 
 from optparse import OptionGroup
 
@@ -280,6 +281,14 @@ class CdfSettings(JobSettings):
                                            'fcdflnxgpvm01.fnal.gov')
         default_output_pnfs_dir = settings.get('default_output_pnfs_dir',
                                                '/pnfs/cdf/scratch')
+        if settings['send_kb_tkt']:
+            for opt in settings['resource_list']:
+                if 'OFFSITE' in opt:
+                    raise InitializationError("--resource_provides=usage_model=OFFSITE"+\
+                                    " and --sendtkt are not allowed together")
+            if 'site' in settings and settings['site']:
+                raise InitializationError("--site and --sendtkt are not allowed together")
+
         if 'outLocation' not in settings:
             if settings['send_kb_tkt']:
                 settings['outLocation'] = "%s@%s:" %\
@@ -290,7 +299,7 @@ class CdfSettings(JobSettings):
                                           (default_output_pnfs_dir,
                                            settings['user'])
         if 'tar_file_name' not in settings:
-            raise Exception(
+            raise InitializationError(
                 'you must supply an input tar ball using --tarFile')
         if 'sectionList' in settings:
             try:

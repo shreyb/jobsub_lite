@@ -201,7 +201,7 @@ def refresh_pnfs_lru(agelimit=1):
                     if long_proxy_name not in proxies:
                     	proxies[long_proxy_name] = authorize(dn, user, grp, role, agelimit)
                     for destpath in check[3:]:
-                        if destpath not in refreshed_files:
+                        if destpath not in refreshed_files and '/scratch/' in destpath:
                             refreshed_files.append(destpath)
                             
                             #todo hardcoded a very fnal specific url here

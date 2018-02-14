@@ -281,8 +281,10 @@ class JobSubClient:
 
         """
         result={}
-        i = ifdh.ifdh()
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
+        os.environ['GROUP'] = self.account_group
+        os.environ['EXPERIMENT'] = self.account_group
+        i = ifdh.ifdh()
         
 
         orig_dir = os.getcwd()
@@ -376,7 +378,7 @@ class JobSubClient:
                 logSupport.dprint(err)
                 raise JobSubClientError(err) 
 
-            if already_exists:
+            if already_exists and '/scratch/' in destpath:
                 #read back 16 bytes of destfile to game the LRU in dcache
                 # This is where IFDH automatically creates a voms proxy.
                 # We'll unset X509_USER_PROXY later - we need this for 
@@ -393,8 +395,9 @@ class JobSubClient:
                     logSupport.dprint("executing: %s "% (" ".join(globus_url_cp_cmd)))
                     subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
                 except:
-                    print "%s failed %s" % (" ".join(globus_url_cp_cmd),
-                                                    sys.exc_info()[1] )
+                    logSupport.dprint("%s failed %s" % (" ".join(globus_url_cp_cmd),
+                                                        sys.exc_info()[1] ))
+                    logSupport.dprint("this globus error is usually not serious, proceeding")
                 finally:
                     if old_x509_user_proxy is not None:
                         os.environ['X509_USER_PROXY'] = old_x509_user_proxy

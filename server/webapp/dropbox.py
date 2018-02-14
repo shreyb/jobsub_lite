@@ -42,29 +42,17 @@ class DropboxResource(object):
                           "application/x-download", "attachment")
 
     def doPOST(self, acctgroup, kwargs):
-        """Pretend to upload files to Dropbox service
-        they now go elsewhere
-        TODO need a way to identify older clients and
-        flag to them that thier files weren't uploaded
         """
-        dropbox_path_root = get_dropbox_location(acctgroup)
-        file_map = dict()
-        for arg_name, arg_value in kwargs.items():
-            logger.log("arg_name=%s arg_value=%s" % (arg_name, arg_value))
-            if hasattr(arg_value, 'file'):
-                if arg_name.find('file') < 0:
-                    supplied_digest = arg_name
-                    phldr = arg_name
-                drpbx_fpath = os.path.join(
-                    dropbox_path_root, arg_value.filename)
-                dropbox_url = '/jobsub/acctgroups/%s/dropbox/%s/%s' %\
-                    (acctgroup, phldr, arg_value.filename)
-                file_map[arg_name] = {
-                    'path': drpbx_fpath,
-                    'url': dropbox_url,
-                    'host': socket.gethostname()
-                }
-        return file_map
+        Catch older clients ( < v1.2.6 ) which try to up load to dropbox on
+        the jobsub server.  
+        """
+        err="""
+        Unsupported client/server combination.  The dropbox:// feature
+        was moved from the jobsub_server to dcache  starting with  v1_2_6.
+        If you want to use this feature use  jobsub_client v1_2_6
+        or greater
+        """
+        raise Exception(err)
 
 
 

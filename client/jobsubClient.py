@@ -378,7 +378,7 @@ class JobSubClient:
                 logSupport.dprint(err)
                 raise JobSubClientError(err) 
 
-            if already_exists:
+            if already_exists and '/scratch/' in destpath:
                 #read back 16 bytes of destfile to game the LRU in dcache
                 # This is where IFDH automatically creates a voms proxy.
                 # We'll unset X509_USER_PROXY later - we need this for 

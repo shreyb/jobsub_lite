@@ -38,11 +38,6 @@ from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 import subprocessSupport
 
-try:
-    import ifdh
-except:
-    sys.stderr.write("unable to import ifdh. source setups.sh; setup ifdh \n")
-    sys.stderr.write("so that tarball submission will work\n")
 
 
 def version_string():
@@ -280,6 +275,15 @@ class JobSubClient:
          'host': 'fermicloud042.fnal.gov'}}
 
         """
+        try:
+            import ifdh
+        except:
+            err="""
+                Unable to import ifdh. Ups setup ifdh
+                so that dropbox and tarball  submission will work.
+                """
+            raise JobSubClientSubmissionError(err)
+
         result={}
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         os.environ['GROUP'] = self.account_group

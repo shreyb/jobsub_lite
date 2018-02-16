@@ -279,8 +279,9 @@ class JobSubClient:
             import ifdh
         except:
             err="""
-                Unable to import ifdh. Ups setup ifdh
-                so that dropbox and tarball  submission will work.
+                SUBMISSION FAILED: Unable to import ifdh, ups setup ifdh
+                so that dropbox and tarball submission will work properly.
+                Exiting....
                 """
             raise JobSubClientSubmissionError(err)
 

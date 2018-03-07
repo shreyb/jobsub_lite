@@ -1,5 +1,15 @@
 
 ================================================================================
+v1.2.6.2
+================================================================================
+Client
+------
+* Bug      19104  Take ifdh dependency version out of jobsub client, minimize
+                  interference with experiments ifdh version.  Use ifdh
+                  set up by experiment if possible.  In any case spawn seperate
+                  shell to run ifdh in.
+
+================================================================================
 v1.2.6.1
 ================================================================================
 Client

@@ -37,7 +37,7 @@ import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 import subprocessSupport
-
+from distutils import spawn
 
 
 def version_string():
@@ -88,6 +88,10 @@ class JobSubClient:
         self.forcex = extra_opts.get('forcex', False)
         self.schedd_list = []
         serverParts = re.split(':', self.server)
+        self.dropbox_max_size = None
+        self.dropbox_location = None
+        self.ca_path = get_capath()
+
 
         constraint = self.extra_opts.get('constraint')
         uid = self.extra_opts.get('uid')
@@ -247,10 +251,20 @@ class JobSubClient:
                 ' '.join(srv_argv))
 
     def get_directory_tar_map(self, argv):
-
+        """
+        @argv: list of directorys to tar /path/to/somedir/,
+               /path/to/anotherdir/, etc
+        foreach arg:
+            create somedir.tar from /path/to/somedir/
+        return a directory_tar_map of the form
+        {"dropbox://somedir.tar":"sha1 digest of somedir.tar",
+         "dropbox//anotherdir.tar": "sha1 digest of anotherdir.tar"}
+        """
         for arg in argv:
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
                 tarpath = uri2path(arg)
+                if tarpath[-1] == '/':
+                    tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
                 create_tarfile(tarname, tarpath)
@@ -259,7 +273,8 @@ class JobSubClient:
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
                 # self.is_tardir = True
-                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%(self.dropbox_uri_map, self.directory_tar_map))
+                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%\
+                        (self.dropbox_uri_map, self.directory_tar_map))
 
 
     def ifdh_upload(self):
@@ -270,50 +285,38 @@ class JobSubClient:
         {'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
 
         RETURNS dictionary result of form after upload:
-        {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43': 
-        {'path': '/pnfs/annie/scratch/d618fa5ff463c6e4070ebebc7bc0058e9b644d43/annie_stuff.tar', 
+        {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43':
+        {'path': '/pnfs/annie/scratch/d618fa5ff463c6e4070ebebc7bc0058e9b644d43/annie_stuff.tar',
          'host': 'fermicloud042.fnal.gov'}}
 
         """
-        try:
-            import ifdh
-        except:
-            err="""
-                SUBMISSION FAILED: Unable to import ifdh, ups setup ifdh
-                so that dropbox and tarball submission will work properly.
-                Exiting....
-                """
-            raise JobSubClientSubmissionError(err)
 
         result={}
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         os.environ['GROUP'] = self.account_group
         os.environ['EXPERIMENT'] = self.account_group
-        i = ifdh.ifdh()
-        
 
         orig_dir = os.getcwd()
         #logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         #logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
         for dropbox in self.dropbox_uri_map.iterkeys():
-            already_existed = False
             val={}
             srcpath = uri2path(dropbox)
-            file_size = int(os.stat(srcpath).st_size) 
-            if file_size > self.dropbox_max_size : 
+            file_size = int(os.stat(srcpath).st_size)
+            if file_size > self.dropbox_max_size :
                 err = "%s is too large %s " %(srcpath, file_size)
                 err +="max allowed size is %s " % self.dropbox_max_size
                 err += "job submission failed"
                 raise JobSubClientSubmissionError(err)
 
-            # If we've tarred up the dir, we need to look in the CWD for 
+            # If we've tarred up the dir, we need to look in the CWD for
             # the tar file
             if dropbox in self.directory_tar_map.itervalues():
                 srcpath = os.path.join(orig_dir, srcpath)
 
-            destpath = os.path.join(self.dropbox_location, 
-                self.dropbox_uri_map[dropbox], 
+            destpath = os.path.join(self.dropbox_location,
+                self.dropbox_uri_map[dropbox],
                 os.path.basename(uri2path(dropbox)))
 
             #todo hardcoded a very fnal specific url here
@@ -323,79 +326,58 @@ class JobSubClient:
             guc_path = '/'.join(nfp)
             globus_url_cp_cmd = [ "globus-url-copy", "-rst-retries",
             "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
-            "30", "-len", "16", "-tcp-bs", "16", 
+            "30", "-len", "16", "-tcp-bs", "16",
             "gsiftp://fndca1.fnal.gov/%s" % guc_path, "/dev/null", ]
 
             val['path'] = destpath
             val['host'] = self.server
             result[self.dropbox_uri_map[dropbox]] = val
             logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
+            already_exists = False
+            ifdh_exe = find_ifdh_exe()
             try:
                 dropbox_dir = os.path.join(self.dropbox_location,
                     self.dropbox_uri_map[dropbox])
-                err = "ifdh mkdir_p %s attempt: %s"%\
+                sts = "ifdh mkdir_p %s attempt: %s"%\
                         (dropbox_dir, '')
-                logSupport.dprint(err)
-                with stdchannel_redirected(sys.stderr, os.devnull):
-                    i.mkdir_p(str(dropbox_dir))
-                    error_text = i.getErrorText()
-                # This case should be redundant here, but just in case
-                if error_text and 'File exists' in error_text:
-                    msg = "File %s already exists.  Skipping mkdir" %\
-                        dropbox_dir 
-                    logSupport.dprint(msg)
-                # Catch any errors and exit
-                elif error_text and 'File exists' not in error_text:
-                    raise Exception("caught ifdh error:%s" % error_text)
-                else:
-                    logSupport.dprint("ifdh mkdir_p %s successful" % 
-                        dropbox_dir)
+                logSupport.dprint(sts)
+                cmd = "%s mkdir_p %s" % (ifdh_exe, dropbox_dir)
+                subprocessSupport.iexe_cmd(cmd)
             except Exception as error:
-                err = "ifdh mkdir %s failed: %s"%\
-                        (os.path.join(self.dropbox_location,
+                if 'File exists' in str(error):
+                    pass
+                else:
+                    err = "%s mkdir %s failed: %s"%\
+                        (ifdh_exe, os.path.join(self.dropbox_location,
                             self.dropbox_uri_map[dropbox]), error)
-                logSupport.dprint(err)
-                raise JobSubClientError(err) 
-            try:                
-                already_existed = False
-                err = "ifdh cp %s %s attempt: %s"%(srcpath, destpath, '')
-                logSupport.dprint(err)
-                with stdchannel_redirected(sys.stderr, os.devnull):
-                    i.cp([str(srcpath), str(destpath)])
-                    error_text = i.getErrorText()
-                # If the file already exists, catch that error 
-                #from ifdhc and move on
-                if error_text and 'File exists' in error_text:
-                    msg = "File %s already exists.  Skipping upload" %\
-                           srcpath
-                    logSupport.dprint(msg)
-                    already_exists = True
-                elif error_text and 'File exists' not in error_text:
-                    raise Exception("caught ifdh error:%s" % error_text)
-                else:
-                    logSupport.dprint("File %s uploaded to %s" %\
-                            (srcpath, destpath))
-                    already_exists = False
+                    logSupport.dprint(err)
+                    raise JobSubClientError(err)
+            try:
+                sts = "ifdh cp %s %s attempt"%(srcpath, destpath)
+                logSupport.dprint(sts)
+                cmd = "%s cp %s %s"%(ifdh_exe, srcpath, destpath)
+                subprocessSupport.iexe_cmd(cmd)
             except Exception as error:
-                print "caught exception from ifdh cp  error=%s" % error 
-                print "i.getErrorText() %s " % i.getErrorText()
-                err = "ifdh cp %s %s failed: %s"%(srcpath, destpath, error)
-                logSupport.dprint(err)
-                raise JobSubClientError(err) 
+                if 'File exists' in str(error):
+                    already_exists = True
+                else:
+                    err = "%s cp %s %s failed: %s"%(ifdh_exe, srcpath, destpath, error)
+                    logSupport.dprint(err)
+                    raise JobSubClientError(err)
 
             if already_exists and '/scratch/' in destpath:
                 #read back 16 bytes of destfile to game the LRU in dcache
                 # This is where IFDH automatically creates a voms proxy.
-                # We'll unset X509_USER_PROXY later - we need this for 
+                # We'll unset X509_USER_PROXY later - we need this for
     	        # globus-url-copy
                 try:
-                    old_x509_user_proxy = os.environ['X509_USER_PROXY'] 
+                    old_x509_user_proxy = os.environ['X509_USER_PROXY']
                 except KeyError:
                     old_x509_user_proxy = None
                 acct_role = self.acct_role if self.acct_role is not None else "Analysis"
                 os.environ['X509_USER_PROXY'] = '/tmp/x509up_voms_%s_%s_%s' % \
                     (self.account_group, acct_role, os.getuid())
-    
+
                 try:
                     logSupport.dprint("executing: %s "% (" ".join(globus_url_cp_cmd)))
                     subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
@@ -407,11 +389,11 @@ class JobSubClient:
                     if old_x509_user_proxy is not None:
                         os.environ['X509_USER_PROXY'] = old_x509_user_proxy
                     else:
-                        del os.environ['X509_USER_PROXY'] 
+                        del os.environ['X509_USER_PROXY']
 
         return result
  
-	 
+
     def dropbox_upload(self):
         """
         upload a tarball or file to the dropbox server
@@ -419,7 +401,6 @@ class JobSubClient:
         """
         result = dict()
         post_data = list()
-        orig_server = self.server
 
         dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN %\
             (self.dropboxServer or self.server, self.account_group)
@@ -818,10 +799,14 @@ class JobSubClient:
             raise JobSubClientError(err)
 
     def remove(self, jobid=None, uid=None, constraint=None):
-        url_pattern = constants.remove_url_dict.get((jobid is not None,
-                                                     uid is not None,
-                                                     self.acct_role is not None,
-                                                     self.forcex))
+        """
+        jobsub_rm aka condor_rm
+        """
+
+        #url_pattern = constants.remove_url_dict.get((jobid is not None,
+        #                                             uid is not None,
+        #                                             self.acct_role is not None,
+        #                                             self.forcex))
         if constraint:
             self.probeSchedds()
             rslts = []
@@ -881,6 +866,9 @@ class JobSubClient:
                 "remove requires either a jobid or uid or constraint")
 
     def history(self, userid=None, jobid=None, outFormat=None):
+        """
+        jobsub_history aka condor_history
+        """
         jobid = self.checkID(jobid)
         self.probeSchedds()
         rc = 0
@@ -916,7 +904,7 @@ class JobSubClient:
         return self.changeJobState(list_url, 'GET')
 
     def dropboxSize(self, acct_group=None):
-        """Get max size of file allowed in dropbox location from server"""	
+        """Get max size of file allowed in dropbox location from server"""
         if not acct_group:
             acct_group = self.account_group
         #check for down servers DNS RR
@@ -927,17 +915,15 @@ class JobSubClient:
 
         dropbox_url = constants.JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN %\
             (self.server, acct_group)
-        
+
         curl, response = curl_secure_context(dropbox_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.CAPATH, self.ca_path)
         default_size = '1073741824'
 
         try:
             curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            r = response.getvalue()
             doc = json.loads(response.getvalue())
             size = doc.get('out')
             return size
@@ -948,7 +934,7 @@ class JobSubClient:
             response.close()
 
     def dropboxLocation(self, acct_group=None):
-        """Get location of dropbox from server"""	
+        """Get location of dropbox from server"""
         if not acct_group:
             acct_group = self.account_group
         #check for down servers DNS RR
@@ -959,17 +945,16 @@ class JobSubClient:
 
         dropbox_url = constants.JOBSUB_DROPBOX_LOCATION_URL_PATTERN %\
             (self.server, acct_group)
-        
+ 
         curl, response = curl_secure_context(dropbox_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.CAPATH, self.ca_path)
         curl.setopt(curl.FAILONERROR, True)
 
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            r = response.getvalue()
             doc = json.loads(response.getvalue())
             location = doc.get('out')
             return location
@@ -1006,12 +991,11 @@ class JobSubClient:
         curl, response = curl_secure_context(auth_method_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, get_capath())
+        curl.setopt(curl.CAPATH, self.ca_path)
 
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            r = response.getvalue()
             method_list = json.loads(response.getvalue())
             methods = []
             for m in method_list.get('out'):
@@ -1236,10 +1220,12 @@ class JobSubClient:
                                      verbose=self.verbose,
                                      suppress_server_details=suppress_server_details)
 
-            
+
 def is_port_open(server, port):
+    """ is port on server open?
+    """
     is_open = False
-    server =  server.strip().replace('https://', '')
+    server = server.strip().replace('https://', '')
     sp = server.split(':')
     server = sp[0]
     if len(sp) == 2 and not port:
@@ -1394,6 +1380,8 @@ def print_msg(msg):
 
 
 def print_server_details(response_code, server, serving_server, response_time):
+    """ all the gory details in CAPTIAL LETTERS.
+    """
     print >> sys.stderr, ''
     print >> sys.stderr, 'JOBSUB SERVER CONTACTED     : %s' % server
     print >> sys.stderr, 'JOBSUB SERVER RESPONDED     : %s' % serving_server
@@ -1432,7 +1420,8 @@ def print_json_response(response, response_code, server, serving_server,
 
 def print_formatted_response(msg, response_code, server, serving_server,
                              response_time, msg_type='OUTPUT',
-                             suppress_server_details=False, print_msg_type=True, verbose=False):
+                             suppress_server_details=False,
+                             print_msg_type=True, verbose=False):
     if suppress_server_details and not msg:
         return
     if print_msg_type:
@@ -1535,9 +1524,9 @@ def get_capath():
                    ]
     ca_dir = os.environ.get('X509_CERT_DIR')
 
-    if (not ca_dir):
+    if not ca_dir:
         for system_ca_dir in ca_dir_list:
-            logSupport.dprint('checking %s' % system_ca_dir)
+            #logSupport.dprint('checking %s' % system_ca_dir)
             if (os.path.exists(system_ca_dir)):
                 ca_dir = system_ca_dir
                 break
@@ -1547,7 +1536,7 @@ def get_capath():
         err += 'Set X509_CERT_DIR in the environment.'
         raise JobSubClientError(err)
 
-    logSupport.dprint('Using CA_DIR: %s' % ca_dir)
+    #logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
 
@@ -1718,11 +1707,11 @@ def uri2path(uri):
 
 def get_dropbox_uri_map(argv):
     # make a map with keys of file path and value of sequence
-    map = dict()
+    amap = dict()
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
-            map[arg] = digest_for_file(uri2path(arg))
-    return map
+            amap[arg] = digest_for_file(uri2path(arg))
+    return amap
 
 
 
@@ -1733,7 +1722,7 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             file_name (str): file to be digested
             block_size (int): size of 'chunks' to be read from file_name
             write_chunks (bool): if True, create files of size 'block_size'
-                in /tmp/(sha1_digest_of_file_name/) which can be re-assembled 
+                in /tmp/(sha1_digest_of_file_name/) which can be re-assembled
                 into a file with 'cat * > file_name' .  Chunks can be sized to
                 spread across cacheing systems such as squid or dcache
         Returns:
@@ -1770,6 +1759,13 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             os.rename(dirpath, newdir)
     return hashd
 
+def find_ifdh_exe():
+    ifdh_exe = spawn.find_executable("ifdh.sh")
+    if not ifdh_exe:
+        here = os.path.dirname(os.path.realpath(__file__))
+        if os.path.exists("%s/ifdh.sh" % here):
+            ifdh_exe = "%s/ifdh.sh" % here
+    return ifdh_exe
 
 def check_id(jobid):
     if jobid is None:
@@ -1879,7 +1875,7 @@ if __name__ == '__main__':
         OPT_DUCK.dest = "values"
         if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
             print "date format OK"
-        
+
 
     else:
         print "syntax error for command input:  %s" % sys.argv

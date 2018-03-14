@@ -10,7 +10,7 @@ JOBLIST=`echo "$@"|sed 's/\s\+/,/g'`
 ####make sure client supports --user
 VER=`$EXEPATH/jobsub_q --version`
 NOT_IMPLEMENTED="1.1.4"
-test $VER \> $NOT_IMPLEMENTED
+test "$VER" = "__VERSION__" -o  "$VER" \> "$NOT_IMPLEMENTED"
 OK_VER=$?
 if [ "$OK_VER" != "0" ]; then
     echo "this test only works with clients greater than $NOT_IMPLEMENTED"

@@ -4,6 +4,9 @@ v1.2.6.2
 ================================================================================
 Client
 ------
+* Bug      19312  Use correct URL so that server can use acct_group to select
+                  schedds
+
 * Bug      19104  Take ifdh dependency version out of jobsub client, minimize
                   interference with experiments ifdh version.  Use ifdh
                   set up by experiment if possible.  In any case spawn seperate

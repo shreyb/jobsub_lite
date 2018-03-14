@@ -11,7 +11,8 @@ BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 
 BuildArch:      noarch
 
-Requires:       krb5-fermi-getcert
+Requires:       fermilab-util_kx509
+Requires:       cigetcert
 Requires:       voms-clients
 Requires:       vo-client
 Requires:       python-cherrypy >= 3.2.2

@@ -1039,7 +1039,7 @@ class JobSubClient:
             return
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         if self.account_group:
-            listScheddsURL = "%s/%s" % (listScheddsURL, self.account_group)
+            listScheddsURL = "%s%s/" % (listScheddsURL, self.account_group)
         
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')

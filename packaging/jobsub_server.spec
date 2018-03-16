@@ -20,7 +20,6 @@ Requires:       condor-python
 Requires:       openssl
 Requires:       mod_ssl
 Requires:       mod_wsgi
-Requires:       osg-ca-scripts
 Requires:       fetch-crl
 
 

@@ -763,7 +763,7 @@ class JobRunner(object):
         else:
             cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
                 (grp, usr)
-        cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
+        cmd += """ -append "+JobsubJobId=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
             args.submitHost)
         cmd += args.outputFile
         if host != args.submitHost:

@@ -4,6 +4,12 @@ v1.2.6.2
 ================================================================================
 Client
 ------
+* Bug      17009  Set +Jobsub_Group correctly for dags so hold/release by group
+                  works as intended
+
+* Bug      19430  Change JobsubJobID occurences in classad to JobsubJobId to 
+                  make monitoring work better
+
 * Bug      19312  Use correct URL so that server can use acct_group to select
                   schedds
 

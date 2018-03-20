@@ -904,6 +904,7 @@ class JobSettings(object):
                 'submit_host']
             self.addToLineSetting(
                 """+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
+            self.addToLineSetting("+Jobsub_Group=\"%s\"" % settings['accountinggroup'])
 
         if settings['notify'].lower() not in ['never','error','always']:
             err = "mail_notification setting '%s' must be one of %s" %(settings['notify'],['never','error','always'])
@@ -1921,7 +1922,7 @@ class JobSettings(object):
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\"" %
                                       (settings['accountinggroup'], settings['user']))
-        self.addToLineSetting("+Jobsub_Group=\"%s\"" % settings['group'])
+            self.addToLineSetting("+Jobsub_Group=\"%s\"" % settings['accountinggroup'])
         self.addToLineSetting("+JobsubJobId=\"%s\"" % settings['jobsubjobid'])
         if settings['subgroup']:
             self.addToLineSetting("+Jobsub_SubGroup=\"%s\"" %

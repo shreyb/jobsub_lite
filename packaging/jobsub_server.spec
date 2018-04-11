@@ -139,6 +139,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/auth_myproxy.py
 /opt/jobsub/server/webapp/auth_myproxy.pyc
 /opt/jobsub/server/webapp/auth_myproxy.pyo
+/opt/jobsub/server/webapp/auth_ferry.py
+/opt/jobsub/server/webapp/auth_ferry.pyc
+/opt/jobsub/server/webapp/auth_ferry.pyo
 /opt/jobsub/server/webapp/auth_gums.py
 /opt/jobsub/server/webapp/auth_gums.pyc
 /opt/jobsub/server/webapp/auth_gums.pyo

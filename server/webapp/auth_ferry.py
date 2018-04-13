@@ -16,7 +16,6 @@ import logging
 import jobsub
 import subprocessSupport
 import authutils
-import util
 
 
 def authenticate(dn, acctgroup, acctrole):
@@ -29,7 +28,6 @@ def authenticate(dn, acctgroup, acctrole):
     try:
         logger.log('acctgroup=%s, acctrole=%s'%(acctgroup, acctrole))
         fqan = get_ferry_fqan(acctgroup, acctrole)
-        
         logger.log('fqan=%s'%(fqan))
         username = get_ferry_mapping(dn, fqan)
         username = username.strip()
@@ -53,12 +51,10 @@ def get_ferry_mapping(dn, fqan):
     if fqan not in fqan_list(default_user(dn)):
         return None
 
-    #vo_dat_file = "/var/lib/jobsub/ferry/vorolemapfile2.json"
-    #dn_dat_file = "/var/lib/jobsub/ferry/gridmapfile2.json"
     vo_dat_file = "fqan_user_map.json"
     dn_dat_file = "dn_user_roles_map.json"
-    vo_dat = util.json_from_file(vo_dat_file)
-    dn_dat = util.json_from_file(dn_dat_file)
+    vo_dat = authutils.json_from_file(vo_dat_file)
+    dn_dat = authutils.json_from_file(dn_dat_file)
     dn_map = dn_dat.get(dn)
     vo_map = vo_dat.get(fqan)
     if dn_map:
@@ -69,20 +65,32 @@ def get_ferry_mapping(dn, fqan):
     return None
 
 def default_user(dn):
+    """
+    Find  the 'default' user mapped to a dn
+
+    Args:   dn: the registered dn of the user example
+      "/DC=org/DC=cilogon/C=US/O=Fermi National Accelerator Laboratory/OU=People/CN=Marie Herman/CN=UID:mherman"
+    Returns:
+       mapped user name in this case: mherman
+    """
+
     default_user = None
-    #dn_dat_file = "/var/lib/jobsub/ferry/gridmapfile2.json"
     dn_dat_file = "dn_user_roles_map.json"
-    dn_dat = util.json_from_file(dn_dat_file)
+    dn_dat = authutils.json_from_file(dn_dat_file)
     dn_map = dn_dat.get(dn)
     if dn_map:
         default_user = dn_map['mapped_uname']['default']
     return default_user
 
 def vos_for_dn(dn):
+    """ Return a list of VOs associated with a dn
+    Args: dn a registered dn the ferry server knows about
+    Returns: a python list i.e [ "nova", "cms", "dune"] associated with dn
+    """
+
     vo_list = []
-    #dn_dat_file = "/var/lib/jobsub/ferry/gridmapfile2.json"
     dn_dat_file = "dn_user_roles_map.json"
-    dn_dat = util.json_from_file(dn_dat_file)
+    dn_dat = authutils.json_from_file(dn_dat_file)
     dn_map = dn_dat.get(dn)
     if dn_map:
         vo_list = dn_map['volist']
@@ -90,48 +98,63 @@ def vos_for_dn(dn):
 
 
 def fqan_list(uname):
-     #aff_file = "/var/lib/jobsub/ferry/membersaffiliationsroles2.json"
-     aff_file = "uname_fqan_map.json"
-     aff_dat = util.json_from_file(aff_file)
-     aff_list = aff_dat.get(uname)
-     return aff_list
+    """ return a list of fqans from ferry
+    Args: uname a uid
+    Returns: python list of fqans associated with that uname according to ferry server
+    example     "stjohn": [
+                           "/fermilab/lariat/Role=None",
+                           "/fermilab/lariat/Role=Analysis",
+                            "/fermilab/lariat/Role=Production",
+                            "/fermilab/lariat/Role=Raw",
+                            "/fermilab/uboone/Role=None",
+                            "/fermilab/uboone/Role=Analysis",
+                            "/fermilab/Role=None",
+                            "/fermilab/Role=Analysis"
+                            ]
+    """
+    aff_file = "uname_fqan_map.json"
+    aff_dat = authutils.json_from_file(aff_file)
+    aff_list = aff_dat.get(uname)
+    return aff_list
 
 def alt_uname(fqan):
-     #alt_uname_file =  "/var/lib/jobsub/ferry/vorolemapfile2.json"
-     alt_uname_file =  "fqan_uname_map.json"
-     alt_uname_dat = util.json_from_file(alt_uname_file)
-     alt_unm = alt_uname_dat.get(fqan)
-     return alt_unm
+    """return uid associated with fqan to override default user name
+    Args: fqan
+    Returns:uid
+    example  fqan->"/fermilab/nova/Role=Production"
+             returns->"novapro"
+    """
+    alt_uname_file = "fqan_uname_map.json"
+    alt_uname_dat = authutils.json_from_file(alt_uname_file)
+    alt_unm = alt_uname_dat.get(fqan)
+    return alt_unm
 
 
 def get_ferry_fqan(acctgroup, acctrole=None):
     """return the fqan and mapped_uid for the role from ferry
     """
-    #should not be hardcoded, obviously
-    #vo_dat_file = "/var/lib/jobsub/ferry/vorolemapfile3.json"
     fqan = None
     try:
         vo_dat_file = "vo_role_fqan_map.json"
-        vo_dat = util.json_from_file(vo_dat_file)
+        vo_dat = authutils.json_from_file(vo_dat_file)
         vo_dict = vo_dat.get(acctgroup)
         if vo_dict:
-            fqan = vo_dict.get('Role=%s'%acctrole)
+            fqan = vo_dict.get('Role=%s' % acctrole)
     except Exception as e:
-        logger.log(e,traceback=True)
+        logger.log(e, traceback=True)
     return fqan
 
 if __name__ == '__main__':
     """
     """
-    #gmaps = util.json_from_file('/var/lib/jobsub/ferry/gridmapfile3.json')
-    gmaps = util.json_from_file("dn_user_roles_map.json")
+    _gmaps = authutils.json_from_file("dn_user_roles_map.json")
 
-    for dn in gmaps:
-        uname = default_user(dn)
-        vo_list = vos_for_dn(dn)
-        fq_list = fqan_list(uname)
-        print 'dn=%s maps to %s' %(dn,uname)
-        print 'vos:%s fqans:%s' %(vo_list, fq_list)
-        if fq_list:
-            for fq in fq_list:
-                print "%s %s"%(fq,get_ferry_mapping(dn,fq))
+    for _dn in _gmaps:
+        _uname = default_user(_dn)
+        _vo_list = vos_for_dn(_dn)
+        _fq_list = fqan_list(_uname)
+        print 'dn=%s maps to %s' %(_dn, _uname)
+        print 'vos:%s fqans:%s' %(_vo_list, _fq_list)
+        if _fq_list:
+            for _fq in _fq_list:
+                print "%s %s"%(_fq, get_ferry_mapping(_dn, _fq))

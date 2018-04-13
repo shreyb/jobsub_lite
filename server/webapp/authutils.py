@@ -27,6 +27,9 @@ import jobsub
 import subprocessSupport
 import pwd
 import hashlib
+import json
+import pycurl
+import cStringIO
 
 
 from distutils import spawn
@@ -138,6 +141,197 @@ class Krb5Ticket(object):
             os.remove(cherrypy.request.krb5cc)
             raise OtherAuthError("%s failed:  %s" % (cmd, sys.exc_info()[1]))
 
+
+
+FERRY_DAT={}
+
+def ferry_url():
+    """ return url for ferry server.  Configured from jobsub.ini
+    """
+    jcp = JobsubConfigParser()
+    f_server = jcp.get('default','ferry_server')
+    f_port = jcp.get('default','ferry_port')
+    url = "https://%s" % f_server
+    if f_port:
+        url = "%s:%s" % (url, f_port)
+    return url
+
+def curl_obj():
+    """ return a pycurl object with some prep from jobsub.ini
+    """
+    jcp = JobsubConfigParser()
+    curl = pycurl.Curl()
+    curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
+    curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
+    curl.setopt(curl.SSLCERT, jcp.get('default','jobsub_cert'))
+    curl.setopt(curl.SSLKEY, jcp.get('default','jobsub_key'))
+    return curl
+
+def invert_rolemap(data):
+    """
+    in: https://ferry_server/getAffiliationMembersRoles
+    out: uname_fqan_map.json
+    """
+    i_dat = {}
+    for vo_name in data.keys():
+        vo_dat = data[vo_name]
+        for itm in vo_dat:
+            if itm['username'] not in i_dat.keys():
+                i_dat[itm['username']] = []
+            i_dat[itm['username']].append(itm['fqan'])
+    return i_dat
+
+def create_uname_fqan_map():
+    data = json_from_file("getAffiliationMembersRoles")
+    d1 = invert_rolemap(data)
+    return d1
+
+
+def invert_gmap(data):
+    """in: @param data i.e  https://ferry_server/getGridMapFile 
+       out: dn_user_roles_map.json
+    """
+    i_dat = {}
+    for vo_name in data.keys():
+        vo_dat = data[vo_name]
+        for itm in vo_dat:
+            if itm['userdn'] not in i_dat.keys():
+                i_dat[itm['userdn']] = {'volist':[],
+                                        'mapped_uname':
+                                        {'default': itm['mapped_uname']}}
+            i_dat[itm['userdn']]['volist'].append(vo_name)
+            mapped_name = i_dat[itm['userdn']]['mapped_uname']['default']
+            if itm['mapped_uname'] != mapped_name:
+                i_dat[itm['userdn']]['mapped_uname'][vo_name] = itm['mapped_uname']
+
+    return i_dat
+
+def create_dn_user_roles_map():
+    """
+    create dn_user_roles_map.json
+    will be stored in  /var/lib/jobsub/ferry
+    """
+    data = json_from_file("getGridMapFile")
+    d1 = invert_gmap(data)
+    return d1
+
+
+def invert_vo_role_uid_map(data):
+    """ in: @param data i.e. https://ferry_server/getVORoleMapFile
+        out1:fqan_user_map.json 
+        out2:vo_role_fqan_map.json
+    """
+    i_dat = {}
+    fqan_dat = {}
+    for itm in data:
+        i_dat[itm['fqan']] = itm['mapped_uname']
+        fq_parts = itm['fqan'].split('/')
+        if len(fq_parts)>1:
+            if fq_parts[1]=='fermilab':
+                vo = fq_parts[2]
+            else:
+                vo = fq_parts[1]
+            if vo not in fqan_dat.keys():
+                fqan_dat[vo] = {}
+            role=fq_parts[-1]
+            fqan_dat[vo][role]=itm['fqan']
+
+    return i_dat, fqan_dat
+
+def create_fqan_user_map():
+    """
+    create fqan_user_map.json
+    will be stored in /var/lib/jobsub/ferry by default
+    """
+    data = json_from_file("getVORoleMapFile")
+    d1,d2 = invert_vo_role_uid_map(data)
+    return d1
+
+def create_vo_role_fqan_map():
+    """
+    create vo_role_fqan_map.json
+    will be stored in /var/lib/jobsub/ferry by default
+    """
+    data = json_from_file("getVORoleMapFile")
+    d1,d2 = invert_vo_role_uid_map(data)
+    return d2
+
+def fetch_from_ferry(fname):
+    """ create @param fname : a json file
+        by default stored in /var/lib/jobsub/ferry
+    """
+    if fname == "dn_user_roles_map.json":
+        return create_dn_user_roles_map()
+    elif fname == "uname_fqan_map.json":
+        return create_uname_fqan_map()
+    elif fname == "fqan_user_map.json":
+        return create_fqan_user_map()
+    elif fname == "vo_role_fqan_map.json":
+        return create_vo_role_fqan_map()
+    else:
+        return _fetch_from_ferry(fname)
+
+def _fetch_from_ferry(fname):
+    """
+    use curl to request @param fname from its API
+    """
+    try:
+        url = "%s/%s" % (ferry_url(), fname)
+        co = curl_obj()
+        response = cStringIO.StringIO()
+        co.setopt(co.WRITEFUNCTION, response.write)
+        co.setopt(co.URL, url)
+        co.perform()
+        co.close()
+        return json.loads(response.getvalue())
+    except Exception as e:
+        logger.log(e, traceback=True, severity=logging.ERROR)
+        logger.log(e, traceback=True, severity=logging.ERROR,
+                   logfile='error')
+
+        logger.log(e, traceback=True)
+
+def json_from_file(fname):
+
+    jcp = JobsubConfigParser()
+    jpath = jcp.get('default', 'ferry_output')
+    if not jpath:
+        jpath = '/var/lib/jobsub/ferry'
+    jfile = os.path.join(jpath, fname)
+    logger.log('checking for %s'%jfile)
+    if os.path.exists(jfile):
+        try:
+            st = os.stat(jfile)  
+            age = time.time() - st.st_mtime
+            logger.log('age of %s is %s'% (jfile, age))
+            max_age = jcp.get('default','ferry_expire')
+            if max_age:
+                max_age = int(max_age)
+            else:
+                max_age = 3600
+    
+            if age > max_age:
+                if fname in FERRY_DAT:
+                    del FERRY_DAT[fname]
+                os.remove(jfile)
+            else:
+                if fname in FERRY_DAT:
+                    return FERRY_DAT[fname]
+        except Exception as e:
+            logger.log(e, traceback=True)
+    if os.path.exists(jfile):
+        fd = open(jfile, "r")
+        dat = json.load(fd)
+        fd.close()
+    else:
+        dat = fetch_from_ferry(fname)
+        jtmp = mk_temp_fname(jfile)
+        fd = open(jtmp, "w")
+        fd.write(json.dumps(dat, indent=4))
+        fd.close()
+        os.rename(jtmp, jfile)
+    FERRY_DAT[fname] = dat
+    return dat
 
 def get_voms(acctgroup):
     """get the VOMS string for voms-proxy-init from jobsub.ini config file

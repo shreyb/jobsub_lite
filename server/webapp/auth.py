@@ -50,7 +50,14 @@ def authenticate(dn, acctgroup, acctrole):
         try:
             if method.lower() in ['gums', 'myproxy']:
                 try:
-                    logger.log("PSYCH!!! Authenticating using ferry: ")
+                    import auth_gums
+                    username = auth_gums.authenticate(dn, acctgroup, acctrole)
+                    cherrypy.request.username = username
+                    return username
+                except Exception as e:
+                    logger.log('%s failed %s' % (method, e))
+            elif method.lower() in ['ferry']:
+                try:
                     import auth_ferry
                     username = auth_ferry.authenticate(dn, acctgroup, acctrole)
                     cherrypy.request.username = username
@@ -101,7 +108,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                 except Exception as e:
                     logger.log('authoriziation failed, %s' % e)
 
-            elif method.lower() == 'myproxy':
+            elif method.lower() in ['myproxy', 'ferry']:
                 try:
                     import auth_myproxy
                     return auth_myproxy.authorize(dn, username,

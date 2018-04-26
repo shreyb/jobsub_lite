@@ -178,7 +178,8 @@ def invert_rolemap(data):
         for itm in vo_dat:
             if itm['username'] not in i_dat.keys():
                 i_dat[itm['username']] = []
-            i_dat[itm['username']].append(itm['fqan'])
+            if itm['fqan'] not in i_dat[itm['username']]:
+                i_dat[itm['username']].append(itm['fqan'])
     return i_dat
 
 def create_uname_fqan_map():
@@ -229,6 +230,8 @@ def invert_vo_role_uid_map(data):
         if len(fq_parts)>1:
             if fq_parts[1]=='fermilab':
                 vo = fq_parts[2]
+                if fq_parts[2]=='mars':
+                    vo = "%s%s" % (fq_parts[2],fq_parts[3])
             else:
                 vo = fq_parts[1]
             if vo not in fqan_dat.keys():

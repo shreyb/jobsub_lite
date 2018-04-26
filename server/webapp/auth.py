@@ -331,7 +331,7 @@ def check_auth(func=None, pass_through=None):
         if  cherrypy.request.method != 'POST':
             uid = None
             try:
-                uid = cherrypy.request.username
+                uid = getattr(cherrypy.request, 'username', None)
             except:
                 pass
             if not uid:

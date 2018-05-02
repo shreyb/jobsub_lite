@@ -254,10 +254,13 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
         # Do we want an exit here?
         return tb
 
-    hdr = condor_header(a_format)
-    fmt = condor_format(a_format)
+    if a_key is None:
+        hdr = condor_header(a_format) 
+        fmt = condor_format(a_format) 
+    else: 
+        hdr = fmt = ''
     s_list = schedd_list()
-    all_jobs = hdr if a_key is None else ''
+    all_jobs = hdr 
     cqef = condor_q_extra_flags()
     for schedd in s_list:
         try:

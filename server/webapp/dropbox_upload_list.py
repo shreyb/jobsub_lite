@@ -20,7 +20,7 @@ import jobsub
 from format import format_response
 
 
-class DropboxUploadList(object):
+class DropboxUploadListResource(object):
     """see module documentation, only one class in file
     """
 

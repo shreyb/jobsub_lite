@@ -259,7 +259,10 @@ def get_dropbox_upload_list(acctgroup):
         a_filter=condor_commands.constructFilter(acctgroup=acctgroup), 
         a_key=['PNFS_INPUT_FILES'])
     
-    return dropbox_uploads.split('\n')        
+    dropbox_uploads_set = set(dropbox_uploads.split('\n'))
+
+
+    return list(dropbox_uploads_set)        
 
     #If False, then what?
     # Command should do something with condor_q -constraint 'Jobsub_group=?="nova"' -af PNFS_INPUT_FILES | sort | uniq -c

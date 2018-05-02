@@ -279,9 +279,7 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
             user = pts[-1]
             log_cmd = "[user:%s] %s" % (
                 user, cmd)
-
             logger.log(log_cmd, logfile='condor_commands')
-            logger.log(jobs, logfile='condor_commands')
             all_jobs += jobs
             # logger.log("cmd=%s"%cmd)
             # logger.log("rslt=%s"%all_jobs)

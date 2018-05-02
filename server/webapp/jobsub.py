@@ -255,9 +255,13 @@ def get_dropbox_upload_list(acctgroup):
     if not dropbox_location:
         return False
 
-    return condor_commands.ui_condor_q(a_filter=condor_commands.constructFilter(acctgroup=acctgroup), a_key=['PNFS_INPUT_FILES'])
+    dropbox_uploads = condor_commands.ui_condor_q(
+        a_filter=condor_commands.constructFilter(acctgroup=acctgroup), 
+        a_key=['PNFS_INPUT_FILES'])
+    
+    return dropbox_uploads.split('\n')        
+
     #If False, then what?
-    # something about using ui_condor_q with constraints formed by constructFilter
     # Command should do something with condor_q -constraint 'Jobsub_group=?="nova"' -af PNFS_INPUT_FILES | sort | uniq -c
 
 

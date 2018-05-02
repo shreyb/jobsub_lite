@@ -54,7 +54,7 @@ class AccountingGroupsResource(object):
         self.authmethods = AuthMethodsResource()
         self.dropboxlocation = DropboxLocationResource()
         self.dropboxsize = DropboxSizeResource()
-        self.dropboxuploadslist = DropboxUploadListResource()
+        self.dropboxuploadlist = DropboxUploadListResource()
 
     def doGET(self, acctgroup):
         """ Query list of accounting groups. Returns a JSON list object.

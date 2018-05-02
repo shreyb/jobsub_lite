@@ -247,6 +247,20 @@ def get_dropbox_location(acctgroup):
                    logfile='error')
     return r_code
 
+def get_dropbox_upload_list(acctgroup):
+    """Return all files uploaded to jobsub using dropbox:// and tardir:// URIs,
+    using jobsub.ini to verify that these are jobsub-managed areas
+    """
+    dropbox_location = get_dropbox_location(acctgroup)
+    if not dropbox_location:
+        return False
+
+    print condor_commands.ui_condor_q(acctgroup, a_key=['PNFS_INPUT_FILES'])
+    #If False, then what?
+    # something about using ui_condor_q with constraints formed by constructFilter
+    # Command should do something with condor_q -constraint 'Jobsub_group=?="nova"' -af PNFS_INPUT_FILES | sort | uniq -c
+
+
 
 
 def get_authentication_methods(acctgroup):

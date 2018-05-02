@@ -232,14 +232,28 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
     return my_filter
 
 
-def ui_condor_q(a_filter=None, a_format=None):
+def ui_condor_q(a_filter=None, a_format=None, a_key=None):
     """
     condor_q
         args:
             a_filter: a condor constraint, usually built by constuct_filter
             a_format: one of 'long', 'dags', 'better-analyze'
+            a_key: Key list whose values should be printed from each job.  
+                   This list will follow -af in the condor_q command.
+                   Cannot be used with a_format currently
     """
     #logger.log('filter=%s format=%s'%(filter,format))
+    # Until we figure out the various possible modes, can't use a_format and 
+    # a_key at the same time
+    try:
+        assert None in (a_format, a_key)
+    except AssertionError:
+        tb = traceback.format_exc()
+        logger.log(tb, severity=logging.ERROR)
+        logger.log(tb, severity=logging.ERROR, logfile='error')
+        # Do we want an exit here?
+        return tb
+
     hdr = condor_header(a_format)
     fmt = condor_format(a_format)
     s_list = schedd_list()
@@ -251,6 +265,9 @@ def ui_condor_q(a_filter=None, a_format=None):
                 cmd = 'condor_q %s -name %s  %s ' % (cqef, schedd, fmt)
             else:
                 cmd = 'condor_q %s -name %s %s %s' % (cqef, schedd, fmt, a_filter)
+            if a_key is not None:
+                cmd = cmd + ' -af %s' % ' '.join((str(elt) for elt in a_key))
+            print cmd
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
             if cmd_err:
                 logger.log(cmd_err)
@@ -258,8 +275,8 @@ def ui_condor_q(a_filter=None, a_format=None):
             c_dn = get_client_dn()
             pts = c_dn.split(':')
             user = pts[-1]
-            log_cmd = "[user:%s] condor_q -name %s %s" % (
-                user, schedd, a_filter)
+            log_cmd = "[user:%s] %s" % (
+                user, cmd)
 
             logger.log(log_cmd, logfile='condor_commands')
             all_jobs += jobs

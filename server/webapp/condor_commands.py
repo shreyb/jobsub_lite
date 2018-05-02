@@ -257,7 +257,7 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
     hdr = condor_header(a_format)
     fmt = condor_format(a_format)
     s_list = schedd_list()
-    all_jobs = hdr
+    all_jobs = hdr if a_key is None else ''
     cqef = condor_q_extra_flags()
     for schedd in s_list:
         try:
@@ -267,7 +267,6 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
                 cmd = 'condor_q %s -name %s %s %s' % (cqef, schedd, fmt, a_filter)
             if a_key is not None:
                 cmd = cmd + ' -af %s' % ' '.join((str(elt) for elt in a_key))
-            print cmd
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
             if cmd_err:
                 logger.log(cmd_err)

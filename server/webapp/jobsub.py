@@ -261,6 +261,25 @@ def get_dropbox_upload_list(acctgroup):
     
     dropbox_uploads_set = set(dropbox_uploads.split('\n'))
 
+    # TODO: If one line has more than one file, 
+    # e.g. /pnfs/path/to/file1,/pnfs/path/to/file2, handle that
+
+    # Run a generator pipeline to populate a list
+    # i.e. step1 = (file for file in dropbox_uploads_set if blah)
+    # step2 = (file for file in step1 if blah)
+    # ...  final_list = list(step_penultimate) or have penultimate create a 
+    # list directly
+
+    
+    # Check if each dir is subdir of dropbox_location.  From stack overflow:
+
+    """
+os.path.realpath(path): Return the canonical path of the specified filename, eliminating any symbolic links encountered in the path (if they are supported by the operating system).
+
+Use it on directory and subdirectory name, then check latter starts with former.
+
+    """
+
 
     return list(dropbox_uploads_set)        
 

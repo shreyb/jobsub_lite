@@ -219,6 +219,27 @@ def get_dropbox_max_size(acctgroup):
         return r_code_default
 
 
+def get_dropbox_constraint(acctgroup):
+    """Scan jobsub.ini for dropbox condor_q query constraint
+       uses, return a string
+    """
+    try:
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'dropbox_constraint')
+        logger.log("r_code = %s"%r_code)
+        cnstr = r_code % acctgroup
+        logger.log("returning = %s" % cnstr)
+        return cnstr
+    except:
+        logger.log('Failed to get dropbox_constraint: ',
+                   traceback=True,
+                   severity=logging.ERROR)
+        cnstr = '(jobsub_group=?="%s")&&(PNFS_INPUT_FILES=!=Null)' % acctgroup
+        logger.log("returning = %s" % cnstr)
+        return cnstr
+
+
+
 def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
@@ -251,40 +272,27 @@ def get_dropbox_upload_list(acctgroup):
     """Return all files uploaded to jobsub using dropbox:// and tardir:// URIs,
     using jobsub.ini to verify that these are jobsub-managed areas
     """
+    dropbox_upload_list = []
     dropbox_location = get_dropbox_location(acctgroup)
     if not dropbox_location:
         return False
 
-    dropbox_uploads = condor_commands.ui_condor_q(
-        a_filter=condor_commands.constructFilter(acctgroup=acctgroup), 
-        a_key=['PNFS_INPUT_FILES'])
+    a_filter = "-constraint '%s' " % get_dropbox_constraint(acctgroup)
+    a_key=['PNFS_INPUT_FILES']
+
+    dropbox_uploads = condor_commands.ui_condor_q(a_filter=a_filter,
+                                                  a_key=a_key)
     
-    dropbox_uploads_set = set(dropbox_uploads.split('\n'))
-
-    # TODO: If one line has more than one file, 
-    # e.g. /pnfs/path/to/file1,/pnfs/path/to/file2, handle that
-
-    # Run a generator pipeline to populate a list
-    # i.e. step1 = (file for file in dropbox_uploads_set if blah)
-    # step2 = (file for file in step1 if blah)
-    # ...  final_list = list(step_penultimate) or have penultimate create a 
-    # list directly
-
-    
-    # Check if each dir is subdir of dropbox_location.  From stack overflow:
-
-    """
-os.path.realpath(path): Return the canonical path of the specified filename, eliminating any symbolic links encountered in the path (if they are supported by the operating system).
-
-Use it on directory and subdirectory name, then check latter starts with former.
-
-    """
+    query_rslt = dropbox_uploads.split('\n')
+    for line in query_rslt:
+        for item in line.split(','):
+            dropbox_location in item:
+                if item not in dropbox_upload_list:
+                    dropbox_upload_list.append(item)
 
 
-    return list(dropbox_uploads_set)        
+    return dropbox_upload_list
 
-    #If False, then what?
-    # Command should do something with condor_q -constraint 'Jobsub_group=?="nova"' -af PNFS_INPUT_FILES | sort | uniq -c
 
 
 

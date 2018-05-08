@@ -91,6 +91,19 @@ class JobSubClient:
         self.dropbox_max_size = None
         self.dropbox_location = None
         self.ca_path = get_capath()
+        self.reject_list = self.extra_opts.get('tarball_reject_list',
+                                                ["\.git/",
+                                                 "\.svn/",
+                                                 "\.core$",
+                                                 "\~$",
+                                                 "\.pdf$",
+                                                 "\.eps$",
+                                                 "\.png$",
+                                                 "\.jpg$",
+                                                 "\.jpeg$",
+                                                 "\.log$",
+                                                 "\.err$",
+                                                 "\.out" ])
 
 
         constraint = self.extra_opts.get('constraint')
@@ -267,7 +280,7 @@ class JobSubClient:
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
-                create_tarfile(tarname, tarpath)
+                create_tarfile(tarname, tarpath, reject_list=self.reject_list)
                 digest = digest_for_file(tarname)
                 tar_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[tar_url] = digest
@@ -1544,7 +1557,7 @@ def get_capath():
 
 
 
-def create_tarfile(tar_file, tar_path, tar_type="tar"):
+def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
     """
     create a compressed tarfile
         Args:
@@ -1552,6 +1565,8 @@ def create_tarfile(tar_file, tar_path, tar_type="tar"):
             tar_path (string): directory to be tarred up into 'tar_file'
             tar_type (string, optional): if "tgz": gzipped tarfile
                                                   otherwise bzipped tarfile
+            reject_list (list[]): list of regular expressions of file names 
+                                  to reject from the tar_file
         Returns:
             bool: True if successful, False otherwise.
         Raises:
@@ -1566,24 +1581,28 @@ def create_tarfile(tar_file, tar_path, tar_type="tar"):
         tar = tarfile.open(tar_file, 'w:bz2')
     os.chdir(tar_path)
     tar_dir = os.getcwd()
-    #print('creating tar of %s' % tar_dir)
     failed_file_list = []
     ftar_d = os.path.realpath(tar_dir)
-    files = os.listdir(tar_dir)
-
-    for fname in files:
-        ftar_n = os.path.join(ftar_d, fname)
-        try:
-            tar.add(ftar_n, fname)
-
-        except StandardError:
-            failed_file_list.append(fname)
+    for root, dirs, files in os.walk(ftar_d):
+        for ff in files:
+            ok_include = True
+            ft = os.path.join(root, ff)
+            fname = os.path.basename(ft)
+            for patt in reject_list:
+                if re.search(patt, ft):
+                    ok_include = False
+                    break
+            if ok_include:
+                try:
+                    tar.add(ft[len(ftar_d)+1:])
+                except StandardError:
+                    failed_file_list.append(fname)
     tar.close()
     os.chdir(orig_dir)
     if failed_file_list:
         for fname in failed_file_list:
             print(
-                "failed to add to tarfile: %s Permissions problem?\n" %
+                "failed to add to tarfile: %s Permissions problem?" %
                 fname)
         return False
     return True
@@ -1856,7 +1875,10 @@ if __name__ == '__main__':
                        "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
-        create_tarfile(sys.argv[1+1], sys.argv[2+1])
+        reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
+                       "\.log$", "\.err$", "\.out$" ]
+
+        create_tarfile(sys.argv[1+1], sys.argv[2+1], reject_list=reject_list)
         WRITE_CHUNKS = False
         if len(sys.argv) >= 6:
             WRITE_CHUNKS = True

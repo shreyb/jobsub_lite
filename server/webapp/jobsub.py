@@ -268,11 +268,12 @@ def get_dropbox_location(acctgroup):
                    logfile='error')
     return r_code
 
+
 def get_dropbox_upload_list(acctgroup):
     """Return all files uploaded to jobsub using dropbox:// and tardir:// URIs,
     using jobsub.ini to verify that these are jobsub-managed areas
     """
-    dropbox_upload_list = []
+    dropbox_upload_set = set()    # Use set to ensure uniqueness automatically
     dropbox_location = get_dropbox_location(acctgroup)
     if not dropbox_location:
         return False
@@ -284,17 +285,13 @@ def get_dropbox_upload_list(acctgroup):
                                                   a_key=a_key)
     
     query_rslt = dropbox_uploads.split('\n')
+
     for line in query_rslt:
         for item in line.split(','):
-            dropbox_location in item:
-                if item not in dropbox_upload_list:
-                    dropbox_upload_list.append(item)
-
-
-    return dropbox_upload_list
-
-
-
+            if dropbox_location in item:    
+                dropbox_upload_set.add(item)
+    
+    return list(dropbox_upload_set)
 
 
 def get_authentication_methods(acctgroup):

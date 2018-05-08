@@ -1,7 +1,6 @@
 """
  Description:
-   Query dropbox location to use for an experiment to drop tarballs and other files.  
-   Written as a part of the transition to unmount Bluearc from the grid worker nodes.
+   Query list of files uploaded to dropbox by jobsub for an experiment
 
    API is /acctgroups/<group>/dropboxuploadlist/
 

@@ -16,7 +16,6 @@ import cherrypy
 import logger
 import logging
 import jobsub
-# from condor_commands import ui_condor_q, constructFilter
 from format import format_response
 
 

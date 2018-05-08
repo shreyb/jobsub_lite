@@ -286,6 +286,7 @@ def get_dropbox_upload_list(acctgroup):
     
     query_rslt = dropbox_uploads.split('\n')
 
+    # This should automatically take care of the no-jobs or error case
     for line in query_rslt:
         for item in line.split(','):
             if dropbox_location in item:    

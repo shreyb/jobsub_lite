@@ -31,7 +31,6 @@ class VOMSGroupResource(object):
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-
         voms_group = get_voms(acctgroup)
         if voms_group is None: 
             cherrypy.response.status = 404

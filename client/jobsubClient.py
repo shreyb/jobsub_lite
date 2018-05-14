@@ -91,19 +91,22 @@ class JobSubClient:
         self.dropbox_max_size = None
         self.dropbox_location = None
         self.ca_path = get_capath()
-        self.reject_list = self.extra_opts.get('tarball_reject_list',
-                                                ["\.git/",
-                                                 "\.svn/",
-                                                 "\.core$",
-                                                 "\~$",
-                                                 "\.pdf$",
-                                                 "\.eps$",
-                                                 "\.png$",
-                                                 "\.jpg$",
-                                                 "\.jpeg$",
-                                                 "\.log$",
-                                                 "\.err$",
-                                                 "\.out" ])
+        if self.extra_opts.get('tarball_reject_list'):
+            self.reject_list = read_re_file(self.extra_opts.get('tarball_reject_list'))
+        else:
+            self.reject_list = ["\.git/",
+                                "\.svn/",
+                                "\.core$",
+                                "\~$",
+                                "\.pdf$",
+                                "\.eps$",
+                                "\.png$",
+                                "\.jpg$",
+                                "\.jpeg$",
+                                "\.log$",
+                                "\.err$",
+                                "\.out",
+                                ]
 
 
         constraint = self.extra_opts.get('constraint')
@@ -1579,6 +1582,11 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
         tar = tarfile.open(tar_file, 'w:gz')
     else:
         tar = tarfile.open(tar_file, 'w:bz2')
+
+    #dont tar old copies of tarball into new tarball
+    if tar_file not in reject_list:
+        reject_list.append('%s$' % tar_file)
+
     os.chdir(tar_path)
     tar_dir = os.getcwd()
     failed_file_list = []
@@ -1837,6 +1845,18 @@ def date_callback(option, opt, value, p):
     return p
 
 
+def read_re_file(filename):
+    re_list = []
+    f = open(filename, "r")
+    lines = f.readlines()
+    for line in lines:
+        if line[0] != '#':
+            re_list.append(line.rstrip('\n'))
+    return re_list
+
+
+
+
 import contextlib
 
 
@@ -1864,6 +1884,7 @@ def stdchannel_redirected(stdchannel, dest_filename):
             os.dup2(oldstdchannel, stdchannel.fileno())
         if dest_file is not None:
             dest_file.close()
+
 if __name__ == '__main__':
     #put anything you want to test without using the entire client here
 
@@ -1877,6 +1898,10 @@ if __name__ == '__main__':
     elif sys.argv[1] == "TEST_TAR_FUNCS":
         reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
                        "\.log$", "\.err$", "\.out$" ]
+        if len(sys.argv) >= 7:
+            print 'reading reject_list file %s' % sys.argv[6]
+            reject_list = read_re_file(sys.argv[6])
+            print 'reject_list = %s' % reject_list
 
         create_tarfile(sys.argv[1+1], sys.argv[2+1], reject_list=reject_list)
         WRITE_CHUNKS = False
@@ -1892,6 +1917,9 @@ if __name__ == '__main__':
             print "to test directory /tmp/%s contents use commands " % DIG
             print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
                     (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+    elif sys.argv[1] == 'TEST_RE_LIST':
+        re_list = read_re_file(sys.argv[2])
+        print "re_list = %s" % re_list
 
     elif sys.argv[1] == "TEST_DATE_CALLBACK":
         P_DUCK = lambda: None

@@ -253,6 +253,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/version.py
 /opt/jobsub/server/webapp/version.pyc
 /opt/jobsub/server/webapp/version.pyo
+/opt/jobsub/server/webapp/voms_group.py
+/opt/jobsub/server/webapp/voms_group.pyc
+/opt/jobsub/server/webapp/voms_group.pyo
 /scratch/dropbox/
 /scratch/uploads/
 

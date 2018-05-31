@@ -91,6 +91,22 @@ class JobSubClient:
         self.dropbox_max_size = None
         self.dropbox_location = None
         self.ca_path = get_capath()
+        if self.extra_opts.get('tarball_reject_list'):
+            self.reject_list = read_re_file(self.extra_opts.get('tarball_reject_list'))
+        else:
+            self.reject_list = ["\.git/",
+                                "\.svn/",
+                                "\.core$",
+                                "\~$",
+                                "\.pdf$",
+                                "\.eps$",
+                                "\.png$",
+                                "\.jpg$",
+                                "\.jpeg$",
+                                "\.log$",
+                                "\.err$",
+                                "\.out",
+                                ]
 
 
         constraint = self.extra_opts.get('constraint')
@@ -267,7 +283,7 @@ class JobSubClient:
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
-                create_tarfile(tarname, tarpath)
+                create_tarfile(tarname, tarpath, reject_list=self.reject_list)
                 digest = digest_for_file(tarname)
                 tar_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[tar_url] = digest
@@ -1544,7 +1560,7 @@ def get_capath():
 
 
 
-def create_tarfile(tar_file, tar_path, tar_type="tar"):
+def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
     """
     create a compressed tarfile
         Args:
@@ -1552,6 +1568,8 @@ def create_tarfile(tar_file, tar_path, tar_type="tar"):
             tar_path (string): directory to be tarred up into 'tar_file'
             tar_type (string, optional): if "tgz": gzipped tarfile
                                                   otherwise bzipped tarfile
+            reject_list (list[]): list of regular expressions of file names 
+                                  to reject from the tar_file
         Returns:
             bool: True if successful, False otherwise.
         Raises:
@@ -1564,26 +1582,35 @@ def create_tarfile(tar_file, tar_path, tar_type="tar"):
         tar = tarfile.open(tar_file, 'w:gz')
     else:
         tar = tarfile.open(tar_file, 'w:bz2')
+
+    #dont tar old copies of tarball into new tarball
+    if tar_file not in reject_list:
+        reject_list.append('%s$' % tar_file)
+
     os.chdir(tar_path)
     tar_dir = os.getcwd()
-    #print('creating tar of %s' % tar_dir)
     failed_file_list = []
     ftar_d = os.path.realpath(tar_dir)
-    files = os.listdir(tar_dir)
-
-    for fname in files:
-        ftar_n = os.path.join(ftar_d, fname)
-        try:
-            tar.add(ftar_n, fname)
-
-        except StandardError:
-            failed_file_list.append(fname)
+    for root, dirs, files in os.walk(ftar_d):
+        for ff in files:
+            ok_include = True
+            ft = os.path.join(root, ff)
+            fname = os.path.basename(ft)
+            for patt in reject_list:
+                if re.search(patt, ft):
+                    ok_include = False
+                    break
+            if ok_include:
+                try:
+                    tar.add(ft[len(ftar_d)+1:])
+                except StandardError:
+                    failed_file_list.append(fname)
     tar.close()
     os.chdir(orig_dir)
     if failed_file_list:
         for fname in failed_file_list:
             print(
-                "failed to add to tarfile: %s Permissions problem?\n" %
+                "failed to add to tarfile: %s Permissions problem?" %
                 fname)
         return False
     return True
@@ -1818,6 +1845,18 @@ def date_callback(option, opt, value, p):
     return p
 
 
+def read_re_file(filename):
+    re_list = []
+    f = open(filename, "r")
+    lines = f.readlines()
+    for line in lines:
+        if line[0] != '#':
+            re_list.append(line.rstrip('\n'))
+    return re_list
+
+
+
+
 import contextlib
 
 
@@ -1845,6 +1884,7 @@ def stdchannel_redirected(stdchannel, dest_filename):
             os.dup2(oldstdchannel, stdchannel.fileno())
         if dest_file is not None:
             dest_file.close()
+
 if __name__ == '__main__':
     #put anything you want to test without using the entire client here
 
@@ -1856,7 +1896,14 @@ if __name__ == '__main__':
                        "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
-        create_tarfile(sys.argv[1+1], sys.argv[2+1])
+        reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
+                       "\.log$", "\.err$", "\.out$" ]
+        if len(sys.argv) >= 7:
+            print 'reading reject_list file %s' % sys.argv[6]
+            reject_list = read_re_file(sys.argv[6])
+            print 'reject_list = %s' % reject_list
+
+        create_tarfile(sys.argv[1+1], sys.argv[2+1], reject_list=reject_list)
         WRITE_CHUNKS = False
         if len(sys.argv) >= 6:
             WRITE_CHUNKS = True
@@ -1870,6 +1917,9 @@ if __name__ == '__main__':
             print "to test directory /tmp/%s contents use commands " % DIG
             print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
                     (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+    elif sys.argv[1] == 'TEST_RE_LIST':
+        re_list = read_re_file(sys.argv[2])
+        print "re_list = %s" % re_list
 
     elif sys.argv[1] == "TEST_DATE_CALLBACK":
         P_DUCK = lambda: None

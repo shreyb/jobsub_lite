@@ -181,6 +181,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/dropbox_size.py
 /opt/jobsub/server/webapp/dropbox_size.pyc
 /opt/jobsub/server/webapp/dropbox_size.pyo
+/opt/jobsub/server/webapp/dropbox_upload_list.py
+/opt/jobsub/server/webapp/dropbox_upload_list.pyc
+/opt/jobsub/server/webapp/dropbox_upload_list.pyo
 /opt/jobsub/server/webapp/forcex_jobid.py
 /opt/jobsub/server/webapp/forcex_jobid.pyc
 /opt/jobsub/server/webapp/forcex_jobid.pyo
@@ -250,6 +253,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/version.py
 /opt/jobsub/server/webapp/version.pyc
 /opt/jobsub/server/webapp/version.pyo
+/opt/jobsub/server/webapp/voms_group.py
+/opt/jobsub/server/webapp/voms_group.pyc
+/opt/jobsub/server/webapp/voms_group.pyo
 /scratch/dropbox/
 /scratch/uploads/
 

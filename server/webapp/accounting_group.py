@@ -25,6 +25,8 @@ from configured_sites import ConfiguredSitesResource
 from auth_methods import AuthMethodsResource
 from dropbox_location import DropboxLocationResource
 from dropbox_size import DropboxSizeResource
+from dropbox_upload_list import DropboxUploadListResource
+from voms_group import VOMSGroupResource
 
 
 @cherrypy.popargs('acctgroup')
@@ -53,6 +55,8 @@ class AccountingGroupsResource(object):
         self.authmethods = AuthMethodsResource()
         self.dropboxlocation = DropboxLocationResource()
         self.dropboxsize = DropboxSizeResource()
+        self.dropboxuploadlist = DropboxUploadListResource()
+        self.vomsgroup = VOMSGroupResource()
 
     def doGET(self, acctgroup):
         """ Query list of accounting groups. Returns a JSON list object.

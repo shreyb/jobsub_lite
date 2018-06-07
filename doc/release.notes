@@ -15,7 +15,7 @@ Server
 		  configured VOMS FQAN for a configued jobsub group.  Cleanup
 		  tool is maintained outside of jobsub distribution, and 
    		  documentation can be found here: 
-		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Cleanup_Tool
+		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Dropbox_Cleanup_Tool
 		  
 
 ================================================================================

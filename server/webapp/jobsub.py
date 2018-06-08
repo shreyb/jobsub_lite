@@ -219,6 +219,27 @@ def get_dropbox_max_size(acctgroup):
         return r_code_default
 
 
+def get_dropbox_constraint(acctgroup):
+    """Scan jobsub.ini for dropbox condor_q query constraint
+       uses, return a string
+    """
+    try:
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'dropbox_constraint')
+        logger.log("r_code = %s"%r_code)
+        cnstr = r_code % acctgroup
+        logger.log("returning = %s" % cnstr)
+        return cnstr
+    except:
+        logger.log('Failed to get dropbox_constraint: ',
+                   traceback=True,
+                   severity=logging.ERROR)
+        cnstr = '(jobsub_group=?="%s")&&(PNFS_INPUT_FILES=!=Null)' % acctgroup
+        logger.log("returning = %s" % cnstr)
+        return cnstr
+
+
+
 def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
@@ -247,6 +268,31 @@ def get_dropbox_location(acctgroup):
                    logfile='error')
     return r_code
 
+
+def get_dropbox_upload_list(acctgroup):
+    """Return all files uploaded to jobsub using dropbox:// and tardir:// URIs,
+    using jobsub.ini to verify that these are jobsub-managed areas
+    """
+    dropbox_upload_set = set()    # Use set to ensure uniqueness automatically
+    dropbox_location = get_dropbox_location(acctgroup)
+    if not dropbox_location:
+        return False
+
+    a_filter = "-constraint '%s' " % get_dropbox_constraint(acctgroup)
+    a_key=['PNFS_INPUT_FILES']
+
+    dropbox_uploads = condor_commands.ui_condor_q(a_filter=a_filter,
+                                                  a_key=a_key)
+    
+    query_rslt = dropbox_uploads.split('\n')
+
+    # This should automatically take care of the no-jobs or error case
+    for line in query_rslt:
+        for item in line.split(','):
+            if dropbox_location in item:    
+                dropbox_upload_set.add(item)
+    
+    return list(dropbox_upload_set)
 
 
 def get_authentication_methods(acctgroup):

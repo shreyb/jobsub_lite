@@ -179,6 +179,18 @@ def parse_opts(argv):
                          default=None,
                          help='Alternate location of Dropbox server to use')
 
+    opt_group.add_option('--tarball-exclusion-file',
+                         dest='tarball_reject_list',
+                         action='store',
+                         metavar='<tarball exclusion regex file>',
+                         default=None,
+                         help="A file of python regex's to exclude from "+\
+                              " tarballs. Use with --tar_file_name tardir://"+\
+                              " Default exclusion list includes .git and .svn"+\
+                              " directories, pdf, eps, log files, and human"+\
+                              " readable images.  "+\
+                              "\n")
+
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
@@ -263,7 +275,8 @@ def main(argv):
                              options.acctRole, srv_argv,
                              options.dropboxServer, options.dag, 
                              extra_opts={'debug': options.debug,
-                                         'jobid_output_only':options.jobid_output_only})
+                                         'jobid_output_only':options.jobid_output_only,
+                                         'tarball_reject_list':options.tarball_reject_list})
     rc = 1
     try:
         http_code = js_client.submit()

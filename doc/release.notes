@@ -11,8 +11,11 @@ Client
 Server
 -------
 * Feature  19700  Return a listing of tarballs older than specified date that are
-                  not in the job queue for a cleanup script.  Example cleanup script
-                  will be provided shortly
+		  configured VOMS FQAN for a configued jobsub group.  Cleanup
+		  tool is maintained outside of jobsub distribution, and 
+   		  documentation can be found here: 
+		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Dropbox_Cleanup_Tool
+		  
 
 ================================================================================
 v1.2.6.2

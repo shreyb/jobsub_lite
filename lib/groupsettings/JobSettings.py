@@ -608,10 +608,13 @@ class JobSettings(object):
 
         file_group.add_option("--tar_file_name", dest="tar_file_name",
                               action="store",
-                              metavar="dropbox://PATH/TO/TAR_FILE",
-                              help=re.sub('  \s+', ' ', """specify tarball
-                    or directory (use tardir:///PATH/TO/DIR) to be tarred up 
-                    and transferred to worker node. TAR_FILE will be copied 
+                              metavar="""
+                              dropbox://PATH/TO/TAR_FILE
+                              tardir://PATH/TO/DIRECTORY
+                              """,
+                              help=re.sub('  \s+', ' ', """specify TAR_FILE
+                    or DIRECTORY to be
+                    transferred to worker node. TAR_FILE will be copied 
                     to an area specified in the jobsub server configuration, 
                     transferred to the job and unpacked there.  TAR_FILE will 
                     be accessible to the user job on the worker node via the 

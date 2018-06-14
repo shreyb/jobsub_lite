@@ -94,18 +94,35 @@ class JobSubClient:
         if self.extra_opts.get('tarball_reject_list'):
             self.reject_list = read_re_file(self.extra_opts.get('tarball_reject_list'))
         else:
-            self.reject_list = ["\.git/",
+            self.reject_list = [
+                                # exclude .git and .svn directories
+                                "\.git/",
                                 "\.svn/",
+                                #exclude .core files
                                 "\.core$",
-                                "\~$",
+                                # exclude emacs backups
+                                "\~.*$",
+                                # exclude pdfs and eps files
                                 "\.pdf$",
                                 "\.eps$",
+                                # NO PICTURES OF CATS
                                 "\.png$",
+                                "\.PNG$",
+                                "\.gif$",
+                                "\.GIF$",
                                 "\.jpg$",
                                 "\.jpeg$",
+                                "\.JPG$",
+                                "\.JPEG$",
+                                # no .log .out or .err files
                                 "\.log$",
                                 "\.err$",
-                                "\.out",
+                                "\.out$",
+                                # no tarfiles or zipfiles
+                                "\.tar$",
+                                "\.tgz$",
+                                "\.zip$",
+                                "\.gz$",
                                 ]
 
 

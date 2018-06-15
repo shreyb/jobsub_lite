@@ -191,8 +191,9 @@ def list_sandboxes(options):
     for server in client.schedd_list:
         if "https:" not in server:
             server = "https://%s" % server
-        if ":8443" not in server:
-            server = "%s:8443" % server
+        port = str(client.serverPort)
+        if port not in server:
+            server = "%s:%s" % (server, port)
         if options.acctRole is not None:
             submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE % \
                 (server, options.acctGroup, options.acctRole, user)

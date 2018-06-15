@@ -26,7 +26,6 @@ from jobsubClient import curl_secure_context
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
 from jobsubClient import jid_callback
-from jobsubClient import get_jobsub_server_aliases
 from jobsubClient import check_id
 
 
@@ -185,10 +184,15 @@ def list_sandboxes(options):
     client = JobSubClient(options.jobsubServer, options.acctGroup, options.acctRole, [
     ], extra_opts={'debug': options.debug})
 
+    client.probeSchedds()
     rc = 0
     rc_err = 0
     rc_arr = []
-    for server in get_jobsub_server_aliases(options.jobsubServer):
+    for server in client.schedd_list:
+        if "https:" not in server:
+            server = "https://%s" % server
+        if ":8443" not in server:
+            server = "%s:8443" % server
         if options.acctRole is not None:
             submitURL = constants.JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE % \
                 (server, options.acctGroup, options.acctRole, user)

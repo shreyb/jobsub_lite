@@ -941,10 +941,10 @@ class JobSubClient:
         if not acct_group:
             acct_group = self.account_group
         #check for down servers DNS RR
-        for server in self.serverAliases:
-            if is_port_open(server, self.serverPort):
-                self.server = server
-                break
+#        for server in self.serverAliases:
+#            if is_port_open(server, self.serverPort):
+#                self.server = server
+#                break
 
         dropbox_url = constants.JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN %\
             (self.server, acct_group)
@@ -971,10 +971,10 @@ class JobSubClient:
         if not acct_group:
             acct_group = self.account_group
         #check for down servers DNS RR
-        for server in self.serverAliases:
-            if is_port_open(server, self.serverPort):
-                self.server = server
-                break
+#        for server in self.serverAliases:
+#            if is_port_open(server, self.serverPort):
+#                self.server = server
+#                break
 
         dropbox_url = constants.JOBSUB_DROPBOX_LOCATION_URL_PATTERN %\
             (self.server, acct_group)

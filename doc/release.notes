@@ -8,6 +8,8 @@ Client
 * Feature 19808   Ability to exclude files from submitted tarballs based on 
                   patterns in file names
 
+* Bug     18608   jobsub_fetchlog --list not contacting all servers behind proxy
+
 Server
 -------
 * Feature  19700  Return a listing of tarballs older than specified date that are

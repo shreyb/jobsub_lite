@@ -532,8 +532,8 @@ class LineIO:
     def tell(self):
         return self.fd.tell()
 
-    def tell_line(self):
-        return self.first_line + len(self.cached_lines)
+    #def tell_line(self):
+    #    return self.first_line + len(self.cached_lines)
 
     def readline(self):
         return self.fd.readline()

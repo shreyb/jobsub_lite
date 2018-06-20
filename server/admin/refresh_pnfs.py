@@ -24,7 +24,9 @@ import logging
 import jobsub
 import subprocessSupport
 import authutils
-import use_myproxy
+import auth_myproxy
+import auth_kca
+import auth_gums
 
 from functools import wraps, partial
 from distutils import spawn
@@ -51,15 +53,13 @@ def authenticate(dn, acctgroup, acctrole):
         try:
             if method.lower() in ['gums', 'myproxy']:
                 try:
-                    import use_myproxy
-                    username = use_myproxy.authenticate(dn, acctgroup, acctrole)
+                    username = auth_gums.authenticate(dn, acctgroup, acctrole)
                     cherrypy.request.username = username
                     return username
                 except Exception as e:
                     logger.log('%s failed %s' % (method, e))
             elif method.lower() == 'kca-dn':
                 try:
-                    import auth_kca
                     return auth_kca.authenticate(dn)
                 except Exception as e:
                     logger.log('%s failed %s' % (method, e))
@@ -95,7 +95,6 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         try:
             if method.lower() in ['gums', 'kca-dn']:
                 try:
-                    import auth_kca
                     return auth_kca.authorize(dn, username,
                                               acctgroup, acctrole, age_limit)
                 except Exception as e:
@@ -103,8 +102,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
             elif method.lower() == 'myproxy':
                 try:
-                    import use_myproxy
-                    return use_myproxy.authorize(dn, username,
+                    return auth_myproxy.authorize(dn, username,
                                                   acctgroup, acctrole,
                                                   age_limit)
                 except Exception as e:
@@ -241,7 +239,8 @@ def refresh_pnfs_lru(agelimit=1):
             os.remove(proxies[key])
 
 
-
+def test():
+    print 'test'
 
 
 

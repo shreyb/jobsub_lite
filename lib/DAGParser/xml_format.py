@@ -251,7 +251,7 @@ def dict2string(dict, dict_name, el_name, dict_attr_name="name", el_attr_name="v
     if isinstance(dict, types.DictType):
         keys = dict.keys()
     else:
-        keys = range(len(dist))  # allow lists to be used as dictionaries
+        keys = range(len(dict))  # allow lists to be used as dictionaries
 
     for idx in keys:
         el = dict[idx]
@@ -341,7 +341,7 @@ def dict2file(fd, dict, dict_name, el_name, dict_attr_name="name", el_attr_name=
     if isinstance(dict, types.DictType):
         keys = dict.keys()
     else:
-        keys = range(len(dist))  # allow lists to be used as dictionaries
+        keys = range(len(dict))  # allow lists to be used as dictionaries
 
     for idx in keys:
         el = dict[idx]

@@ -15,7 +15,11 @@ from JobSettings import JobSettings
 
 class JobTest(unittest.TestCase):
 
-#    def __init__(self):
+    #def __init__(self):
+     #   self.ns = JobSettings()
+        #super(JobTest, self).__init__()
+
+
 #        self.stdout = sys.stdout
 #        self.stderr = sys.stderr
 #        self.devnull = open(os.devnull,'w')
@@ -456,4 +460,3 @@ if __name__ == "__main__":
     #unittest.main()
     suite = unittest.makeSuite(JobTest)
     unittest.TextTestRunner(verbosity=10).run(suite)
-

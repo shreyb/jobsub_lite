@@ -118,14 +118,14 @@ class TaskTar(TaskRelease):
         src_dir = '%s/../src/%s' % (self.release.releaseDir,
                                     self.release.version)
         cmd = 'rm -rf %s; mkdir -p %s; cp -r %s %s/%s' % \
-              (src_dir, src_dir, self.release.sourceDir, src_dir, self.releaseDirname)
+              (src_dir, src_dir, self.release.sourceDir, src_dir, self.release.releaseDir)
         print "%s" % cmd
         execute_cmd(cmd)
         for f in self.updateFileList:
             self.updateFile(f)
         cmd = 'cd %s; %s %s -czf %s/%s %s' % \
               (src_dir, self.tarExe, exclude, self.release.releaseDir,
-               self.releaseFilename, self.releaseDirname)
+               self.releaseFilename, self.release.releaseDir)
         print "%s" % cmd
         execute_cmd(cmd)
         self.status = 'COMPLETE'

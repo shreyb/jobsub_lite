@@ -24,6 +24,7 @@ import logging
 import jobsub
 import subprocessSupport
 import authutils
+import pwd
 
 from functools import wraps, partial
 from distutils import spawn

@@ -1094,9 +1094,12 @@ class JobSubClient:
                     if schedd not in self.schedd_list:
                         schedd_host = schedd.split('@')[-1]
                         if not is_port_open(schedd_host, self.serverPort):
-                            print 'ERROR jobsub server on %s port %s not responding' % (schedd_host, serverPort)
+                            err_fmt = 'ERROR jobsub server on %s port %s '
+                            err_fmt += 'is not responding'
+                            print err_fmt % (schedd_host, self.serverPort)
                         elif not is_port_open(schedd_host, condor_port):
-                            print 'ERROR condor on  %s port %s not responding' % (schedd_host, condor_port)
+                            print 'ERROR condor on  %s port %s not responding' %\
+                                    (schedd_host, condor_port)
                         else:
                             self.schedd_list.append(schedd)
                             jobload = long(pts[-1:][0])

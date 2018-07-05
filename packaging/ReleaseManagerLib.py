@@ -125,7 +125,7 @@ class TaskTar(TaskRelease):
             self.updateFile(f)
         cmd = 'cd %s; %s %s -czf %s/%s %s' % \
               (src_dir, self.tarExe, exclude, self.release.releaseDir,
-               self.releaseFilename, self.release.releaseDir)
+               self.releaseFilename, self.releaseDirname)
         print "%s" % cmd
         execute_cmd(cmd)
         self.status = 'COMPLETE'

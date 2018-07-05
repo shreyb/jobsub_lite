@@ -18,6 +18,7 @@ Server
    		  documentation can be found here: 
 		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Dropbox_Cleanup_Tool
 		  
+* Bug     20203  wrapper script failing if execuable both on command line and in tarball
 
 ================================================================================
 v1.2.6.2

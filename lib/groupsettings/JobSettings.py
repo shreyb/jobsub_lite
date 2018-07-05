@@ -1013,10 +1013,13 @@ class JobSettings(object):
 
         ifdh_cmd = settings['ifdh_cmd']
         exe_script = settings['exe_script']
+        b_exe_script = os.path.basename(exe_script)
         if settings['transfer_executable']:
-            exe_script = os.path.basename(settings['exe_script'])
-        f.write("export JOBSUB_EXE_SCRIPT=`find . -name %s -print`\n" %
-                os.path.basename(settings['exe_script']))
+            exe_script = b_exe_script
+        f.write("export JOBSUB_EXE_SCRIPT=$(ls %s 2>/dev/null)\n" % exe_script)
+        f.write("""if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then \n """)
+        f.write("""    export JOBSUB_EXE_SCRIPT=""")
+        f.write("""$(find . -name %s -print | head -1)\nfi\n""" %  b_exe_script)
         f.write("chmod +x $JOBSUB_EXE_SCRIPT\n")
         script_args = ''
         if settings['verbose']:

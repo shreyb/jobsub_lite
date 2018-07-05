@@ -118,7 +118,7 @@ class TaskTar(TaskRelease):
         src_dir = '%s/../src/%s' % (self.release.releaseDir,
                                     self.release.version)
         cmd = 'rm -rf %s; mkdir -p %s; cp -r %s %s/%s' % \
-              (src_dir, src_dir, self.release.sourceDir, src_dir, self.release.releaseDir)
+              (src_dir, src_dir, self.release.sourceDir, src_dir, self.releaseDirname)
         print "%s" % cmd
         execute_cmd(cmd)
         for f in self.updateFileList:

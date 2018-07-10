@@ -18,7 +18,15 @@ Server
    		  documentation can be found here: 
 		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Dropbox_Cleanup_Tool
 		  
-* Bug     20203  wrapper script failing if execuable both on command line and in tarball
+* Bug     20203   wrapper script failing if execuable both on command line and in tarball
+
+* KNOWN ISSUE 	  There is a known issue related to Bug 20203.  If the job 
+		  executable specified by the file:// URI has the same filename 
+		  as a file in the top-level directory of a tarball that's passed 
+		  to jobsub through either the --tar_file_name or -f flags, the 
+		  tarball's version of this file will take precedence and the job 
+		  executable will be overwritten.  This will be fixed in the next release.
+
 
 ================================================================================
 v1.2.6.2

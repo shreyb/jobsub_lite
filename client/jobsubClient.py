@@ -1612,6 +1612,19 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
     failed_file_list = []
     ftar_d = os.path.realpath(tar_dir)
     for root, dirs, files in os.walk(ftar_d):
+        for dd in dirs:
+            fd = os.path.join(root,dd)
+            ok_include = True
+            if os.path.islink(dd) or not os.listdir(fd):
+                for patt in reject_list:
+                    if re.search(patt,fd):
+                        ok_include = False
+                        break
+                if ok_include:
+                    try:
+                        tar.add(fd[len(ftar_d)+1:])
+                    except StandardError:
+                        failed_file_list.append(fd)
         for ff in files:
             ok_include = True
             ft = os.path.join(root, ff)

@@ -1,4 +1,13 @@
 #!/bin/bash
+# file: run_autopep8.sh
+# usage: run_autopep8.sh change|restore|help
+#     change: run autopep8 -a -i on all python files in `pwd`/jobsub
+#     restore: check all python files back out from git
+#     help: this message
+# requires virtualenv to be set up previously
+#    
+# author: Dennis Box dbox@fnal.gov
+#
 
 process_branch() {
 

@@ -57,6 +57,14 @@ def authenticate(dn, acctgroup, acctrole):
                     return username
                 except Exception as e:
                     logger.log('%s failed %s' % (method, e))
+            elif method.lower() in ['ferry']:
+                try:
+                    import auth_ferry
+                    username = auth_ferry.authenticate(dn, acctgroup, acctrole)
+                    cherrypy.request.username = username
+                    return username
+                except Exception as e:
+                    logger.log('%s failed %s' % (method, e))
             elif method.lower() == 'kca-dn':
                 try:
                     import auth_kca
@@ -101,7 +109,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                 except Exception as e:
                     logger.log('authoriziation failed, %s' % e)
 
-            elif method.lower() == 'myproxy':
+            elif method.lower() in ['myproxy', 'ferry']:
                 try:
                     import auth_myproxy
                     return auth_myproxy.authorize(dn, username,
@@ -324,7 +332,7 @@ def check_auth(func=None, pass_through=None):
         if  cherrypy.request.method != 'POST':
             uid = None
             try:
-                uid = cherrypy.request.username
+                uid = getattr(cherrypy.request, 'username', None)
             except:
                 pass
             if not uid:

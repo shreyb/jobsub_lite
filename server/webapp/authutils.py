@@ -173,10 +173,10 @@ def invert_rolemap(data):
     out: uname_fqan_map.json
     """
     i_dat = {}
-    for vo_name in data.keys():
+    for vo_name in data:
         vo_dat = data[vo_name]
         for itm in vo_dat:
-            if itm['username'] not in i_dat.keys():
+            if itm['username'] not in i_dat:
                 i_dat[itm['username']] = []
             if itm['fqan'] not in i_dat[itm['username']]:
                 i_dat[itm['username']].append(itm['fqan'])
@@ -191,12 +191,22 @@ def create_uname_fqan_map():
 def invert_gmap(data):
     """in: @param data i.e  https://ferry_server/getGridMapFile 
        out: dn_user_roles_map.json
+       #changed: add ?resource_name=fermi_workers"
+       #also for getVORoleMapFile etc
+
     """
     i_dat = {}
-    for vo_name in data.keys():
+    for vo_name in data:
+        #logger.log('checking vo %s' % vo_name)
         vo_dat = data[vo_name]
+        #logger.log('checking vo_dat %s' % vo_dat)
         for itm in vo_dat:
-            if itm['userdn'] not in i_dat.keys():
+            if 'ferry_error' in vo_dat:
+                continue
+            #logger.log('checking itm %s' % itm)
+            #if isinstance(itm, str):
+            #    itm = json.loads(itm)
+            if itm['userdn'] not in i_dat:
                 i_dat[itm['userdn']] = {'volist':[],
                                         'mapped_uname':
                                         {'default': itm['mapped_uname']}}
@@ -227,17 +237,17 @@ def invert_vo_role_uid_map(data):
     for itm in data:
         i_dat[itm['fqan']] = itm['mapped_uname']
         fq_parts = itm['fqan'].split('/')
-        if len(fq_parts)>1:
-            if fq_parts[1]=='fermilab':
+        if len(fq_parts) > 1:
+            if fq_parts[1] == 'fermilab':
                 vo = fq_parts[2]
-                if fq_parts[2]=='mars':
+                if fq_parts[2] == 'mars':
                     vo = "%s%s" % (fq_parts[2],fq_parts[3])
             else:
                 vo = fq_parts[1]
-            if vo not in fqan_dat.keys():
+            if vo not in fqan_dat:
                 fqan_dat[vo] = {}
-            role=fq_parts[-1]
-            fqan_dat[vo][role]=itm['fqan']
+            role = fq_parts[-2]
+            fqan_dat[vo][role] = itm['fqan']
 
     return i_dat, fqan_dat
 
@@ -271,8 +281,20 @@ def fetch_from_ferry(fname):
         return create_fqan_user_map()
     elif fname == "vo_role_fqan_map.json":
         return create_vo_role_fqan_map()
+    elif fname == "getGridMapFile":
+        return getGridMapFile()
     else:
         return _fetch_from_ferry(fname)
+
+
+def getGridMapFile():
+    prs = JobsubConfigParser()
+    gmf = {}
+    for vo in prs.supportedGroups():
+        fname = "getGridMapFile?unitname=%s" % vo
+        gmf[vo] = _fetch_from_ferry(fname)
+    return gmf
+
 
 def _fetch_from_ferry(fname):
     """
@@ -280,6 +302,8 @@ def _fetch_from_ferry(fname):
     """
     try:
         url = "%s/%s" % (ferry_url(), fname)
+        #if fname in ['getVORoleMapFile', 'getGridMapFile']:
+        #    url += "?resourcename=fermi_workers"
         co = curl_obj()
         response = cStringIO.StringIO()
         co.setopt(co.WRITEFUNCTION, response.write)

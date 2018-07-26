@@ -48,8 +48,13 @@ def get_ferry_mapping(dn, fqan):
              dn: DN of proxy or cert trying to authenticate
            fqan: combination of acctgroup/role
     """
-    if fqan not in fqan_list(default_user(dn)):
-        return None
+    # getVORoleMapFile was changed. Before, a fqan could be present
+    # and return an empty string.  Now, the fqan is not
+    # present if it doesn't map to anything.  This check
+    # needs to come out as a consequence
+    #
+    # if fqan not in fqan_list(default_user(dn)):
+    #     return None
 
     vo_dat_file = "fqan_user_map.json"
     dn_dat_file = "dn_user_roles_map.json"

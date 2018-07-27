@@ -1615,7 +1615,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
         for dd in dirs:
             fd = os.path.join(root,dd)
             ok_include = True
-            if os.path.islink(dd) or not os.listdir(fd):
+            if os.path.islink(fd) or not os.listdir(fd):
                 for patt in reject_list:
                     if re.search(patt,fd):
                         ok_include = False

@@ -18,6 +18,7 @@ import getopt
 import optparse
 import time
 import traceback
+import json
 
 import constants
 import logSupport
@@ -179,6 +180,13 @@ def parse_opts(argv):
                          default=None,
                          help='Alternate location of Dropbox server to use')
 
+    opt_group.add_option('--json-config',
+                         dest='json_config',
+                         action='store',
+                         metavar='<JSON submit config file>',
+                         default=None,
+                         help='a JSON dict file of jobsub_submit options and values')
+
     opt_group.add_option('--tarball-exclusion-file',
                          dest='tarball_reject_list',
                          action='store',
@@ -216,7 +224,74 @@ def parse_opts(argv):
         parser.print_help()
         sys.exit(1)
 
+    # print('1 argv=%s' % argv)
+    j = 0
+    submit_config = ""
+    while j < len(argv):
+        if argv[j] == "--json-config":
+            argv.pop(j)
+            submit_config = argv.pop(j)
+        j += 1
+
+
+    # print('2 argv=%s' % argv)
+    if submit_config:
+        fd = open(submit_config)
+        sd = json.load(fd)
+        fd.close()
+        argv_job_idx = get_jobexe_idx(argv)
+        if argv_job_idx is not None:
+            argv_job_present = argv[argv_job_idx]
+        else:
+            argv_job_idx = len(argv)
+            argv_job_present = False
+        for opt in sd:
+            if isinstance(opt,unicode):
+                opt = str(opt)
+            if sd.get(opt) and isinstance(sd[opt],unicode):
+                sd[opt] = str(sd[opt])
+            # print('3 argv=%s' % argv)
+            # print 'checking %s:%s' %(opt,sd[opt])
+            if str(sd[opt]).lower() == "true": 
+                # print 'adding %s at %s' % (opt, argv_job_idx)
+                argv.insert(argv_job_idx, opt)
+                argv_job_idx += 1
+                # print('1 new argv=%s' % argv)
+            elif "file://" in opt:
+                if argv_job_present:
+                    print "ERROR: you specified %s in %s" % (opt,submit_config)
+                    print "and %s in the command line" % (argv_job_present)
+                    print "these conflict, exiting"
+                    exit(1)
+                else:
+                    argv.insert(argv_job_idx, opt)
+                    if sd[opt]:
+                        inc = 1
+                        if isinstance(sd[opt], str):
+                            # print "%s IS A STRING" % sd[opt]
+                            argv.insert(argv_job_idx+inc, str(sd[opt]))
+                            # print('2 new argv=%s' % argv)
+
+                        elif isinstance(sd[opt], list):
+                            # print "%s IS A LIST" % sd[opt]
+                            for el in sd[opt]:
+                                argv.insert(argv_job_idx+inc, str(el))
+                                inc += 1
+
+                                # print('3 new argv=%s' % argv)
+            elif str(sd[opt]).lower() != "false":
+                argv.insert(argv_job_idx, opt)
+                argv_job_idx += 1
+                argv.insert(argv_job_idx,str(sd[opt]))
+                argv_job_idx  += 1
+                # print('4 new argv=%s' % argv)
+            # print 'argv_job_idx = %s'%argv_job_idx
+
     cli_argv, srv_argv = split_client_server_args(parser, argv)
+    #print('argv=%s' % argv)
+    #print('cli_argv=%s' % cli_argv)
+    #print('srv_argv=%s' % srv_argv)
+    #sys.exit(0)
 
     options, remainder = parser.parse_args(cli_argv)
 

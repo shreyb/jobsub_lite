@@ -234,7 +234,6 @@ def parse_opts(argv):
         j += 1
 
 
-    # print('2 argv=%s' % argv)
     if submit_config:
         fd = open(submit_config)
         sd = json.load(fd)
@@ -248,15 +247,14 @@ def parse_opts(argv):
         for opt in sd:
             if isinstance(opt,unicode):
                 opt = str(opt)
+            if opt[0] == "#":
+                continue
+
             if sd.get(opt) and isinstance(sd[opt],unicode):
                 sd[opt] = str(sd[opt])
-            # print('3 argv=%s' % argv)
-            # print 'checking %s:%s' %(opt,sd[opt])
             if str(sd[opt]).lower() == "true": 
-                # print 'adding %s at %s' % (opt, argv_job_idx)
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
-                # print('1 new argv=%s' % argv)
             elif "file://" in opt:
                 if argv_job_present:
                     print "ERROR: you specified %s in %s" % (opt,submit_config)
@@ -267,31 +265,28 @@ def parse_opts(argv):
                     argv.insert(argv_job_idx, opt)
                     if sd[opt]:
                         inc = 1
-                        if isinstance(sd[opt], str):
-                            # print "%s IS A STRING" % sd[opt]
-                            argv.insert(argv_job_idx+inc, str(sd[opt]))
-                            # print('2 new argv=%s' % argv)
-
-                        elif isinstance(sd[opt], list):
-                            # print "%s IS A LIST" % sd[opt]
+                        if isinstance(sd[opt], list):
                             for el in sd[opt]:
                                 argv.insert(argv_job_idx+inc, str(el))
                                 inc += 1
+                        else:
+                            argv.insert(argv_job_idx+inc, str(sd[opt]))
 
-                                # print('3 new argv=%s' % argv)
+
+            elif isinstance(sd[opt], list):
+                for lel in sd[opt]:
+                    argv.insert(argv_job_idx, opt)
+                    argv_job_idx += 1
+                    argv.insert(argv_job_idx, lel)
+                    argv_job_idx  += 1
+
             elif str(sd[opt]).lower() != "false":
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
                 argv.insert(argv_job_idx,str(sd[opt]))
                 argv_job_idx  += 1
-                # print('4 new argv=%s' % argv)
-            # print 'argv_job_idx = %s'%argv_job_idx
 
     cli_argv, srv_argv = split_client_server_args(parser, argv)
-    #print('argv=%s' % argv)
-    #print('cli_argv=%s' % cli_argv)
-    #print('srv_argv=%s' % srv_argv)
-    #sys.exit(0)
 
     options, remainder = parser.parse_args(cli_argv)
 

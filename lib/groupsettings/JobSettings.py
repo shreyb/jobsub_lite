@@ -40,7 +40,7 @@ class MyCmdParser(OptionParser):
         # workaround
         epilog = """
         NOTES
-        You can have as many instances of -c, -d, -e, -f, -l and -y as you need.
+        You can have as many instances of -c, -d, -e, -f, and -l as you need.
 
         The -d directory mapping works on non-Grid nodes, too.
 

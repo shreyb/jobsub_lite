@@ -9,21 +9,24 @@
         Parag Mhashilkar
 """
 
-import condor_commands
-import logger
+import os
 import logging
 import cherrypy
-import os
 import pwd
 import pipes
 import socket
 from distutils import spawn
-import subprocessSupport
 import StringIO
 
+import subprocessSupport
+import condor_commands
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
 
+if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
+    import FakeLogger as logger
+else:
+    import logger
 
 def is_supported_accountinggroup(acctgroup):
     """Is acctgroup configured in jobsub.ini?
@@ -315,6 +318,7 @@ def get_authentication_methods(acctgroup):
     for meth in r_code.split(','):
         methods.append(meth.strip())
     return methods
+
 
 
 def get_submit_reject_threshold():
@@ -684,3 +688,14 @@ def condor_bin(cmd):
     if not exe:
         raise Exception("Unable to find command '%s' in the PATH." % exe)
     return exe
+
+
+if __name__ == '__main__':
+    # export PYTHONPATH=jobsub/server/webapp
+    # export PYTHONPATH=$PYTHONPATH:jobsub/lib/logger
+    # export PYTHONPATH=$PYTHONPATH:jobsub/lib/JobsubConfigParser
+    # export JOBSUB_INI_FILE=/opt/jobsub/server/conf.jobsub.ini
+    # export JOBSUB_USE_FAKE_LOGGER=true
+    # possibly export JOBSUB_SUPPRESS_LOG_OUTPUT=true
+    print 'put some test code here'
+

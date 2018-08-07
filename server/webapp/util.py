@@ -326,7 +326,7 @@ def doJobAction(acctgroup,
                 # continue and process the other ones
                 failures += 1
                 err = "%s: exception:  %s " % (cmd, sys.exc_info()[1])
-                logger.log(err, traceback=1)
+                logger.log(err, traceback=True)
                 msg = "%s - %s" % (cmd, err)
                 logger.log(msg, severity=logging.ERROR)
                 logger.log(msg, severity=logging.ERROR,

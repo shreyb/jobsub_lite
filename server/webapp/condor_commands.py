@@ -10,18 +10,24 @@
     Author:
         Dennis Box
 """
+import os
 import cherrypy
-import logger
 import logging
 import traceback
 import math
 import platform
-import subprocessSupport
 import socket
 import re
-import JobsubConfigParser
-from request_headers import get_client_dn
 from random import randint
+
+import JobsubConfigParser
+import subprocessSupport
+from request_headers import get_client_dn
+
+if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
+    import FakeLogger as logger
+else:
+    import logger
 
 
 JOBSTATUS_DICT = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
@@ -274,9 +280,13 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
             if cmd_err:
                 logger.log(cmd_err)
                 logger.log(cmd_err, severity=logging.ERROR, logfile='error')
-            c_dn = get_client_dn()
-            pts = c_dn.split(':')
-            user = pts[-1]
+            user = 'Unknown'
+            try:
+                c_dn = get_client_dn()
+                pts = c_dn.split(':')
+                user = pts[-1]
+            except:
+                pass
             log_cmd = "[user:%s] %s" % (
                 user, cmd)
             logger.log(log_cmd, logfile='condor_commands')
@@ -467,10 +477,13 @@ def vo_constraint(acctgroup):
     if not acctgroup:
         return "True"
     jcp = JobsubConfigParser.JobsubConfigParser()
-    voc = jcp.get('default', 'vo_constraint')
+    voc = jcp.get(acctgroup, 'vo_constraint')
     if not voc:
         voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))""" 
-    return voc.format(acctgroup)
+    if "{0}" in voc:
+        return voc.format(acctgroup)
+    else:
+        return voc
 
 def schedd_load_metric():
     jcp = JobsubConfigParser.JobsubConfigParser()
@@ -576,3 +589,14 @@ def schedd_name(arglist=None):
                     return _schedd
             i = i + 1
     return _name
+
+
+if __name__ == '__main__':
+    # export PYTHONPATH=jobsub/server/webapp
+    # export PYTHONPATH=$PYTHONPATH:jobsub/lib/logger
+    # export PYTHONPATH=$PYTHONPATH:jobsub/lib/JobsubConfigParser
+    # export JOBSUB_INI_FILE=/opt/jobsub/server/conf.jobsub.ini
+    # export JOBSUB_USE_FAKE_LOGGER=true
+    # possibly export JOBSUB_SUPPRESS_LOG_OUTPUT=true
+    print 'put some test code here'
+

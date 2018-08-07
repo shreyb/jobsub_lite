@@ -19,8 +19,10 @@ def get_client_dn():
 
     # In case of proxy additional last part will be of the form /CN=[0-9]*
     # In other words, issuer_dn is a substring of the client_dn
-    if client_dn.startswith(issuer_dn):
-        client_dn = issuer_dn
+    if client_dn:
+        if issuer_dn:
+            if client_dn.startswith(issuer_dn):
+                client_dn = issuer_dn
     return client_dn
 
 def uid_from_client_dn():

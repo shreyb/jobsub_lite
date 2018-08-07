@@ -97,6 +97,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/lib/logger/logger.py
 /opt/jobsub/lib/logger/logger.pyc
 /opt/jobsub/lib/logger/logger.pyo
+/opt/jobsub/lib/logger/FakeLogger.py
+/opt/jobsub/lib/logger/FakeLogger.pyc
+/opt/jobsub/lib/logger/FakeLogger.pyo
 /opt/jobsub/LICENSE.txt
 /opt/jobsub/server/__init__.py
 /opt/jobsub/server/__init__.pyc

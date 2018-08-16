@@ -11,7 +11,10 @@ Server
 -----------
 * Feature  16876  better support for experiment specific schedds
 * Feature  18713  Ferry authentication enabled
-
+* Bug      20614  Make sure ferry_refresh doesn't discard old mappings
+                  if new mappings can't be obtained due to network
+                  problems
+* Bug      20620  Make sure CAPATH is in ferry curl incantation
 
 ================================================================================
 v1.2.7.1

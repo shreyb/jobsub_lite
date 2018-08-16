@@ -165,6 +165,11 @@ def curl_obj():
     curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
     curl.setopt(curl.SSLCERT, jcp.get('default','jobsub_cert'))
     curl.setopt(curl.SSLKEY, jcp.get('default','jobsub_key'))
+    capath = jcp.get('default','ca_path')
+    if not capath:
+        capath = '/etc/grid-security/certificates'
+    curl.setopt(curl.CAPATH, capath)
+    logger.log('capath=%s' % capath)
     return curl
 
 def invert_rolemap(data):
@@ -292,7 +297,9 @@ def getGridMapFile():
     gmf = {}
     for vo in prs.supportedGroups():
         fname = "getGridMapFile?unitname=%s" % vo
-        gmf[vo] = _fetch_from_ferry(fname)
+        dat = _fetch_from_ferry(fname)
+        if dat:
+            gmf[vo] = dat
     return gmf
 
 
@@ -317,6 +324,20 @@ def _fetch_from_ferry(fname):
                    logfile='error')
 
         logger.log(e, traceback=True)
+        return {}
+
+
+def refresh_ferry_dat(fname, jfile):
+    dat = fetch_from_ferry(fname)
+    if dat:
+        jtmp = mk_temp_fname(jfile)
+        fd = open(jtmp, "w")
+        fd.write(json.dumps(dat, indent=4))
+        fd.close()
+        os.rename(jtmp, jfile)
+        FERRY_DAT[fname] = dat
+    return dat
+
 
 def json_from_file(fname):
 
@@ -326,6 +347,7 @@ def json_from_file(fname):
         jpath = '/var/lib/jobsub/ferry'
     jfile = os.path.join(jpath, fname)
     logger.log('checking for %s'%jfile)
+    dat = None
     if os.path.exists(jfile):
         try:
             st = os.stat(jfile)  
@@ -338,12 +360,9 @@ def json_from_file(fname):
                 max_age = 3600
     
             if age > max_age:
-                if fname in FERRY_DAT:
-                    del FERRY_DAT[fname]
-                os.remove(jfile)
-            else:
-                if fname in FERRY_DAT:
-                    return FERRY_DAT[fname]
+                refresh_ferry_dat(fname, jfile)
+            if fname in FERRY_DAT:
+                return FERRY_DAT[fname]
         except Exception as e:
             logger.log(e, traceback=True)
     if os.path.exists(jfile):
@@ -351,13 +370,9 @@ def json_from_file(fname):
         dat = json.load(fd)
         fd.close()
     else:
-        dat = fetch_from_ferry(fname)
-        jtmp = mk_temp_fname(jfile)
-        fd = open(jtmp, "w")
-        fd.write(json.dumps(dat, indent=4))
-        fd.close()
-        os.rename(jtmp, jfile)
-    FERRY_DAT[fname] = dat
+        dat = refresh_ferry_dat(fname, jfile)
+    if dat:
+        FERRY_DAT[fname] = dat
     return dat
 
 def get_voms(acctgroup):

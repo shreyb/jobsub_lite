@@ -6,6 +6,7 @@ v1.2.8
 Client
 ---------
 * Feature   6591  jobsub_submit accepts a json config file 
+* Bug      20715  --json-config (file) works, --json-config=(file) doesn't
 
 Server
 -----------

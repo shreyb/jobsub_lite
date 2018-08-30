@@ -231,6 +231,10 @@ def parse_opts(argv):
         if argv[j] == "--json-config":
             argv.pop(j)
             submit_config = argv.pop(j)
+        elif "--json-config=" in argv[j]:
+            arg=argv.pop(j)
+            # pathological? case where '=' may be in name of json-config-file
+            submit_config = "=".join(arg.split("=")[1:])
         j += 1
 
 

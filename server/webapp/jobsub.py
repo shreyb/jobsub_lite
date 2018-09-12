@@ -280,7 +280,7 @@ def get_dropbox_upload_list(acctgroup):
     dropbox_upload_set = set()    # Use set to ensure uniqueness automatically
     dropbox_location = get_dropbox_location(acctgroup)
     if not dropbox_location:
-        raise Exception("Unable to determine dropbox location")
+        return False
 
     # Error conditions for return from ui_condor_q.  Want to replace this code
     # when we change ui_condor_q to raise exception properly

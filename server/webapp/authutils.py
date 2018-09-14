@@ -310,7 +310,7 @@ def _fetch_from_ferry(fname):
     try:
         url = "%s/%s" % (ferry_url(), fname)
         if fname in ['getVORoleMapFile', 'getGridMapFile']:
-            url += "?resourcename=fermi_workers"
+            url += "?resourcename=fermigrid"
         co = curl_obj()
         response = cStringIO.StringIO()
         co.setopt(co.WRITEFUNCTION, response.write)

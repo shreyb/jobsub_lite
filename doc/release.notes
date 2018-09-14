@@ -16,6 +16,7 @@ Server
                   if new mappings can't be obtained due to network
                   problems
 * Bug      20620  Make sure CAPATH is in ferry curl incantation
+* Bug      20843  re-enable and modify commented out option for ferry API
 
 ================================================================================
 v1.2.7.1

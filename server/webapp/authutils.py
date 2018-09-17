@@ -25,7 +25,6 @@ import logger
 import logging
 import jobsub
 import subprocessSupport
-import pwd
 import hashlib
 import json
 import pycurl
@@ -295,9 +294,11 @@ def fetch_from_ferry(fname):
 def getGridMapFile():
     prs = JobsubConfigParser()
     gmf = {}
+    dat = {}
     for vo in prs.supportedGroups():
         fname = "getGridMapFile?unitname=%s" % vo
         dat = _fetch_from_ferry(fname)
+        #logger.log('adding vo %s data %s'%(vo, dat))
         if dat:
             gmf[vo] = dat
     return gmf
@@ -306,18 +307,52 @@ def getGridMapFile():
 def _fetch_from_ferry(fname):
     """
     use curl to request @param fname from its API
-    """
+    """ 
+    jcp = JobsubConfigParser()
+    dat = {}
+    tries = 0
+    numtries = 3
+    sleep_val = 10
+    ferry_api_append_list = jcp.get('default', 'ferry_api_append_list')
+    if not ferry_api_append_list:
+        ferry_api_append_list=''
+    ferry_url_append = jcp.get('default', 'ferry_url_append')
+    if not ferry_url_append:
+        ferry_url_append = ''
     try:
-        url = "%s/%s" % (ferry_url(), fname)
-        if fname in ['getVORoleMapFile', 'getGridMapFile']:
-            url += "?resourcename=fermigrid"
-        co = curl_obj()
-        response = cStringIO.StringIO()
-        co.setopt(co.WRITEFUNCTION, response.write)
-        co.setopt(co.URL, url)
-        co.perform()
-        co.close()
-        return json.loads(response.getvalue())
+        while tries < numtries:
+            tries = tries + 1
+            url = "%s/%s" % (ferry_url(), fname)
+            #
+            #if fname in ['getVORoleMapFile', 'getGridMapFile']:
+            #    url += "?resourcename=fermigrid"
+            if fname in ferry_api_append_list:
+                url += ferry_url_append
+            #logger.log("url =%s" % url)
+            co = curl_obj()
+            response = cStringIO.StringIO()
+            co.setopt(co.WRITEFUNCTION, response.write)
+            co.setopt(co.URL, url)
+            co.perform()
+            co.close()
+            dat = json.loads(response.getvalue())
+
+            if dat and 'ferry_error' not in dat:
+                break
+
+            if dat and 'ferry_error' in dat:
+                errs = str(dat['ferry_error'])
+                if 'No DNs found' or 'periment does not exist' in errs:
+                    break
+                logger.log('url %s returned %s retry in %s sec'%\
+                          (url, dat, sleep_val))
+            else:
+                logger.log('url %s returned NULL, retry in %s sec'%\
+                          (url, sleep_val))
+
+            time.sleep(sleep_val)
+        return dat
+
     except Exception as e:
         logger.log(e, traceback=True, severity=logging.ERROR)
         logger.log(e, traceback=True, severity=logging.ERROR,
@@ -346,7 +381,7 @@ def json_from_file(fname):
     if not jpath:
         jpath = '/var/lib/jobsub/ferry'
     jfile = os.path.join(jpath, fname)
-    logger.log('checking for %s'%jfile)
+    #logger.log('checking for %s'%jfile)
     dat = None
     if os.path.exists(jfile):
         try:

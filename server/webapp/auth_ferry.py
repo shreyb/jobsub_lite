@@ -55,7 +55,7 @@ def get_ferry_mapping(dn, fqan):
     #
     # if fqan not in fqan_list(default_user(dn)):
     #     return None
-
+    dn = authutils.clean_proxy_dn(dn)
     vo_dat_file = "fqan_user_map.json"
     dn_dat_file = "dn_user_roles_map.json"
     vo_dat = authutils.json_from_file(vo_dat_file)

@@ -263,8 +263,11 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/voms_group.py
 /opt/jobsub/server/webapp/voms_group.pyc
 /opt/jobsub/server/webapp/voms_group.pyo
-/scratch/dropbox/
-/scratch/uploads/
+%defattr(644,rexbatch,fife,755)
+%attr(-,rexbatch,fife) /scratch/dropbox/
+%attr(-,rexbatch,fife) /scratch/uploads/
+%attr(-,rexbatch,fife) /var/lib/jobsub/
+%attr(-,rexbatch,fife) /var/lib/jobsub/ferry/
 
 %changelog
 

@@ -40,6 +40,7 @@ cp -r ./ $RPM_BUILD_ROOT/opt/jobsub
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
 mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
+mkdir -p $RPM_BUILD_ROOT/var/lib/jobsub/ferry
 cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
 
 

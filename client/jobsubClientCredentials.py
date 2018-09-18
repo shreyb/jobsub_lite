@@ -377,6 +377,19 @@ def proxy_issuer(proxy_fname):
         pass
     return issuer
 
+def proxy_subject(proxy_fname):
+    openssl_cmd = spawn.find_executable("openssl")
+    issuer = ""
+    if not openssl_cmd:
+        raise Exception("Unable to find command 'openssl' in the PATH.")
+    cmd = '%s x509 -in %s -noout -subject' % (openssl_cmd, proxy_fname)
+    try:
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        issuer = cmd_out.replace('subject= ','')
+    except:
+        pass
+    return issuer
+
 if __name__ == '__main__':
     # Simple tests that work on SL5,6,7, OSX 10
     for a in sys.argv:

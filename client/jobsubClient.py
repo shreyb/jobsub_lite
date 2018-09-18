@@ -157,6 +157,19 @@ class JobSubClient:
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
+        subject = jobsubClientCredentials.proxy_subject(cert)
+        parts = subject.split('/CN=')
+        if len(parts) > 7:
+            err = "\nERROR\n"
+            err += """Your user proxy, %s has DN=%s .""" %(cert, subject)
+            err += "  This probably means voms-proxy-init has been used to "
+            err += "refresh it too many "
+            err += " times.  The easist way to fix the problem is to remove "
+            err += "the file %s and re-create it. The easiest way " % cert
+            err += "to re-create it is to re-submit your job after "
+            err += "removing the file."
+            raise JobSubClientError(err)
+
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acct_role = get_acct_role(acct_role, cert)
         self.serverAuthMethods()

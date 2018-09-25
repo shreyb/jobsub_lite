@@ -62,7 +62,7 @@ class X509Credentials(Credentials):
             lt = x509_lifetime(self.cert)
             self.validFrom = lt['stime']
             self.validTo = lt['etime']
-        except:
+        except Exception:
             self.validFrom = None
             self.validTo = None
             raise CredentialsError
@@ -85,7 +85,7 @@ class X509Credentials(Credentials):
             if (stime < now) and (now < etime):
                 return False
             return True
-        except:
+        except Exception:
             err = ''.join(["error parsing X509 certificate start time:",
                            "%s or end time:%s" % (self.validFrom, self.validTo)])
             raise CredentialsError(err)
@@ -119,7 +119,7 @@ class VOMSProxy(X509Proxy):
         X509Proxy.__init__(self, proxy_file=proxy_file)
         try:
             self.fqan = self.getFQAN()
-        except:
+        except Exception:
             self.fqan = None
 
     def getFQAN(self):
@@ -135,7 +135,7 @@ class VOMSProxy(X509Proxy):
         try:
             cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
             fqan = cmd_out.strip().splitlines()
-        except:
+        except Exception:
             pass
         return fqan
 
@@ -150,7 +150,7 @@ class Krb5Ticket(Credentials):
             self.validFrom = lt['stime']
             self.validTo = lt['etime']
             self.principal = krb5_default_principal(self.krb5CredCache)
-        except:
+        except Exception:
             self.krb5CredCache = None
             self.validFrom = None
             self.validTo = None
@@ -203,13 +203,13 @@ class Krb5Ticket(Credentials):
             try:
                 stime = time.mktime(time.strptime(self.validFrom, fmt))
                 etime = time.mktime(time.strptime(self.validTo, fmt))
-            except:
+            except Exception:
                 pass
         try:
             if (stime < now) and (now < etime):
                 return False
             return True
-        except:
+        except Exception:
             err = "error parsing KRB5 ticket start time:%s or end time:%s" %\
                 (self.validFrom, self.validTo)
             raise CredentialsError(err)
@@ -233,7 +233,7 @@ def krb5cc_to_x509(krb5cc, x509_fname=constants.X509_PROXY_DEFAULT_FILE):
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, cmd_env)
         os.rename(tmp_x509_fname, x509_fname)
         proxy_created = True
-    except:
+    except Exception:
         pass
     if not proxy_created:
         raise CredentialsError("failed to create %s using kx509" % x509_fname)
@@ -250,7 +250,7 @@ def krb5_default_principal(cache=None):
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         prn = (re.findall(
             constants.KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN, cmd_out))[0]
-    except:
+    except Exception:
         print sys.exc_info()[1]
         prn = "UNKNOWN"
     return prn
@@ -299,20 +299,21 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     cmd_out = 1
     itry = 0
     ntries = 3
-    #a flaky web server behind DNS RR or HAProxy RR can cause cigetcert to fail, retry
+    # a flaky web server behind DNS RR or HAProxy RR can cause cigetcert to fail, retry
     #'ntries' times in hopes of hitting a good one
     #
     while cmd_out != 0 and itry <= ntries:
         itry += 1
         err = ''
         try:
-            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(
+                cmd, child_env=child_env)
             break
-        except:
-            print ' cigetcert try %s of %s failed' % (itry,ntries)
+        except Exception:
+            print ' cigetcert try %s of %s failed' % (itry, ntries)
             err = "%s %s" % (cmd_err, sys.exc_info()[1])
             print err
-            
+
     if err:
         raise CredentialsError(err)
 
@@ -373,9 +374,10 @@ def proxy_issuer(proxy_fname):
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         issuer = cmd_out.strip()
-    except:
+    except Exception:
         pass
     return issuer
+
 
 def proxy_subject(proxy_fname):
     openssl_cmd = spawn.find_executable("openssl")
@@ -385,10 +387,11 @@ def proxy_subject(proxy_fname):
     cmd = '%s x509 -in %s -noout -subject' % (openssl_cmd, proxy_fname)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        issuer = cmd_out.replace('subject= ','')
-    except:
+        issuer = cmd_out.replace('subject= ', '')
+    except Exception:
         pass
     return issuer
+
 
 if __name__ == '__main__':
     # Simple tests that work on SL5,6,7, OSX 10

@@ -26,15 +26,15 @@ def authenticate(dn, acctgroup, acctrole):
             acctrole: role (Analysis, Production, etc)
     """
     try:
-        logger.log('acctgroup=%s, acctrole=%s'%(acctgroup, acctrole))
+        logger.log('acctgroup=%s, acctrole=%s' % (acctgroup, acctrole))
         fqan = get_ferry_fqan(acctgroup, acctrole)
-        logger.log('fqan=%s'%(fqan))
+        logger.log('fqan=%s' % (fqan))
         username = get_ferry_mapping(dn, fqan)
         username = username.strip()
         logger.log("ferry mapped dn '%s' fqan '%s' to '%s'" %
                    (dn, fqan, username))
         return username
-    except:
+    except Exception:
         err = "ferry mapping for the dn '%s' fqan '%s' failed" % (dn, fqan)
         logger.log(err, traceback=True, severity=logging.ERROR)
         logger.log(err, traceback=True,
@@ -69,6 +69,7 @@ def get_ferry_mapping(dn, fqan):
             return dn_map['mapped_uname']['default']
     return None
 
+
 def default_user(dn):
     """
     Find  the 'default' user mapped to a dn
@@ -86,6 +87,7 @@ def default_user(dn):
     if dn_map:
         default_user = dn_map['mapped_uname']['default']
     return default_user
+
 
 def vos_for_dn(dn):
     """ Return a list of VOs associated with a dn
@@ -122,6 +124,7 @@ def fqan_list(uname):
     aff_list = aff_dat.get(uname)
     return aff_list
 
+
 def alt_uname(fqan):
     """return uid associated with fqan to override default user name
     Args: fqan
@@ -149,6 +152,7 @@ def get_ferry_fqan(acctgroup, acctrole=None):
         logger.log(e, traceback=True)
     return fqan
 
+
 if __name__ == '__main__':
     """
     """
@@ -158,8 +162,8 @@ if __name__ == '__main__':
         _uname = default_user(_dn)
         _vo_list = vos_for_dn(_dn)
         _fq_list = fqan_list(_uname)
-        print 'dn=%s maps to %s' %(_dn, _uname)
-        print 'vos:%s fqans:%s' %(_vo_list, _fq_list)
+        print 'dn=%s maps to %s' % (_dn, _uname)
+        print 'vos:%s fqans:%s' % (_vo_list, _fq_list)
         if _fq_list:
             for _fq in _fq_list:
-                print "%s %s"%(_fq, get_ferry_mapping(_dn, _fq))
+                print "%s %s" % (_fq, get_ferry_mapping(_dn, _fq))

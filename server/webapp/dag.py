@@ -73,7 +73,7 @@ class DagResource(object):
                 uname = None
                 try:
                     uname = cherrypy.request.username
-                except:
+                except Exception:
                     uname = request_headers.uid_from_client_dn()
 
                 command_path_user = jscfg.commandPathUser(acctgroup,
@@ -176,8 +176,8 @@ class DagResource(object):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-            #cherrypy.request.username should be set by @check_auth using GUMS
-            #but double check
+            # cherrypy.request.username should be set by @check_auth using GUMS
+            # but double check
             if not hasattr(cherrypy.request, 'username') or \
                     not cherrypy.request.username:
                 cherrypy.request.username = kwargs.get('username')
@@ -196,7 +196,7 @@ class DagResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DagResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

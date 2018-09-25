@@ -61,7 +61,7 @@ class UsersJobsResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on UsersJobsResource.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500
@@ -145,7 +145,7 @@ class UsersJobsResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on UsersJobsResource.default: %s' % sys.exc_info()[
                 1]
             logger.log(err, severity=logging.ERROR, traceback=True)

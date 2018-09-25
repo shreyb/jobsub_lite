@@ -14,11 +14,8 @@
 
 import sys
 import os
-import getopt
 import optparse
-import time
 import traceback
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError

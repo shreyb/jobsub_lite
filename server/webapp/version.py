@@ -22,6 +22,7 @@ class VersionResource(object):
     Description:
     This module returns jobsub server version extracted from the RPM
     """
+
     def doGET(self, kwargs):
         """ perform http GET of URL /jobsub/version
         """
@@ -48,7 +49,7 @@ class VersionResource(object):
                            severity=logging.ERROR,
                            logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on VersionResouce.index: %s' % sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, traceback=True)

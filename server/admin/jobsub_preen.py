@@ -75,7 +75,7 @@ def findRmUserJobDirs(rootDir, ageInDays):
                 logger.log('removing link %s' % fname)
                 try:
                     os.unlink(fname)
-                except:
+                except Exception:
                     logger.log("%s" % sys.exc_info()[1])
 
             if os.path.exists(fname) and \
@@ -89,20 +89,20 @@ def findRmUserJobDirs(rootDir, ageInDays):
                     logger.log('removing link %s' % fname)
                     try:
                         os.unlink(fname)
-                    except:
+                    except Exception:
                         logger.log("%s" % sys.exc_info()[1])
                 else:
                     logger.log('removing directory %s' % fname)
                     try:
                         shutil.rmtree(fname, ignore_errors=True)
-                    except:
+                    except Exception:
                         logger.log("%s" % sys.exc_info()[1])
 
 
 def rmOldFiles(rootDir, ageInDays, doSubDirs=0, rmEmptyDirs=False):
-    #doSubDirs now contains depth information, recursively
-    #go into subdirs until doSubdirs==0
-    #if negative, recurse to bottom
+    # doSubDirs now contains depth information, recursively
+    # go into subdirs until doSubdirs==0
+    # if negative, recurse to bottom
     ageInSeconds = int(ageInDays) * 24 * 60 * 60
     now = time.time()
     if rmEmptyDirs:
@@ -112,14 +112,14 @@ def rmOldFiles(rootDir, ageInDays, doSubDirs=0, rmEmptyDirs=False):
         fname = os.path.join(rootDir, f)
         if os.path.isdir(fname):
             if doSubDirs:
-                rmOldFiles(fname, ageInDays, doSubDirs-1, rmEmptyDirs)
+                rmOldFiles(fname, ageInDays, doSubDirs - 1, rmEmptyDirs)
         else:
             if os.stat(fname).st_mtime < now - ageInSeconds:
 
                 logger.log('removing file %s' % fname)
                 try:
                     os.unlink(fname)
-                except:
+                except Exception:
                     logger.log("%s" % sys.exc_info()[1])
 
 
@@ -132,7 +132,7 @@ def removeEmptyDirs(rootDir):
                 try:
                     logger.log('removing empty directory  %s' % fname)
                     os.rmdir(fname)
-                except:
+                except Exception:
                     logger.log("%s" % sys.exc_info()[1])
 
 
@@ -145,7 +145,7 @@ def print_help():
         elif arg 3 is 'doSubDirs':
            if arg 4 exists an is an integer:
                remove files in <root_dir> and subdirs older than <ageInDays> down to depth 'arg 4' subdirs
-           else:      
+           else:
               remove all files in <root_dir> and subdirs older than <ageInDays>
         elif arg 3 is 'rmEmptySubdirs':
            remove all files in <root_dir> and subdirs older than <ageInDays>,
@@ -166,10 +166,15 @@ def run_prog():
         if sys.argv[3] == 'thisDirOnly':
             rmOldFiles(sys.argv[1], sys.argv[2])
         elif sys.argv[3] == 'doSubDirs':
-            if len(sys.argv)>=5  and isinstance(int(sys.argv[4]),(int,long)):
-            	rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=int(sys.argv[4]))
+            if len(sys.argv) >= 5 and isinstance(
+                    int(sys.argv[4]), (int, long)):
+                rmOldFiles(
+                    sys.argv[1],
+                    sys.argv[2],
+                    doSubDirs=int(
+                        sys.argv[4]))
             else:
-            	rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=-1)
+                rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=-1)
         elif sys.argv[3] == 'rmEmptySubdirs':
             rmOldFiles(sys.argv[1], sys.argv[2], doSubDirs=True,
                        rmEmptyDirs=True)
@@ -184,8 +189,7 @@ def run_prog():
 if __name__ == '__main__':
     try:
         run_prog()
-    except:
-
+    except Exception:
         logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,
                    traceback=True)

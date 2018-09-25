@@ -37,7 +37,7 @@ class HistoryResource(object):
             logger.log("filter=%s" % filter)
             history = jobsub_history(filter)
             return {'out': history}
-        except:
+        except Exception:
             err = ' %s' % sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR)
@@ -69,7 +69,7 @@ class HistoryResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on HistoryResouce.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)
@@ -123,7 +123,7 @@ class HistoryResource(object):
                 rc = {
                     'out': 'informational page for %s not implemented' % (params)}
 
-        except:
+        except Exception:
             err = 'Exception on HistoryResource.default: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

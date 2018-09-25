@@ -109,7 +109,7 @@ class AccountJobsResource(object):
                 for arg in jobsub_args.split():
                     if '/pnfs/' in arg:
                         pnfs_list.append(arg)
-                        #logger.log(arg,logfile='dropbox')
+                        # logger.log(arg,logfile='dropbox')
                 jobsub_command = kwargs.get('jobsub_command')
                 role = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %
@@ -180,7 +180,9 @@ class AccountJobsResource(object):
                             parts = line.strip().split()
                             jid = parts[-1]
                             for pnfs in pnfs_list:
-                                logger.log("%s %s " % (jid, pnfs), logfile='dropbox')
+                                logger.log(
+                                    "%s %s " %
+                                    (jid, pnfs), logfile='dropbox')
                 if rcode.get('err'):
                     logger.log(rcode['err'], severity=logging.ERROR)
                     logger.log(rcode['err'], severity=logging.ERROR,
@@ -244,7 +246,7 @@ class AccountJobsResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 cherrypy.response.status = 404
                 rcode = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)

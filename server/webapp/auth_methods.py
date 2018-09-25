@@ -59,7 +59,7 @@ class AuthMethodsResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on AuthMethodsResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

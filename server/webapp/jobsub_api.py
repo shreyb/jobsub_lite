@@ -63,8 +63,8 @@ class Root(object):
                     '<a href=acctgroups/>Browse Accounting Groups</a>',
                     '<a href=users/>User Information</a>',
                     '<a href=scheddload/>Schedd Load </a>',
+                    ]
                    ]
-                  ]
 
             r_code = {'out': out}
             return r_code
@@ -113,7 +113,7 @@ def create_statedir(log):
                     s_dir[1])
                 out, err = iexe_priv_cmd(cmd)
                 log.error('Created statedir/subdirectories' % s_dir[0])
-            except:
+            except Exception:
                 err = 'Failed creating internal state directory %s' % state_dir
                 log.error(err)
                 log.error(traceback.format_exc())
@@ -156,14 +156,14 @@ def application(environ, start_response):
     cache_on = False
     cache_duration = 120
     try:
-        jcp_c = jcp.get('default','enable_http_cache')
+        jcp_c = jcp.get('default', 'enable_http_cache')
         if jcp_c:
             if jcp_c == True or jcp_c.lower() == 'true':
                 cache_on = True
-        jcp_d = jcp.get('default','http_cache_duration')
+        jcp_d = jcp.get('default', 'http_cache_duration')
         if jcp_d:
             cache_duration = int(jcp_d)
-    except:
+    except Exception:
         pass
 
     cherrypy.config.update({
@@ -172,16 +172,17 @@ def application(environ, start_response):
         'log.error_file': error_log,
         'log.access_file': access_log,
         'tools.caching.on': cache_on,
-        'tools.caching.delay':cache_duration,
+        'tools.caching.delay': cache_duration,
     })
 
     app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE:%s cacheing:%s cache_duration:%s seconds' %
                   (current_thread().ident,
-                   os.environ.get('JOBSUB_INI_FILE'),cache_on,cache_duration))
+                   os.environ.get('JOBSUB_INI_FILE'), cache_on, cache_duration))
 
     initialize(app.log)
 
     return cherrypy.tree(environ, start_response)
+
 
 if __name__ == '__main__':
     cherrypy.quickstart(ROOTURL, '/jobsub')

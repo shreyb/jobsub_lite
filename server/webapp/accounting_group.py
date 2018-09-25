@@ -102,7 +102,7 @@ class AccountingGroupsResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on AccountingGroupsResource.index: %s' %\
                 sys.exc_info()[1]
             cherrypy.response.status = 500

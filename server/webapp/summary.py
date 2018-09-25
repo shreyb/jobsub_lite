@@ -36,7 +36,7 @@ class JobSummaryResource(object):
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on JobSummaryResouce.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

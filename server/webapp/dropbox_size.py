@@ -1,6 +1,6 @@
 """
  Description:
-   Query dropbox size to use for an experiment to drop tarballs and other files.  
+   Query dropbox size to use for an experiment to drop tarballs and other files.
    Written as a part of the transition to unmount Bluearc from the grid worker nodes.
 
    API is /acctgroups/<group>/dropboxsize/
@@ -26,7 +26,7 @@ class DropboxSizeResource(object):
     def doGET(self, kwargs):
         """ http GET request on index.html of API
             Query max dropbox size. Returns a JSON list object.
-            API is /acctgroups/<group>/dropboxsize/ 
+            API is /acctgroups/<group>/dropboxsize/
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
@@ -34,11 +34,11 @@ class DropboxSizeResource(object):
         if dropbox == False:
             cherrypy.response.status = 403
             return {'err': 'Dropbox size is NOT available for %s'
-                % acctgroup}
+                    % acctgroup}
         elif not dropbox:
             cherrypy.response.status = 404
             return {'err': 'Dropbox size is NOT found for %s'
-                % acctgroup}
+                    % acctgroup}
         return {'out': dropbox}
 
     @cherrypy.expose
@@ -56,7 +56,7 @@ class DropboxSizeResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DropboxSizeResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

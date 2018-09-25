@@ -21,9 +21,9 @@ class JobsubConfigParser(object):
         if self.submit_host is None:
             self.submit_host = socket.gethostname()
         self.parser.read(self.cnf)
-	# Taken from ConfigParser
+        # Taken from ConfigParser
         self._boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
-                      '0': False, 'no': False, 'false': False, 'off': False} 
+                                '0': False, 'no': False, 'false': False, 'off': False}
 
     def get_submit_host(self):
         return self.submit_host
@@ -75,7 +75,7 @@ class JobsubConfigParser(object):
             val = valdict[opt]
             return val.strip("'")
         return None
-   
+
     def getboolean(self, sect, opt):
         itm = self.items(sect)
         valdict = dict(itm)
@@ -86,7 +86,7 @@ class JobsubConfigParser(object):
             return self._boolean_states[val.lower()]
         else:
             raise NoOptionError("There is neither a default value nor a value"
-                " for section %s called %s" % (sect, opt))
+                                " for section %s called %s" % (sect, opt))
 
     def supportedRoles(self, host=None):
         if host is None:

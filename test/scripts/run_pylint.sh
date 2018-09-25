@@ -32,28 +32,10 @@ process_branch() {
     echo "GIT_CHECKOUT=\"PASSED\"" >> $results
 
     # pylint related variables
-    PYLINT_RCFILE=/dev/null
-    PYLINT_OPTIONS="--errors-only --rcfile=$PYLINT_RCFILE"
+    PYLINT_RCFILE=$WORKSPACE/pylintrc
+    PYLINT_OPTIONS=" --rcfile=$PYLINT_RCFILE"
 
 
-    if python --version 2>&1 | grep 'Python 2.6' > /dev/null ; then
-        # PYLINT_IGNORE_LIST files for python 2.6 here
-        # white-space seperated list of files to be skipped by pylint 
-        # --ignore-module/--ignore  is supposed to do this but doesn't 
-        # seem to work.  After coding this I found that it is
-        # not needed with careful use of --disable: directive but its
-        # here if needed in future 
-        PYLINT_IGNORE_LIST=""
-        # pylint directives added since v1.3.1 throw bad-option-value
-        # errors unless disabled at command line
-        PYLINT_OPTIONS="$PYLINT_OPTIONS  --disable bad-option-value"
-    else
-        #PYLINT_IGNORE_LIST files for python 2.7+ here
-        PYLINT_IGNORE_LIST=""
-        # unsubscriptable-object considered to be buggy in recent
-        # pylint relases
-        PYLINT_OPTIONS="$PYLINT_OPTIONS  --disable unsubscriptable-object"
-    fi
 
     # pep8 related variables
     # default: E121,E123,E126,E226,E24,E704
@@ -79,7 +61,7 @@ process_branch() {
 
     PEP8_OPTIONS="--ignore="
     # E111 indentation is not a multiple of four
-    PEP8_OPTIONS="$PEP8_OPTIONS,E111"
+    PEP8_OPTIONS="$PEP8_OPTIONSE111"
     # E121 continuation line under-indented for hanging indent
     PEP8_OPTIONS="$PEP8_OPTIONS,E121"
     # E123 closing bracket does not match indentation of opening bracket’s line
@@ -123,7 +105,7 @@ process_branch() {
     #uncomment to see all pep8 errors
     PEP8_OPTIONS=""
     
-
+   
 
     # get list of python scripts 
     cd "${JOBSUB_SRC}"
@@ -140,7 +122,7 @@ process_branch() {
           fi
       done
       if [ "$PYLINT_SKIP" != "True" ]; then
-          pylint $PYLINT_OPTIONS -e F0401 ${script}  >> $pylint_log || log_nonzero_rc "pylint" $?
+          pylint $PYLINT_OPTIONS ${script}  >> $pylint_log || log_nonzero_rc "pylint" $?
       fi
       pycodestyle $PEP8_OPTIONS ${script} >> ${pep8_log} || log_nonzero_rc "pep8" $?
     done
@@ -268,7 +250,7 @@ HTML_TD_FAILED="border: 0px solid black;border-collapse: collapse;background-col
 git_branches="$1"
 WORKSPACE=`pwd`
 export JOBSUB_SRC=$WORKSPACE/jobsub
-
+cp $JOBSUB_SRC/test/scripts/pylintrc $WORKSPACE
 source $JOBSUB_SRC/test/scripts/utils.sh
 if [ "x$VIRTUAL_ENV" = "x" ]; then
     setup_python_venv $WORKSPACE

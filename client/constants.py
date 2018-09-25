@@ -42,7 +42,7 @@ JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/job
 JOBSUB_AUTHMETHODS_URL_PATTERN = '%s/jobsub/acctgroups/%s/authmethods/'
 JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxsize/'
 
-JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/' 
+JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/'
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
 JOBSUB_Q_USERID_URL_PATTERN = '%s/jobsub/users/%s/jobs/'
@@ -160,7 +160,7 @@ KRB5_DEFAULT_CC = 'FILE:/tmp/krb5cc_%s' % os.getuid()
 X509_PROXY_DEFAULT_FILE = '/tmp/x509up_u%s' % os.getuid()
 
 ##########################################################################
-# Other 
+# Other
 ##########################################################################
 
 IFDH_FILE_EXISTS_PATTERN = ".+File\sexists(.+)?"

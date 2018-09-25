@@ -14,13 +14,9 @@
 
 import sys
 import os
-import getopt
 import optparse
-import time
 import traceback
 import json
-
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
@@ -192,11 +188,11 @@ def parse_opts(argv):
                          action='store',
                          metavar='<tarball exclusion regex file>',
                          default=None,
-                         help="A file of python regex's to exclude from "+\
-                              " tarballs. Use with --tar_file_name tardir://"+\
-                              " Default exclusion list includes .git and .svn"+\
-                              " directories, pdf, eps, log files, and human"+\
-                              " readable images.  "+\
+                         help="A file of python regex's to exclude from " +
+                              " tarballs. Use with --tar_file_name tardir://" +
+                              " Default exclusion list includes .git and .svn" +
+                              " directories, pdf, eps, log files, and human" +
+                              " readable images.  " +
                               "\n")
 
     opt_group.add_option('--debug',
@@ -232,11 +228,10 @@ def parse_opts(argv):
             argv.pop(j)
             submit_config = argv.pop(j)
         elif "--json-config=" in argv[j]:
-            arg=argv.pop(j)
+            arg = argv.pop(j)
             # pathological? case where '=' may be in name of json-config-file
             submit_config = "=".join(arg.split("=")[1:])
         j += 1
-
 
     if submit_config:
         fd = open(submit_config)
@@ -249,19 +244,19 @@ def parse_opts(argv):
             argv_job_idx = len(argv)
             argv_job_present = False
         for opt in sd:
-            if isinstance(opt,unicode):
+            if isinstance(opt, unicode):
                 opt = str(opt)
             if opt[0] == "#":
                 continue
 
-            if sd.get(opt) and isinstance(sd[opt],unicode):
+            if sd.get(opt) and isinstance(sd[opt], unicode):
                 sd[opt] = str(sd[opt])
-            if str(sd[opt]).lower() == "true": 
+            if str(sd[opt]).lower() == "true":
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
             elif "file://" in opt:
                 if argv_job_present:
-                    print "ERROR: you specified %s in %s" % (opt,submit_config)
+                    print "ERROR: you specified %s in %s" % (opt, submit_config)
                     print "and %s in the command line" % (argv_job_present)
                     print "these conflict, exiting"
                     exit(1)
@@ -271,24 +266,23 @@ def parse_opts(argv):
                         inc = 1
                         if isinstance(sd[opt], list):
                             for el in sd[opt]:
-                                argv.insert(argv_job_idx+inc, str(el))
+                                argv.insert(argv_job_idx + inc, str(el))
                                 inc += 1
                         else:
-                            argv.insert(argv_job_idx+inc, str(sd[opt]))
-
+                            argv.insert(argv_job_idx + inc, str(sd[opt]))
 
             elif isinstance(sd[opt], list):
                 for lel in sd[opt]:
                     argv.insert(argv_job_idx, opt)
                     argv_job_idx += 1
                     argv.insert(argv_job_idx, lel)
-                    argv_job_idx  += 1
+                    argv_job_idx += 1
 
             elif str(sd[opt]).lower() != "false":
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
-                argv.insert(argv_job_idx,str(sd[opt]))
-                argv_job_idx  += 1
+                argv.insert(argv_job_idx, str(sd[opt]))
+                argv_job_idx += 1
 
     cli_argv, srv_argv = split_client_server_args(parser, argv)
 
@@ -323,7 +317,7 @@ def print_acctgroup_help(options):
     """
 
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [
-        ], extra_opts={})
+    ], extra_opts={})
     response = js_client.help()
 
     out = response.get('out')
@@ -347,10 +341,10 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
-                             options.dropboxServer, options.dag, 
+                             options.dropboxServer, options.dag,
                              extra_opts={'debug': options.debug,
-                                         'jobid_output_only':options.jobid_output_only,
-                                         'tarball_reject_list':options.tarball_reject_list})
+                                         'jobid_output_only': options.jobid_output_only,
+                                         'tarball_reject_list': options.tarball_reject_list})
     rc = 1
     try:
         http_code = js_client.submit()

@@ -40,6 +40,7 @@ from sqlite_commands import constructQuery
 from sqlite_commands import iwd_jobsub_history
 from request_headers import uid_from_client_dn
 
+
 def cleanup(zip_file, outfilename=None):
     """ Hook function to cleanup sandbox files after request has been processed
     """
@@ -47,13 +48,13 @@ def cleanup(zip_file, outfilename=None):
     if outfilename is not None:
         try:
             os.remove(outfilename)
-        except:
+        except Exception:
             err = 'Failed to remove encoded file at %s' % outfilename
             logger.log(err)
             logger.log(err, severity=logging.ERROR, logfile='error')
     try:
         os.remove(zip_file)
-    except:
+    except Exception:
         err = 'Failed to remove zip file at %s' % zip_file
         logger.log(err)
         logger.log(err, severity=logging.ERROR, logfile='error')
@@ -89,7 +90,6 @@ class SandboxResource(object):
         API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
     """
 
-
     def findSandbox(self, path):
         """
         check that sandbox exists
@@ -109,7 +109,7 @@ class SandboxResource(object):
         timeout = 60 * 15
         try:
             request_uid = cherrypy.request.username
-        except:
+        except Exception:
             request_uid = uid_from_client_dn()
         if not request_uid:
             request_uid = kwargs.get('username')
@@ -194,17 +194,17 @@ class SandboxResource(object):
             zip_file = os.path.join(sbx_create_dir,
                                     '%s.%s' % (job_id, out_format))
             if partial:
-                zipfile="partial_%s" % zip_file
+                zipfile = "partial_%s" % zip_file
             rcode = {'out': zip_file}
 
-            #cherrypy.request.hooks.attach('on_end_request', cleanup,
+            # cherrypy.request.hooks.attach('on_end_request', cleanup,
             #                              zip_file=zip_file)
-            #cherrypy.request.hooks.attach('after_error_response', cleanup,
+            # cherrypy.request.hooks.attach('after_error_response', cleanup,
             #                              zip_file=zip_file)
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != request_uid:
                 if sandbox_readable_by_group(acctgroup) \
-                        or is_superuser_for_group(acctgroup,request_uid) \
+                        or is_superuser_for_group(acctgroup, request_uid) \
                         or is_global_superuser(request_uid):
                     make_sandbox_readable(zip_path, owner)
                 else:
@@ -217,7 +217,8 @@ class SandboxResource(object):
                     return rcode
             else:
                 if self.valid_cached(zip_file):
-                    return serve_file(zip_file, 'application/x-download', 'attachment')
+                    return serve_file(
+                        zip_file, 'application/x-download', 'attachment')
 
                 make_sandbox_readable(zip_path, owner)
             create_archive(zip_file, zip_path, job_id,
@@ -238,7 +239,7 @@ class SandboxResource(object):
             to find this job ID, double check that you specified --group
             incorrectly.  If the job is more than a few weeks old, it was
             probably removed to save space. Jobsub_fetchlog --list will
-            show the  sandboxes that are still on the server."""  % job_id
+            show the  sandboxes that are still on the server.""" % job_id
             rcode = {'err': ' '.join(outmsg.split())}
 
         return rcode
@@ -288,7 +289,7 @@ class SandboxResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
                 cherrypy.response.status = 500
-        except:
+        except Exception:
             err = 'Exception on SandboxResource.index'
             cherrypy.response.status = 500
             logger.log(err, traceback=True)

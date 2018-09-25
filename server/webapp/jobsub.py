@@ -28,6 +28,7 @@ if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
 else:
     import logger
 
+
 def is_supported_accountinggroup(acctgroup):
     """Is acctgroup configured in jobsub.ini?
     """
@@ -38,7 +39,7 @@ def is_supported_accountinggroup(acctgroup):
         logger.log("supported groups:%s accountinggroup:%s" %
                    (groups, acctgroup))
         r_code = (acctgroup in groups)
-    except:
+    except Exception:
         logger.log('Failed to get accounting groups: ',
                    traceback=True, severity=logging.ERROR)
         logger.log('Failed to get accounting groups: ',
@@ -50,9 +51,9 @@ def is_supported_accountinggroup(acctgroup):
 
 
 def global_superusers():
-    """return a list of global_superusers 
+    """return a list of global_superusers
        global_superusers can hold,release,remove other
-       users jobs and browse 
+       users jobs and browse
        other users sandboxes regardless of other
        settings
     """
@@ -65,6 +66,7 @@ def global_superusers():
             g_list.append(itm)
     logger.log('returning %s' % g_list)
     return g_list
+
 
 def group_superusers(acctgroup):
     """return a list of superusers for acctgroup
@@ -94,9 +96,11 @@ def is_superuser_for_group(acctgroup, user):
         return user in su_list
     raise Exception('group %s not supported' % acctgroup)
 
+
 def is_global_superuser(user):
     gsu = global_superusers()
     return user in gsu
+
 
 def sandbox_readable_by_group(acctgroup):
     """return True if anyone in acctgroup can read and fetch
@@ -108,7 +112,7 @@ def sandbox_readable_by_group(acctgroup):
         r_code = prs.get(acctgroup, 'sandbox_readable_by_group')
         logger.log('sandbox_readable_by_group:%s is %s' % (acctgroup, r_code))
         return r_code
-    except:
+    except Exception:
         logger.log('Failed to get sandbox_readable_by_group: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -133,7 +137,7 @@ def sandbox_allowed_browsable_file_types():
             r_code = extensions.split()
         logger.log('output_files_web_browsable_allowed_types %s' % (r_code))
         return r_code
-    except:
+    except Exception:
         logger.log('Failed to get output_files_web_browsable_allowed_types: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -153,7 +157,7 @@ def get_supported_accountinggroups():
     try:
         prs = JobsubConfigParser()
         r_code = prs.supportedGroups()
-    except:
+    except Exception:
         logger.log('Failed to get accounting groups: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -176,7 +180,7 @@ def default_voms_role(acctgroup="default"):
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'default_voms_role')
         logger.log('default voms role for %s : %s' % (acctgroup, r_code))
-    except:
+    except Exception:
         logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
                    severity=logging.ERROR,
                    traceback=True)
@@ -197,7 +201,7 @@ def sub_group_pattern(acctgroup):
         sgp = prs.get(acctgroup, 'sub_group_pattern')
         if sgp:
             acg = sgp
-    except:
+    except Exception:
         pass
     return acg
 
@@ -207,12 +211,14 @@ def get_dropbox_max_size(acctgroup):
        uses, return a string
     """
     r_code_default = '1073741824'
-    logger.log("default = %s attempting to find dropbox_max_size"%r_code_default)
+    logger.log(
+        "default = %s attempting to find dropbox_max_size" %
+        r_code_default)
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_max_size')
-        logger.log("r_code = %s"%r_code)
-    except:
+        logger.log("r_code = %s" % r_code)
+    except Exception:
         logger.log('Failed to get dropbox_max_size: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -229,11 +235,11 @@ def get_dropbox_constraint(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_constraint')
-        logger.log("r_code = %s"%r_code)
+        logger.log("r_code = %s" % r_code)
         cnstr = r_code % acctgroup
         logger.log("returning = %s" % cnstr)
         return cnstr
-    except:
+    except Exception:
         logger.log('Failed to get dropbox_constraint: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -242,12 +248,11 @@ def get_dropbox_constraint(acctgroup):
         return cnstr
 
 
-
 def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
     """
-    r_code = None 
+    r_code = None
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_location')
@@ -260,8 +265,8 @@ def get_dropbox_location(acctgroup):
                 r_code = r_code_sub
             except TypeError:
                 # Substitution failed, so return original r_code
-           	pass
-    except:
+                pass
+    except Exception:
         logger.log('Failed to get dropbox_location: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -282,19 +287,19 @@ def get_dropbox_upload_list(acctgroup):
         return False
 
     a_filter = "-constraint '%s' " % get_dropbox_constraint(acctgroup)
-    a_key=['PNFS_INPUT_FILES']
+    a_key = ['PNFS_INPUT_FILES']
 
     dropbox_uploads = condor_commands.ui_condor_q(a_filter=a_filter,
                                                   a_key=a_key)
-    
+
     query_rslt = dropbox_uploads.split('\n')
 
     # This should automatically take care of the no-jobs or error case
     for line in query_rslt:
         for item in line.split(','):
-            if dropbox_location in item:    
+            if dropbox_location in item:
                 dropbox_upload_set.add(item)
-    
+
     return list(dropbox_upload_set)
 
 
@@ -305,7 +310,7 @@ def get_authentication_methods(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'authentication_methods')
-    except:
+    except Exception:
         logger.log('Failed to get authentication_methods: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -320,7 +325,6 @@ def get_authentication_methods(acctgroup):
     return methods
 
 
-
 def get_submit_reject_threshold():
     """return submit_reject_threshold
        from jobsub.ini
@@ -330,8 +334,9 @@ def get_submit_reject_threshold():
     if prs.has_section('default'):
         if prs.has_option('default', 'submit_reject_threshold'):
             sdf = prs.get('default', 'submit_reject_threshold')
-    logger.log('submit_reject_threshold=%s'%sdf)
+    logger.log('submit_reject_threshold=%s' % sdf)
     return float(sdf)
+
 
 def get_command_path_root():
     """return root directory of sandboxes
@@ -458,12 +463,13 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             workdir_id)
 
         schedd_nm = condor_commands.schedd_name(jobsub_args)
-        recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
+        recent_duty_cycle = float(
+            condor_commands.schedd_recent_duty_cycle(schedd_nm))
         srt = get_submit_reject_threshold()
 
         if recent_duty_cycle > srt:
             err = "schedd %s is overloaded " % schedd_nm
-            err += "at %s percent busy " % (100.0*recent_duty_cycle)
+            err += "at %s percent busy " % (100.0 * recent_duty_cycle)
             err += "rejecting job submission, try again in a few minutes"
             result = {'err': err}
             logger.log(err)
@@ -488,8 +494,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                 job_submit_dir, 'krb5cc_%s' % username)
 
             copy_file_as_user(src_cache_fname, dst_cache_fname, username)
-            logger.log('Added %s for acctgroup %s to transfer_encrypt_files' %\
-                    (dst_cache_fname, acctgroup))
+            logger.log('Added %s for acctgroup %s to transfer_encrypt_files' %
+                       (dst_cache_fname, acctgroup))
             child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
             child_env['KRB5CCNAME'] = dst_cache_fname
 
@@ -698,4 +704,3 @@ if __name__ == '__main__':
     # export JOBSUB_USE_FAKE_LOGGER=true
     # possibly export JOBSUB_SUPPRESS_LOG_OUTPUT=true
     print 'put some test code here'
-

@@ -142,19 +142,20 @@ class Krb5Ticket(object):
             raise OtherAuthError("%s failed:  %s" % (cmd, sys.exc_info()[1]))
 
 
+FERRY_DAT = {}
 
-FERRY_DAT={}
 
 def ferry_url():
     """ return url for ferry server.  Configured from jobsub.ini
     """
     jcp = JobsubConfigParser()
-    f_server = jcp.get('default','ferry_server')
-    f_port = jcp.get('default','ferry_port')
+    f_server = jcp.get('default', 'ferry_server')
+    f_port = jcp.get('default', 'ferry_port')
     url = "https://%s" % f_server
     if f_port:
         url = "%s:%s" % (url, f_port)
     return url
+
 
 def curl_obj():
     """ return a pycurl object with some prep from jobsub.ini
@@ -163,14 +164,15 @@ def curl_obj():
     curl = pycurl.Curl()
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
     curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
-    curl.setopt(curl.SSLCERT, jcp.get('default','jobsub_cert'))
-    curl.setopt(curl.SSLKEY, jcp.get('default','jobsub_key'))
-    capath = jcp.get('default','ca_path')
+    curl.setopt(curl.SSLCERT, jcp.get('default', 'jobsub_cert'))
+    curl.setopt(curl.SSLKEY, jcp.get('default', 'jobsub_key'))
+    capath = jcp.get('default', 'ca_path')
     if not capath:
         capath = '/etc/grid-security/certificates'
     curl.setopt(curl.CAPATH, capath)
     logger.log('capath=%s' % capath)
     return curl
+
 
 def invert_rolemap(data):
     """
@@ -187,6 +189,7 @@ def invert_rolemap(data):
                 i_dat[itm['username']].append(itm['fqan'])
     return i_dat
 
+
 def create_uname_fqan_map():
     data = json_from_file("getAffiliationMembersRoles")
     d1 = invert_rolemap(data)
@@ -194,7 +197,7 @@ def create_uname_fqan_map():
 
 
 def invert_gmap(data):
-    """in: @param data i.e  https://ferry_server/getGridMapFile 
+    """in: @param data i.e  https://ferry_server/getGridMapFile
        out: dn_user_roles_map.json
        #changed: add ?resource_name=fermi_workers"
        #also for getVORoleMapFile etc
@@ -209,10 +212,10 @@ def invert_gmap(data):
             if 'ferry_error' in vo_dat:
                 continue
             #logger.log('checking itm %s' % itm)
-            #if isinstance(itm, str):
+            # if isinstance(itm, str):
             #    itm = json.loads(itm)
             if itm['userdn'] not in i_dat:
-                i_dat[itm['userdn']] = {'volist':[],
+                i_dat[itm['userdn']] = {'volist': [],
                                         'mapped_uname':
                                         {'default': itm['mapped_uname']}}
             i_dat[itm['userdn']]['volist'].append(vo_name)
@@ -221,6 +224,7 @@ def invert_gmap(data):
                 i_dat[itm['userdn']]['mapped_uname'][vo_name] = itm['mapped_uname']
 
     return i_dat
+
 
 def create_dn_user_roles_map():
     """
@@ -234,7 +238,7 @@ def create_dn_user_roles_map():
 
 def invert_vo_role_uid_map(data):
     """ in: @param data i.e. https://ferry_server/getVORoleMapFile
-        out1:fqan_user_map.json 
+        out1:fqan_user_map.json
         out2:vo_role_fqan_map.json
     """
     i_dat = {}
@@ -246,7 +250,7 @@ def invert_vo_role_uid_map(data):
             if fq_parts[1] == 'fermilab':
                 vo = fq_parts[2]
                 if fq_parts[2] == 'mars':
-                    vo = "%s%s" % (fq_parts[2],fq_parts[3])
+                    vo = "%s%s" % (fq_parts[2], fq_parts[3])
             else:
                 vo = fq_parts[1]
             if vo not in fqan_dat:
@@ -256,14 +260,16 @@ def invert_vo_role_uid_map(data):
 
     return i_dat, fqan_dat
 
+
 def create_fqan_user_map():
     """
     create fqan_user_map.json
     will be stored in /var/lib/jobsub/ferry by default
     """
     data = json_from_file("getVORoleMapFile")
-    d1,d2 = invert_vo_role_uid_map(data)
+    d1, d2 = invert_vo_role_uid_map(data)
     return d1
+
 
 def create_vo_role_fqan_map():
     """
@@ -271,8 +277,9 @@ def create_vo_role_fqan_map():
     will be stored in /var/lib/jobsub/ferry by default
     """
     data = json_from_file("getVORoleMapFile")
-    d1,d2 = invert_vo_role_uid_map(data)
+    d1, d2 = invert_vo_role_uid_map(data)
     return d2
+
 
 def fetch_from_ferry(fname):
     """ create @param fname : a json file
@@ -346,19 +353,19 @@ def json_from_file(fname):
     if not jpath:
         jpath = '/var/lib/jobsub/ferry'
     jfile = os.path.join(jpath, fname)
-    logger.log('checking for %s'%jfile)
+    logger.log('checking for %s' % jfile)
     dat = None
     if os.path.exists(jfile):
         try:
-            st = os.stat(jfile)  
+            st = os.stat(jfile)
             age = time.time() - st.st_mtime
-            logger.log('age of %s is %s'% (jfile, age))
-            max_age = jcp.get('default','ferry_expire')
+            logger.log('age of %s is %s' % (jfile, age))
+            max_age = jcp.get('default', 'ferry_expire')
             if max_age:
                 max_age = int(max_age)
             else:
                 max_age = 3600
-    
+
             if age > max_age:
                 refresh_ferry_dat(fname, jfile)
             if fname in FERRY_DAT:
@@ -374,6 +381,7 @@ def json_from_file(fname):
     if dat:
         FERRY_DAT[fname] = dat
     return dat
+
 
 def get_voms(acctgroup):
     """get the VOMS string for voms-proxy-init from jobsub.ini config file
@@ -663,15 +671,15 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s' % (username, acctrole))
         if acctrole != jobsub.default_voms_role(acctgroup):
-            append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
+            append_hashes = JobsubConfigParser().get(acctgroup, 'hash_nondefault_proxy')
             if append_hashes:
                 if not dn:
                     dn = get_client_dn()
                 dn = clean_proxy_dn(dn)
                 dig = hashlib.sha1()
                 dig.update(dn)
-                x509_cache_fname = "%s_%s" % (x509_cache_fname, dig.hexdigest())
-
+                x509_cache_fname = "%s_%s" % (
+                    x509_cache_fname, dig.hexdigest())
 
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s' % username)
@@ -727,7 +735,7 @@ def is_valid_cache(cache_name):
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         logger.log("%s is still valid" % cache_name)
         return True
-    except:
+    except Exception:
         err = "%s is expired,invalid, or does not exist" % cache_name
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')

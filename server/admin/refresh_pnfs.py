@@ -65,7 +65,7 @@ def authenticate(dn, acctgroup, acctrole):
                     logger.log('%s failed %s' % (method, e))
             else:
                 logger.log("Unknown authenticate method: %s" % method)
-        except:
+        except Exception:
             logger.log("Failed to authenticate using method: %s" % method)
 
     err = "Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" %\
@@ -110,7 +110,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
             else:
                 logger.log("Unknown authorization method: %s" % method)
-        except:
+        except Exception:
             logger.log("Failed to authorize using method: %s" % method)
 
     err = ''.join(["Failed to authorize dn '%s' " % dn,
@@ -159,7 +159,7 @@ def refresh_pnfs_lru(agelimit=1):
     cmd += """x509userproxysubject x509userproxy PNFS_INPUT_FILES -constraint"""
     cmd += """ "JobUniverse=?=5 && X509UserProxySubject=!=UNDEFINED  &&  """
     cmd += """ PNFS_INPUT_FILES=!=UNDEFINED" """
-    #print "cmd = %s " % cmd
+    # print "cmd = %s " % cmd
     logger.log(cmd, logfile='pnfs_refresh')
     already_processed = ['']
     queued_users = []
@@ -170,10 +170,9 @@ def refresh_pnfs_lru(agelimit=1):
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='pnfs_refresh')
         raise Exception(err)
-    lines = cmd_out.split("\n")
-    lines.sort()
+    lines = sorted(cmd_out.split("\n"))
     supported_roles = JobsubConfigParser().supportedRoles()
-    proxies = {} 
+    proxies = {}
     for line in lines:
         if line not in already_processed:
             already_processed.append(line)
@@ -197,45 +196,51 @@ def refresh_pnfs_lru(agelimit=1):
                     elif pfn[-2] in supported_roles:
                         role = pfn[-2]
                     if long_proxy_name not in proxies:
-                    	proxies[long_proxy_name] = authorize(dn, user, grp, role, agelimit)
+                        proxies[long_proxy_name] = authorize(
+                            dn, user, grp, role, agelimit)
                     for destpath in check[3:]:
                         if destpath not in refreshed_files and '/scratch/' in destpath:
                             refreshed_files.append(destpath)
-                            
-                            #todo hardcoded a very fnal specific url here
+
+                            # todo hardcoded a very fnal specific url here
                             dpl = destpath.split('/')
-                            nfp = ["pnfs","fnal.gov","usr"]
+                            nfp = ["pnfs", "fnal.gov", "usr"]
                             nfp.extend(dpl[2:])
                             guc_path = '/'.join(nfp)
-                            globus_url_cp_cmd = [ "globus-url-copy", "-rst-retries",
-                            "3", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
-                            "60", "-len", "16", "-tcp-bs", "16", 
-                            "gsiftp://fndca1.fnal.gov/%s" % guc_path, 
-                            "/dev/null", ]
+                            globus_url_cp_cmd = ["globus-url-copy", "-rst-retries",
+                                                 "3", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
+                                                 "60", "-len", "16", "-tcp-bs", "16",
+                                                 "gsiftp://fndca1.fnal.gov/%s" % guc_path,
+                                                 "/dev/null", ]
                             child_env = os.environ.copy()
                             child_env['X509_USER_PROXY'] = proxies[long_proxy_name]
                             child_env['X509_USER_CERT'] = proxies[long_proxy_name]
                             child_env['X509_USER_KEY'] = proxies[long_proxy_name]
                             try:
-                                logger.log(" ".join(globus_url_cp_cmd), logfile='pnfs_refresh')
+                                logger.log(
+                                    " ".join(globus_url_cp_cmd), logfile='pnfs_refresh')
                                 subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd),
                                                            child_env=child_env)
-                            except:
-                    		err = "Error %s:%s" % (" ".join(globus_url_cp_cmd),
+                            except Exception:
+                                err = "Error %s:%s" % (" ".join(globus_url_cp_cmd),
                                                        sys.exc_info()[1])
                                 print err
-                                logger.log(err, severity=logging.ERROR,logfile='pnfs_refresh')
+                                logger.log(
+                                    err, severity=logging.ERROR, logfile='pnfs_refresh')
 
-                except:
+                except Exception:
                     err = "Error processing %s:%s" % (line, sys.exc_info()[1])
                     print err
                     logger.log(err, severity=logging.ERROR)
-                    logger.log(err, severity=logging.ERROR, logfile='pnfs_refresh')
+                    logger.log(
+                        err,
+                        severity=logging.ERROR,
+                        logfile='pnfs_refresh')
 
-    #print 'removing proxies'
+    # print 'removing proxies'
     for key in proxies:
         if os.path.exists(proxies[key]):
-            #print 'removing %s'%proxies[key]
+            # print 'removing %s'%proxies[key]
             os.remove(proxies[key])
 
 
@@ -243,12 +248,9 @@ def test():
     print 'test'
 
 
-
-
-
 if __name__ == '__main__':
     #
-    #Entry point for krbrefresh cron job.
+    # Entry point for krbrefresh cron job.
     #
     if len(sys.argv) > 1:
         if sys.argv[1] == '--test':

@@ -139,7 +139,7 @@ def loadArchive(afile, cleanup=False):
         createHistoryDump(f)
         createSqlFile(f)
         loadDatabase(f, cleanup)
-    except:
+    except Exception:
         logger.log(
             "%s" %
             sys.exc_info()[1],
@@ -166,7 +166,7 @@ def loadNewestArchive(cleanup=False):
                     logger.log('%s wins' % fpx, logfile="fill_jobsub_history")
                     t = tx
                     fp = fpx
-            except:
+            except Exception:
                 logger.log(
                     "%s" %
                     sys.exc_info()[1],
@@ -206,7 +206,7 @@ def keepUp():
     checkHistoryDB()
     try:
         os.makedirs('work')
-    except:
+    except Exception:
         pass
     try:
         shutil.copy('jobsub_history.db', 'work')
@@ -251,7 +251,7 @@ def keepUp():
         loadDatabase(fname)
         shutil.copy('jobsub_history.db', history_db)
 
-    except:
+    except Exception:
         logger.log(
             sys.exc_info()[1],
             severity=logging.ERROR,
@@ -362,7 +362,7 @@ def loadDatabase(filebase, cleanup=False):
             if os.path.exists(f):
                 logger.log('cleaning up %s' % f, logfile="fill_jobsub_history")
                 os.remove(f)
-        except:
+        except Exception:
             logger.log(
                 "%s" %
                 sys.exc_info()[1],
@@ -477,11 +477,11 @@ def run_prog():
     else:
         parser.print_help()
 
+
 if __name__ == '__main__':
     try:
         run_prog()
-    except:
-
+    except Exception:
         logger.log("%s" % sys.exc_info()[1],
                    severity=logging.ERROR,
                    traceback=True,

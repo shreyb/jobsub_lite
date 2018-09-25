@@ -87,7 +87,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             if (search_pat in out2) and ('VO' in out2):
                 logger.log('found  %s , authenticated successfully' %
                            (search_pat))
-                #jobsub.move_file_as_user(
+                # jobsub.move_file_as_user(
                 #    x509_tmp_fname, x509_cache_fname, username)
             else:
                 logger.log('failed to find %s in %s' % (search_pat, out2))
@@ -103,12 +103,12 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
                 raise authutils.OtherAuthError(err)
 
-    except:
+    except Exception:
         err = traceback.format_exc()
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')
         raise authutils.AuthorizationError(dn, acctgroup)
-    #if os.path.exists(x509_tmp_fname):
+    # if os.path.exists(x509_tmp_fname):
     #    os.remove(x509_tmp_fname)
     #    logger.log("cleanup:rm %s" % x509_tmp_fname)
 

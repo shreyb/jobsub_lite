@@ -127,7 +127,7 @@ class JobSettings(object):
 
         self.settings['istestjob'] = False
         self.settings['needafs'] = False
-        notify_setting = self.fileParser.get('default','condor_mail_notify')
+        notify_setting = self.fileParser.get('default', 'condor_mail_notify')
         if notify_setting is None:
             notify_setting = 'Never'
         self.settings['notify'] = notify_setting
@@ -362,7 +362,7 @@ class JobSettings(object):
                                                 """The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently""",
                                                 """are '%s' , '%s' , and '%s' but this may change in the future.""" % (
                                                     ex_short, ex_med, ex_long),
-                                                """Default value of  EXPECTED_LIFETIME is currently '%s' .""" % (ex_default) ]))
+                                                """Default value of  EXPECTED_LIFETIME is currently '%s' .""" % (ex_default)]))
 
         generic_group.add_option("--maxConcurrent",
                                  dest="maxConcurrent",
@@ -481,39 +481,37 @@ class JobSettings(object):
                                  attributes and '&&(CVMFS==\"OSG\")' to the
                                  job requirements"""))
 
-
         cmd_help = ['never send mail about job results ',
                     'send mail only when job fails due to error ',
                     'always  mail when job completes or fails ',
-                    ]   
-        cm_cmd = ['never','error','always']
+                    ]
+        cm_cmd = ['never', 'error', 'always']
 
-        cm_ntfy = self.fileParser.get('default','condor_mail_notify')
+        cm_ntfy = self.fileParser.get('default', 'condor_mail_notify')
 
         if cm_ntfy is None:
             cm_ntfy = 'Never'
         if cm_ntfy.lower() not in cm_cmd:
             cm_ntfy = 'Never'
 
-
         dft = '(default)'
         idx = 0
         generic_group.add_option("-Q", "--mail_never", dest="notify",
                                  action="store_const", const=cm_cmd[idx],
-                                 help="%s%s"%(cmd_help[idx],
-                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
+                                 help="%s%s" % (cmd_help[idx],
+                                                dft if cm_ntfy.lower() == cm_cmd[idx] else " "))
 
         idx = 1
         generic_group.add_option("-q", "--mail_on_error", dest="notify",
                                  action="store_const", const=cm_cmd[idx],
-                                 help="%s%s"%(cmd_help[idx],
-                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
+                                 help="%s%s" % (cmd_help[idx],
+                                                dft if cm_ntfy.lower() == cm_cmd[idx] else " "))
 
         idx = 2
         generic_group.add_option("-M", "--mail_always", dest="notify",
                                  action="store_const", const=cm_cmd[idx],
-                                 help="%s%s"%(cmd_help[idx],
-                                 dft if cm_ntfy.lower()==cm_cmd[idx] else " "))
+                                 help="%s%s" % (cmd_help[idx],
+                                                dft if cm_ntfy.lower() == cm_cmd[idx] else " "))
 
         # generic_group.add_option("-T","--test_queue", dest="istestjob",
         #    action="store_true",default=False,
@@ -553,7 +551,7 @@ class JobSettings(object):
                                  help=re.sub('  \s+', ' ', """DISABLED:
             formerly was 'do not generate shell wrapper, disabled per request
             from fermigrid operations.  The wrapfiles used to not  work off
-            site, now they do.""") )
+            site, now they do."""))
 
         file_group.add_option("--use_gftp", dest="use_gftp",
                               action="store_true", default=False,
@@ -614,13 +612,13 @@ class JobSettings(object):
                               """,
                               help=re.sub('  \s+', ' ', """specify TAR_FILE
                     or DIRECTORY to be
-                    transferred to worker node. TAR_FILE will be copied 
-                    to an area specified in the jobsub server configuration, 
-                    transferred to the job and unpacked there.  TAR_FILE will 
-                    be accessible to the user job on the worker node via the 
-                    environment variable $INPUT_TAR_FILE.  The unpacked 
-                    contents will be in the same directory as 
-                    $INPUT_TAR_FILE.""")) 
+                    transferred to worker node. TAR_FILE will be copied
+                    to an area specified in the jobsub server configuration,
+                    transferred to the job and unpacked there.  TAR_FILE will
+                    be accessible to the user job on the worker node via the
+                    environment variable $INPUT_TAR_FILE.  The unpacked
+                    contents will be in the same directory as
+                    $INPUT_TAR_FILE."""))
 
         generic_group.add_option("-n", "--no_submit", dest="submit",
                                  action="store_false", default=True,
@@ -700,7 +698,7 @@ class JobSettings(object):
                     return True
                 else:
                     return False
-            except:
+            except Exception:
                 return False
 
     def timeFormatOK(self, a_str):
@@ -716,12 +714,12 @@ class JobSettings(object):
                     return True
                 else:
                     return False
-            except:
+            except Exception:
                 return False
 
     def diskFormatOK(self, a_str):
         try:
-            mem  = float(a_str)
+            mem = float(a_str)
             if mem <= 0:
                 print "you asked for %s disk, too low. Exiting" % mem
                 return False
@@ -736,7 +734,7 @@ class JobSettings(object):
                     try:
                         mem = float(mem)
                         if mem <= 0:
-                            print "you asked for %s%s disk, too low. Exiting"%\
+                            print "you asked for %s%s disk, too low. Exiting" %\
                                   (mem, units)
                             return False
 
@@ -744,18 +742,18 @@ class JobSettings(object):
                     except ValueError:
                         return False
                 else:
-                    print "units '%s' not accepted.  Must be one of %s"%\
-                           (units, ['KB', 'MB', 'GB', 'TB'])
+                    print "units '%s' not accepted.  Must be one of %s" %\
+                        (units, ['KB', 'MB', 'GB', 'TB'])
                     return False
-            except:
+            except Exception:
                 return False
 
     def memFormatOK(self, a_str):
         try:
             mem = float(a_str)
             if mem <= 0:
-                print "you asked for %s memory, which makes no sense. Exiting"%\
-                       mem
+                print "you asked for %s memory, which makes no sense. Exiting" %\
+                    mem
                 return False
             print "Warning: --memory=%s had no units! " % a_str
             print "Valid units are 'KB','MB','GB','TB'.  Assuming MB"
@@ -768,7 +766,7 @@ class JobSettings(object):
                     try:
                         mem = float(mem)
                         if mem <= 0:
-                            print "you asked for %s%s memory which is <0"%\
+                            print "you asked for %s%s memory which is <0" %\
                                   (mem, units)
                             return False
 
@@ -777,9 +775,9 @@ class JobSettings(object):
                         return False
                 else:
                     print "units '%s' not accepted.  Must be one of %s " %\
-                            (units, ['KB', 'MB', 'GB', 'TB'])
+                        (units, ['KB', 'MB', 'GB', 'TB'])
                     return False
-            except:
+            except Exception:
                 return False
 
     def checkSanity(self):
@@ -799,7 +797,7 @@ class JobSettings(object):
                         os.environ[a] = b
                         settings['added_environment'].pop(i)
                         settings['added_environment'].insert(i, a)
-                    except:
+                    except Exception:
                         raise InitializationError(
                             "error processing -e %s" % arg)
                 else:
@@ -820,9 +818,9 @@ class JobSettings(object):
                 if ncpu < 1:
                     err = "--cpu must be >=1"
                     raise InitializationError(err)
-            except:
+            except Exception:
                 err = 'could not parse --cpu=%s.  Must be an integer >=1' %\
-                       settings['cpu']
+                    settings['cpu']
                 raise InitializationError(err)
 
         if 'timeout' in settings and not self.timeFormatOK(
@@ -888,7 +886,6 @@ class JobSettings(object):
                 err = 'There are common sites in both --site and --blacklist %s your jobs will never start' % intset
                 raise InitializationError(err)
 
-
         if 'nowrapfilex' in settings and settings['nowrapfilex']:
             print """WARNING the --nowrapfile option has been disabled at the request of
             the Grid Operations group.  Your jobs will be submitted with a wrapper and should still
@@ -907,10 +904,13 @@ class JobSettings(object):
                 'submit_host']
             self.addToLineSetting(
                 """+JobsubParentJobId = "%s" """ % settings['jobsubparentjobid'])
-            self.addToLineSetting("+Jobsub_Group=\"%s\"" % settings['accountinggroup'])
+            self.addToLineSetting(
+                "+Jobsub_Group=\"%s\"" %
+                settings['accountinggroup'])
 
-        if settings['notify'].lower() not in ['never','error','always']:
-            err = "mail_notification setting '%s' must be one of %s" %(settings['notify'],['never','error','always'])
+        if settings['notify'].lower() not in ['never', 'error', 'always']:
+            err = "mail_notification setting '%s' must be one of %s" % (
+                settings['notify'], ['never', 'error', 'always'])
             raise InitializationError(err)
         return True
 
@@ -943,9 +943,9 @@ class JobSettings(object):
         f.write("\n")
         f.write("%s\n" % JobUtils().logTruncateString())
         ifdh_pgm_text = JobUtils().ifdhString() %\
-                        (settings['ifdh_cmd'],
-                         settings['wn_ifdh_location'],
-                         settings['ifdh_cmd'])
+            (settings['ifdh_cmd'],
+             settings['wn_ifdh_location'],
+             settings['ifdh_cmd'])
 
         f.write(ifdh_pgm_text)
         f.write("\n")
@@ -971,7 +971,7 @@ class JobSettings(object):
         f.write("""redirect_output_start\n""")
 
         f.write("\n")
-        #f.write(JobUtils().krb5ccNameString())
+        # f.write(JobUtils().krb5ccNameString())
         f.write("\n")
         f.write("setup_ifdh_env\n")
         if 'set_up_ifdh' in settings and settings['set_up_ifdh']:
@@ -979,17 +979,17 @@ class JobSettings(object):
 
         if 'tar_file_basename' in settings:
             if 'tar_file_name' in settings:
-                f.write("${JSB_TMP}/ifdh.sh cp %s %s\n"%(settings['tar_file_name'],
-                                              settings['tar_file_basename']))
+                f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
+                                                           settings['tar_file_basename']))
             f.write(
-                    "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %\
-                     settings['tar_file_basename'])
-            # this is not the right way to do this, should look at ini file 
+                "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %
+                settings['tar_file_basename'])
+            # this is not the right way to do this, should look at ini file
             # to see where to  untar it or whether to untar it at all
             # done in a hurry to get  this out the door
             if settings['group'] != 'cdf':
                 f.write(
-                    """if [ -e "$INPUT_TAR_FILE" ]; """+\
+                    """if [ -e "$INPUT_TAR_FILE" ]; """ +
                     """then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
         f.close()
@@ -1019,7 +1019,7 @@ class JobSettings(object):
         f.write("export JOBSUB_EXE_SCRIPT=$(ls %s 2>/dev/null)\n" % exe_script)
         f.write("""if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then \n """)
         f.write("""    export JOBSUB_EXE_SCRIPT=""")
-        f.write("""$(find . -name %s -print | head -1)\nfi\n""" %  b_exe_script)
+        f.write("""$(find . -name %s -print | head -1)\nfi\n""" % b_exe_script)
         f.write("chmod +x $JOBSUB_EXE_SCRIPT\n")
         script_args = ''
         if settings['verbose']:
@@ -1225,7 +1225,7 @@ class JobSettings(object):
             "tar czvf %s/%s.tgz * " % (tmpdir, base))
         if iret:
             raise Exception(ires)
-	# Should we have f.close() corresponding to line 1205?
+        # Should we have f.close() corresponding to line 1205?
         f = open('%s/xtract.sh' % tmpdir, 'w')
         f.write(ju.untar_sh())
         f.close()
@@ -1665,7 +1665,7 @@ class JobSettings(object):
                     tInputFiles = eScript
         if settings['tar_file_name']:
             t = settings['tar_file_name']
-            #this won't work if tar_file in pnfs
+            # this won't work if tar_file in pnfs
             if t not in tInputFiles and os.path.exists(t):
                 if len(tInputFiles) > 0:
                     tInputFiles = tInputFiles + ",%s" % t
@@ -1764,8 +1764,8 @@ class JobSettings(object):
                     settings['input_file_classad_list'].append(tfn)
 
         if settings['input_file_classad_list']:
-            pnfs_input_setting="""+PNFS_INPUT_FILES = "%s" """ %\
-                    (",".join(settings['input_file_classad_list']))
+            pnfs_input_setting = """+PNFS_INPUT_FILES = "%s" """ %\
+                (",".join(settings['input_file_classad_list']))
             self.addToLineSetting(pnfs_input_setting)
 
     def condorRequirements(self):
@@ -1812,7 +1812,7 @@ class JobSettings(object):
 
     def makeCondorRequirements(self):
         settings = self.settings
-        if 'needs_appending' in settings and settings['needs_appending']==False:
+        if 'needs_appending' in settings and settings['needs_appending'] == False:
             return settings['requirements']
         settings['needs_appending'] = False
 
@@ -1820,31 +1820,30 @@ class JobSettings(object):
             settings['requirements'] = settings['overwriterequirements']
             return settings['requirements']
 
-        bval = self.fileParser.get('default','requirements_base')
+        bval = self.fileParser.get('default', 'requirements_base')
         if bval:
             settings['requirements'] = bval
 
         if 'grid' in settings and settings['grid']:
             _default = '&& (target.IS_Glidein==true) '
-            gval = self.fileParser.get('default','requirements_is_glidein')
+            gval = self.fileParser.get('default', 'requirements_is_glidein')
             if not gval:
                 gval = _default
             settings['requirements'] = settings['requirements'] + gval
-
 
         if 'site' in settings and settings['site']:
             _default = '&& (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)) '
             sval = self.fileParser.get('default', 'requirements_site')
             if not sval:
                 sval = _default
-            settings['requirements'] = settings['requirements'] +  sval
+            settings['requirements'] = settings['requirements'] + sval
 
         if 'blacklist' in settings and settings['blacklist']:
             _default = '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites)) '
             sval = self.fileParser.get('default', 'requirements_blacklist')
             if not sval:
                 sval = _default
-            settings['requirements'] = settings['requirements'] +  sval
+            settings['requirements'] = settings['requirements'] + sval
 
         if 'desired_os' in settings and settings['desired_os']:
             settings['requirements'] = settings[
@@ -1895,7 +1894,7 @@ class JobSettings(object):
         f.write("rank                  = Mips / 2 + Memory\n")
         f.write("job_lease_duration = %s\n" %
                 settings.get('job_lease_duration', '7200'))
-        f.write("notification = %s\n"%settings.get('notify','Never'))
+        f.write("notification = %s\n" % settings.get('notify', 'Never'))
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         f.write("transfer_output                 = True\n")
         f.write("transfer_output_files = .empty_file\n")
@@ -1928,7 +1927,9 @@ class JobSettings(object):
             else:
                 self.addToLineSetting("+AccountingGroup = \"group_%s.%s\"" %
                                       (settings['accountinggroup'], settings['user']))
-            self.addToLineSetting("+Jobsub_Group=\"%s\"" % settings['accountinggroup'])
+            self.addToLineSetting(
+                "+Jobsub_Group=\"%s\"" %
+                settings['accountinggroup'])
         self.addToLineSetting("+JobsubJobId=\"%s\"" % settings['jobsubjobid'])
         if settings['subgroup']:
             self.addToLineSetting("+Jobsub_SubGroup=\"%s\"" %

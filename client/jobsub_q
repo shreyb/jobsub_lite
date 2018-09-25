@@ -59,7 +59,7 @@ def required_args_present(options):
                 return False
 
         if options.better_analyze and not options.jobId:
-            err =  """ERROR --better-analyze must be used with --jobid"""
+            err = """ERROR --better-analyze must be used with --jobid"""
             print err
             return False
 
@@ -95,7 +95,7 @@ def parse_opts(argv):
                          default=os.environ.get('JOBSUB_GROUP'),
                          help="".join(['Group/Experiment/Subgroup ',
                                        'for priorities and accounting',
-                                      ]))
+                                       ]))
 
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
@@ -135,7 +135,7 @@ def parse_opts(argv):
                                        '(example) 1234.@fifebatch.fnal.gov ',
                                        'then ALL job ids with that cluster ',
                                        'and schedd name will be returned',
-                                      ]))
+                                       ]))
 
     opt_group.add_option('--long',
                          dest='outFormat',
@@ -237,11 +237,11 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', options)
     rc = 1
 
-    optDict = {'debug':options.debug,
-               'better_analyze':options.better_analyze,
-                'constraint':options.constraint,
-                'uid': options.uid
-              }
+    optDict = {'debug': options.debug,
+               'better_analyze': options.better_analyze,
+               'constraint': options.constraint,
+               'uid': options.uid
+               }
 
     js_client = JobSubClient(options.jobsubServer,
                              options.acctGroup,

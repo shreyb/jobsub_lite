@@ -75,8 +75,7 @@ class DAGManLogParser:
             #exeport = int(exeurllist[1][:-1])
             m = re.match("(\d+)", exeurllist[1])
             exeport = m.group(1)
-        except:
-            # Protect just in case
+        except Exception:            # Protect just in case
             exehost = "unknown"
             exeport = -1
         datetime["node"] = exehost
@@ -321,7 +320,7 @@ class DAGManLogParser:
             if long == 2:
                 print "jid=%s el=%s el[keys]=%s" % (jid, el, el.keys())
             cur = status_strings[el["current"]]
-            if cur == "Completed" and "end" in el and "retcode" in el["end"] :
+            if cur == "Completed" and "end" in el and "retcode" in el["end"]:
                 cur = cur + " Exit Code:%s" % el["end"]["retcode"]
             print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, socket.gethostname(), cur, el["section"])
             if long:
@@ -387,8 +386,8 @@ class DAGManLogParserFast:
             try:
                 optype = int(line[0:3])
                 jid = int(string.split(line[5:15], '.', 1)[0])
-            except:
-                # in case of error, just skip (optype=-1)
+            # in case of error, just skip (optype=-1)
+            except Exception:
                 optype = -1
                 jid = 0
             new_state = None
@@ -532,7 +531,7 @@ class LineIO:
     def tell(self):
         return self.fd.tell()
 
-    #def tell_line(self):
+    # def tell_line(self):
     #    return self.first_line + len(self.cached_lines)
 
     def readline(self):

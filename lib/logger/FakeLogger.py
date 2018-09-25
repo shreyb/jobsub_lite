@@ -4,14 +4,15 @@ import os
 import sys
 from threading import current_thread
 
-#File: FakeLogger.py
-#Purpose: redirects jobsub logging to stdout
-#Author Dennis Box, dbox@fnal.gov
+# File: FakeLogger.py
+# Purpose: redirects jobsub logging to stdout
+# Author Dennis Box, dbox@fnal.gov
 #
-#Usage:  import FakeLogger as logger  in jobsub code
+# Usage:  import FakeLogger as logger  in jobsub code
 #        useful for unit testing
 #        if $JOBSUB_SUPPRESS_LOG_OUTPUT is defined, no logging occurs
 #        else logging goes to stdout
+
 
 def whereAmI(nFramesUp=1):
     """ Create a string naming the function n frames up on the stack.
@@ -23,6 +24,7 @@ def whereAmI(nFramesUp=1):
 
 def init_logger(logger_name, log_file, level=logging.INFO):
     pass
+
 
 def get_logger(logger_name, level=logging.INFO):
     pass
@@ -36,12 +38,16 @@ def log(msg='', context='', severity=logging.INFO,
     here = whereAmI()
     msg = '%s %s' % (here, msg)
     if logfile:
-        print("LOG [file=%s] [severity=%s] %s %s"%(logfile, severity, msg, traceback))
+        print("LOG [file=%s] [severity=%s] %s %s" %
+              (logfile, severity, msg, traceback))
     elif cherrypy.request.app is None:
         logfile = log_file_name(here)
-        print("LOG [file=%s] [severity=%s] %s %s"%(logfile, severity, msg, traceback))
+        print("LOG [file=%s] [severity=%s] %s %s" %
+              (logfile, severity, msg, traceback))
     else:
-        print("LOG [file=debug] [severity=%s] %s %s"%(severity, msg, traceback))
+        print(
+            "LOG [file=debug] [severity=%s] %s %s" %
+            (severity, msg, traceback))
 
 
 def log_file_name(whereFrom):

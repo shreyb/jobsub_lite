@@ -9,7 +9,7 @@ import subprocessSupport
 
 def fix_links(really_do_it=False):
     cmds = ["""condor_history -format "%s." clusterid -format "%s" procid -format " %s " owner  -format "%s\n" iwd """,
-            """condor_q -format "%s." clusterid -format "%s" procid -format " %s " owner  -format "%s\n" iwd """ ]
+            """condor_q -format "%s." clusterid -format "%s" procid -format " %s " owner  -format "%s\n" iwd """]
     for cmd in cmds:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:

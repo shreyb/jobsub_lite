@@ -55,7 +55,7 @@ class ScheddLoadResource(object):
                 logger.log(err)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 ret_code = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on ScheddLoadResource.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

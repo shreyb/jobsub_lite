@@ -60,7 +60,7 @@ class AccountJobsByUserResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsByUserResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)

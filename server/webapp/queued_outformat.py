@@ -49,7 +49,7 @@ class QueuedFormattedOutputResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on QueuedLongResouce.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

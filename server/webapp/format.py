@@ -17,7 +17,8 @@ from pprint import pformat
 
 def htmlPrintItemList(src, dpth=0, key=''):
     s = ''
-    tabs = lambda n: ' ' * n * 4
+
+    def tabs(n): return ' ' * n * 4
     if isinstance(src, dict):
         if key:
             s = '%s%s<li>%s:</li>\n' % (s, tabs(dpth), key)

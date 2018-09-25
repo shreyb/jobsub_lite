@@ -25,7 +25,7 @@ class DropboxUploadListResource(object):
     def doGET(self, kwargs):
         """ http GET request on index.html of API
             Query dropbox location. Returns a JSON list object.
-            API is /acctgroups/<group>/dropboxuploadlist/ 
+            API is /acctgroups/<group>/dropboxuploadlist/
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
@@ -33,12 +33,12 @@ class DropboxUploadListResource(object):
         if dropbox_uploads == False:
             cherrypy.response.status = 403
             return {'err': 'Dropbox location is NOT available for %s'
-                % acctgroup}
+                    % acctgroup}
         # Case for if dropbox_uploads is empty
         elif not dropbox_uploads:
             cherrypy.response.status = 404
             return {'err': 'Dropbox upload list is NOT found for %s'
-                % acctgroup}
+                    % acctgroup}
         return {'out': dropbox_uploads}
 
     @cherrypy.expose
@@ -56,7 +56,7 @@ class DropboxUploadListResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DropboxUploadListResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

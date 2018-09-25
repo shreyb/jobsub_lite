@@ -77,7 +77,7 @@ class JobActionByConstraintResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on JobActionByConstraintResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)

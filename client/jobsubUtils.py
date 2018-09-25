@@ -34,11 +34,12 @@ def which(program):
                 return exe_file
     return None
 
+
 def splitall(path):
     """
-    Split a path into its components, rather than just 
+    Split a path into its components, rather than just
     into a filename and the rest of the path.
-    
+
     Note that os.path.join(*splitall(path)) = path
 
     @return: List containing path components

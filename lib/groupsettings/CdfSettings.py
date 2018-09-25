@@ -25,18 +25,18 @@ class CdfSettings(JobSettings):
 
         self.cdf_group.add_option("--tarFile", dest="tar_file_name",
                                   action="store", type="string",
-                                  help="path for tar file to be submitted "+\
+                                  help="path for tar file to be submitted " +
                                        "(e.g. dropbox://./submitme.tar.gz)")
 
         self.cdf_group.add_option("--sendtkt", dest="send_kb_tkt",
-                                  action="store_true", 
+                                  action="store_true",
                                   default=False,
-                                  help="send kerberos ticket to worker"+\
+                                  help="send kerberos ticket to worker" +
                                        " nodes (default==False)")
 
         self.cdf_group.add_option("--outLocation", dest="outLocation",
                                   action="store", type="string",
-                                  help="full path for output file (e.g. "+\
+                                  help="full path for output file (e.g. " +
                                        "me@ncdfxx.fnal.gov:/home/me/my_data_dir)")
 
         self.cdf_group.add_option("--procType", dest="procType",
@@ -53,21 +53,21 @@ class CdfSettings(JobSettings):
 
         self.cdf_group.add_option("--sections", dest="sectionList",
                                   action="store", type="string",
-                                  help="segment range (e.g. 1-100)) "+\
-                                       "start-end, use instead of "+\
+                                  help="segment range (e.g. 1-100)) " +
+                                       "start-end, use instead of " +
                                        "--start --end")
 
         self.cdf_group.add_option("--dhaccess", dest="dhaccess",
                                   action="store", type="string",
-                                  help="method for dataset access, "+\
-                                       "options are SAM,userSAM,dcache,"+\
+                                  help="method for dataset access, " +
+                                       "options are SAM,userSAM,dcache," +
                                        "diskpool,MCGen,rootd,fcp/rcp, None")
 
         self.cdf_group.add_option("--sam_station", dest="sam_station",
                                   action="store", type="string",
-                                  help="=qualifier:version:station. To "+\
-                                       "use a sam station different from "+\
-                                       "the default,to specify only if "+\
+                                  help="=qualifier:version:station. To " +
+                                       "use a sam station different from " +
+                                       "the default,to specify only if " +
                                        "dhaccess=SAM is used (default is SAM)")
 
         self.cdf_group.add_option("--maxParallelSec", dest="maxConcurrent",
@@ -128,7 +128,10 @@ class CdfSettings(JobSettings):
             "export CAF_JID=${DAGMANJOBID}",
             "export OUTPUT_TAR_FILE=jobsub_cdf_output.tgz",
             "#replace '$' in OUTPUT_DESTINATION with literal ${CAF_SECTION}-${CAF_JID} value",
-            "OUTPUT_DESTINATION=%s%s%s" % (settings['outLocation'], sep, settings['joblog_tarfile']),
+            "OUTPUT_DESTINATION=%s%s%s" % (
+                settings['outLocation'],
+                sep,
+                settings['joblog_tarfile']),
             "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
             "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
             "export OUTPUT_DESTINATION",
@@ -224,7 +227,7 @@ class CdfSettings(JobSettings):
             """cpy_out="${JSB_TMP}/ifdh.sh cp ${OUTPUT_TAR_FILE} ${OUTPUT_DESTINATION}"  """,
             """
             out_dir=`dirname ${OUTPUT_DESTINATION}`
-            ${JSB_TMP}/ifdh.sh ls  $out_dir 0 > /dev/null 2>&1 
+            ${JSB_TMP}/ifdh.sh ls  $out_dir 0 > /dev/null 2>&1
             if [ $? -ne 0 ]; then
                 ${JSB_TMP}/ifdh.sh mkdir $out_dir
                 if [ $? -ne 0 ]; then
@@ -284,18 +287,19 @@ class CdfSettings(JobSettings):
         if settings['send_kb_tkt']:
             for opt in settings['resource_list']:
                 if 'OFFSITE' in opt:
-                    raise InitializationError("--resource_provides=usage_model=OFFSITE"+\
-                                    " and --sendtkt are not allowed together")
+                    raise InitializationError("--resource_provides=usage_model=OFFSITE" +
+                                              " and --sendtkt are not allowed together")
             if 'site' in settings and settings['site']:
-                raise InitializationError("--site and --sendtkt are not allowed together")
+                raise InitializationError(
+                    "--site and --sendtkt are not allowed together")
 
         if 'outLocation' not in settings:
             if settings['send_kb_tkt']:
                 settings['outLocation'] = "%s@%s:" %\
-                                      (settings['user'],
-                                       default_output_host)
+                    (settings['user'],
+                     default_output_host)
             else:
-                settings['outLocation'] = "%s/%s"%\
+                settings['outLocation'] = "%s/%s" %\
                                           (default_output_pnfs_dir,
                                            settings['user'])
         if 'tar_file_name' not in settings:
@@ -303,16 +307,16 @@ class CdfSettings(JobSettings):
                 'you must supply an input tar ball using --tarFile')
         if 'sectionList' in settings:
             try:
-                #print 'sectionList %s'%settings['sectionList']
+                # print 'sectionList %s'%settings['sectionList']
                 firstSection, lastSection = settings['sectionList'].split('-')
-                #print 'first: %s last:%s'%(firstSection,lastSection)
+                # print 'first: %s last:%s'%(firstSection,lastSection)
                 firstSection = int(firstSection)
                 lastSection = int(lastSection)
                 settings['firstSection'] = firstSection
                 settings['lastSection'] = lastSection
                 settings['queuecount'] = lastSection - firstSection + 1
                 settings['job_count'] = lastSection - firstSection + 1
-            except:
+            except Exception:
                 err = "error, --sections='%s' must be of the form 'i-j' " %\
                     settings['sectionList']
                 err += "where both i and j are positive integers"

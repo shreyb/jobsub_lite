@@ -103,7 +103,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
                 raise authutils.OtherAuthError(err)
 
-    except:
+    except Exception:
         err = traceback.format_exc()
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')

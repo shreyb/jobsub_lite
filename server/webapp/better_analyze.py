@@ -45,7 +45,7 @@ class BetterAnalyzeResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on BetterAnalyzeResouce.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

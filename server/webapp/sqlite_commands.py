@@ -24,7 +24,6 @@ def sql_header():
     return hdr
 
 
-
 def handle_jobid(jid):
     """@param jid: a jobsubjobid '123.0@schedd1@jobsub.fnal.gov'
     """
@@ -37,9 +36,9 @@ def handle_jobid(jid):
         if cl_pr[-1]:
             jid_q = "jobsubjobid = '%s'" % jid
         else:
-            jid_q = "jobsubjobid like '%s.%s@%s'" %(cl_pr[0], '%', at_schedd)
+            jid_q = "jobsubjobid like '%s.%s@%s'" % (cl_pr[0], '%', at_schedd)
     elif len(cl_pr) == 1:
-        jid_q = "jobsubjobid like '%s.%s@%s'" %(cl_pr[0], '%', at_schedd)
+        jid_q = "jobsubjobid like '%s.%s@%s'" % (cl_pr[0], '%', at_schedd)
     else:
         return 'malformed'
     return jid_q

@@ -12,8 +12,6 @@ import shutil
 import traceback
 import subprocessSupport
 import re
-
-import logSupport
 import constants
 from defaultServer import defaultServer
 from jobsubClient import JobSubClient
@@ -241,7 +239,7 @@ def get_sandbox(options):
 
     try:
         checkDestDir(options.destdir)
-    except:
+    except Exception:
         print 'Error creating output directory'
         print traceback.format_exc()
         return 1
@@ -327,7 +325,7 @@ def get_sandbox(options):
                                      suppress_server_details=False,
                                      print_msg_type=False,
                                      verbose=options.debug)
-    except:
+    except Exception:
         print 'Error extracting the fetched files'
         sandbox_extract_rc = 1
         print traceback.format_exc()

@@ -41,7 +41,7 @@ class QueuedJobStatusResource(object):
                                     user_id, job_id,
                                     jobstatus=jobstatus)
         #logger.log("filter=%s status=%s" % (my_filter, jobstatus))
-        user_jobs = ui_condor_q(my_filter,jobstatus)
+        user_jobs = ui_condor_q(my_filter, jobstatus)
         return {'out': user_jobs.split('\n')}
 
     @cherrypy.expose
@@ -58,7 +58,7 @@ class QueuedJobStatusResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on QueuedHoldResouce.index: %s' % sys.exc_info()[
                 1]
             cherrypy.response.status = 500

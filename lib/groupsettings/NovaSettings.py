@@ -2,7 +2,6 @@
 # $Id$
 from JobSettings import JobSettings
 import os
-import string
 from optparse import OptionGroup
 
 

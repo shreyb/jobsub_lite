@@ -52,7 +52,7 @@ class DAGHelpResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DAGHelpResource.index %s' % sys.exc_info()[1]
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,

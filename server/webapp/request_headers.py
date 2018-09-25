@@ -25,6 +25,7 @@ def get_client_dn():
                 client_dn = issuer_dn
     return client_dn
 
+
 def uid_from_client_dn():
     """
     return uid from a dn of the form
@@ -37,7 +38,7 @@ def uid_from_client_dn():
         if 'UID:' in part:
             uid_parts = part.split(':')
             uid = uid_parts[-1]
-    #if not cherrypy.request.username:
+    # if not cherrypy.request.username:
     #    cherrpy.request.username = uid
     return uid
 

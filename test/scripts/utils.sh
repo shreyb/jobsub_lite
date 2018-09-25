@@ -1,8 +1,4 @@
 #!/bin/sh
-# file: utils.sh
-# purpose: sourced by other files in this directory to setup
-# python venv and make pylint, autopep8, unittest2 and other
-# testing utils available
 
 log_nonzero_rc() {
     echo "`date` ERROR: $1 failed with non zero exit code ($2)" 1>&2

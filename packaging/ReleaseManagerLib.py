@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import subprocess
-import shlex
 import shutil
-import popen2
-import traceback
 import string
-#from pylint import lint
 
 
 class ExeError(RuntimeError):
@@ -17,7 +12,7 @@ class ExeError(RuntimeError):
         RuntimeError.__init__(self, str)
 
 
-class Release:
+class Release(object):
 
     def __init__(self, product, ver, rpm_rel, rc, srcDir, relDir='/tmp'):
         self.product = product
@@ -59,7 +54,7 @@ class Release:
         print 35 * "_"
 
 
-class TaskRelease:
+class TaskRelease(object):
 
     def __init__(self, name, rel):
         self.name = name
@@ -213,7 +208,7 @@ class TaskServerRPM(TaskTar):
             self.release.releaseDir, rpm_filename))
 
 
-class PackageExcludes:
+class PackageExcludes(object):
 
     def __init__(self):
 

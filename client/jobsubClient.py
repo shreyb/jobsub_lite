@@ -70,7 +70,7 @@ class JobSubClientSubmissionError(Exception):
         sys.exit(errMsg)
 
 
-class JobSubClient:
+class JobSubClient(object):
 
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, useDag=False,
@@ -92,45 +92,45 @@ class JobSubClient:
         self.dropbox_location = None
         self.ca_path = get_capath()
         if self.extra_opts.get('tarball_reject_list'):
-            self.reject_list = read_re_file(self.extra_opts.get('tarball_reject_list'))
+            self.reject_list = read_re_file(
+                self.extra_opts.get('tarball_reject_list'))
         else:
             self.reject_list = [
-                                # exclude .git and .svn directories
-                                "\.git/",
-                                "\.svn/",
-                                #exclude .core files
-                                "\.core$",
-                                # exclude emacs backups
-                                "\~.*$",
-                                # exclude pdfs and eps files
-                                "\.pdf$",
-                                "\.eps$",
-                                # NO PICTURES OF CATS
-                                "\.png$",
-                                "\.PNG$",
-                                "\.gif$",
-                                "\.GIF$",
-                                "\.jpg$",
-                                "\.jpeg$",
-                                "\.JPG$",
-                                "\.JPEG$",
-                                # no .log .out or .err files
-                                "\.log$",
-                                "\.err$",
-                                "\.out$",
-                                # no tarfiles or zipfiles
-                                "\.tar$",
-                                "\.tgz$",
-                                "\.zip$",
-                                "\.gz$",
-                                ]
-
+                # exclude .git and .svn directories
+                "\.git/",
+                "\.svn/",
+                # exclude .core files
+                "\.core$",
+                # exclude emacs backups
+                "\~.*$",
+                # exclude pdfs and eps files
+                "\.pdf$",
+                "\.eps$",
+                # NO PICTURES OF CATS
+                "\.png$",
+                "\.PNG$",
+                "\.gif$",
+                "\.GIF$",
+                "\.jpg$",
+                "\.jpeg$",
+                "\.JPG$",
+                "\.JPEG$",
+                # no .log .out or .err files
+                "\.log$",
+                "\.err$",
+                "\.out$",
+                # no tarfiles or zipfiles
+                "\.tar$",
+                "\.tgz$",
+                "\.zip$",
+                "\.gz$",
+            ]
 
         constraint = self.extra_opts.get('constraint')
         uid = self.extra_opts.get('uid')
         if constraint and uid:
             if uid not in constraint:
-                constraint = """Owner=?="%s"&&%s""" %(uid, constraint)
+                constraint = """Owner=?="%s"&&%s""" % (uid, constraint)
                 self.extra_opts['constraint'] = constraint
 
         if len(serverParts) != 3:
@@ -161,7 +161,7 @@ class JobSubClient:
         parts = subject.split('/CN=')
         if len(parts) > 7:
             err = "\nERROR\n"
-            err += """Your user proxy, %s has DN=%s .""" %(cert, subject)
+            err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
             err += "  This probably means voms-proxy-init has been used to "
             err += "refresh it too many "
             err += " times.  The easist way to fix the problem is to remove "
@@ -232,7 +232,7 @@ class JobSubClient:
                     else:
                         raise JobSubClientError(err)
 
-                except:
+                except Exception:
                     raise JobSubClientError(err)
 
             if self.dropbox_uri_map:
@@ -244,7 +244,7 @@ class JobSubClient:
                 # upload the files
                 logSupport.dprint('calling ifdh_upload')
                 result = self.ifdh_upload()
-                logSupport.dprint('ifdh_upload result=%s'%result)
+                logSupport.dprint('ifdh_upload result=%s' % result)
                 if not result:
                     raise JobSubClientSubmissionError('ifdh_upload failed')
 
@@ -259,7 +259,7 @@ class JobSubClient:
                             if values is not None:
                                 if self.dropboxServer is None:
                                     srv_argv[idx] = values.get('path')
-                                    #actual_server = "https://%s:8443/" % \
+                                    # actual_server = "https://%s:8443/" % \
                                     #    str(values.get('host'))
                                 else:
                                     url = values.get('url')
@@ -319,9 +319,8 @@ class JobSubClient:
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
                 # self.is_tardir = True
-                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s"%\
-                        (self.dropbox_uri_map, self.directory_tar_map))
-
+                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
+                                  (self.dropbox_uri_map, self.directory_tar_map))
 
     def ifdh_upload(self):
         """
@@ -337,22 +336,22 @@ class JobSubClient:
 
         """
 
-        result={}
+        result = {}
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         os.environ['GROUP'] = self.account_group
         os.environ['EXPERIMENT'] = self.account_group
 
         orig_dir = os.getcwd()
-        #logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
-        #logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
+        # logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
+        # logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
         for dropbox in self.dropbox_uri_map.iterkeys():
-            val={}
+            val = {}
             srcpath = uri2path(dropbox)
             file_size = int(os.stat(srcpath).st_size)
-            if file_size > self.dropbox_max_size :
-                err = "%s is too large %s " %(srcpath, file_size)
-                err +="max allowed size is %s " % self.dropbox_max_size
+            if file_size > self.dropbox_max_size:
+                err = "%s is too large %s " % (srcpath, file_size)
+                err += "max allowed size is %s " % self.dropbox_max_size
                 err += "job submission failed"
                 raise JobSubClientSubmissionError(err)
 
@@ -362,30 +361,30 @@ class JobSubClient:
                 srcpath = os.path.join(orig_dir, srcpath)
 
             destpath = os.path.join(self.dropbox_location,
-                self.dropbox_uri_map[dropbox],
-                os.path.basename(uri2path(dropbox)))
+                                    self.dropbox_uri_map[dropbox],
+                                    os.path.basename(uri2path(dropbox)))
 
-            #todo hardcoded a very fnal specific url here
+            # todo hardcoded a very fnal specific url here
             dpl = destpath.split('/')
-            nfp = ["pnfs","fnal.gov","usr"]
+            nfp = ["pnfs", "fnal.gov", "usr"]
             nfp.extend(dpl[2:])
             guc_path = '/'.join(nfp)
-            globus_url_cp_cmd = [ "globus-url-copy", "-rst-retries",
-            "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
-            "30", "-len", "16", "-tcp-bs", "16",
-            "gsiftp://fndca1.fnal.gov/%s" % guc_path, "/dev/null", ]
+            globus_url_cp_cmd = ["globus-url-copy", "-rst-retries",
+                                 "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
+                                 "30", "-len", "16", "-tcp-bs", "16",
+                                 "gsiftp://fndca1.fnal.gov/%s" % guc_path, "/dev/null", ]
 
             val['path'] = destpath
             val['host'] = self.server
             result[self.dropbox_uri_map[dropbox]] = val
-            logSupport.dprint('srcpath=%s destpath=%s'%( srcpath, destpath))
+            logSupport.dprint('srcpath=%s destpath=%s' % (srcpath, destpath))
             already_exists = False
             ifdh_exe = find_ifdh_exe()
             try:
                 dropbox_dir = os.path.join(self.dropbox_location,
-                    self.dropbox_uri_map[dropbox])
-                sts = "ifdh mkdir_p %s attempt: %s"%\
-                        (dropbox_dir, '')
+                                           self.dropbox_uri_map[dropbox])
+                sts = "ifdh mkdir_p %s attempt: %s" %\
+                    (dropbox_dir, '')
                 logSupport.dprint(sts)
                 cmd = "%s mkdir_p %s" % (ifdh_exe, dropbox_dir)
                 subprocessSupport.iexe_cmd(cmd)
@@ -393,29 +392,30 @@ class JobSubClient:
                 if 'File exists' in str(error):
                     pass
                 else:
-                    err = "%s mkdir %s failed: %s"%\
+                    err = "%s mkdir %s failed: %s" %\
                         (ifdh_exe, os.path.join(self.dropbox_location,
-                            self.dropbox_uri_map[dropbox]), error)
+                                                self.dropbox_uri_map[dropbox]), error)
                     logSupport.dprint(err)
                     raise JobSubClientError(err)
             try:
-                sts = "ifdh cp %s %s attempt"%(srcpath, destpath)
+                sts = "ifdh cp %s %s attempt" % (srcpath, destpath)
                 logSupport.dprint(sts)
-                cmd = "%s cp %s %s"%(ifdh_exe, srcpath, destpath)
+                cmd = "%s cp %s %s" % (ifdh_exe, srcpath, destpath)
                 subprocessSupport.iexe_cmd(cmd)
             except Exception as error:
                 if 'File exists' in str(error):
                     already_exists = True
                 else:
-                    err = "%s cp %s %s failed: %s"%(ifdh_exe, srcpath, destpath, error)
+                    err = "%s cp %s %s failed: %s" % (
+                        ifdh_exe, srcpath, destpath, error)
                     logSupport.dprint(err)
                     raise JobSubClientError(err)
 
             if already_exists and '/scratch/' in destpath:
-                #read back 16 bytes of destfile to game the LRU in dcache
+                # read back 16 bytes of destfile to game the LRU in dcache
                 # This is where IFDH automatically creates a voms proxy.
                 # We'll unset X509_USER_PROXY later - we need this for
-    	        # globus-url-copy
+                # globus-url-copy
                 try:
                     old_x509_user_proxy = os.environ['X509_USER_PROXY']
                 except KeyError:
@@ -425,12 +425,15 @@ class JobSubClient:
                     (self.account_group, acct_role, os.getuid())
 
                 try:
-                    logSupport.dprint("executing: %s "% (" ".join(globus_url_cp_cmd)))
+                    logSupport.dprint(
+                        "executing: %s " %
+                        (" ".join(globus_url_cp_cmd)))
                     subprocessSupport.iexe_cmd(" ".join(globus_url_cp_cmd))
-                except:
+                except Exception:
                     logSupport.dprint("%s failed %s" % (" ".join(globus_url_cp_cmd),
-                                                        sys.exc_info()[1] ))
-                    logSupport.dprint("this globus error is usually not serious, proceeding")
+                                                        sys.exc_info()[1]))
+                    logSupport.dprint(
+                        "this globus error is usually not serious, proceeding")
                 finally:
                     if old_x509_user_proxy is not None:
                         os.environ['X509_USER_PROXY'] = old_x509_user_proxy
@@ -438,7 +441,6 @@ class JobSubClient:
                         del os.environ['X509_USER_PROXY']
 
         return result
- 
 
     def dropbox_upload(self):
         """
@@ -497,9 +499,9 @@ class JobSubClient:
 
     def submit_dag(self):
         self.init_submission()
-        #if (not self.dropbox_uri_map) or self.dropboxServer:
+        # if (not self.dropbox_uri_map) or self.dropboxServer:
         #    self.probeSchedds()
-        #self.serverAuthMethods()
+        # self.serverAuthMethods()
         if self.acct_role:
             self.submit_url = \
                 constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE %\
@@ -604,9 +606,9 @@ class JobSubClient:
 
     def submit(self):
         self.init_submission()
-        #if (not self.dropbox_uri_map) or self.dropboxServer:
+        # if (not self.dropbox_uri_map) or self.dropboxServer:
         #    self.probeSchedds()
-        #self.serverAuthMethods()
+        # self.serverAuthMethods()
 
         if self.acct_role:
             self.submit_url = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE %\
@@ -849,7 +851,7 @@ class JobSubClient:
         jobsub_rm aka condor_rm
         """
 
-        #url_pattern = constants.remove_url_dict.get((jobid is not None,
+        # url_pattern = constants.remove_url_dict.get((jobid is not None,
         #                                             uid is not None,
         #                                             self.acct_role is not None,
         #                                             self.forcex))
@@ -939,13 +941,16 @@ class JobSubClient:
                 http_code = self.changeJobState(hist_URL, 'GET',
                                                 ssl_verifyhost=False)
                 rc += http_code_to_rc(http_code)
-            except:
+            except Exception:
                 print 'Error retrieving history from the server %s' % server
                 rc += 1
                 logSupport.dprint(traceback.format_exc())
         return rc
 
     def summary(self):
+        """
+        jobsub_q --summary
+        """
         list_url = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(list_url, 'GET')
 
@@ -953,7 +958,7 @@ class JobSubClient:
         """Get max size of file allowed in dropbox location from server"""
         if not acct_group:
             acct_group = self.account_group
-        #check for down servers DNS RR
+        # check for down servers DNS RR
 #        for server in self.serverAliases:
 #            if is_port_open(server, self.serverPort):
 #                self.server = server
@@ -973,7 +978,7 @@ class JobSubClient:
             doc = json.loads(response.getvalue())
             size = doc.get('out')
             return size
-        except:
+        except Exception:
             return default_size
         finally:
             curl.close()
@@ -983,7 +988,7 @@ class JobSubClient:
         """Get location of dropbox from server"""
         if not acct_group:
             acct_group = self.account_group
-        #check for down servers DNS RR
+        # check for down servers DNS RR
 #        for server in self.serverAliases:
 #            if is_port_open(server, self.serverPort):
 #                self.server = server
@@ -991,7 +996,7 @@ class JobSubClient:
 
         dropbox_url = constants.JOBSUB_DROPBOX_LOCATION_URL_PATTERN %\
             (self.server, acct_group)
- 
+
         curl, response = curl_secure_context(dropbox_url, self.credentials)
         curl.setopt(curl.SSL_VERIFYHOST, 0)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
@@ -1010,7 +1015,7 @@ class JobSubClient:
             err = "HTTP response:%s PyCurl Error %s: %s" % (
                 http_code, errno, errstr)
             if http_code == 403:
-                msg = "Dropbox upload for %s has been turned off.\n"%acct_group
+                msg = "Dropbox upload for %s has been turned off.\n" % acct_group
                 print msg
             # logSupport.dprint(traceback.format_exc(limit=10))
             # traceback.print_stack()
@@ -1019,13 +1024,15 @@ class JobSubClient:
             curl.close()
             response.close()
 
-
-
     def serverAuthMethods(self, acct_group=None):
-
+        """
+        Retrieve accepted authorization methods from jobsub-server
+        URL to server is https://jobsub-server:(port)jobsub/acctgroups/%s/authmethods/
+        @parameter acct_group (nova, mu2e etc) goes in %s of URL
+        """
         if not acct_group:
             acct_group = self.account_group
-        #check for down servers DNS RR
+        # check for down servers DNS RR
         for server in self.serverAliases:
             if is_port_open(server, self.serverPort):
                 self.server = server
@@ -1046,15 +1053,17 @@ class JobSubClient:
             methods = []
             for m in method_list.get('out'):
                 methods.append(str(m))
-            if 'myproxy' in methods:
-                cred = jobsubClientCredentials.cigetcert_to_x509(
-                    self.initial_server,
-                    acct_group,
-                    self.verbose)
-                if cred:
-                    self.credentials['cert'] = cred
-                    self.credentials['key'] = cred
-                    self.credentials['proxy'] = cred
+            need_cigetcert_methods = ['myproxy', 'ferry']
+            for meth in need_cigetcert_methods:
+                if meth in methods:
+                    cred = jobsubClientCredentials.cigetcert_to_x509(
+                        self.initial_server,
+                        acct_group,
+                        self.verbose)
+                    if cred:
+                        self.credentials['cert'] = cred
+                        self.credentials['key'] = cred
+                        self.credentials['proxy'] = cred
             return methods
 
         except pycurl.error as error:
@@ -1086,13 +1095,13 @@ class JobSubClient:
         listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
         if self.account_group:
             listScheddsURL = "%s%s/" % (listScheddsURL, self.account_group)
-        
+
         curl, response = curl_secure_context(listScheddsURL, self.credentials)
         curl.setopt(curl.CUSTOMREQUEST, 'GET')
         curl.setopt(curl.SSL_VERIFYHOST, 0)
-        best_schedd = self.server.replace("https://","").split(":")[0]
+        best_schedd = self.server.replace("https://", "").split(":")[0]
         best_jobload = sys.maxsize
-        condor_port = int(os.environ.get("JOBSUB_CONDOR_PORT","9615"))
+        condor_port = int(os.environ.get("JOBSUB_CONDOR_PORT", "9615"))
         try:
             curl.perform()
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -1112,7 +1121,7 @@ class JobSubClient:
                             print err_fmt % (schedd_host, self.serverPort)
                         elif not is_port_open(schedd_host, condor_port):
                             print 'ERROR condor on  %s port %s not responding' %\
-                                    (schedd_host, condor_port)
+                                (schedd_host, condor_port)
                         else:
                             self.schedd_list.append(schedd)
                             jobload = long(pts[-1:][0])
@@ -1130,8 +1139,7 @@ class JobSubClient:
             # logSupport.dprint(traceback.format_exc(limit=10))
             # traceback.print_stack()
             raise JobSubClientError(err)
-        except:
-            # probably called a server that doesnt support this URL, just continue
+        except Exception:            # probably called a server that doesnt support this URL, just continue
             # and let round robin do its thing
             logSupport.dprint("Error: %s " % sys.exc_info()[0])
             pass
@@ -1230,6 +1238,12 @@ class JobSubClient:
         return return_value
 
     def extractResponseDetails(self, curl, response):
+        """
+        Find some important details from HTTP response from jobsub-server
+        return them as a tuple
+        @parameter curl : pycurl object
+        @parameter response: curl response object
+        """
         content_type = curl.getinfo(pycurl.CONTENT_TYPE)
         code = curl.getinfo(pycurl.RESPONSE_CODE)
         value = response.getvalue()
@@ -1244,8 +1258,8 @@ class JobSubClient:
         content_type, code, value, serving_server =\
             self.extractResponseDetails(curl, response)
         if self.extra_opts.get('jobid_output_only'):
-            matchObj = re.match( r'(.*)Use job id (.*) to retrieve (.*)',
-                       value, re.S|re.I)
+            matchObj = re.match(r'(.*)Use job id (.*) to retrieve (.*)',
+                                value, re.S | re.I)
             if matchObj and matchObj.group(2):
                 print matchObj.group(2)
                 return
@@ -1290,7 +1304,7 @@ def is_port_open(server, port):
         s.close()
         if result == 0:
             is_open = True
-    except:
+    except Exception:
         pass
     return is_open
 
@@ -1328,14 +1342,18 @@ def get_jobsub_server_aliases(server):
 
 
 def servicing_jobsub_server(curl):
+    """
+    Try to figure out which of the servers behind DNS RR is responding
+    does not work with HAPROXY in front of servers
+    """
+
     server = 'UNKNOWN'
     try:
         ip = curl.getinfo(pycurl.PRIMARY_IP)
         server = constants.JOBSUB_SERVER_URL_PATTERN %\
             (socket.gethostbyaddr(ip)[0],
              constants.JOBSUB_SERVER_DEFAULT_PORT)
-    except:
-        # Ignore errors. This is not critical
+    except Exception:        # Ignore errors. This is not critical
         pass
     return server
 
@@ -1592,8 +1610,7 @@ def get_capath():
     return ca_dir
 
 
-
-def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
+def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     """
     create a compressed tarfile
         Args:
@@ -1601,7 +1618,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
             tar_path (string): directory to be tarred up into 'tar_file'
             tar_type (string, optional): if "tgz": gzipped tarfile
                                                   otherwise bzipped tarfile
-            reject_list (list[]): list of regular expressions of file names 
+            reject_list (list[]): list of regular expressions of file names
                                   to reject from the tar_file
         Returns:
             bool: True if successful, False otherwise.
@@ -1609,14 +1626,14 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
             None
     """
     orig_dir = os.getcwd()
-    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %\
-        (tar_file, tar_path, orig_dir))
+    logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
+                      (tar_file, tar_path, orig_dir))
     if tar_type == "tgz":
         tar = tarfile.open(tar_file, 'w:gz')
     else:
         tar = tarfile.open(tar_file, 'w:bz2')
 
-    #dont tar old copies of tarball into new tarball
+    # dont tar old copies of tarball into new tarball
     if tar_file not in reject_list:
         reject_list.append('%s$' % tar_file)
 
@@ -1626,17 +1643,17 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
     ftar_d = os.path.realpath(tar_dir)
     for root, dirs, files in os.walk(ftar_d):
         for dd in dirs:
-            fd = os.path.join(root,dd)
+            fd = os.path.join(root, dd)
             ok_include = True
             if os.path.islink(fd) or not os.listdir(fd):
                 for patt in reject_list:
-                    if re.search(patt,fd):
+                    if re.search(patt, fd):
                         ok_include = False
                         break
                 if ok_include:
                     try:
-                        tar.add(fd[len(ftar_d)+1:])
-                    except StandardError:
+                        tar.add(fd[len(ftar_d) + 1:])
+                    except Exception:
                         failed_file_list.append(fd)
         for ff in files:
             ok_include = True
@@ -1648,8 +1665,8 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
                     break
             if ok_include:
                 try:
-                    tar.add(ft[len(ftar_d)+1:])
-                except StandardError:
+                    tar.add(ft[len(ftar_d) + 1:])
+                except Exception:
                     failed_file_list.append(fname)
     tar.close()
     os.chdir(orig_dir)
@@ -1660,9 +1677,6 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[] ):
                 fname)
         return False
     return True
-
-
-
 
 
 ##########################################################################
@@ -1790,7 +1804,6 @@ def get_dropbox_uri_map(argv):
     return amap
 
 
-
 def digest_for_file(file_name, block_size=2**20, write_chunks=False):
     """
     compute  sha1 digest or a file
@@ -1812,7 +1825,7 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
         dirpath = tempfile.mkdtemp()
         dirtemp = os.path.dirname(dirpath)
         f_cnt = int('a00000', 16)
-        #chunks will be named 'a00000, a00001, a00002, etc
+        # chunks will be named 'a00000, a00001, a00002, etc
         chunk_name = os.path.join(dirpath, str(hex(f_cnt))[2:])
     while True:
         data = fhdl.read(block_size)
@@ -1829,11 +1842,12 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
     hashd = dig.hexdigest()
     if write_chunks:
         newdir = os.path.join(dirtemp, hashd)
-        if  os.path.exists(newdir):
+        if os.path.exists(newdir):
             shutil.rmtree(dirpath)
         else:
             os.rename(dirpath, newdir)
     return hashd
+
 
 def find_ifdh_exe():
     ifdh_exe = spawn.find_executable("ifdh.sh")
@@ -1842,6 +1856,7 @@ def find_ifdh_exe():
         if os.path.exists("%s/ifdh.sh" % here):
             ifdh_exe = "%s/ifdh.sh" % here
     return ifdh_exe
+
 
 def check_id(jobid):
     if jobid is None:
@@ -1879,14 +1894,14 @@ def date_callback(option, opt, value, p):
             datetime.strptime(value, fmt)
             dateOK = True
             break
-        except:
+        except Exception:
             pass
     if dateOK:
         setattr(p.values, option.dest, value)
     else:
         sys.exit(
-            """invalid date format for '%s'.  Must be of the form """ % value +\
-            """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """+\
+            """invalid date format for '%s'.  Must be of the form """ % value +
+            """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
             """example: '2015-03-01 01:59:03'""")
     return p
 
@@ -1899,8 +1914,6 @@ def read_re_file(filename):
         if line[0] != '#':
             re_list.append(line.rstrip('\n'))
     return re_list
-
-
 
 
 import contextlib
@@ -1931,25 +1944,27 @@ def stdchannel_redirected(stdchannel, dest_filename):
         if dest_file is not None:
             dest_file.close()
 
+
 if __name__ == '__main__':
-    #put anything you want to test without using the entire client here
+    # put anything you want to test without using the entire client here
 
     if len(sys.argv) == 1 or 'help' in sys.argv[1].lower():
         print "".join(("\n", "usage:", "\n",
-                       "%s --help\n"% sys.argv[0],
-                       "%s TEST_TAR_FUNCS output_tarfile "% sys.argv[0],
+                       "%s --help\n" % sys.argv[0],
+                       "%s TEST_TAR_FUNCS output_tarfile " % sys.argv[0],
                        "input_directory[write_chunks (1|0)]  [block_size (int)]\n",
                        "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
         reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
-                       "\.log$", "\.err$", "\.out$" ]
+                       "\.log$", "\.err$", "\.out$"]
         if len(sys.argv) >= 7:
             print 'reading reject_list file %s' % sys.argv[6]
             reject_list = read_re_file(sys.argv[6])
             print 'reject_list = %s' % reject_list
 
-        create_tarfile(sys.argv[1+1], sys.argv[2+1], reject_list=reject_list)
+        create_tarfile(sys.argv[1 + 1], sys.argv[2 + 1],
+                       reject_list=reject_list)
         WRITE_CHUNKS = False
         if len(sys.argv) >= 6:
             WRITE_CHUNKS = True
@@ -1962,19 +1977,19 @@ if __name__ == '__main__':
         if WRITE_CHUNKS:
             print "to test directory /tmp/%s contents use commands " % DIG
             print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
-                    (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+                (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
     elif sys.argv[1] == 'TEST_RE_LIST':
         re_list = read_re_file(sys.argv[2])
         print "re_list = %s" % re_list
 
     elif sys.argv[1] == "TEST_DATE_CALLBACK":
-        P_DUCK = lambda: None
+        def P_DUCK(): return None
         P_DUCK.values = lambda: None
-        OPT_DUCK = lambda: None
+
+        def OPT_DUCK(): return None
         OPT_DUCK.dest = "values"
         if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
             print "date format OK"
-
 
     else:
         print "syntax error for command input:  %s" % sys.argv

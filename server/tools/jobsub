@@ -3,13 +3,10 @@
 
 from groupsettings import JobSettings, MinervaSettings, NovaSettings
 from groupsettings import CdfSettings, MinosSettings
-import getopt
 import sys
 import os
-import datetime
 import commands
 import pprint
-import subprocess
 import shlex
 
 
@@ -69,7 +66,7 @@ def doSubmit(settings):
                 exports = exports + """export %s="%s";""" % (var, val)
     cmd = ""
 
-    if settings.has_key('schedd') and settings['schedd'] is not None:
+    if 'schedd' in settings and settings['schedd'] is not None:
         schedd_spec = "-name %s " % settings['schedd']
     else:
         schedd_spec = ""
@@ -85,7 +82,7 @@ def doSubmit(settings):
             append, settings['submit_host'])
         append = """%s -append "+Jobsub_Group=\\"%s\\"" """ % (
             append, settings['group'])
-        if settings.has_key('maxConcurrent'):
+        if 'maxConcurrent' in settings:
             maxjobs = settings['maxConcurrent']
         else:
             maxjobs = 2000
@@ -115,7 +112,7 @@ if __name__ == "__main__":
     try:
         a = shlex.split(' '.join(sys.argv))
         sys.argv = a
-    except:
+    except Exception:
         pass
     notAllowed = ['>', '<', '-', '+', '=']
     for arg in sys.argv:
@@ -132,7 +129,7 @@ if __name__ == "__main__":
 
     try:
         settings = iterArgs()
-    except Exception, e:
+    except Exception as e:
         print str(e)
         sys.exit(1)
     # settings.checkSanity()

@@ -15,7 +15,6 @@
 import cherrypy
 import logger
 import logging
-import jobsub
 from authutils import get_voms
 from format import format_response
 

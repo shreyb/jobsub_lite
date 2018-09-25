@@ -19,10 +19,10 @@ Server input options: --maxConcurrent  maximum number of DAG nodes that can be r
 
 USER_SCRIPT FORMAT:
 
-jobsub_submit_dag generates and optionally runs a condor 
+jobsub_submit_dag generates and optionally runs a condor
 DAG (directed acyclic graph) of condor jobs.  For illustration, suppose
-that you have 5 jobs A,B,C,D,E, that you want to run using condor. 
-Job B requires A to run first, C and D require the output form B, 
+that you have 5 jobs A,B,C,D,E, that you want to run using condor.
+Job B requires A to run first, C and D require the output form B,
 and E requires the input from C and D.
 A graphic representation would be:
 
@@ -34,8 +34,8 @@ A graphic representation would be:
                      \ /
                       E
 
-Job A can be submitted to the batch system 
-using the command 
+Job A can be submitted to the batch system
+using the command
 jobsub_submit file://jobA.sh, job B by jobsub_submit file://jobB.sh, etc.
 
 
@@ -53,10 +53,10 @@ jobsub_submit file://jobD.sh
 jobsub_submit file://jobE.sh
 </serial>
 
-If this input file is saved as 'user_script', the command to 
+If this input file is saved as 'user_script', the command to
 generate and submit a DAG would be
 
-jobsub_submit_dag [Client Options] [Server Options] file://user_script 
+jobsub_submit_dag [Client Options] [Server Options] file://user_script
 """
 usage = """
 usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ]
@@ -293,7 +293,7 @@ class DagParser(object):
 
     def nameNode(self, elem):
         #global snum,pnum,jnum, nodeDict
-        if elem.attrib.has_key('name'):
+        if 'name' in elem.attrib:
             self.nodeDict[elem.attrib['name']] = elem
             return
         if elem.tag == 'serial':
@@ -450,7 +450,8 @@ class DagParser(object):
                         ncmds = 0
                         i = 0
                         for word in biglist:
-                            if word.find(".cmd") >= 0 and word not in condor_cmd_list:
+                            if word.find(
+                                    ".cmd") >= 0 and word not in condor_cmd_list:
                                 ncmds = ncmds + 1
                                 condor_cmd = word
                                 jobName = "Jb_%d_%d" % (j, i)
@@ -465,7 +466,8 @@ class DagParser(object):
                             self.jobList.append(tuple(condor_cmd_list))
                         if self.processingParallel:
                             plist.append(tuple(condor_cmd_list))
-                        if (self.redundancy != 0 and self.redundancy != len(condor_cmd_list)):
+                        if (self.redundancy != 0 and self.redundancy !=
+                                len(condor_cmd_list)):
                             print "ERROR: different number of '.cmd' files detected"
                             print "between jobs in input file! This will generate"
                             print "an incorrect DAG!  aborting......"
@@ -684,7 +686,8 @@ class ArgParser(object):
                         '--tar_file_name', '-f', '-i', '-t']
             for arg in self.passedArgs:
                 if os.path.isfile(arg):
-                    if (i == 0) or ((i > 0) and (self.passedArgs[i - 1] not in fileOpts)):
+                    if (i == 0) or ((i > 0) and (
+                            self.passedArgs[i - 1] not in fileOpts)):
                         self.inputFile = self.passedArgs[i]
                         del self.passedArgs[i]
                         break
@@ -698,7 +701,7 @@ class ArgParser(object):
                 now = val.rstrip()
                 condor_tmp = os.environ.get("CONDOR_TMP")
                 home = os.environ.get("HOME")
-                if condor_tmp == "" or condor_tmp == None:
+                if condor_tmp == "" or condor_tmp is None:
                     self.outputFile = home + "/submit.%s.dag" % now
                 else:
                     self.outputFile = condor_tmp + "/submit.%s.dag" % now
@@ -724,7 +727,7 @@ class ArgParser(object):
     def printManual(self):
         #m = os.path.basename(sys.argv[0])
         #df = """date +%Y%m%d_%H%M%S_%N"""
-        #manFile = manual 
+        #manFile = manual
         print manual
         sys.exit(0)
 

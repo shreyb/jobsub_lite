@@ -13,8 +13,6 @@
 
 import logger
 import logging
-import jobsub
-import subprocessSupport
 import authutils
 
 
@@ -155,6 +153,7 @@ def get_ferry_fqan(acctgroup, acctrole=None):
 
 if __name__ == '__main__':
     """
+    test code
     """
     _gmaps = authutils.json_from_file("dn_user_roles_map.json")
 

@@ -61,7 +61,7 @@ process_branch() {
 
     PEP8_OPTIONS="--ignore="
     # E111 indentation is not a multiple of four
-    PEP8_OPTIONS="$PEP8_OPTIONSE111"
+    PEP8_OPTIONS="$PEP8_OPTIONS""E111"
     # E121 continuation line under-indented for hanging indent
     PEP8_OPTIONS="$PEP8_OPTIONS,E121"
     # E123 closing bracket does not match indentation of opening bracket’s line
@@ -103,15 +103,15 @@ process_branch() {
 
 
     #uncomment to see all pep8 errors
-    PEP8_OPTIONS=""
+    #PEP8_OPTIONS=""
     
    
 
     # get list of python scripts 
     cd "${JOBSUB_SRC}"
-    export PYTHONPATH=${JOBSUB_SRC}/server/webapp:${JOBSUB_SRC}/lib/JobsubConfigParser:${JOBSUB_SRC}/lib/logger:${JOBSUB_SRC}/client:$PYTHONPATH
+    export PYTHONPATH=${JOBSUB_SRC}:${JOBSUB_SRC}/server/webapp:${JOBSUB_SRC}/lib/JobsubConfigParser:${JOBSUB_SRC}/lib/logger:${JOBSUB_SRC}/client:$PYTHONPATH
     export PYTHONPATH=${JOBSUB_SRC}/lib/groupsettings:${JOBSUB_SRC}/packaging:$PYTHONPATH
-    scripts=`find . -type f  -not -path "*/ups_jobsub_client/*"    -not -path "*/unarchive/*" -not -path "*/jobsubjobsection/*" -not -path "*/.git/*" -exec file {} \; | grep 'python script'| cut -d: -f1`
+    scripts=`find . -type f   -not -path "*/unarchive/*" -not -path "*/jobsubjobsection/*" -not -path "*/.git/*" -exec file {} \; | grep -i python | cut -d: -f1`
     for script in $scripts; do
       #can't seem to get --ignore or --ignore-modules to work, so do it this way
       PYLINT_SKIP="False"

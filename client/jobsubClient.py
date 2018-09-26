@@ -97,33 +97,33 @@ class JobSubClient(object):
         else:
             self.reject_list = [
                 # exclude .git and .svn directories
-                "\.git/",
-                "\.svn/",
-                # exclude .core files
-                "\.core$",
+                r"\.git/",
+                r"\.svn/",
+                rr# exclude .core files
+                r"\.core$",
                 # exclude emacs backups
-                "\~.*$",
+                r"\~.*$",
                 # exclude pdfs and eps files
-                "\.pdf$",
-                "\.eps$",
+                r"\.pdf$",
+                r"\.eps$",
                 # NO PICTURES OF CATS
-                "\.png$",
-                "\.PNG$",
-                "\.gif$",
-                "\.GIF$",
-                "\.jpg$",
-                "\.jpeg$",
-                "\.JPG$",
-                "\.JPEG$",
+                r"\.png$",
+                r"\.PNG$",
+                r"\.gif$",
+                r"\.GIF$",
+                r"\.jpg$",
+                r"\.jpeg$",
+                r"\.JPG$",
+                r"\.JPEG$",
                 # no .log .out or .err files
-                "\.log$",
-                "\.err$",
-                "\.out$",
+                r"\.log$",
+                r"\.err$",
+                r"\.out$",
                 # no tarfiles or zipfiles
-                "\.tar$",
-                "\.tgz$",
-                "\.zip$",
-                "\.gz$",
+                r"\.tar$",
+                r"\.tgz$",
+                r"\.zip$",
+                r"\.gz$",
             ]
 
         constraint = self.extra_opts.get('constraint')
@@ -1792,7 +1792,7 @@ def get_jobexe_uri(argv):
 
 
 def uri2path(uri):
-    return re.sub('^.\S+://', '', uri)
+    return re.sub(r'^.\S+://', '', uri)
 
 
 def get_dropbox_uri_map(argv):
@@ -1863,7 +1863,7 @@ def check_id(jobid):
         return jobid
     else:
         # p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
-        p = re.compile('^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
+        p = re.compile(r'^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
         if not p.match(jobid):
             err = "ERROR: --jobid '%s' is malformed" % jobid
             raise JobSubClientError(err)
@@ -1956,8 +1956,8 @@ if __name__ == '__main__':
                        "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
-        reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
-                       "\.log$", "\.err$", "\.out$"]
+        reject_list = [r"\.git/", r"\.svn/", r"\.core$", r"~$", r"\.pdf$", r"\.eps$", r"\.png$",
+                       r"\.log$", r"\.err$", r"\.out$"]
         if len(sys.argv) >= 7:
             print 'reading reject_list file %s' % sys.argv[6]
             reject_list = read_re_file(sys.argv[6])

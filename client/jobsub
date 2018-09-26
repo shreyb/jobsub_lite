@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-################################################################################
+##########################################################################
 # Project:
 #   JobSub
 #
@@ -10,40 +10,32 @@
 # Description:
 #   This module implements the JobSub client tool
 #
-################################################################################
+##########################################################################
 
 helptext = """
 jobsub has been replaced with a suite of client tools listed here:
 
-jobsub_submit     -- submit a job    
+jobsub_submit     -- submit a job
 jobsub_submit_dag -- submit a dag description of jobs
 
-jobsub_status     -- list OSG sites that are available to submit jobs to  
+jobsub_status     -- list OSG sites that are available to submit jobs to
 
-jobsub_q          -- check status of jobs in queue (like condor_q)    
+jobsub_q          -- check status of jobs in queue (like condor_q)
 
-jobsub_hold       -- hold jobs in queue   
-jobsub_release    -- release held jobs   
-jobsub_rm         -- remove jobs from queue  
+jobsub_hold       -- hold jobs in queue
+jobsub_release    -- release held jobs
+jobsub_rm         -- remove jobs from queue
 
 jobsub_fetchlog   -- retrieve job log files from jobsub_server
-jobsub_history    -- check status of finished jobs (like conndor_history) 
+jobsub_history    -- check status of finished jobs (like conndor_history)
 
 all of these tools respond to the --help flag by listing their
 input options along with explanations
 
-for more  information see 
+for more  information see
 https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Using_the_Client
 """
 
 
 if __name__ == '__main__':
     print helptext
-
-
-
-
-
-
-
-

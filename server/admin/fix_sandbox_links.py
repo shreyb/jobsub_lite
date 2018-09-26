@@ -33,13 +33,13 @@ def fix_links(really_do_it=False):
 
 def print_help():
     usage = """fix_sandbox_links, a program for fixing soft links
-		for jobsub sandbox if they get messed up or for creating
-		them for a server upgrade
-	options:
-		--test : print out the links that would be created
-			but don't actually do it
-		--fix-links: create the soft links that are needed
-			for the sandbox downloader to work
+            for jobsub sandbox if they get messed up or for creating
+            them for a server upgrade
+            options:
+            --test : print out the links that would be created
+            but don't actually do it
+            --fix-links: create the soft links that are needed
+            for the sandbox downloader to work
 """
 
     print usage

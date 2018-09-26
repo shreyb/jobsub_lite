@@ -99,7 +99,7 @@ class JobSubClient(object):
                 # exclude .git and .svn directories
                 r"\.git/",
                 r"\.svn/",
-                rr# exclude .core files
+                # exclude .core files
                 r"\.core$",
                 # exclude emacs backups
                 r"\~.*$",

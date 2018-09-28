@@ -13,18 +13,12 @@ from JobSettings import JobSettings
 
 class JobTest(unittest.TestCase):
 
-    # def __init__(self):
-     #   self.ns = JobSettings()
-        #super(JobTest, self).__init__()
 
-    #        self.stdout = sys.stdout
-    #        self.stderr = sys.stderr
-    #        self.devnull = open(os.devnull,'w')
-    #
-    #        return super(unittest.TestCase,self).__init__()
-    #
+    #def __init__(self):
+    
+       #return super(JobTest, self).__init__()
+    
 
-    currentResult = None  # holds last result object passed to run method
 
     def run(self, result=None):
         self.currentResult = result  # remember result for use in tearDown
@@ -50,6 +44,12 @@ class JobTest(unittest.TestCase):
 
         os.environ['CONDOR_TMP'] = self.tmpdir
         os.environ['CONDOR_EXEC'] = self.tmpdir
+        self.currentResult = None
+        self.ns = JobSettings()
+    
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
+        self.devnull = open(os.devnull,'w')
         if not hasattr(self, 'ns'):
             self.ioSetUp()
             self.stdioOFF()
@@ -60,20 +60,20 @@ class JobTest(unittest.TestCase):
 
     def tearDown(self):
         #ok = self.currentResult.wasSuccessful()
-        errors = self.currentResult.errors
-        failures = self.currentResult.failures
-        ok = len(
-            self.currentResult.errors) == 0 and len(
-            self.currentResult.failures) == 0
-        self.stdioON()
-        if len(errors) > 0 or len(failures) > 0:
-            print """test failed, output saved to %s""" % self.tmpdir
-            print """ errors: %s """ % errors
-            print """ failures: %s """ % failures
-        else:
+        #errors = self.currentResult.errors
+        #failures = self.currentResult.failures
+        #ok = len(
+        #    self.currentResult.errors) == 0 and len(
+        #    self.currentResult.failures) == 0
+        #self.stdioON()
+        #if len(errors) > 0 or len(failures) > 0:
+        #    print """test failed, output saved to %s""" % self.tmpdir
+        #    print """ errors: %s """ % errors
+        #    print """ failures: %s """ % failures
+        #else:
             # print "test ok, removing %s"%self.tmpdir
-            import shutil
-            shutil.rmtree(self.tmpdir)
+        import shutil
+        shutil.rmtree(self.tmpdir)
 
     def testConstructor(self):
         """test that JobSettings constructor initializes correctly"""
@@ -325,7 +325,7 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        cmd = "grep '^\s*+JOB_EXPECTED_MAX_LIFETIME\s*=\s*600\s*$' %s" % ns.settings['cmdfile']
+        cmd = r"grep '^\s*+JOB_EXPECTED_MAX_LIFETIME\s*=\s*600\s*$' %s" % ns.settings['cmdfile']
         (retVal, output) = commands.getstatusoutput(cmd)
         self.assertEqual(
             retVal,
@@ -343,7 +343,7 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        cmd = "grep '^\s*request_disk\s*=\s*10GB\s*$'  %s" % ns.settings['cmdfile']
+        cmd = r"grep '^\s*request_disk\s*=\s*10GB\s*$'  %s" % ns.settings['cmdfile']
         (retVal, output) = commands.getstatusoutput(cmd)
         self.assertEqual(retVal, 0, cmd)
 
@@ -357,7 +357,7 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        cmd = "grep '^\s*request_memory\s*=\s*10GB\s*$'  %s" % ns.settings['cmdfile']
+        cmd = r"grep '^\s*request_memory\s*=\s*10GB\s*$'  %s" % ns.settings['cmdfile']
         (retVal, output) = commands.getstatusoutput(cmd)
         self.assertEqual(retVal, 0, cmd)
 
@@ -371,7 +371,7 @@ class JobTest(unittest.TestCase):
         ns.checkSanity()
         ns.makeCondorFiles()
         self.stdioON()
-        cmd = "grep '^\s*request_cpus\s*=\s*4\s*$'  %s" % ns.settings['cmdfile']
+        cmd = r"grep '^\s*request_cpus\s*=\s*4\s*$'  %s" % ns.settings['cmdfile']
         (retVal, output) = commands.getstatusoutput(cmd)
         self.assertEqual(retVal, 0, cmd)
 
@@ -470,7 +470,7 @@ class JobTest(unittest.TestCase):
         (
             retVal,
             output) = commands.getstatusoutput(
-            "grep -P 'ifdh.sh\s+cp\s+-D\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/ \\\; input_file_2 \$\{CONDOR_DIR_INPUT\}\/'  %s" %
+            r"grep -P 'ifdh.sh\s+cp\s+-D\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/ \\\; input_file_2 \$\{CONDOR_DIR_INPUT\}\/'  %s" %
             ns.settings['wrapfile'])
         self.assertEqual(
             retVal,
@@ -481,7 +481,7 @@ class JobTest(unittest.TestCase):
         (
             retVal,
             output) = commands.getstatusoutput(
-            "grep -P 'ifdh.sh\s+cp\s+-D\s+\$\{CONDOR_DIR_FOO\}\/\*\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\*\s+this_is_the_bar_dir' %s" %
+            r"grep -P 'ifdh.sh\s+cp\s+-D\s+\$\{CONDOR_DIR_FOO\}\/\*\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\*\s+this_is_the_bar_dir' %s" %
             ns.settings['wrapfile'])
         self.assertEqual(
             retVal,
@@ -504,7 +504,7 @@ class JobTest(unittest.TestCase):
         self.stdioOFF()
         ns.makeCondorFiles()
         self.stdioON()
-        (retVal, output) = commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force=expgridftp\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/\s+\\\;\s+input_file_2\s+\$\{CONDOR_DIR_INPUT\}\/' %s" %
+        (retVal, output) = commands.getstatusoutput(r"grep -P 'ifdh.sh\s+cp\s+--force=expgridftp\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/\s+\\\;\s+input_file_2\s+\$\{CONDOR_DIR_INPUT\}\/' %s" %
                                                     (ns.settings['wrapfile']))
 
         self.assertEqual(
@@ -513,7 +513,7 @@ class JobTest(unittest.TestCase):
             'gftp cant find input_file_1 in ' +
             ns.settings['wrapfile'])
 
-        (retVal, output) = commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s" %
+        (retVal, output) = commands.getstatusoutput(r"grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s" %
                                                     (ns.settings['wrapfile']))
         self.assertEqual(
             retVal,

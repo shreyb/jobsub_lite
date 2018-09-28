@@ -243,11 +243,11 @@ HTML_TR_FAILED="padding: 5px;text-align: center;"
 HTML_TD_FAILED="border: 0px solid black;border-collapse: collapse;background-color: #ff0000;padding: 5px;text-align: center;"
 
 
-
 ###############################################################################
 
 
-git_branches="$1"
+git_branches="$@"
+shift
 WORKSPACE=`pwd`
 export JOBSUB_SRC=$WORKSPACE/jobsub
 cp $JOBSUB_SRC/test/scripts/pylintrc $WORKSPACE

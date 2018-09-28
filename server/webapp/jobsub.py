@@ -533,7 +533,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
     return result
 
 
-class JobsubConfig:
+class JobsubConfig(object):
     """Class representing and creating expected directory structure on
        jobsub server
     """

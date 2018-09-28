@@ -94,7 +94,7 @@ def check_user_doesnot_exist_error(llrun_out):
 
 ###############################################################################
 
-class PrivActionManager:
+class PrivActionManager(object):
 
 
     def __init__(self):

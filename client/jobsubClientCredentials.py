@@ -30,7 +30,7 @@ class CredentialsError(Exception):
         sys.exit(errMsg)
 
 
-class Credentials():
+class Credentials(object):
     """
     Abstract Class for Credentials
     """

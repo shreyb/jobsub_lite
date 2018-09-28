@@ -42,7 +42,7 @@ for i in status_strings.keys():
 #         release- {date,time,utime}
 #         suspend- {date,time,utime}
 # sections - dictionary of (section_name,jid)
-class DAGManLogParser:
+class DAGManLogParser(object):
 
     def parseSubmit(self, jid, datetime, other, block, ignore_sections):
         if not ignore_sections:
@@ -370,7 +370,7 @@ class DAGManLogParser:
 #                   each element count how many times it went throug that state
 
 
-class DAGManLogParserFast:
+class DAGManLogParserFast(object):
 
     def parseFile(self, fd, want_counters, alive_only):
         changed = 0
@@ -512,7 +512,7 @@ class DAGManLogParserFast:
 
 ###########################################################################
 # these ones will work on line by line basis
-class LineIO:
+class LineIO(object):
 
     def __init__(self, filename, default_fields):
         self.filename = filename

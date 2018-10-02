@@ -281,17 +281,17 @@ def doJobAction(acctgroup,
         if is_group_superuser:
             if constraint and (acctgroup not in constraint):
                 constraint = constraint + \
-                    """&&(regexp("group_%s.*",AccountingGroup))""" % acctgroup
-        msg = '[user: %s] %s  jobs with constraint (%s)' %\
+                    r"""&&(regexp("group_%s.*",AccountingGroup))""" % acctgroup
+        msg = r'[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
 
     out = err = ''
-    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
-    expr += '(\s+)(\d+)(\s+Permission Denied).*'
-    expr2 = '.*ailed to connect*'
-    expr3 = '.*all jobs matching constraint*'
+    expr = r'.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
+    expr += r'(\s+)(\d+)(\s+Permission Denied).*'
+    expr2 = r'.*ailed to connect*'
+    expr3 = r'.*all jobs matching constraint*'
     regex = re.compile(expr)
     regex2 = re.compile(expr2)
     regex3 = re.compile(expr3)

@@ -111,7 +111,7 @@ process_branch() {
     cd "${JOBSUB_SRC}"
     export PYTHONPATH=${JOBSUB_SRC}:${JOBSUB_SRC}/server/webapp:${JOBSUB_SRC}/lib/JobsubConfigParser:${JOBSUB_SRC}/lib/logger:${JOBSUB_SRC}/client:$PYTHONPATH
     export PYTHONPATH=${JOBSUB_SRC}/lib/groupsettings:${JOBSUB_SRC}/packaging:$PYTHONPATH
-    scripts=`find . -type f   -not -path "*/unarchive/*" -not -path "*/jobsubjobsection/*" -not -path "*/.git/*" -exec file {} \; | grep -i python | cut -d: -f1`
+    scripts=`find . -type f   -not -path "*/unarchive/*" -not -path "*/jobsubjobsection/*" -not -path "*/.git/*"  -exec file {} \; | grep -i 'python script' | cut -d: -f1`
     for script in $scripts; do
       #can't seem to get --ignore or --ignore-modules to work, so do it this way
       PYLINT_SKIP="False"
@@ -122,8 +122,10 @@ process_branch() {
           fi
       done
       if [ "$PYLINT_SKIP" != "True" ]; then
+          echo pylint  ${script}
           pylint $PYLINT_OPTIONS ${script}  >> $pylint_log || log_nonzero_rc "pylint" $?
       fi
+      echo pycodestyle  ${script} 
       pycodestyle $PEP8_OPTIONS ${script} >> ${pep8_log} || log_nonzero_rc "pep8" $?
     done
 

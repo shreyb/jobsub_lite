@@ -121,7 +121,7 @@ class DagResource(object):
 
                     logger.log('before: jobsub_args = %s' % jobsub_args)
                     logger.log("cf_path_w_space='%s'" % cf_path_w_space)
-                    command_tag = "\@(\S*)%s" % jobsub_command.filename
+                    command_tag = r"\@(\S*)%s" % jobsub_command.filename
                     logger.log("command_tag='%s'" % command_tag)
                     _str = '"re.sub(command_tag, cf_path_w_space, jobsub_args)"'
                     logger.log('executing:%s' % _str)

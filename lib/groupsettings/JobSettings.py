@@ -367,7 +367,7 @@ class JobSettings(object):
         generic_group.add_option("--maxConcurrent",
                                  dest="maxConcurrent",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', r"""
         max number of jobs running concurrently at given time. Use in
         conjunction with -N option to protect a shared resource.
         Example: jobsub -N 1000 -maxConcurrent 20 will
@@ -394,19 +394,19 @@ class JobSettings(object):
         generic_group.add_option("--memory", dest="memory",
                                  metavar="NUMBER[UNITS]",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', r"""
                 Request worker nodes have at least NUMBER[UNITS]  of memory.
                 If UNITS is not specified default is 'MB'.   Allowed values for
                 UNITS are 'KB','MB','GB', and 'TB' """))
 
         generic_group.add_option("--cpu", dest="cpu", metavar="NUMBER",
                                  action="store", type="int",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                         request worker nodes have at least NUMBER cpus """))
 
         sam_group.add_option("--dataset_definition", dest="dataset_definition",
                              action="store", type="string",
-                             help=re.sub('  \s+', ' ', """
+                             help=re.sub(r'  \s+', ' ', """
                 SAM dataset definition used in a Directed Acyclic Graph (DAG)
                 """))
 
@@ -416,7 +416,7 @@ class JobSettings(object):
 
         generic_group.add_option("--drain", dest="drain",
                                  action="store_true",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 mark this job to be allowed to be drained or killed during
                 downtimes """))
 
@@ -426,7 +426,7 @@ class JobSettings(object):
 
         generic_group.add_option("--OS", dest="os",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 specify OS version of worker node. Example
                 --OS=SL5  Comma seperated list
                 '--OS=SL4,SL5,SL6' works as well . Default is any available OS
@@ -434,7 +434,7 @@ class JobSettings(object):
 
         generic_group.add_option("--show-parsing", dest="show_parsing",
                                  action="store_true", default=False,
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 print out how command line was parsed into argv
                 list and exit.
                 Useful for seeing how quotes in options are parsed)"""))
@@ -442,24 +442,24 @@ class JobSettings(object):
         generic_group.add_option("--generate-email-summary",
                                  dest="mail_summary",
                                  action="store_true", default=False,
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 generate and mail a summary report of completed/failed/removed
                 jobs in a DAG"""))
 
         generic_group.add_option("--email-to", dest="notify_user",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 email address to send job reports/summaries to
                 (default is $USER@fnal.gov)"""))
 
         generic_group.add_option("-G", "--group", dest="accountinggroup",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 Group/Experiment for priorities and accounting"""))
 
         generic_group.add_option("--subgroup", dest="subgroup",
                                  action="store", type="string",
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 Subgroup for priorities and accounting. See
                 https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
                 Jobsub_submit#Groups-Subgroups-Quotas-Priorities
@@ -468,13 +468,13 @@ class JobSettings(object):
 
         generic_group.add_option("-v", "--verbose", dest="verbose",
                                  action="store_true", default=False,
-                                 help=re.sub('  \s+', ' ', """
+                                 help=re.sub(r'  \s+', ' ', """
                 dump internal state of program (useful for debugging)"""))
 
         generic_group.add_option("--resource-provides", type="string",
                                  action="callback",
                                  callback=self.resource_callback,
-                                 help=re.sub('  \s+', ' ', """request specific
+                                 help=re.sub(r'  \s+', ' ', """request specific
                                  resources by changing condor jdf file.
                                  For example: --resource-provides=CVMFS=OSG
                                  will add +CVMFS=\"OSG\" to the job classad
@@ -530,7 +530,7 @@ class JobSettings(object):
 
         file_group.add_option("--no_log_buffer", dest="nologbuffer",
                               action="store_true",
-                              help=re.sub('  \s+', ' ', """write log file
+                              help=re.sub(r'  \s+', ' ', """write log file
             directly to disk. DOES NOT WORK WITH PNFS, WILL NOT WORK WITH
             BLUEARC WHEN IT IS UNMOUNTED FROM WORKER NODES VERY SOON.
             Default is to copy it back after job is completed.
@@ -542,13 +542,13 @@ class JobSettings(object):
 
         generic_group.add_option("-g", "--grid", dest="grid",
                                  action="store_true",
-                                 help=re.sub('  \s+', ' ', """run job on the
+                                 help=re.sub(r'  \s+', ' ', """run job on the
             FNAL GP  grid. Other flags can modify target sites to include other
             areas of the Open Science Grid"""))
 
         generic_group.add_option("--nowrapfile", dest="nowrapfilex",
                                  action="store_true",
-                                 help=re.sub('  \s+', ' ', """DISABLED:
+                                 help=re.sub(r'  \s+', ' ', """DISABLED:
             formerly was 'do not generate shell wrapper, disabled per request
             from fermigrid operations.  The wrapfiles used to not  work off
             site, now they do."""))
@@ -563,13 +563,13 @@ class JobSettings(object):
 
         generic_group.add_option("--overwrite_condor_requirements",
                                  dest="overwriterequirements", action="store",
-                                 help=re.sub('  \s+', ' ', """overwrite default
+                                 help=re.sub(r'  \s+', ' ', """overwrite default
                                  condor requirements with supplied
                                  requirements"""))
 
         generic_group.add_option("--override", dest="override", nargs=2,
                                  action="store", default=(1, 1),
-                                 help=re.sub('  \s+', ' ', """override some
+                                 help=re.sub(r'  \s+', ' ', """override some
             other value: --override 'requirements' 'gack==TRUE' would produce
             the same condor command file as --overwrite_condor_requirements
             'gack==TRUE' if you want to use this option, test it first with -n
@@ -577,7 +577,7 @@ class JobSettings(object):
 
         generic_group.add_option("-C", dest="usepwd", action="store_true",
                                  default=False,
-                                 help=re.sub('  \s+', ' ', """execute on
+                                 help=re.sub(r'  \s+', ' ', """execute on
                                  grid from directory you are currently in
                                  NOTE:WILL STOP WORKING SOON WHEN BLUARC
                                  UNMOUNTED FROM WORKER NODES
@@ -586,7 +586,7 @@ class JobSettings(object):
         generic_group.add_option("-e", "--environment",
                                  dest="added_environment", action="append",
                                  metavar='ENV_VAR',
-                                 help=re.sub('  \s+', ' ', """-e
+                                 help=re.sub(r'  \s+', ' ', """-e
         ADDED_ENVIRONMENT exports this variable with its local
         value to worker node environment. For example export FOO="BAR";
         jobsub -e FOO <more stuff> guarantees that the value of $FOO on
@@ -610,7 +610,7 @@ class JobSettings(object):
                               dropbox://PATH/TO/TAR_FILE
                               tardir://PATH/TO/DIRECTORY
                               """,
-                              help=re.sub('  \s+', ' ', """specify TAR_FILE
+                              help=re.sub(r'  \s+', ' ', """specify TAR_FILE
                     or DIRECTORY to be
                     transferred to worker node. TAR_FILE will be copied
                     to an area specified in the jobsub server configuration,

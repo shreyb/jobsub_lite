@@ -2,8 +2,6 @@
 
 import os
 import sys
-import re
-import traceback
 import subprocessSupport
 
 

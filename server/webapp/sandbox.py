@@ -32,7 +32,6 @@ from jobsub import is_global_superuser
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
-from datetime import datetime
 from JobsubConfigParser import JobsubConfigParser
 from condor_commands import constructFilter
 from condor_commands import iwd_condor_q
@@ -146,7 +145,7 @@ class SandboxResource(object):
                 if partial:
                     cmd = iwd_condor_q(query, 'cmd')
                     logger.log('cmd=%s' % cmd)
-                    expr = '^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
+                    expr = r'^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
                     regex = re.compile(expr)
                     g = regex.match(cmd)
                     partial = g.group(2)
@@ -166,7 +165,7 @@ class SandboxResource(object):
                 if partial:
                     cmd = iwd_jobsub_history(query, 'ownerjob')
                     logger.log('cmd=%s' % cmd)
-                    expr = '^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
+                    expr = r'^(\S+)(_\d+_\d+_\d+_\d+_\d+_)(\S+)*'
                     regex = re.compile(expr)
                     g = regex.match(cmd)
                     partial = g.group(2)

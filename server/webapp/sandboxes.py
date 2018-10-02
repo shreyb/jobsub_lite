@@ -47,9 +47,10 @@ class SandboxesResource(object):
             suffix = ".%s" % file_id.split('.')[-1]
             if suffix in allowed_list:
                 cherrypy.request.output_format = 'pre'
-                cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
+                cmd = r"find  %s/%s/%s/%s/%s -type f " %\
                     (command_path_root, cherrypy.request.acctgroup,
                      user_id, job_id, file_id)
+                cmd += r"-mindepth 0 -maxdepth 0 -exec cat -u {} \;" 
             else:
                 return {'out': 'you do not have permission to browse %s' % file_id}
         elif job_id:

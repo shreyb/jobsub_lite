@@ -308,6 +308,7 @@ def execute_cmd(cmd, stdin_data=None):
             cmd, errcode, tempErr))
     return tempOut
 
+
 """
 def execute_cmd1(cmd, stdin_data=None):
     #child = subprocess.Popen(shlex.split(cmd), stdin=stdin_data)

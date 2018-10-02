@@ -78,7 +78,7 @@ fi
         return ks
 
     def logTruncateString(self):
-        lts = """
+        lts = r"""
 set_jobsub_debug(){
     export PS4='$LINENO:'
     set -xv

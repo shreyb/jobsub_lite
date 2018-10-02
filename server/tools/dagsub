@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 docString = """
  $Id$
 """
-manual = """
+manual = r"""
 
 Server input options: --maxConcurrent  maximum number of DAG nodes that can be run simultaneously
 
@@ -767,7 +767,7 @@ class JobRunner(object):
             cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
                 (grp, usr)
         cmd += """ -append "+Jobsub_Group=\\"%s\\"" """ % (grp)
-        cmd += """ -append "+JobsubJobId=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
+        cmd += r""" -append "+JobsubJobId=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
             args.submitHost)
         cmd += args.outputFile
         if host != args.submitHost:

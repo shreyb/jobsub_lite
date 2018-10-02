@@ -4,7 +4,6 @@
    Author:  Dennis Box, dbox@fnal.gov
 """
 import cherrypy
-import logger
 
 
 def get_client_dn():

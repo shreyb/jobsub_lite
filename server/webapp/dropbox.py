@@ -18,7 +18,6 @@ from auth import check_auth
 from request_headers import get_client_dn
 from format import format_response
 from jobsub import get_dropbox_path_root
-from jobsub import get_dropbox_location
 from util import mkdir_p
 from util import digest_for_file
 

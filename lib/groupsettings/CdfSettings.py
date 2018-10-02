@@ -5,7 +5,6 @@ import re
 from JobSettings import JobSettings
 from JobSettings import InitializationError
 from JobSettings import JobUtils
-from JobSettings import InitializationError
 
 from optparse import OptionGroup
 
@@ -132,7 +131,7 @@ class CdfSettings(JobSettings):
                 settings['outLocation'],
                 sep,
                 settings['joblog_tarfile']),
-            "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
+            r"OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
             "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
             "export OUTPUT_DESTINATION",
             "export HOME=${TMPDIR}/work",
@@ -259,7 +258,7 @@ class CdfSettings(JobSettings):
     def makeCommandFile(self, job_iter=0):
         settings = self.settings
         if job_iter > 0:
-            tag = 'CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)'
+            tag = r'CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)'
             x = settings['environment']
             y = re.sub(tag, "", x)
             this_section = job_iter + settings['firstSection'] - 1

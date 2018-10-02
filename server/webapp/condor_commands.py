@@ -147,7 +147,7 @@ def condor_format(input_switch=None):
         # don't try this at home folks
         fmtList = [
             """ -dag """,
-            """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+            r""" -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
             """ -format ' %-1s '""", """string(" ")""",
             """ -format ' %-16s '""", dagStatusStr,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
@@ -158,13 +158,13 @@ def condor_format(input_switch=None):
             """ -format ' %-2s' """, jobStatusStr,
             """ -format '%3d ' JobPrio """,
             """ -format ' %4.1f ' ImageSize/1024.0 """,
-            """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            r""" -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
             """ -format '%-10s' """, dagProgressStr,
             """ -format '\\n' Owner """,
         ]
     elif input_switch == "hold":
         fmtList = [
-            """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+            r""" -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
             """ -format ' %-14s ' Owner """,
             """ -format ' %-11s ' 'formatTime(EnteredCurrentStatus,"%m/%d %H:%M")'""",
             """ -format '  %s' HoldReason""",
@@ -172,7 +172,7 @@ def condor_format(input_switch=None):
         ]
     else:
         fmtList = [
-            """ -format '%-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
+            r""" -format '%-37s' 'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
             """ -format ' %-14s ' Owner """,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""", runTimeStr, """/(3600*24))'""",
@@ -182,7 +182,7 @@ def condor_format(input_switch=None):
             """ -format ' %-2s' """, jobStatusStr,
             """ -format '%3d ' JobPrio """,
             """ -format ' %4.1f ' ImageSize/1024.0 """,
-            """ -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            r""" -format '%-30s ' 'regexps(".*\/(.+)",cmd,"\\1")'""",
             """ -format '\\n' Owner """,
         ]
 
@@ -221,10 +221,10 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
         while '' in cluster_pts:
             cluster_pts.remove('')
         cluster_pts.append('.*')
-        job_cnst = """regexp("%s#%s\.%s#.*",GlobalJobId)""" % (host,
-                                                               cluster_pts[0],
-                                                               cluster_pts[1]
-                                                               )
+        job_cnst = r"""regexp("%s#%s\.%s#.*",GlobalJobId)""" % (host,
+                                                                cluster_pts[0],
+                                                                cluster_pts[1]
+                                                                )
     else:
         lorw = ' '
         job_cnst = 'ClusterID==%d' % (math.trunc(float(jobid)))

@@ -6,6 +6,19 @@
 import cherrypy
 
 
+def slashify(a_dn):
+    """
+    if a_dn is of the form CN=UID:dbox,CN=Dennis Box,OU=People,yada yada yada
+    reformat it and return as
+    /yada yada yada/OU=People/CN=Dennis Box/CN=UID:dbox
+    """
+    if '/' in a_dn:
+        return a_dn
+    lst = a_dn.split(',')
+    lst.reverse()
+    new_dn = '/' + '/'.join(lst)
+    return new_dn
+
 def get_client_dn():
     """
     Identify the client DN based on if the client is using a X509 cert-key
@@ -13,9 +26,8 @@ def get_client_dn():
     Wont work if the proxy is derieved from the proxy itself.
     """
 
-    issuer_dn = cherrypy.request.headers.get('Ssl-Client-I-Dn')
-    client_dn = cherrypy.request.headers.get('Ssl-Client-S-Dn')
-
+    issuer_dn = slashify(cherrypy.request.headers.get('Ssl-Client-I-Dn'))
+    client_dn = slashify(cherrypy.request.headers.get('Ssl-Client-S-Dn'))
     # In case of proxy additional last part will be of the form /CN=[0-9]*
     # In other words, issuer_dn is a substring of the client_dn
     if client_dn:

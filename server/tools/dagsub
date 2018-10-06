@@ -759,15 +759,15 @@ class JobRunner(object):
         if args is not None:
             subgroup = args.subgroup
 
-        cmd += """ -append "+Owner=\\"%s\\"" """ % usr
+        cmd += r""" -append "+Owner=\"%s\"" """ % usr
         if subgroup:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """ %\
+            cmd += r"""-append "+AccountingGroup=\"group_%s.%s.%s\"" """ %\
                 (grp, subgroup, usr)
         else:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
+            cmd += r"""-append "+AccountingGroup=\"group_%s.%s\"" """ %\
                 (grp, usr)
-        cmd += """ -append "+Jobsub_Group=\\"%s\\"" """ % (grp)
-        cmd += r""" -append "+JobsubJobId=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
+        cmd += r""" -append "+Jobsub_Group=\"%s\"" """ % (grp)
+        cmd += r""" -append "+JobsubJobId=\"\$(Cluster).\$(Process)@%s\"" """ % (
             args.submitHost)
         cmd += args.outputFile
         if host != args.submitHost:

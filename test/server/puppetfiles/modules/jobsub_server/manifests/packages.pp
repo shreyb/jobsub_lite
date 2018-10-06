@@ -33,22 +33,7 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
 
     package {'git': ensure => present}
     package { 'httpd': ensure => present}
-    package { 'upsupdbootstrap-fnal': ensure => present }
 
-    package { 'llrun':
-      ensure          => present,
-      install_options => '--enablerepo=osg',
-    }
-
-    package { 'lcmaps-plugins-gums-client':
-      ensure          => present,
-      install_options => '--enablerepo=osg',
-    }
-
-    package { 'lcmaps-without-gsi':
-      ensure          => present,
-      install_options => '--enablerepo=epel',
-    }
 
     package { 'myproxy':
       ensure          => present,
@@ -82,15 +67,6 @@ class jobsub_server::packages (String $ifdhc_version = $jobsub_server::vars::ifd
       install_options => '--enablerepo=osg',
     }
 
-    package { 'osg-ca-scripts':
-      ensure          => present,
-      install_options => '--enablerepo=osg',
-    }
   
-    #install these ups products and make them current
-    jobsub_server::ups::product {
-      'ups'          : version => $ups_version, qualifier => "-f ${ups_flavor}";
-      'ifdhc'        : version => $ifdhc_version, qualifier => "-f ${ups_flavor} -q python27";
-    }
 
 }

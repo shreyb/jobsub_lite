@@ -76,11 +76,11 @@ def doSubmit(settings):
                                                 schedd_spec,
                                                 settings['cmdfile'])
     else:
-        append = """-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
+        append = r"""-append "+Owner=\"%s\"" -append "+AccountingGroup=\"group_%s.%s\"" """ %\
             (settings['user'], settings['group'], settings['user'])
-        append = r"""%s -append "+JobsubJobId=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
+        append = r"""%s -append "+JobsubJobId=\"\$(Cluster).\$(Process)@%s\"" """ % (
             append, settings['submit_host'])
-        append = """%s -append "+Jobsub_Group=\\"%s\\"" """ % (
+        append = r"""%s -append "+Jobsub_Group=\"%s\"" """ % (
             append, settings['group'])
         if 'maxConcurrent' in settings:
             maxjobs = settings['maxConcurrent']

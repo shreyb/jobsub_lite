@@ -35,5 +35,5 @@ echo "puppet module install $tarfile" >>$REMOTE_SCRIPT
 echo "puppet apply -e \"class { $2 : $3 }\"" >> $REMOTE_SCRIPT
 echo "" >> $REMOTE_SCRIPT
 scp $REMOTE_SCRIPT root@${REMOTE_HOST}:$REMOTE_SCRIPT
-ssh root@${REMOTE_HOST} bash $REMOTE_SCRIPT
+ssh -t root@${REMOTE_HOST} bash $REMOTE_SCRIPT
 #rm $REMOTE_SCRIPT

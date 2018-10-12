@@ -11,6 +11,6 @@
   "description": "Install and configure a jobsub server in a Hurry. Configuration is variables in manifest/vars.pp",
   "summary": "install and configure a jobsub server in a hurry",
   "author": "Dennis D. Box, dbox@fnal.gov",
-  "name": "dbox-jobsub_server",
+  "name": "fnal-jobsub_server",
   "project_page": "https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki"
 }

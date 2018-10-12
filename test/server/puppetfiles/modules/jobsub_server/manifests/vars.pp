@@ -49,7 +49,7 @@ class jobsub_server::vars{
         $epel_release = 'epel-release-7'
         $epel_url = 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
         $osg_release = 'osg-release.noarch'
-        $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm'
+        $osg_url = 'https://repo.opensciencegrid.org/osg/3.4/osg-3.4-el7-release-latest.rpm'
         $wget_opt = ''
         $yum_priorities = 'yum-plugin-priorities'
       }

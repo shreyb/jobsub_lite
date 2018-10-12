@@ -14,6 +14,7 @@ class jobsub_server::files{
   $jobsub_git_dir = $jobsub_server::vars::jobsub_git_dir
   $jobsub_cert = $jobsub_server::vars::jobsub_cert
   $jobsub_key = $jobsub_server::vars::jobsub_key
+  $allow_proxy_line = $jobsub_server::vars::allow_proxy_line
   $jenkins_user = $jobsub_server::vars::jenkins_user
   $jenkins_home = $jobsub_server::vars::jenkins_home
   $jenkins_cert = $jobsub_server::vars::jenkins_cert
@@ -255,9 +256,9 @@ class jobsub_server::files{
 
   file_line {
     'allow_proxy_certs':
-    ensure => 'absent',
+    ensure => 'present',
     path   => '/etc/sysconfig/httpd',
-    line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+    line   => $allow_proxy_line
   }
   file_line {
     'sudoers':

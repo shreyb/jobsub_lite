@@ -29,6 +29,10 @@ LogLevel info
         Order deny,allow
         Allow from all
     </Directory>
+    <Directory /opt/jobsub>
+      <%= scope.lookupvar('jobsub_server::vars::jobsub_api_ssl_directive') %>
+    </Directory>
+
 
     RequestHeader set Front-End-Https "On"
     RequestHeader set Auth-User "%{SSL_CLIENT_S_DN}s"

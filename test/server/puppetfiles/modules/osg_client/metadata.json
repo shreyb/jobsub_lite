@@ -9,8 +9,8 @@
 
   ],
   "description": "Install and configure a jobsub server in a Hurry. Configuration is variables in manifest/vars.pp",
-  "summary": "install and configure a jobsub server in a hurry",
+  "summary": "install and configure an osg client on a fermicloud node in a hurry",
   "author": "Dennis D. Box, dbox@fnal.gov",
-  "name": "gwms-jobsub_server",
+  "name": "gwms-osg_client",
   "project_page": "https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki"
 }

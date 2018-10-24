@@ -1,8 +1,4 @@
 #!/bin/sh
-# file: utils.sh
-# purpose: sourced by other files in this directory to setup
-# python venv and make pylint, autopep8, unittest2 and other
-# testing utils available
 
 log_nonzero_rc() {
     echo "`date` ERROR: $1 failed with non zero exit code ($2)" 1>&2
@@ -60,15 +56,10 @@ setup_python_venv() {
 
     export PYTHONPATH="$PWD:$PYTHONPATH"
 
-    # Install dependancies first so we don't get uncompatible ones
-    # Following RPMs need to be installed on the machine:
-    # 1. rrdtool-devel
-    # 2. openssl-devel
-    # 3. swig
     # pep8 has been replaced by pycodestyle
     pip_packages="${ASTROID} ${PYLINT} pycodestyle unittest2 coverage" 
-    pip_packages="$pip_packages rrdtool pyyaml mock xmlrunner future importlib argparse"
-    pip_packages="$pip_packages ${HYPOTHESIS} ${AUTOPEP8}"
+    pip_packages="$pip_packages pyyaml mock xmlrunner future importlib argparse"
+    pip_packages="$pip_packages ${HYPOTHESIS} ${AUTOPEP8} cherrypy"
 
 
     for package in $pip_packages; do

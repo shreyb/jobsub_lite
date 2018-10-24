@@ -1,4 +1,25 @@
 
+================================================================================
+v1.2.8.2
+================================================================================
+Client
+---------
+* Feature  17060  Detect an invalid proxy that has been renewed too many times
+                  and provide an informative message
+* Bug      20920  client not performing cigetcert properly with ferry authmethod
+
+================================================================================
+v1.2.8.1
+================================================================================
+Client
+---------
+
+Server
+-------
+* Bug      20873  jobsub rpm needs to create /var/lib/jobsub/ferry dir
+* Bug      20875  ferry authentication needs to strip off /CN=num1/CN=num2
+                  from DN of users proxies for matching
+
 
 ================================================================================
 v1.2.8

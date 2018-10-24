@@ -40,6 +40,7 @@ cp -r ./ $RPM_BUILD_ROOT/opt/jobsub
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
 mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
+mkdir -p $RPM_BUILD_ROOT/var/lib/jobsub/ferry
 cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/jobsub_api.conf
 
 
@@ -262,8 +263,11 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/voms_group.py
 /opt/jobsub/server/webapp/voms_group.pyc
 /opt/jobsub/server/webapp/voms_group.pyo
-/scratch/dropbox/
-/scratch/uploads/
+%defattr(644,rexbatch,fife,755)
+%attr(-,rexbatch,fife) /scratch/dropbox/
+%attr(-,rexbatch,fife) /scratch/uploads/
+%attr(-,rexbatch,fife) /var/lib/jobsub/
+%attr(-,rexbatch,fife) /var/lib/jobsub/ferry/
 
 %changelog
 

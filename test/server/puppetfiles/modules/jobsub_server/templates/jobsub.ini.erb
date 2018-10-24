@@ -22,29 +22,45 @@
 ;;substitutes them in
 
 [default]
+;
+;;htcondor only sends mail to user if job errors out
+condor_mail_notify = Never
+
 ;;RecentDaemonCoreDutyCycle is a number between 0 and 1
 ;;if RecentDaemonCoreDutyCycle > submit_reject_threshold then submission
 ;;will fail with an error message to try again later
 submit_reject_threshold = .95
 requirements_is_glidein = ' '
 ;;global_superusers can hold/release/remove anyones job and view thier sandboxes
-global_superusers = 'ahandres mfattoru boyd mazzacan kherner kretzke sbhat coimbra lisa vito kuropat illingwo stoughto natasha ivm mengel kirby tlevshin '
+global_superusers = 'ahandres mfattoru boyd mazzacan kherner kretzke sbhat coimbra vito kuropat illingwo stoughto natasha ivm mengel kirby tlevshin '
 
 ;;becomes job_lease_duration in submitted jobs jdf
 job_lease_duration = 3600
 ;;input to -valid flag in voms-proxy-init
 voms_proxy_lifetime = 24:00
-authentication_methods = myproxy
+;;begin myproxy auth section
+;;authentication_methods = myproxy
 myproxy_server = fermicloud343.fnal.gov
+;;end myproxy auth section
+;;begin ferry auth section
+authentication_methods = ferry
+ferry_server = ferry.fnal.gov
+ferry_port = 8443
+ferry_output = /var/lib/jobsub/ferry
+ferry_expire = 3600
+jobsub_cert = /etc/grid-security/jobsub/jobsubcert.pem
+jobsub_key = /etc/grid-security/jobsub/jobsubkey.pem
+;;end ferry auth section
 motd_file = /do/not/use/motd_file
 ifdh_base_uri = http://samweb.fnal.gov:8480/sam/${GROUP}/api
-desired_os = ' && ( DesiredOS =?= NULL || stringlistimember(Target.IFOS_installed,DesiredOS)) '
+;;desired_os = ' && ( DesiredOS =?= NULL || stringlistimember(Target.IFOS_installed,DesiredOS)) '
+desired_os = ' && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed))'
 condor_setup_cmd = ''
 transfer_wrapfile = True
 transfer_executable = True
 condor_installed_in_opt = False
-command_path_root = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads
-dropbox_path_root = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/dropbox
+command_path_root = /fife/local/scratch/uploads
+dropbox_path_root = /fife/local/scratch/dropbox
 wn_ifdh_location = '/cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /grid/fermiapp/products/common/etc/setups.sh /fnal/ups/etc/setups.sh '
 jobsub_max_joblog_size = 5000000
 jobsub_max_joblog_tail_size = 4000000
@@ -52,15 +68,26 @@ jobsub_max_joblog_head_size = 1000000
 site_ignore_list = 'Fermigrid fcdfosgt2 fcdfosgt3'
 default_voms_role = Analysis
 krbrefresh_query_format = ' -af:, "strcat(jobsub_group,string(\".\"),owner)" x509userproxysubject x509userproxy -constraint "JobUniverse=?=5&&X509UserProxySubject=!=UNDEFINED" '
-#uncomment if condor_version > 8.5
-#condor_q_extra_flags = -allusers -nobatch
+condor_q_extra_flags = -allusers -nobatch
 requirements = 'target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2'
+;;metric used to choose least loaded schedd to submit to
+;;good choices are TotalRunningJobs, RecentDaemonCoreDutyCycle, TotalJobAds
+schedd_load_metric = TotalRunningJobs
+schedd_constraint=stringListMember(name,"jobsub01.fnal.gov,jobsub02.fnal.gov,<%= scope.lookupvar('::fqdn') %>")
+vo_constraint = '%(schedd_constraint)s&&(supportedvolist=?=Null || stringlistimember("{0}",supportedvolist)=?=true)'
+downtime_constraint = '(InDownTime =!= True)&&(InDownTime =!= "True") && %(schedd_constraint)s'
 
+;;location that client uploads dropbox files to via ifdh
+;;jobs on worker nodes then download these files via ifdh
+dropbox_location = /pnfs/%%s/scratch/jobsub_stage
+;;max size of files moved by above method
+dropbox_max_size = 2147483648
+
+[accel]
 [admx]
 [annie]
 sandbox_readable_by_group = True
 [argoneut]
-[captmnv]
 [cdf]
 voms = cdf:/cdf
 transfer_krbcc_to_job = True
@@ -75,77 +102,94 @@ default_output_host = fcdflnxgpvm01.fnal.gov
 [coupp]
 [darkside]
 [des]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
 voms = des:/des
 [dune]
 voms = dune:/dune
-group_superusers = 'anorman trj'
+group_superusers = 'anorman schellma trj'
 sandbox_readable_by_group = True
+hash_nondefault_proxy = True
 [dzero]
 voms = dzero:/dzero/users
 transfer_krbcc_to_job = True
 sub_group_pattern = dzero/users
+[ebd]
+[egp]
 [fermilab]
 voms = fermilab:/fermilab
+dropbox_location = /pnfs/fermigrid/volatile/fermilab/jobsub_stage
 [genie]
 [gm2]
 sandbox_readable_by_group = True
 [icarus]
-[lar1]
-[lar1nd]
+group_superusers = 'wospakrk'
 [lariat]
 [lsst]
 voms = lsst:/lsst
 [marsaccel]
+dropbox_location = /pnfs/mars/marsaccel/scratch/jobsub_stage
 voms = fermilab:/fermilab/mars/accel
 sub_group_pattern = mars/accel
 [marsgm2]
+dropbox_location = /pnfs/mars/marsgm2/scratch/jobsub_stage
 voms = fermilab:/fermilab/mars/gm2
 sub_group_pattern = mars/gm2
 [marslbne]
+dropbox_location = /pnfs/mars/marslbne/scratch/jobsub_stage
 voms = fermilab:/fermilab/mars/lbne
 sub_group_pattern = mars/lbne
 [marsmu2e]
+dropbox_location = /pnfs/mars/marsmu2e/scratch/jobsub_stage
 voms = fermilab:/fermilab/mars/mu2e
 sub_group_pattern = mars/mu2e
 ;set_up_ifdh = True
 [minerva]
-group_superusers = 'rodriges drut1186 drimal jyhan'
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
+group_superusers = 'rodriges drut1186 drimal jyhan xlu'
 [miniboone]
 [minos]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
 sandbox_readable_by_group = True
 [mu2e]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
 sandbox_readable_by_group = True
 ;set_up_ifdh = True
 group_superusers = 'kutschke gandr rlc'
+hash_nondefault_proxy = True
+[next]
 [numix]
 [noble]
 [nova]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
 group_superusers = 'dbox jwolcott karlwarb'
 sandbox_readable_by_group = True
 ;;Should be set to 'True' for groups that use Production role but do not use
 ;;managed proxies distribued by discompsupp
 hash_nondefault_proxy = True
+[miniboone]
 [patriot]
 [sbnd]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
+group_superusers = 'vito dbrailsf'
 [seaquest]
+dropbox_location = /pnfs/e906/scratch/jobsub_stage
 [test]
 [uboone]
+dropbox_location = /pnfs/%%s/resilient/jobsub_stage
 sandbox_readable_by_group = True
 
 ;;submit_host section
 ;;these will overwrite the experiment settings above
 ;;
-
-
-[<%= scope.lookupvar('::fqdn') %>]
+[htcjsdev01.fnal.gov]
 output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
 ;;max value for jobsub_submit -N
 jobsub_max_cluster_procs = 10000
 
 ;;match to JOB_EXPECTED_MAX_LIFETIME
-;;as of jobsub 1.1.9.1, 'bare' seconds without a unit 
-;;generates a warning on submission so append 's','m','h',or 'd' 
-;;to these numbers 
+;;as of jobsub 1.1.9.1, 'bare' seconds without a unit
+;;generates a warning on submission so append 's','m','h',or 'd'
+;;to these numbers
 ;;6 hours
 job_expected_max_lifetime_short = 3h
 ;;12 hours
@@ -157,13 +201,109 @@ job_expected_max_lifetime_long = 85200s
 job_expected_max_lifetime_default = 8h
 
 
-condor_tmp = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
-condor_exec = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
-history_db = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/history/jobsub_history.db
+condor_tmp = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+condor_exec = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+history_db = /fife/local/scratch/history/jobsub_history.db
 x509_user_proxy = /fife/local/home/rexbatch/.security/${GROUP}/x509cc_${LOGNAME}
-storage_group = <%= scope.lookupvar('jobsub_server::vars::jobsub_group') %>
-supported_groups = 'admx annie argoneut captmnv cdf cdms chips coupp darkside des dune dzero fermilab genie gm2 icarus lar1 lar1nd lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos mu2e numix noble nova patriot sbnd seaquest test uboone'
-supported_roles = 'Analysis Calibration DESGW Data Production Online'
+storage_group = fife
+supported_groups = 'accel admx annie argoneut cdf cdms chips coupp darkside des dune dzero ebd egp fermilab genie gm2 icarus lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos next mu2e numix noble nova patriot sbnd seaquest test uboone'
+supported_roles = 'Analysis Calibration DESGW Data MARS Production Online'
+transfer_wrapfile = True
+always_run_on_grid = True
+has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER
+default_grid_site = False
+
+[htcjsdev02.fnal.gov]
+output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
+;;max value for jobsub_submit -N
+jobsub_max_cluster_procs = 10000
+
+;;match to JOB_EXPECTED_MAX_LIFETIME
+;;as of jobsub 1.1.9.1, 'bare' seconds without a unit
+;;generates a warning on submission so append 's','m','h',or 'd'
+;;to these numbers
+;;6 hours
+job_expected_max_lifetime_short = 3h
+;;12 hours
+job_expected_max_lifetime_medium = 8h
+;;23 hours 40 minutes
+;;same as 1420m or 85200s
+job_expected_max_lifetime_long = 85200s
+;; default - 23 hours 40 minutes
+job_expected_max_lifetime_default = 8h
+
+
+condor_tmp = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+condor_exec = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+history_db = /fife/local/scratch/history/jobsub_history.db
+x509_user_proxy = /fife/local/home/rexbatch/.security/${GROUP}/x509cc_${LOGNAME}
+storage_group = fife
+supported_groups = 'accel admx annie argoneut cdf cdms chips coupp darkside des dune dzero ebd egp fermilab genie gm2 icarus lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos next mu2e numix noble nova patriot sbnd seaquest test uboone'
+supported_roles = 'Analysis Calibration DESGW Data MARS Production Online'
+transfer_wrapfile = True
+always_run_on_grid = True
+has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER
+default_grid_site = False
+
+[jobsub01.fnal.gov]
+output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
+;;max value for jobsub_submit -N
+jobsub_max_cluster_procs = 10000
+
+;;match to JOB_EXPECTED_MAX_LIFETIME
+;;as of jobsub 1.1.9.1, 'bare' seconds without a unit
+;;generates a warning on submission so append 's','m','h',or 'd'
+;;to these numbers
+;;6 hours
+job_expected_max_lifetime_short = 3h
+;;12 hours
+job_expected_max_lifetime_medium = 8h
+;;23 hours 40 minutes
+;;same as 1420m or 85200s
+job_expected_max_lifetime_long = 85200s
+;; default - 23 hours 40 minutes
+job_expected_max_lifetime_default = 8h
+
+
+condor_tmp = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+condor_exec = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+history_db = /fife/local/scratch/history/jobsub_history.db
+x509_user_proxy = /fife/local/home/rexbatch/.security/${GROUP}/x509cc_${LOGNAME}
+storage_group = fife
+supported_groups = 'accel admx annie argoneut cdf cdms chips coupp darkside des dune dzero ebd egp fermilab genie gm2 icarus lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos next mu2e numix noble nova patriot sbnd seaquest test uboone'
+supported_roles = 'Analysis Calibration DESGW Data MARS Production Online'
+transfer_wrapfile = True
+always_run_on_grid = True
+has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER
+default_grid_site = False
+
+[<%= scope.lookupvar('::fqdn') %>]
+output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
+;;max value for jobsub_submit -N
+jobsub_max_cluster_procs = 10000
+
+;;match to JOB_EXPECTED_MAX_LIFETIME
+;;as of jobsub 1.1.9.1, 'bare' seconds without a unit
+;;generates a warning on submission so append 's','m','h',or 'd'
+;;to these numbers
+;;6 hours
+job_expected_max_lifetime_short = 3h
+;;12 hours
+job_expected_max_lifetime_medium = 8h
+;;23 hours 40 minutes
+;;same as 1420m or 85200s
+job_expected_max_lifetime_long = 85200s
+;; default - 23 hours 40 minutes
+job_expected_max_lifetime_default = 8h
+
+
+condor_tmp = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+condor_exec = /fife/local/scratch/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
+history_db = /fife/local/scratch/history/jobsub_history.db
+x509_user_proxy = /fife/local/home/rexbatch/.security/${GROUP}/x509cc_${LOGNAME}
+storage_group = fife
+supported_groups = 'accel admx annie argoneut cdf cdms chips coupp darkside des dune dzero ebd egp fermilab genie gm2 icarus lariat lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos next mu2e numix noble nova patriot sbnd seaquest test uboone'
+supported_roles = 'Analysis Calibration DESGW Data MARS Production Online'
 transfer_wrapfile = True
 always_run_on_grid = True
 has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER

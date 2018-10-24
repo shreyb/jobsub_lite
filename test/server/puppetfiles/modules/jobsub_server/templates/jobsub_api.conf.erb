@@ -29,13 +29,20 @@ LogLevel info
         Order deny,allow
         Allow from all
     </Directory>
+    <Directory /opt/jobsub>
+      <%= scope.lookupvar('jobsub_server::vars::jobsub_api_ssl_directive') %>
+    </Directory>
+
 
     RequestHeader set Front-End-Https "On"
     RequestHeader set Auth-User "%{SSL_CLIENT_S_DN}s"
     RequestHeader set Remote-User "%{SSL_CLIENT_S_DN}s"
+    RequestHeader set Ssl-Client-I-Dn "%{SSL_CLIENT_I_DN}s"
+    RequestHeader set Ssl-Client-S-Dn "%{SSL_CLIENT_S_DN}s"
+
 
     SSLEngine On
-    SSLProtocol all -SSLv2 -SSLv3
+    SSLProtocol -all +TLSv1.2
     SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:+MEDIUM:+LOW
 
     SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>

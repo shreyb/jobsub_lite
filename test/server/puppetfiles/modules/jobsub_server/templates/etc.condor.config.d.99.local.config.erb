@@ -18,6 +18,13 @@ HAS_USAGE_MODEL = "DEDICATED"
 GLIDEIN_ToDie = 2147483600
 COLLECTOR_PORT = 9615
 QUEUE_SUPER_USERS = root, condor, rexbatch
+ALLOW_READ = *
+ALLOW_WRITE = *
+GSI_DAEMON_CERT = /etc/grid-security/hostcert.pem
+GSI_DAEMON_KEY = /etc/grid-security/hostkey.pem
+GSI_DAEMON_TRUSTED_CA_DIR = /etc/grid-security/certificates
+SEC_DEFAULT_AUTHENTICATION_METHODS = FS,GSI
+
 
 
 

@@ -135,7 +135,7 @@ function cleanup_files {
 PGM=$0
 PID=$$
 job_start=$(date '+%s')
-sleepval = 30
+sleepval = 300
 if [ "$1" != "" ]; then
     sleepval = $1
 fi

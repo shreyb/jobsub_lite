@@ -89,7 +89,7 @@ SSLEngine on
 #   SSL Protocol support:
 # List the enable protocol levels with which clients will be able to
 # connect.  Disable SSLv2 access by default:
-SSLProtocol all -SSLv2 -SSLv3
+SSLProtocol -all +TLSv1.2
 
 #   SSL Cipher Suite:
 # List the ciphers that the client is permitted to negotiate.
@@ -109,21 +109,7 @@ SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
 #   you've both a RSA and a DSA private key you can configure
 #   both in parallel (to also allow the use of DSA ciphers, etc.)
 SSLCertificateKeyFile <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
-
-#   Server Certificate Chain:
-#   Point SSLCertificateChainFile at a file containing the
-#   concatenation of PEM encoded CA certificates which form the
-#   certificate chain for the server certificate. Alternatively
-#   the referenced file can be the same as SSLCertificateFile
-#   when the CA certificates are directly appended to the server
-#   certificate for convinience.
-#SSLCertificateChainFile /etc/pki/tls/certs/server-chain.crt
-
-#   Certificate Authority (CA):
-#   Set the CA certificate verification path where to find CA
-#   certificates for client authentication or alternatively one
-#   huge file containing all of them (file must be PEM encoded)
-#SSLCACertificateFile /etc/pki/tls/certs/ca-bundle.crt
+SSLCACertificatePath  /etc/grid-security/certificates
 
 #   Client Authentication (Type):
 #   Client certificate verification type and depth.  Types are

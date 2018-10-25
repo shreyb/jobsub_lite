@@ -4,7 +4,7 @@ LogLevel info
 
 <VirtualHost *:8443>
     ServerAlias jobsub
-    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
+    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=/opt:/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
     WSGIProcessGroup jobsub
     WSGIScriptAlias / /opt/jobsub/server/webapp/jobsub_api.py
 
@@ -26,11 +26,22 @@ LogLevel info
             SetHandler None
     </Location>
     <Directory /var/www/html/static>
-        Order deny,allow
-        Allow from all
+        <IfVersion < 2.4>
+          Order allow,deny
+          Allow from all
+        </IfVersion>
+        <IfVersion >= 2.4>
+          Require all granted
+        </IfVersion>
     </Directory>
     <Directory /opt/jobsub>
-      <%= scope.lookupvar('jobsub_server::vars::jobsub_api_ssl_directive') %>
+        <IfVersion < 2.4>
+          Order allow,deny
+          Allow from all
+        </IfVersion>
+        <IfVersion >= 2.4>
+          Require all granted
+        </IfVersion>
     </Directory>
 
 

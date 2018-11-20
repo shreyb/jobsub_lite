@@ -239,6 +239,8 @@ def parse_opts(argv):
 
 
     if submit_config:
+        classad_val = "--lines '+JOBSUB_JSON_CONFIG_FILE=\"%s\"'" % submit_config
+        argv.insert(1, classad_val)
         fd = open(submit_config)
         sd = json.load(fd)
         fd.close()

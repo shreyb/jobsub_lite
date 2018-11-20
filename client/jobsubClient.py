@@ -22,6 +22,7 @@ import platform
 import json
 import copy
 import traceback
+import optparse
 import pprint
 import constants
 import jobsubClientCredentials

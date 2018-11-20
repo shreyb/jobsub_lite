@@ -1,0 +1,17 @@
+sudo: required
+services:
+- docker
+language:
+- python
+before_install:
+- git clean -f -d
+- docker run --rm  dbox/jobsub-test new_jobsub_branches 10
+- docker ps -a
+- docker run --rm dbox/jobsub-test help
+script:
+- docker run --rm dbox/jobsub-test help
+#after_success:
+#- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#- docker push  dbox/jobsub-test:latest
+#- docker push  dbox/jobsub-test:sl7
+#- docker push  dbox/jobsub-test:sl6

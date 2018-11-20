@@ -200,7 +200,7 @@ def parse_opts(argv):
 
     opt_group.add_option('--jobsub-server',
                          dest='jobsubServer',
-                         action='unique_store',
+                         action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')

@@ -107,7 +107,7 @@ def parse_opts(argv):
     parser.add_option('--archive-format',
                       dest='format',
                       type='string',
-                      action='unique_store',
+                      action='store',
                       metavar='<Archive Format>',
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')

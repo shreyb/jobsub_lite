@@ -223,6 +223,7 @@ class JobSettings(object):
         self.settings['subgroup'] = None
         self.settings['jobsub_max_cluster_procs'] = 10000
         self.settings['job_expected_max_lifetime'] = 21600
+        self.settings['dag_start_memory'] = '100kb'
         self.settings['input_file_classad_list'] = []
         #self.settings['set_expected_max_lifetime'] = None
 
@@ -1343,7 +1344,7 @@ class JobSettings(object):
         f.write("transfer_executable     = True\n")
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
-
+        f.write("request_memory = %s\n" % settings['dag_start_memory'])
         f.write("requirements  = %s\n" % self.condorRequirements())
 
         f.write("queue 1\n")
@@ -1424,6 +1425,7 @@ class JobSettings(object):
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
 
+        f.write("request_memory = %s\n" % settings['dag_start_memory'])
         f.write("requirements  = %s\n" % self.condorRequirements())
 
         f.write("queue 1\n")
@@ -1454,6 +1456,7 @@ class JobSettings(object):
         f.write("transfer_executable     = True\n")
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
+        f.write("request_memory = %s\n" % settings['dag_start_memory'])
         f.write("requirements  = %s\n" % self.condorRequirements())
         f.write("queue 1\n")
 
@@ -1509,6 +1512,7 @@ class JobSettings(object):
         f.write("transfer_executable     = True\n")
         f.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
         self.handleResourceProvides(f)
+        f.write("request_memory = %s\n" % settings['dag_start_memory'])
         f.write("requirements  = %s\n" % self.condorRequirements())
         f.write("queue 1\n")
 

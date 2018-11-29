@@ -20,6 +20,7 @@ import traceback
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
+from jobsubClient import JobsubClientOption 
 from jobsubClient import version_string
 from jobsubClient import http_code_to_rc
 from jobsubClient import jid_callback
@@ -51,6 +52,7 @@ def parse_opts(argv):
     epi_text += """wiki/Frequently_Asked_Questions"""
 
     parser = optparse.OptionParser(usage=usage,
+                                   option_class=JobsubClientOption,
                                    version=version_string(),
                                    conflict_handler="resolve",
                                    epilog=epi_text)
@@ -61,7 +63,7 @@ def parse_opts(argv):
     opt_group.add_option('-G', '--group',
                          dest='acctGroup',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
                          help="".join(['Group/Experiment/Subgroup ',
@@ -79,7 +81,7 @@ def parse_opts(argv):
     opt_group.add_option('--role',
                          dest='acctRole',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          metavar='<VOMS Role>',
                          default=None,
                          help='VOMS Role for priorities and accounting')
@@ -118,7 +120,7 @@ def parse_opts(argv):
     opt_group.add_option('--user',
                          dest='uid',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          default=None,
                          metavar='<user ID>',
                          help='release all jobs with this uid ')

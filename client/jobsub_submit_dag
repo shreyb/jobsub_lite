@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
+from jobsubClient import JobsubClientOption 
 from jobsubClient import version_string
 from jobsubClient import version_string
 from jobsubClient import http_code_to_rc
@@ -40,7 +41,7 @@ def split_client_server_args(parser, argv):
 
         if opt:
             cli_argv.append(argv[i])
-            if opt.action in optparse.Option.TYPED_ACTIONS:
+            if opt.action in JobsubClientOption.TYPED_ACTIONS:
                 try:
                     cli_argv.append(argv[i+1])
                     i += 1
@@ -106,6 +107,7 @@ def parse_server_args(option, opt_str, value, parser):
 def parse_opts(argv):
     usage = '%prog [Client Options] [Server Options] file://user_script \n\nProvide --group and --jobsub-server to see full help'
     parser = optparse.OptionParser(usage=usage,
+                                   option_class=JobsubClientOption,
                                    version=version_string(),
                                    add_help_option=False,
                                    conflict_handler="resolve",
@@ -117,7 +119,7 @@ def parse_opts(argv):
     opt_group.add_option('-G', '--group',
                          dest='acctGroup',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          default=os.environ.get('JOBSUB_GROUP'),
                          metavar='<Group/Experiment/Subgroup>',
                          help='Group/Experiment/Subgroup for priorities and accounting')
@@ -126,7 +128,7 @@ def parse_opts(argv):
     opt_group.add_option('--role',
                          dest='acctRole',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          metavar='<VOMS Role>',
                          default=None,
                          help='VOMS Role for priorities and accounting')

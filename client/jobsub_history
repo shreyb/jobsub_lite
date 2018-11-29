@@ -23,6 +23,7 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
+from jobsubClient import JobsubClientOption
 from jobsubClient import version_string
 from jobsubClient import jid_callback
 from jobsubClient import date_callback
@@ -46,6 +47,7 @@ def required_args_present(options):
 def parse_opts(argv):
     usage = '%prog [Client Options]'
     parser = optparse.OptionParser(usage=usage,
+                                   option_class=JobsubClientOption,
                                    version=version_string(),
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: --group  .Please direct questions, comments, or problems to the service desk")
@@ -56,7 +58,7 @@ def parse_opts(argv):
     opt_group.add_option('-G', '--group',
                          dest='acctGroup',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
@@ -72,7 +74,7 @@ def parse_opts(argv):
     opt_group.add_option('--user',
                          dest='histUser',
                          type='string',
-                         action='store',
+                         action='unique_store',
                          metavar='<uid>',
                          default=None,
                          help='username to look at history of')

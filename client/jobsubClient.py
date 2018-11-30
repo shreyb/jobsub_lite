@@ -1628,10 +1628,9 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     orig_dir = os.getcwd()
     logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
                       (tar_file, tar_path, orig_dir))
-    if tar_type == "tgz":
-        tar = tarfile.open(tar_file, 'w:gz')
-    else:
-        tar = tarfile.open(tar_file, 'w:bz2')
+    temp_name = tempfile.mktemp()
+
+    tar = tarfile.open(temp_name, 'w')
 
     # dont tar old copies of tarball into new tarball
     if tar_file not in reject_list:
@@ -1669,6 +1668,11 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
                 except Exception:
                     failed_file_list.append(fname)
     tar.close()
+    cmd1 = "gzip -n %s" % temp_name
+    subprocessSupport.iexe_cmd(cmd1)
+    gzip_file = "%s.gz" % temp_name
+    tar_file = os.path.join(orig_dir, tar_file)
+    os.rename(gzip_file, tar_file)
     os.chdir(orig_dir)
     if failed_file_list:
         for fname in failed_file_list:

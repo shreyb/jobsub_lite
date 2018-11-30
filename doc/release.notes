@@ -5,10 +5,11 @@ v1.2.9
 
 Client
 -------
+* Feature  21214  add json-config filename to condor classad when submitting if
+                  one is used
 
 Server
 ------
-
 * Bug      21440  Make the dagBegins use less memory
                   New jobsub.ini parameter in [default]:
                   dag_start_memory = (something) to change default from 100kb

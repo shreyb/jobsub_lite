@@ -14,6 +14,7 @@ class jobsub_server::files{
   $jobsub_git_dir = $jobsub_server::vars::jobsub_git_dir
   $jobsub_cert = $jobsub_server::vars::jobsub_cert
   $jobsub_key = $jobsub_server::vars::jobsub_key
+  $allow_proxy_line = $jobsub_server::vars::allow_proxy_line
   $jenkins_user = $jobsub_server::vars::jenkins_user
   $jenkins_home = $jobsub_server::vars::jenkins_home
   $jenkins_cert = $jobsub_server::vars::jenkins_cert
@@ -25,7 +26,6 @@ class jobsub_server::files{
   $esg = '/etc/grid-security'
   exec { 'setupCA':
     command => '/usr/sbin/osg-ca-manage setupCA --location root --url osg',
-    require => [ Package['osg-ca-scripts'] ],
   }
   
   exec { 'makebasedir':
@@ -164,6 +164,13 @@ class jobsub_server::files{
     mode   => '0755'
   }
 
+  file { '/var/lib/jobsub/ferry':
+    ensure => directory,
+    owner  => $jobsub_user,
+    group  => $jobsub_group,
+    mode   => '0755'
+  }
+
   file { '/var/lib/jobsub/tmp':
     ensure => directory,
     owner  => $jobsub_user,
@@ -258,7 +265,7 @@ class jobsub_server::files{
     'allow_proxy_certs':
     ensure => 'present',
     path   => '/etc/sysconfig/httpd',
-    line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+    line   => $allow_proxy_line
   }
   file_line {
     'sudoers':
@@ -347,11 +354,6 @@ class jobsub_server::files{
     content => template('jobsub_server/jobsub_api.conf.erb'),
   }
 
-  file { '/etc/lcmaps.db':
-    ensure  => file,
-    mode    => '0644',
-    content => template('jobsub_server/lcmaps.db.erb')
-  }
 
 #     file { '/etc/sysconfig/jenkins':
 #       ensure  => file,
@@ -410,14 +412,5 @@ class jobsub_server::files{
     mode   => '0744'
   }
 
-  file {'/etc/lcmaps':
-    ensure => 'directory',
-    mode   => '0755'
-  }
 
-  file { '/etc/lcmaps/lcmaps.db':
-    ensure  => 'link',
-    target  => '/etc/lcmaps.db',
-    require => Package['lcmaps-plugins-gums-client']
-  }
 }

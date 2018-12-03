@@ -43,15 +43,19 @@ class jobsub_server::vars{
         $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm'
         $wget_opt = ''
         $yum_priorities = 'yum-plugin-priorities'
+        $jobsub_api_ssl_directive = 'Allow from all'
+        $allow_proxy_line = 'export OPENSSL_ALLOW_PROXY_CERTS=1'
       }
       '7' : {
         $ups_flavor = 'Linux64bit+3.10-2.17'
         $epel_release = 'epel-release-7'
         $epel_url = 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
         $osg_release = 'osg-release.noarch'
-        $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm'
+        $osg_url = 'https://repo.opensciencegrid.org/osg/3.4/osg-3.4-el7-release-latest.rpm'
         $wget_opt = ''
         $yum_priorities = 'yum-plugin-priorities'
+        $jobsub_api_ssl_directive = 'Require all granted'
+        $allow_proxy_line = 'OPENSSL_ALLOW_PROXY_CERTS=1'
       }
       default: {
         $ups_flavor = 'NULL'

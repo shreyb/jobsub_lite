@@ -22,15 +22,13 @@ fi
 export REMOTE_HOST=$1
 export REMOTE_SCRIPT=jobsub_host_puppet_apply.sh
 puppet module build jobsub_server
-scp jobsub_server/pkg/dbox-jobsub_server-0.0.1.tar.gz root@${REMOTE_HOST}:dbox-jobsub_server-0.0.1.tar.gz
-echo "puppet module list | grep dbox-jobsub_server" > $REMOTE_SCRIPT
-echo "if [ \$? -eq 0 ]; then" >> $REMOTE_SCRIPT
-echo "    puppet module uninstall dbox-jobsub_server" >> $REMOTE_SCRIPT
-echo "fi" >> $REMOTE_SCRIPT
-echo "puppet module install dbox-jobsub_server-0.0.1.tar.gz" >>$REMOTE_SCRIPT
+scp jobsub_server/pkg/gwms-jobsub_server-0.0.1.tar.gz root@${REMOTE_HOST}:gwms-jobsub_server-0.0.1.tar.gz
+echo "for M in \$(puppet module list | grep jobsub_server | awk '{print \$2}'); do" > $REMOTE_SCRIPT
+echo "    puppet module uninstall \$M" >> $REMOTE_SCRIPT
+echo "done" >> $REMOTE_SCRIPT
+echo "puppet module install gwms-jobsub_server-0.0.1.tar.gz" >>$REMOTE_SCRIPT
 echo "puppet apply -e \"class { 'jobsub_server' : }\"" >> $REMOTE_SCRIPT
 echo "" >> $REMOTE_SCRIPT
 scp $REMOTE_SCRIPT root@${REMOTE_HOST}:$REMOTE_SCRIPT
-ssh root@${REMOTE_HOST} bash $REMOTE_SCRIPT
+ssh -t root@${REMOTE_HOST} bash $REMOTE_SCRIPT
 rm $REMOTE_SCRIPT
-ssh rexbatch@$REMOTE_HOST bash sync_cmd jobsub01.fnal.gov

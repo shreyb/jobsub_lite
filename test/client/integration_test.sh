@@ -29,7 +29,7 @@ else
 fi
 }
 
-
+export SKIP_CDF_TEST=True
 export SERVER=$1
 if [ -e "$2" ]; then
     source $2
@@ -46,6 +46,8 @@ if [[ "$GROUP" = "" && "$JOBSUB_GROUP" = "" ]]; then
     export GROUP=nova
 fi
 if [ "$GROUP" = "cdf" ]; then
+    echo "group cdf testing is not supported"
+    exit 1
     export SUBMIT_FLAGS=" $SUBMIT_FLAGS --tar_file_name dropbox://junk.tgz -N 2 "
 fi
 if [ "$GROUP" != "" ]; then
@@ -154,12 +156,14 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
 fi
 #hack hack hack, very few people can run cdf tests 
 #see INC000000898600
+export SKIP_CDF_TEST=True
 if [ "$SKIP_CDF_TEST" = "" ]; then
     echo "willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey " | grep $USER > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         export SKIP_CDF_TEST="YES"
     fi
 fi
+export SKIP_CDF_TEST=True
 if [ "$SKIP_CDF_TEST" = "" ]; then
     lg_echo testing cdf sam job
     unset JOBSUB_SETUP_SOURCED

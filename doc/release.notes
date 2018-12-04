@@ -5,6 +5,9 @@ v1.2.9
 
 Client
 -------
+* Bug      21031  --group --user and other client options that should only 
+                  occur once are checked and flagged as an error if multiples
+
 * Feature  21214  add json-config filename to condor classad when submitting if
                   one is used
 

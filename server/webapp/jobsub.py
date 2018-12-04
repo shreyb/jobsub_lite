@@ -249,6 +249,8 @@ def get_dropbox_location(acctgroup):
        uses, return a string
     """
     r_code = None 
+    if not is_supported_accountinggroup(acctgroup):
+        return r_code
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_location')

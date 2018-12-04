@@ -676,7 +676,7 @@ class JobSubClient(object):
         return http_code
 
     def changeJobState(self, url, http_custom_request, post_data=None,
-                       ssl_verifyhost=False, timeout=None):
+                       ssl_verifyhost=False, connect_timeout=None):
         """
         Generic API to perform job actions like remove/hold/release
         """
@@ -701,7 +701,7 @@ class JobSubClient(object):
                 logSupport.dprint(err)
                 raise JobSubClientError(err)
             else:
-                curl.setopt(curl.TIMEOUT, _timeout)
+                curl.setopt(curl.CONNECTTIMEOUT, _timeout)
 
         http_code = 200
         response_time = 0

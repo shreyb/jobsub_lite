@@ -691,13 +691,13 @@ class JobSubClient(object):
             curl.setopt(curl.HTTPPOST, post_data)
         if not ssl_verifyhost:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
-        if timeout is not None:
+        if connect_timeout is not None:
             try:
-                _timeout = int(timeout)
+                _timeout = int(connect_timeout)
             except ValueError:
                 err = "timeout %s is not valid type (is %s, should be " +\
                 " %s "
-                err = err % (timeout, type(timeout), "int")
+                err = err % (connect_timeout, type(connect_timeout), "int")
                 logSupport.dprint(err)
                 raise JobSubClientError(err)
             else:
@@ -1206,7 +1206,7 @@ class JobSubClient(object):
         if self.better_analyze:
             return self.changeJobState(url=list_url, 
                                        http_custom_request='GET',
-                                       timeout=300)
+                                       connect_timeout=300)
 
         return self.changeJobState(list_url, 'GET')
 

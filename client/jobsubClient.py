@@ -1206,7 +1206,7 @@ class JobSubClient(object):
         if self.better_analyze:
             return self.changeJobState(url=list_url, 
                                        http_custom_request='GET',
-                                       connect_timeout=300)
+                                       connect_timeout=constants.JOBSUB_BETTER_ANALYZE_CONNECTTIMEOUT)
 
         return self.changeJobState(list_url, 'GET')
 

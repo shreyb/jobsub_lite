@@ -706,7 +706,7 @@ class JobSubClient(object):
         return http_code
 
     def changeJobState(self, url, http_custom_request, post_data=None,
-                       ssl_verifyhost=False):
+                       ssl_verifyhost=False, connect_timeout=None):
         """
         Generic API to perform job actions like remove/hold/release
         """
@@ -721,6 +721,17 @@ class JobSubClient(object):
             curl.setopt(curl.HTTPPOST, post_data)
         if not ssl_verifyhost:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
+        if connect_timeout is not None:
+            try:
+                _timeout = int(connect_timeout)
+            except ValueError:
+                err = "timeout %s is not valid type (is %s, should be " +\
+                " %s "
+                err = err % (connect_timeout, type(connect_timeout), "int")
+                logSupport.dprint(err)
+                raise JobSubClientError(err)
+            else:
+                curl.setopt(curl.CONNECTTIMEOUT, _timeout)
 
         http_code = 200
         response_time = 0
@@ -1220,6 +1231,13 @@ class JobSubClient(object):
 
         if outFormat is not None:
             list_url = "%s%s/" % (list_url, outFormat)
+
+        # We expect better-analyze queries to take longer, so give it 5 min
+        if self.better_analyze:
+            return self.changeJobState(url=list_url, 
+                                       http_custom_request='GET',
+                                       connect_timeout=constants.JOBSUB_BETTER_ANALYZE_CONNECTTIMEOUT)
+
         return self.changeJobState(list_url, 'GET')
 
     def requiresFileUpload(self, uri):

@@ -11,6 +11,8 @@ Client
 * Feature  21214  add json-config filename to condor classad when submitting if
                   one is used
 
+* Bug      21444   client times out on jobsub_q --better-analyze
+
 Server
 ------
 * Bug      20496  Handle case where there are no jobs in the queue differently 

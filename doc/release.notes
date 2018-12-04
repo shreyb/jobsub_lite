@@ -10,6 +10,8 @@ Client
 
 Server
 ------
+* Bug      20496  Handle case where there are no jobs in the queue differently 
+                  than a failure to contact server
 * Bug      20659  Change tarball creation algorithm to gzip from bzip as bzip
                   makes for slow extractions on worker nodes
 

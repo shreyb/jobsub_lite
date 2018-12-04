@@ -22,6 +22,7 @@ import platform
 import json
 import copy
 import traceback
+import optparse
 import pprint
 import constants
 import jobsubClientCredentials
@@ -68,6 +69,35 @@ class JobSubClientSubmissionError(Exception):
     def __init__(self, errMsg="JobSub remote submission failed."):
         logSupport.dprint(traceback.format_exc())
         sys.exit(errMsg)
+
+
+# This is a special class to pass all options from the client through.  We're 
+# adding an action, "unique_store", that acts like "store", but checks if the 
+# key has already been set yet.
+# Adapted from https://stackoverflow.com/questions/23032514/argparse-disable-same-argument-occurences 
+# and optparse docs
+class JobsubClientOption(optparse.Option):
+    
+    # Add unique_store to various ACTIONS lists
+    ACTIONS = optparse.Option.ACTIONS + ("unique_store",)
+    STORE_ACTIONS = optparse.Option.STORE_ACTIONS + ("unique_store",)
+    TYPED_ACTIONS = optparse.Option.TYPED_ACTIONS + ("unique_store",)
+    ALWAYS_TYPED_ACTIONS = optparse.Option.ALWAYS_TYPED_ACTIONS + ("unique_store",)
+
+    # Override take_action from optparse.Option class to add our case for 
+    # unique_store
+    def take_action(self, action, dest, opt, value, values, parser):
+        if action == 'unique_store':
+            # Is our dest key (getattr(values, key) already set?
+            if values.ensure_value(dest, None) is not None:
+                parser.error(("{0} appears more than once.  Please try " 
+                        "submitting again with only one {0} argument "
+                        "given").format(opt))
+            else:
+                setattr(values, dest, value)
+        else:
+            optparse.Option.take_action(
+                self, action, dest, opt, value, values, parser)
 
 
 class JobSubClient(object):

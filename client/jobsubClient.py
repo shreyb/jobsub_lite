@@ -489,7 +489,10 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         for file_name, key in self.dropbox_uri_map.items():
-            post_data.append((key, (pycurl.FORM_FILE, uri2path(file_name))))
+            post_data = self.post_data_append(post_data,
+                                              key,
+                                              pycurl.FORM_FILE,
+                                              uri2path(file_name))
         curl.setopt(curl.HTTPPOST, post_data)
         response_time = 0
         try:
@@ -567,11 +570,18 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data.append(('jobsub_command',
-                              (pycurl.FORM_FILE, self.job_executable)))
+
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_command',
+                                              pycurl.FORM_FILE,
+                                              self.job_executable)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
-            post_data.append(('jobsub_payload',
-                              (pycurl.FORM_FILE, payloadFileName)))
+
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_payload',
+                                               pycurl.FORM_FILE,
+                                               payloadFileName)
+
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
         http_code = 200
@@ -601,6 +611,18 @@ class JobSubClient(object):
         response.close()
         return http_code
 
+    def post_data_append(self, post_data, payload, fmt, fname):
+        #append payload to HTTP post_data payload
+        #fmt is postdata format
+        #fname is file to append
+        print "appending %s fmt %s to %s"%(fname,fmt,payload)
+        try:
+            assert(os.access(fname, os.R_OK))
+            post_data.append((payload, (fmt, fname)))
+            return post_data
+        except Exception :
+            raise JobSubClientError("error HTTP POSTing %s - Is it readable?" % fname)
+        
     def makeDagPayload(self, infile):
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
@@ -675,8 +697,10 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data.append(('jobsub_command',
-                              (pycurl.FORM_FILE, self.job_executable)))
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_command',
+                                              pycurl.FORM_FILE,
+                                              self.job_executable)
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
 

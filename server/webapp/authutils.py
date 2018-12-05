@@ -314,7 +314,7 @@ def getGridMapFile():
         # fname = "getGridMapFile?unitname=%s" % vo
         # We'll do this substitution here because we're not generating 
         # a file from it anyway
-        fname = api + prs.get('default', 'ferry_getGridMapFile')
+        fname = api + prs.get('default', 'ferry_getGridMapFile'.lower())
         fname = fname.format(vo) 
         dat = _fetch_from_ferry(fname)
         if dat:
@@ -330,8 +330,8 @@ def _fetch_from_ferry(fname):
         url = "%s/%s" % (ferry_url(), fname)
         jcp = JobsubConfigParser()
         jcp_option = 'ferry_%s' % fname
-        if jcp.has_option('default', jcp_option):
-            url += jcp.get('default', jcp_option)
+        if jcp.has_option('default', jcp_option.lower()):
+            url += jcp.get('default', jcp_option.lower())
 #        if fname in ['getVORoleMapFile', 'getGridMapFile']:
 #            url += "?resourcename=fermigrid"
         co = curl_obj()

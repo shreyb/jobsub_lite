@@ -16,6 +16,9 @@ Client
 
 * Bug      21444   client times out on jobsub_q --better-analyze
 
+* Bug      214988   jobsub_submit --tardir not working when /tmp directory mounted
+                   on a different disk than submit_dir
+
 Server
 ------
 * Bug      20496  Handle case where there are no jobs in the queue differently 

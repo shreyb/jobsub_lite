@@ -5,6 +5,9 @@ v1.2.9
 
 Client
 -------
+* Bug      12871  fail with understandable error message if file to be POSTed
+                  to jobsub server is unreadable
+
 * Bug      21031  --group --user and other client options that should only 
                   occur once are checked and flagged as an error if multiples
 

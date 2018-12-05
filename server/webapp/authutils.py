@@ -338,6 +338,7 @@ def _fetch_from_ferry(fname):
         response = cStringIO.StringIO()
         co.setopt(co.WRITEFUNCTION, response.write)
         co.setopt(co.URL, url)
+        logger.log("Calling FERRY url: {0}".format(url))
         co.perform()
         co.close()
         return json.loads(response.getvalue())

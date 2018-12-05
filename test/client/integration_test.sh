@@ -250,6 +250,11 @@ OUTFILE=$1.testlist-sites.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_status.sh  $SERVER >$OUTFILE  2>&1
 pass_or_fail
 
+lg_echo testing clients for repeated input flags  
+OUTFILE=$1.test_client_exit_codes.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_client_exit_codes.sh  $SERVER >$OUTFILE  2>&1
+pass_or_fail
+
 OUTFILE=$1.jobsubjobsections.$OUTGROUP.log
 for JOB in $DAGJID  $MAXCONCURRENTJID ; do
     lg_echo checking $JOB for JobsubJobSections

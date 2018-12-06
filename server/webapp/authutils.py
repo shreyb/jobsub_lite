@@ -163,9 +163,9 @@ def curl_obj():
     curl = pycurl.Curl()
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
     curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
-    curl.setopt(curl.SSLCERT, jcp.get('default','jobsub_cert'))
-    curl.setopt(curl.SSLKEY, jcp.get('default','jobsub_key'))
-    capath = jcp.get('default','ca_path')
+    curl.setopt(curl.SSLCERT, jcp.get('default', 'jobsub_cert'))
+    curl.setopt(curl.SSLKEY, jcp.get('default', 'jobsub_key'))
+    capath = jcp.get('default', 'ca_path')
     if not capath:
         capath = '/etc/grid-security/certificates'
     curl.setopt(curl.CAPATH, capath)
@@ -190,7 +190,6 @@ def invert_rolemap(data):
 def create_uname_fqan_map():
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_uname_fqan_map')
-    # data = json_from_file("getAffiliationMembersRoles")
     data = json_from_file(api)
     d1 = invert_rolemap(data)
     return d1
@@ -233,7 +232,6 @@ def create_dn_user_roles_map():
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_dn_user_roles_map')
     data = json_from_file(api)
-    # data = json_from_file("getGridMapFile")
     d1 = invert_gmap(data)
     return d1
 
@@ -270,8 +268,7 @@ def create_fqan_user_map():
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_fqan_user_map')
     data = json_from_file(api)
-    # data = json_from_file("getVORoleMapFile")
-    d1,d2 = invert_vo_role_uid_map(data)
+    d1, d2 = invert_vo_role_uid_map(data)
     return d1
 
 def create_vo_role_fqan_map():
@@ -282,8 +279,7 @@ def create_vo_role_fqan_map():
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_vo_role_fqan_map')
     data = json_from_file(api)
-    # data = json_from_file("getVORoleMapFile")
-    d1,d2 = invert_vo_role_uid_map(data)
+    d1, d2 = invert_vo_role_uid_map(data)
     return d2
 
 def fetch_from_ferry(fname):
@@ -304,14 +300,12 @@ def fetch_from_ferry(fname):
         return _fetch_from_ferry(fname)
 
 
-# TODO: Fix this
 def getGridMapFile():
     prs = JobsubConfigParser()
     # We start with the same file as create_dn_user_roles_map()
     api = prs.get('default', 'ferry_dn_user_roles_map')
     gmf = {}
     for vo in prs.supportedGroups():
-        # fname = "getGridMapFile?unitname=%s" % vo
         # We'll do this substitution here because we're not generating 
         # a file from it anyway
         fname = api + prs.get('default', 'ferry_getGridMapFile'.lower())
@@ -332,8 +326,6 @@ def _fetch_from_ferry(fname):
         jcp_option = 'ferry_%s' % fname
         if jcp.has_option('default', jcp_option.lower()):
             url += jcp.get('default', jcp_option.lower())
-#        if fname in ['getVORoleMapFile', 'getGridMapFile']:
-#            url += "?resourcename=fermigrid"
         co = curl_obj()
         response = cStringIO.StringIO()
         co.setopt(co.WRITEFUNCTION, response.write)

@@ -1744,7 +1744,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     subprocessSupport.iexe_cmd(cmd1)
     gzip_file = "%s.gz" % temp_name
     tar_file = os.path.join(orig_dir, tar_file)
-    os.rename(gzip_file, tar_file)
+    shutil.move(gzip_file, tar_file)
     os.chdir(orig_dir)
     if failed_file_list:
         for fname in failed_file_list:

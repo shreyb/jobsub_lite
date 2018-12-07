@@ -5,6 +5,9 @@ v1.2.9
 
 Client
 -------
+* Bug      12871  fail with understandable error message if file to be POSTed
+                  to jobsub server is unreadable
+
 * Bug      21031  --group --user and other client options that should only 
                   occur once are checked and flagged as an error if multiples
 
@@ -12,6 +15,9 @@ Client
                   one is used
 
 * Bug      21444   client times out on jobsub_q --better-analyze
+
+* Bug      214988   jobsub_submit --tardir not working when /tmp directory mounted
+                   on a different disk than submit_dir
 
 Server
 ------

@@ -190,6 +190,8 @@ def invert_rolemap(data):
 def create_uname_fqan_map():
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_uname_fqan_map')
+    if not api:
+        api = 'getAffiliationMembersRoles'
     data = json_from_file(api)
     d1 = invert_rolemap(data)
     return d1
@@ -231,6 +233,8 @@ def create_dn_user_roles_map():
     """
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_dn_user_roles_map')
+    if not api:
+        api = 'getGridMapFile'
     data = json_from_file(api)
     d1 = invert_gmap(data)
     return d1
@@ -267,6 +271,8 @@ def create_fqan_user_map():
     """
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_fqan_user_map')
+    if not api:
+        api = 'getVORoleMapFile'
     data = json_from_file(api)
     d1, d2 = invert_vo_role_uid_map(data)
     return d1
@@ -278,6 +284,8 @@ def create_vo_role_fqan_map():
     """
     jcp = JobsubConfigParser()
     api = jcp.get('default', 'ferry_vo_role_fqan_map')
+    if not api:
+        api = 'getVORoleMapFile'
     data = json_from_file(api)
     d1, d2 = invert_vo_role_uid_map(data)
     return d2
@@ -304,12 +312,16 @@ def getGridMapFile():
     prs = JobsubConfigParser()
     # We start with the same file as create_dn_user_roles_map()
     api = prs.get('default', 'ferry_dn_user_roles_map')
+    if not api:
+        api = 'getGridMapFile'
     gmf = {}
     for vo in prs.supportedGroups():
         # We'll do this substitution here because we're not generating 
         # a file from it anyway
-        fname = api + prs.get('default', 'ferry_getGridMapFile'.lower())
-        fname = fname.format(vo) 
+        _append = prs.get('default', 'ferry_getGridMapFile'.lower())
+        fname = (api + _append.format(vo)) if _append else api
+        # Note that if _append is None, we will save all the grid map file
+        # data in each vo key
         dat = _fetch_from_ferry(fname)
         if dat:
             gmf[vo] = dat

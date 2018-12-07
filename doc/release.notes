@@ -26,6 +26,8 @@ Server
 * Bug      20659  Change tarball creation algorithm to gzip from bzip as bzip
                   makes for slow extractions on worker nodes
 
+* Feature  20874  Ferry APIS/URLS should be read from a config file
+
 * Bug      21440  Make the dagBegins use less memory
                   New jobsub.ini parameter in [default]:
                   dag_start_memory = (something) to change default from 100kb

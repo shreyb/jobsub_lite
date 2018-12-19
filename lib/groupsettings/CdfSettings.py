@@ -237,7 +237,7 @@ class CdfSettings(JobSettings):
             $cpy_out
             cpy_stat=$?
             """,
-            """exiting with status $cpy_stat"  """,
+            """echo "exiting with status $cpy_stat"  """,
             """exit $cpy_stat""",
         ]
         f = open(settings['wrapfile'], 'a')

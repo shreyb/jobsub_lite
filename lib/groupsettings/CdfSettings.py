@@ -223,7 +223,7 @@ class CdfSettings(JobSettings):
             """,
             """done""",
             """if [ "$cpy_stat" != "0" ]; then """,
-            """  echo "$cpy_out failed, exiting with status $cpy_stat  """,
+            """  echo "$cpy_out failed, exiting with status $cpy_stat"  """,
             """  exit $cpy_stat""",
             """fi """
         ]

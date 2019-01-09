@@ -94,6 +94,7 @@ gCMD3="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT3 \
+    --outLocation '/pnfs/cdf/scratch/$USER/out$.tgz' \
     $SERVER_SPEC \
     --tarFile dropbox://input2.tgz \
     some_subdir/testSAM.sh $ foo bar baz"
@@ -115,6 +116,7 @@ gCMD="$EXEPATH/jobsub_submit $SUBMIT_FLAGS \
     -e IFDH_BASE_URI \
     -G cdf $RESOURCE_PROVIDES \
     -N 3 --generate-email-summary \
+    --outLocation /pnfs/cdf/scratch/$USER/jobsub_out \
     --mail_on_error --maxParallelSec 5 \
     --dataset_definition=$SAM_DATASET \
     --project_name=$SAM_PROJECT3 \

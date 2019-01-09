@@ -31,6 +31,12 @@ Server
 * Bug      21440  Make the dagBegins use less memory
                   New jobsub.ini parameter in [default]:
                   dag_start_memory = (something) to change default from 100kb
+
+* Bug      21572  Extra quote in CdfSettings.py causing ALL CDF jobs to fail
+
+* Bug      21615  CDF wrapper copyback failing if --outLocation is a file as 
+                  opposed to a directory
+ 
 ================================================================================
 v1.2.8.2
 ================================================================================

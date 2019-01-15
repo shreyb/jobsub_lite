@@ -277,7 +277,7 @@ always_run_on_grid = True
 has_usage_model = FERMICLOUD_PRIV1,FERMICLOUD_PRIV,FERMICLOUD_PP_PRIV1,FERMICLOUD_PP_PRIV,FERMICLOUD_PP,FERMICLOUD,OFFSITE,PAID_CLOUD,DEDICATED,OPPORTUNISTIC,SLOTTEST,PAID_CLOUD_TEST,AWS_HEPCLOUD,SLEEPER
 default_grid_site = False
 
-[<%= scope.lookupvar('::fqdn') %>]
+[$HOSTNAME]
 output_files_web_browsable_allowed_types = '.out .err .cmd .sh .log .dag .dot .metrics .sub'
 ;;max value for jobsub_submit -N
 jobsub_max_cluster_procs = 10000

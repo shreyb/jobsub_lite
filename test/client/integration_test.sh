@@ -156,7 +156,7 @@ if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
 fi
 #hack hack hack, very few people can run cdf tests 
 #see INC000000898600
-export SKIP_CDF_TEST=True
+#export SKIP_CDF_TEST=True
 if [ "$SKIP_CDF_TEST" = "" ]; then
     echo "willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey " | grep $USER > /dev/null 2>&1
     if [ $? -ne 0 ]; then

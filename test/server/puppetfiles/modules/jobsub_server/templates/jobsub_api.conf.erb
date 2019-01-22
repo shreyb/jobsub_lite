@@ -43,7 +43,7 @@ LogLevel info
 
     SSLEngine On
     SSLProtocol -all +TLSv1.2
-    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:+MEDIUM:+LOW
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:!MEDIUM:!LOW
 
     SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
     SSLCertificateKeyFile <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>

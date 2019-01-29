@@ -23,7 +23,19 @@ Server
 * Bug      20659  Change tarball creation algorithm to gzip from bzip as bzip
                   makes for slow extractions on worker nodes
 
-* Feature  20874  Ferry APIS/URLS should be read from a config file
+* Feature  20874  Ferry APIS/URLS should be read from a config file.  New entries
+		  in the jobsub.ini configuration file should be the following:
+		  - ferry_uname_fqan_map 
+		  - ferry_dn_user_roles_map
+		  - ferry_fqan_user_map 
+		  - ferry_vo_role_fqan_map 
+
+		  (The following are optional and should be used in conjunction 
+		  with the values of the above keys, like ferry_<value_of_above_key>.
+                  They should be used to add conditional filters to any of the 
+                  above values)
+		  - ferry_getgridmapfile 
+		  - ferry_getvorolemapfile 
 
 * Bug      21440  Make the dagBegins use less memory
                   New jobsub.ini parameter in [default]:

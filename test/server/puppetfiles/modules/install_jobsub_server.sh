@@ -19,6 +19,9 @@ fi
 if [ "$1" = "--help" ]; then
     help
 fi
+#for selinux:
+#puppet module install puppet-selinux
+#puppet apply -e "class { 'selinux' : mode => 'permissive',}"
 export REMOTE_HOST=$1
 export REMOTE_SCRIPT=jobsub_host_puppet_apply.sh
 puppet module build jobsub_server

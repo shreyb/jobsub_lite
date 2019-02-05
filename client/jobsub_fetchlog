@@ -17,7 +17,6 @@ import logSupport
 import constants
 from defaultServer import defaultServer
 from jobsubClient import JobSubClient
-from jobsubClient import JobsubClientOption 
 from jobsubClient import get_client_credentials
 from jobsubClient import print_formatted_response
 from jobsubClient import version_string
@@ -42,7 +41,6 @@ def required_args_present(options):
 
 def parse_opts(argv):
     parser = optparse.OptionParser(usage='%prog [options]',
-                                   option_class=JobsubClientOption,
                                    version=version_string(),
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
@@ -51,7 +49,7 @@ def parse_opts(argv):
     parser.add_option('-G', '--group',
                       dest='acctGroup',
                       type='string',
-                      action='unique_store',
+                      action='store',
                       metavar='<Group/Experiment/Subgroup>',
                       default=os.environ.get('JOBSUB_GROUP'),
                       help='Group/Experiment/Subgroup for priorities and accounting')
@@ -75,7 +73,7 @@ def parse_opts(argv):
     parser.add_option('--timeout',
                       dest='timeout',
                       type='int',
-                      action='unique_store',
+                      action='store',
                       metavar='<Timeout>',
                       default=None,
                       help='Timeout for the operation in sec')
@@ -83,7 +81,7 @@ def parse_opts(argv):
     parser.add_option('--dest-dir', '--unzipdir', '--destdir',
                       dest='destdir',
                       type='string',
-                      action='unique_store',
+                      action='store',
                       metavar='<Dest Dir>',
                       default=None,
                       help='Directory to automatically unarchive logs into')
@@ -91,7 +89,7 @@ def parse_opts(argv):
     parser.add_option('--role',
                       dest='acctRole',
                       type='string',
-                      action='unique_store',
+                      action='store',
                       metavar='<VOMS Role>',
                       default=None,
                       help='VOMS Role for priorities and accounting')
@@ -99,7 +97,7 @@ def parse_opts(argv):
     parser.add_option('--user',
                       dest='user',
                       type='string',
-                      action='unique_store',
+                      action='store',
                       metavar='<user>',
                       default=None,
                       help='VOMS Role for priorities and accounting')

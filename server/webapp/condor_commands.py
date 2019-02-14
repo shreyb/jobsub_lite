@@ -409,8 +409,9 @@ def collector_host():
     return the condor collector host name
     """
     try:
-        hosts, cmd_err = subprocessSupport.iexe_cmd(
-            """condor_status -collector -af Machine""")
+        cmdf = """condor_status -collector -af Machine -constraint '%s'"""
+        cmd = cmdf % collector_constraint()
+        hosts, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
@@ -465,6 +466,13 @@ def condor_q_extra_flags():
     if not cqef:
         cqef = ''
     return cqef
+
+def collector_constraint():
+    jcp = JobsubConfigParser.JobsubConfigParser()
+    cl_constraint = jcp.get('default', 'collector_constraint')
+    if not cl_constraint:
+        cl_constraint = "True"
+    return cl_constraint
 
 def downtime_constraint():
     jcp = JobsubConfigParser.JobsubConfigParser()

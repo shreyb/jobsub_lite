@@ -1,5 +1,52 @@
 
 ================================================================================
+v1.2.9
+================================================================================
+
+Client
+-------
+* Bug      12871  fail with understandable error message if file to be POSTed
+                  to jobsub server is unreadable
+
+* Feature  21214  add json-config filename to condor classad when submitting if
+                  one is used
+
+* Bug      21444   client times out on jobsub_q --better-analyze
+
+* Bug      214988   jobsub_submit --tardir not working when /tmp directory mounted
+                   on a different disk than submit_dir
+
+Server
+------
+* Bug      20496  Handle case where there are no jobs in the queue differently 
+                  than a failure to contact server
+* Bug      20659  Change tarball creation algorithm to gzip from bzip as bzip
+                  makes for slow extractions on worker nodes
+
+* Feature  20874  Ferry APIS/URLS should be read from a config file.  New entries
+		  in the jobsub.ini configuration file should be the following:
+		  - ferry_uname_fqan_map 
+		  - ferry_dn_user_roles_map
+		  - ferry_fqan_user_map 
+		  - ferry_vo_role_fqan_map 
+
+		  (The following are optional and should be used in conjunction 
+		  with the values of the above keys, like ferry_<value_of_above_key>.
+                  They should be used to add conditional filters to any of the 
+                  above values)
+		  - ferry_getgridmapfile 
+		  - ferry_getvorolemapfile 
+
+* Bug      21440  Make the dagBegins use less memory
+                  New jobsub.ini parameter in [default]:
+                  dag_start_memory = (something) to change default from 100kb
+
+* Bug      21572  Extra quote in CdfSettings.py causing ALL CDF jobs to fail
+
+* Bug      21615  CDF wrapper copyback failing if --outLocation is a file as 
+                  opposed to a directory
+ 
+================================================================================
 v1.2.8.2
 ================================================================================
 Client

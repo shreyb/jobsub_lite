@@ -29,17 +29,17 @@ class DropboxUploadListResource(object):
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-        dropbox_uploads = jobsub.get_dropbox_upload_list(acctgroup)
-        if dropbox_uploads == False:
-            cherrypy.response.status = 403
-            return {'err': 'Dropbox location is NOT available for %s'
+        try:
+            dropbox_uploads = jobsub.get_dropbox_upload_list(acctgroup)
+            if dropbox_uploads == False:
+                cherrypy.response.status = 404
+                return {'err': 'Dropbox location is NOT available for %s'
+                    % acctgroup}
+            return {'out': dropbox_uploads}
+        except:
+            cherrypy.response.status = 500 
+            return {'err': 'Error obtaining dropbox upload list for %s'
                 % acctgroup}
-        # Case for if dropbox_uploads is empty
-        elif not dropbox_uploads:
-            cherrypy.response.status = 404
-            return {'err': 'Dropbox upload list is NOT found for %s'
-                % acctgroup}
-        return {'out': dropbox_uploads}
 
     @cherrypy.expose
     @format_response

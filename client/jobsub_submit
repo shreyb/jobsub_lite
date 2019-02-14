@@ -223,6 +223,11 @@ def parse_opts(argv):
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
+    
+    # This bit is just for --json-config since it's treated differently than other args
+    if argv.count("--json-config") > 1:
+        JobSubClientSubmissionError("Only one json config file can be specified.") 
+
 
     # print('1 argv=%s' % argv)
     j = 0
@@ -239,6 +244,8 @@ def parse_opts(argv):
 
 
     if submit_config:
+        classad_val = "--lines '+JOBSUB_JSON_CONFIG_FILE=\"%s\"'" % submit_config
+        argv.insert(1, classad_val)
         fd = open(submit_config)
         sd = json.load(fd)
         fd.close()

@@ -9,11 +9,11 @@
    Nick Palumbo
 
 """
-import cherrypy
 import os
 import getpass
 import traceback
 from distutils import spawn
+import cherrypy
 
 from accounting_group import AccountingGroupsResource
 from queued_jobs import QueuedJobsResource
@@ -68,9 +68,8 @@ class Root(object):
 
             r_code = {'out': out}
             return r_code
-        else:
-            r_code = 'Unsupported method: %s' % cherrypy.request.method
-            return r_code
+        r_code = 'Unsupported method: %s' % cherrypy.request.method
+        return r_code
 
 
 class RDirect(object):
@@ -107,13 +106,13 @@ def create_statedir(log):
             try:
                 cmd = '%s mkdirsAsUser %s %s %s %s' % (
                     exe,
-                    os.path.dirname(dir[0]),
-                    os.path.basename(dir[0]),
+                    os.path.dirname(s_dir[0]),
+                    os.path.basename(s_dir[0]),
                     getpass.getuser(),
                     s_dir[1])
                 out, err = iexe_priv_cmd(cmd)
                 log.error('Created statedir/subdirectories' % s_dir[0])
-            except:
+            except RuntimeError:
                 err = 'Failed creating internal state directory %s' % state_dir
                 log.error(err)
                 log.error(traceback.format_exc())
@@ -124,18 +123,20 @@ def initialize(log):
     create_statedir(log)
 
 
+def set_env(environ, env_var):
+    if environ.get(env_var):
+        os.environ[env_var] = environ[env_var]
+
+
 def application(environ, start_response):
-    os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
-    os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
-    os.environ['JOBSUB_UPS_LOCATION'] = environ['JOBSUB_UPS_LOCATION']
-    os.environ['JOBSUB_CREDENTIALS_DIR'] = \
-        os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
-    os.environ['KCA_DN_PATTERN_LIST'] = environ['KCA_DN_PATTERN_LIST']
-    os.environ['KADMIN_PASSWD_FILE'] = \
-        os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
+    env_vars = ['JOBSUB_INI_FILE', 'JOBSUB_ENV_RUNNER',
+                'JOBSUB_UPS_LOCATION', 'JOBSUB_CREDENTIALS_DIR',
+                'KCA_DN_PATTERN_LIST', 'KADMIN_PASSWD_FILE',
+                'JOBSUB_SERVER_X509_CERT', 'JOBSUB_SERVER_X509_KEY']
+    for env_var in env_vars:
+        set_env(environ, env_var)
+
     os.environ['JOBSUB_SERVER_VERSION'] = "__VERSION__.__RELEASE__"
-    os.environ['JOBSUB_SERVER_X509_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
-    os.environ['JOBSUB_SERVER_X509_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
     if environ.get('JOBSUB_SET_X509_CERT'):
         os.environ['X509_USER_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
         os.environ['X509_USER_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
@@ -156,14 +157,14 @@ def application(environ, start_response):
     cache_on = False
     cache_duration = 120
     try:
-        jcp_c = jcp.get('default','enable_http_cache')
+        jcp_c = jcp.get('default', 'enable_http_cache')
         if jcp_c:
             if jcp_c == True or jcp_c.lower() == 'true':
                 cache_on = True
-        jcp_d = jcp.get('default','http_cache_duration')
+        jcp_d = jcp.get('default', 'http_cache_duration')
         if jcp_d:
             cache_duration = int(jcp_d)
-    except:
+    except RuntimeError:
         pass
 
     cherrypy.config.update({
@@ -172,16 +173,19 @@ def application(environ, start_response):
         'log.error_file': error_log,
         'log.access_file': access_log,
         'tools.caching.on': cache_on,
-        'tools.caching.delay':cache_duration,
+        'tools.caching.delay': cache_duration,
     })
 
-    app.log.error('[%s]: jobsub_api.py starting: JOBSUB_INI_FILE:%s cacheing:%s cache_duration:%s seconds' %
+    fmt_str = """[%s]: jobsub_api.py starting: JOBSUB_INI_FILE:%s """
+    fmt_str += """cacheing:%s cache_duration:%s seconds"""
+    app.log.error(fmt_str %
                   (current_thread().ident,
-                   os.environ.get('JOBSUB_INI_FILE'),cache_on,cache_duration))
+                   os.environ.get('JOBSUB_INI_FILE'), cache_on, cache_duration))
 
     initialize(app.log)
 
     return cherrypy.tree(environ, start_response)
+
 
 if __name__ == '__main__':
     cherrypy.quickstart(ROOTURL, '/jobsub')

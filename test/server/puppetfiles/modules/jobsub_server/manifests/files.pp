@@ -164,6 +164,13 @@ class jobsub_server::files{
     mode   => '0755'
   }
 
+  file { '/var/lib/jobsub/ferry':
+    ensure => directory,
+    owner  => $jobsub_user,
+    group  => $jobsub_group,
+    mode   => '0755'
+  }
+
   file { '/var/lib/jobsub/tmp':
     ensure => directory,
     owner  => $jobsub_user,

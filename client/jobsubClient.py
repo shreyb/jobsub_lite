@@ -22,6 +22,7 @@ import platform
 import json
 import copy
 import traceback
+import optparse
 import pprint
 import constants
 import jobsubClientCredentials
@@ -68,6 +69,7 @@ class JobSubClientSubmissionError(Exception):
     def __init__(self, errMsg="JobSub remote submission failed."):
         logSupport.dprint(traceback.format_exc())
         sys.exit(errMsg)
+
 
 
 class JobSubClient(object):
@@ -459,7 +461,10 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         for file_name, key in self.dropbox_uri_map.items():
-            post_data.append((key, (pycurl.FORM_FILE, uri2path(file_name))))
+            post_data = self.post_data_append(post_data,
+                                              key,
+                                              pycurl.FORM_FILE,
+                                              uri2path(file_name))
         curl.setopt(curl.HTTPPOST, post_data)
         response_time = 0
         try:
@@ -537,11 +542,18 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data.append(('jobsub_command',
-                              (pycurl.FORM_FILE, self.job_executable)))
+
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_command',
+                                              pycurl.FORM_FILE,
+                                              self.job_executable)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
-            post_data.append(('jobsub_payload',
-                              (pycurl.FORM_FILE, payloadFileName)))
+
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_payload',
+                                               pycurl.FORM_FILE,
+                                               payloadFileName)
+
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
         http_code = 200
@@ -571,6 +583,18 @@ class JobSubClient(object):
         response.close()
         return http_code
 
+    def post_data_append(self, post_data, payload, fmt, fname):
+        #append payload to HTTP post_data payload
+        #fmt is postdata format
+        #fname is file to append
+        print "appending %s fmt %s to %s"%(fname,fmt,payload)
+        try:
+            assert(os.access(fname, os.R_OK))
+            post_data.append((payload, (fmt, fname)))
+            return post_data
+        except Exception :
+            raise JobSubClientError("error HTTP POSTing %s - Is it readable?" % fname)
+        
     def makeDagPayload(self, infile):
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
@@ -645,8 +669,10 @@ class JobSubClient(object):
 
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data.append(('jobsub_command',
-                              (pycurl.FORM_FILE, self.job_executable)))
+            post_data = self.post_data_append(post_data,
+                                              'jobsub_command',
+                                              pycurl.FORM_FILE,
+                                              self.job_executable)
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
 
@@ -676,7 +702,7 @@ class JobSubClient(object):
         return http_code
 
     def changeJobState(self, url, http_custom_request, post_data=None,
-                       ssl_verifyhost=False):
+                       ssl_verifyhost=False, connect_timeout=None):
         """
         Generic API to perform job actions like remove/hold/release
         """
@@ -691,6 +717,17 @@ class JobSubClient(object):
             curl.setopt(curl.HTTPPOST, post_data)
         if not ssl_verifyhost:
             curl.setopt(curl.SSL_VERIFYHOST, 0)
+        if connect_timeout is not None:
+            try:
+                _timeout = int(connect_timeout)
+            except ValueError:
+                err = "timeout %s is not valid type (is %s, should be " +\
+                " %s "
+                err = err % (connect_timeout, type(connect_timeout), "int")
+                logSupport.dprint(err)
+                raise JobSubClientError(err)
+            else:
+                curl.setopt(curl.CONNECTTIMEOUT, _timeout)
 
         http_code = 200
         response_time = 0
@@ -1190,6 +1227,13 @@ class JobSubClient(object):
 
         if outFormat is not None:
             list_url = "%s%s/" % (list_url, outFormat)
+
+        # We expect better-analyze queries to take longer, so give it 5 min
+        if self.better_analyze:
+            return self.changeJobState(url=list_url, 
+                                       http_custom_request='GET',
+                                       connect_timeout=constants.JOBSUB_BETTER_ANALYZE_CONNECTTIMEOUT)
+
         return self.changeJobState(list_url, 'GET')
 
     def requiresFileUpload(self, uri):
@@ -1628,10 +1672,9 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     orig_dir = os.getcwd()
     logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
                       (tar_file, tar_path, orig_dir))
-    if tar_type == "tgz":
-        tar = tarfile.open(tar_file, 'w:gz')
-    else:
-        tar = tarfile.open(tar_file, 'w:bz2')
+    temp_name = tempfile.mktemp()
+
+    tar = tarfile.open(temp_name, 'w')
 
     # dont tar old copies of tarball into new tarball
     if tar_file not in reject_list:
@@ -1669,6 +1712,11 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
                 except Exception:
                     failed_file_list.append(fname)
     tar.close()
+    cmd1 = "gzip -n %s" % temp_name
+    subprocessSupport.iexe_cmd(cmd1)
+    gzip_file = "%s.gz" % temp_name
+    tar_file = os.path.join(orig_dir, tar_file)
+    shutil.move(gzip_file, tar_file)
     os.chdir(orig_dir)
     if failed_file_list:
         for fname in failed_file_list:

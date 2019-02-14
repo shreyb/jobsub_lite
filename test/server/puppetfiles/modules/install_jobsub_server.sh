@@ -26,6 +26,10 @@ scp jobsub_server/pkg/gwms-jobsub_server-0.0.1.tar.gz root@${REMOTE_HOST}:gwms-j
 echo "for M in \$(puppet module list | grep jobsub_server | awk '{print \$2}'); do" > $REMOTE_SCRIPT
 echo "    puppet module uninstall \$M" >> $REMOTE_SCRIPT
 echo "done" >> $REMOTE_SCRIPT
+echo "if  which systemctl > /dev/null 2>&1 ; then" >> $REMOTE_SCRIPT
+echo "    puppet module install puppet-selinux" >> $REMOTE_SCRIPT
+echo "    puppet apply -e \"class { 'selinux' : mode => 'permissive',}\"" >> $REMOTE_SCRIPT
+echo "fi" >> $REMOTE_SCRIPT
 echo "puppet module install gwms-jobsub_server-0.0.1.tar.gz" >>$REMOTE_SCRIPT
 echo "puppet apply -e \"class { 'jobsub_server' : }\"" >> $REMOTE_SCRIPT
 echo "" >> $REMOTE_SCRIPT

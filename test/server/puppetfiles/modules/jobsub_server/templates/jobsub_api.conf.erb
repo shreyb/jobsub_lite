@@ -1,23 +1,32 @@
 Listen 8443
 WSGISocketPrefix /opt/jobsub/server/jobsub_api
 LogLevel info
+#comment this out for now as it doesnt work with version<2.4
+#without adding mod_define
+#Define jobsub_dir /opt/jobsub
+#Define jobsub_code_dir ${jobsub_dir}/server/webapp
+#Define jobsub_conf_dir ${jobsub_dir}/server/conf
 
 <VirtualHost *:8443>
     ServerAlias jobsub
-    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=/opt:/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
+    #WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=${jobsub_code_dir}:${jobsub_dir}/lib/JobsubConfigParser:${jobsub_dir}/lib/logger
+    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars::jobsub_group') %> processes=2 threads=25 python-path=/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
     WSGIProcessGroup jobsub
+    #WSGIScriptAlias / ${jobsub_code_dir}/jobsub_api.py
     WSGIScriptAlias / /opt/jobsub/server/webapp/jobsub_api.py
 
+    #SetEnv JOBSUB_INI_FILE ${jobsub_conf_dir}/jobsub.ini
     SetEnv JOBSUB_INI_FILE /opt/jobsub/server/conf/jobsub.ini
-    SetEnv JOBSUB_UPS_LOCATION /fnal/ups/etc/setups.sh
     SetEnv JOBSUB_LOG_DIR /var/log/jobsub
     SetEnv JOBSUB_APP_NAME jobsub
+    #SetEnv JOBSUB_ENV_RUNNER ${jobsub_code_dir}/jobsub_env_runner.sh
     SetEnv JOBSUB_ENV_RUNNER /opt/jobsub/server/webapp/jobsub_env_runner.sh
     SetEnv JOBSUB_CREDENTIALS_DIR /var/lib/jobsub/creds/keytabs
-    SetEnv KADMIN_PASSWD_FILE ~/nope
-    SetEnv KCA_DN_PATTERN_LIST  '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$),^/DC=gov/DC=fnal/O=Fermilab/OU=Robots/CN.*/CN=cron/CN.*/CN=UID:(.*$)'
-    SetEnv JOBSUB_SERVER_X509_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
-    SetEnv JOBSUB_SERVER_X509_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    SetEnv JOBSUB_SERVER_X509_CERT   <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
+    SetEnv JOBSUB_SERVER_X509_KEY   <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    #SetEnv JOBSUB_UPS_LOCATION /take/this/out/now
+    #SetEnv KCA_DN_PATTERN_LIST /take/this/out/now
+    #SetEnv KADMIN_PASSWD_FILE /take/this/out/now
 
     AliasMatch ^/([^/]*\.css) /var/www/html/static/styles/$1
     Alias /static/ /var/www/html/static/
@@ -34,6 +43,7 @@ LogLevel info
           Require all granted
         </IfVersion>
     </Directory>
+    #<Directory ${jobsub_dir}>
     <Directory /opt/jobsub>
         <IfVersion < 2.4>
           Order allow,deny
@@ -54,10 +64,10 @@ LogLevel info
 
     SSLEngine On
     SSLProtocol -all +TLSv1.2
-    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:+MEDIUM:+LOW
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:!MEDIUM:!LOW
 
-    SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
-    SSLCertificateKeyFile <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    SSLCertificateFile <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %> 
+    SSLCertificateKeyFile <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %> 
     SSLCACertificatePath /etc/grid-security/certificates
 
     <Location />

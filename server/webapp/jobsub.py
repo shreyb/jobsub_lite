@@ -17,6 +17,7 @@ import pipes
 import socket
 from distutils import spawn
 import StringIO
+import re
 
 import subprocessSupport
 import condor_commands
@@ -248,6 +249,8 @@ def get_dropbox_location(acctgroup):
        uses, return a string
     """
     r_code = None 
+    if not is_supported_accountinggroup(acctgroup):
+        return r_code
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_location')
@@ -281,11 +284,22 @@ def get_dropbox_upload_list(acctgroup):
     if not dropbox_location:
         return False
 
+    # Error conditions for return from ui_condor_q.  Want to replace this code
+    # when we change ui_condor_q to raise exception properly
+    err_regexes = ['^Traceback \(most recent call last\)\:.+$', 
+            '^HTCondor schedd .+ appears.+']
+    compiled_err_regexes = [re.compile(regex, re.DOTALL) 
+            for regex in err_regexes]
+    
     a_filter = "-constraint '%s' " % get_dropbox_constraint(acctgroup)
     a_key=['PNFS_INPUT_FILES']
 
     dropbox_uploads = condor_commands.ui_condor_q(a_filter=a_filter,
                                                   a_key=a_key)
+
+    for regex in compiled_err_regexes:
+        if regex.match(dropbox_uploads) is not None:
+            raise Exception(dropbox_uploads)
     
     query_rslt = dropbox_uploads.split('\n')
 

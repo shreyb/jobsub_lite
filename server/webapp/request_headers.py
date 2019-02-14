@@ -6,19 +6,22 @@
 import cherrypy
 import logger
 
-
 def slashify(a_dn):
     """
     if a_dn is of the form CN=UID:dbox,CN=Dennis Box,OU=People,yada yada yada
     reformat it and return as
     /yada yada yada/OU=People/CN=Dennis Box/CN=UID:dbox
     """
+    if a_dn is None:
+        return a_dn
     if '/' in a_dn:
         return a_dn
     lst = a_dn.split(',')
     lst.reverse()
     new_dn = '/' + '/'.join(lst)
     return new_dn
+
+
 
 def get_client_dn():
     """

@@ -5,7 +5,7 @@ function help_msg {
   #filename="$(basename $0)"
   cat << EOF
 $filename -i [other options] LOG_DIR
-  Runs the Futurize tests on the current glideinwm subdirectory. No branch is checked out.
+  Runs the Futurize tests on the current jobsub subdirectory. No branch is checked out.
 $filename [options] BRANCH_NAMES LOG_DIR
   Runs Futurize tests in the jobsub repository (a glidienwms subdirectory with the git repository must exist).
   Tests are run on each of the branches in the list. Test results are saved in LOG_DIR

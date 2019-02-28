@@ -11,13 +11,13 @@
 
 import os
 import logging
-import cherrypy
 import pwd
 import pipes
 import socket
 from distutils import spawn
 import StringIO
 import re
+import cherrypy
 
 import subprocessSupport
 import condor_commands
@@ -29,6 +29,7 @@ if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
 else:
     import logger
 
+
 def is_supported_accountinggroup(acctgroup):
     """Is acctgroup configured in jobsub.ini?
     """
@@ -36,8 +37,9 @@ def is_supported_accountinggroup(acctgroup):
     try:
         prs = JobsubConfigParser()
         groups = prs.supportedGroups()
-        logger.log("supported groups:%s accountinggroup:%s" %
-                   (groups, acctgroup))
+        if debug_level():
+            logger.log("supported groups:%s accountinggroup:%s" %
+                      (groups, acctgroup))
         r_code = (acctgroup in groups)
     except:
         logger.log('Failed to get accounting groups: ',
@@ -48,6 +50,18 @@ def is_supported_accountinggroup(acctgroup):
                    logfile='error')
 
     return r_code
+
+
+def debug_level():
+    """return a configurable logging level
+    """
+
+    level = ""
+    prs = JobsubConfigParser()
+    dlvl = prs.get('default', 'log_verbosity')
+    if dlvl:
+        level = dlvl
+    return level
 
 
 def global_superusers():
@@ -64,8 +78,10 @@ def global_superusers():
     if global_susers:
         for itm in global_susers.split():
             g_list.append(itm)
-    logger.log('returning %s' % g_list)
+    if debug_level():
+        logger.log('returning %s' % g_list)
     return g_list
+
 
 def group_superusers(acctgroup):
     """return a list of superusers for acctgroup
@@ -81,23 +97,29 @@ def group_superusers(acctgroup):
     if susers:
         for itm in susers.split():
             g_list.append(itm)
-    logger.log('returning %s' % g_list)
+    if debug_level():
+        logger.log('returning %s' % g_list)
     return g_list
 
 
 def is_superuser_for_group(acctgroup, user):
     """is user 'user' a superuser in acctgroup 'acctgroup'?
     """
-    logger.log('checking if %s in %s is group_superuser' % (user, acctgroup))
+    if debug_level():
+        logger.log('checking if %s in %s is group_superuser' %
+                   (user, acctgroup))
     if is_supported_accountinggroup(acctgroup):
         su_list = group_superusers(acctgroup)
-        logger.log('sulist is %s for %s' % (su_list, acctgroup))
+        if debug_level():
+            logger.log('sulist is %s for %s' % (su_list, acctgroup))
         return user in su_list
     raise Exception('group %s not supported' % acctgroup)
+
 
 def is_global_superuser(user):
     gsu = global_superusers()
     return user in gsu
+
 
 def sandbox_readable_by_group(acctgroup):
     """return True if anyone in acctgroup can read and fetch
@@ -107,7 +129,9 @@ def sandbox_readable_by_group(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'sandbox_readable_by_group')
-        logger.log('sandbox_readable_by_group:%s is %s' % (acctgroup, r_code))
+        if debug_level():
+            logger.log('sandbox_readable_by_group:%s is %s' %
+                       (acctgroup, r_code))
         return r_code
     except:
         logger.log('Failed to get sandbox_readable_by_group: ',
@@ -132,7 +156,9 @@ def sandbox_allowed_browsable_file_types():
                              'output_files_web_browsable_allowed_types')
         if isinstance(extensions, str):
             r_code = extensions.split()
-        logger.log('output_files_web_browsable_allowed_types %s' % (r_code))
+        if debug_level():
+            logger.log('output_files_web_browsable_allowed_types %s' %
+                       (r_code))
         return r_code
     except:
         logger.log('Failed to get output_files_web_browsable_allowed_types: ',
@@ -176,7 +202,8 @@ def default_voms_role(acctgroup="default"):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'default_voms_role')
-        logger.log('default voms role for %s : %s' % (acctgroup, r_code))
+        if debug_level():
+            logger.log('default voms role for %s : %s' % (acctgroup, r_code))
     except:
         logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
                    severity=logging.ERROR,
@@ -208,11 +235,14 @@ def get_dropbox_max_size(acctgroup):
        uses, return a string
     """
     r_code_default = '1073741824'
-    logger.log("default = %s attempting to find dropbox_max_size"%r_code_default)
+    if debug_level():
+        logger.log("default = %s attempting to find dropbox_max_size" %
+                   r_code_default)
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_max_size')
-        logger.log("r_code = %s"%r_code)
+        if debug_level():
+            logger.log("r_code = %s" % r_code)
     except:
         logger.log('Failed to get dropbox_max_size: ',
                    traceback=True,
@@ -230,9 +260,10 @@ def get_dropbox_constraint(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_constraint')
-        logger.log("r_code = %s"%r_code)
         cnstr = r_code % acctgroup
-        logger.log("returning = %s" % cnstr)
+        if debug_level():
+            logger.log("r_code = %s" % r_code)
+            logger.log("returning = %s" % cnstr)
         return cnstr
     except:
         logger.log('Failed to get dropbox_constraint: ',
@@ -243,12 +274,11 @@ def get_dropbox_constraint(acctgroup):
         return cnstr
 
 
-
 def get_dropbox_location(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string
     """
-    r_code = None 
+    r_code = None
     if not is_supported_accountinggroup(acctgroup):
         return r_code
     try:
@@ -263,7 +293,7 @@ def get_dropbox_location(acctgroup):
                 r_code = r_code_sub
             except TypeError:
                 # Substitution failed, so return original r_code
-           	pass
+                pass
     except:
         logger.log('Failed to get dropbox_location: ',
                    traceback=True,
@@ -286,13 +316,13 @@ def get_dropbox_upload_list(acctgroup):
 
     # Error conditions for return from ui_condor_q.  Want to replace this code
     # when we change ui_condor_q to raise exception properly
-    err_regexes = ['^Traceback \(most recent call last\)\:.+$', 
-            '^HTCondor schedd .+ appears.+']
-    compiled_err_regexes = [re.compile(regex, re.DOTALL) 
-            for regex in err_regexes]
-    
+    err_regexes = ['^Traceback \(most recent call last\)\:.+$',
+                   '^HTCondor schedd .+ appears.+']
+    compiled_err_regexes = [re.compile(regex, re.DOTALL)
+                            for regex in err_regexes]
+
     a_filter = "-constraint '%s' " % get_dropbox_constraint(acctgroup)
-    a_key=['PNFS_INPUT_FILES']
+    a_key = ['PNFS_INPUT_FILES']
 
     dropbox_uploads = condor_commands.ui_condor_q(a_filter=a_filter,
                                                   a_key=a_key)
@@ -300,15 +330,15 @@ def get_dropbox_upload_list(acctgroup):
     for regex in compiled_err_regexes:
         if regex.match(dropbox_uploads) is not None:
             raise Exception(dropbox_uploads)
-    
+
     query_rslt = dropbox_uploads.split('\n')
 
     # This should automatically take care of the no-jobs or error case
     for line in query_rslt:
         for item in line.split(','):
-            if dropbox_location in item:    
+            if dropbox_location in item:
                 dropbox_upload_set.add(item)
-    
+
     return list(dropbox_upload_set)
 
 
@@ -334,7 +364,6 @@ def get_authentication_methods(acctgroup):
     return methods
 
 
-
 def get_submit_reject_threshold():
     """return submit_reject_threshold
        from jobsub.ini
@@ -344,8 +373,10 @@ def get_submit_reject_threshold():
     if prs.has_section('default'):
         if prs.has_option('default', 'submit_reject_threshold'):
             sdf = prs.get('default', 'submit_reject_threshold')
-    logger.log('submit_reject_threshold=%s'%sdf)
+    if debug_level():
+        logger.log('submit_reject_threshold=%s' % sdf)
     return float(sdf)
+
 
 def get_command_path_root():
     """return root directory of sandboxes
@@ -374,11 +405,13 @@ def should_transfer_krb5cc(acctgroup):
             can_transfer = prs.get(acctgroup, 'transfer_krbcc_to_job')
             if can_transfer == 'False':
                 can_transfer = False
-    if can_transfer:
-        logger.log("group %s is authorized to transfer krb5 cache" % acctgroup)
-    else:
-        logger.log(
-            "group %s is NOT authorized to transfer krb5 cache" % acctgroup)
+    if debug_level():
+        if can_transfer:
+            logger.log("group %s is authorized to transfer krb5 cache" %
+                       acctgroup)
+        else:
+            logger.log(
+                "group %s is NOT authorized to transfer krb5 cache" % acctgroup)
 
     return can_transfer
 
@@ -472,7 +505,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             workdir_id)
 
         schedd_nm = condor_commands.schedd_name(jobsub_args)
-        recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
+        recent_duty_cycle = float(
+            condor_commands.schedd_recent_duty_cycle(schedd_nm))
         srt = get_submit_reject_threshold()
 
         if recent_duty_cycle > srt:
@@ -502,8 +536,8 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
                 job_submit_dir, 'krb5cc_%s' % username)
 
             copy_file_as_user(src_cache_fname, dst_cache_fname, username)
-            logger.log('Added %s for acctgroup %s to transfer_encrypt_files' %\
-                    (dst_cache_fname, acctgroup))
+            logger.log('Added %s for acctgroup %s to transfer_encrypt_files' %
+                       (dst_cache_fname, acctgroup))
             child_env['ENCRYPT_INPUT_FILES'] = dst_cache_fname
             child_env['KRB5CCNAME'] = dst_cache_fname
 
@@ -623,7 +657,8 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
     # Create the dir as user
     cmd = '%s mkdirsAsUser "%s" "%s" "%s" "%s"' % (exe, base_dir, sub_dirs,
                                                    username, mode)
-    logger.log(cmd)
+    if debug_level():
+        logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
@@ -637,7 +672,8 @@ def move_file_as_user(src, dst, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
-    logger.log(cmd)
+    if debug_level():
+        logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
@@ -650,7 +686,8 @@ def copy_file_as_user(src, dst, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s copyFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
-    logger.log(cmd)
+    if debug_level():
+        logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
@@ -663,7 +700,8 @@ def chown_as_user(path, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s chown "%s" "%s"' % (exe, path, username)
     out = err = ''
-    logger.log(cmd)
+    if debug_level():
+        logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
     except Exception as e:
@@ -679,7 +717,9 @@ def run_cmd_as_user(command, username, child_env={}):
     out = err = ''
     logger.log(cmd)
     try:
-        out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
+        out, err = subprocessSupport.iexe_priv_cmd(cmd,
+                                                   # useShell=True,
+                                                   child_env=child_env,
                                                    username=username)
     except Exception as e:
         err_fmt = 'Error running as user %s using command '
@@ -712,4 +752,3 @@ if __name__ == '__main__':
     # export JOBSUB_USE_FAKE_LOGGER=true
     # possibly export JOBSUB_SUPPRESS_LOG_OUTPUT=true
     print 'put some test code here'
-

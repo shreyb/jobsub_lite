@@ -9,20 +9,19 @@
    Dennis Box
 
 """
-import cherrypy
-import logger
 import logging
 import os
 import time
 import socket
 import sys
+import cherrypy
+import logger
 import subprocessSupport
 from auth import check_auth
 from request_headers import get_client_dn
 from request_headers import uid_from_client_dn
-from jobsub import get_command_path_root
+import jobsub
 from jobsub import sandbox_readable_by_group
-from jobsub import sandbox_allowed_browsable_file_types
 from jobsub import is_superuser_for_group
 from jobsub import is_global_superuser
 from sandbox import make_sandbox_readable
@@ -33,12 +32,13 @@ from format import format_response, rel_link
 class SandboxesResource(object):
 
     def doGET(self, user_id=None, job_id=None, file_id=None, kwargs=None):
-        """ Query for valid sandboxes for given user/acctgroup.  Returns a JSON list object.
+        """ Query for valid sandboxes for given user/acctgroup.
+        Returns a JSON list object.
         API is /jobsub/acctgroups/<grp>/sandboxes/<user_id>/
         """
-        command_path_root = get_command_path_root()
+        command_path_root = jobsub.get_command_path_root()
         if file_id or job_id:
-            allowed_list = sandbox_allowed_browsable_file_types()
+            allowed_list = jobsub.sandbox_allowed_browsable_file_types()
             sandbox_dir = "%s/%s/%s/%s" %\
                 (command_path_root, cherrypy.request.acctgroup, user_id, job_id)
             make_sandbox_readable(sandbox_dir, user_id)
@@ -131,6 +131,12 @@ class SandboxesResource(object):
     @format_response
     @check_auth
     def index(self, acctgroup, **kwargs):
+        if jobsub.debug_level():
+            logger.log('headers %s' % cherrypy.request.headers)
+            logger.log('wsgi_environ %s' % cherrypy.request.wsgi_environ)
+            logger.log('params %s' % cherrypy.request.params)
+            logger.log('namespaces %s' % cherrypy.request.namespaces)
+            logger.log('dir() %s' % dir(cherrypy.request))
         try:
             if kwargs.get('username'):
                 requestor = kwargs.get('username')
@@ -149,8 +155,8 @@ class SandboxesResource(object):
             file_id = kwargs.get('file_id')
             if user_id != requestor:
                 allowed = sandbox_readable_by_group(acctgroup) or \
-                          is_superuser_for_group(acctgroup,requestor) or \
-                          is_global_superuser(requestor)
+                    is_superuser_for_group(acctgroup, requestor) or \
+                    is_global_superuser(requestor)
                 if not allowed:
                     if not user_id:
                         user_id = 'other user'

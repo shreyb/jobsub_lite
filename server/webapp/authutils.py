@@ -142,19 +142,20 @@ class Krb5Ticket(object):
             raise OtherAuthError("%s failed:  %s" % (cmd, sys.exc_info()[1]))
 
 
+FERRY_DAT = {}
 
-FERRY_DAT={}
 
 def ferry_url():
     """ return url for ferry server.  Configured from jobsub.ini
     """
     jcp = JobsubConfigParser()
-    f_server = jcp.get('default','ferry_server')
-    f_port = jcp.get('default','ferry_port')
+    f_server = jcp.get('default', 'ferry_server')
+    f_port = jcp.get('default', 'ferry_port')
     url = "https://%s" % f_server
     if f_port:
         url = "%s:%s" % (url, f_port)
     return url
+
 
 def curl_obj():
     """ return a pycurl object with some prep from jobsub.ini
@@ -169,8 +170,10 @@ def curl_obj():
     if not capath:
         capath = '/etc/grid-security/certificates'
     curl.setopt(curl.CAPATH, capath)
-    logger.log('capath=%s' % capath)
+    if jobsub.log_verbose():
+        logger.log('capath=%s' % capath)
     return curl
+
 
 def invert_rolemap(data):
     """
@@ -186,6 +189,7 @@ def invert_rolemap(data):
             if itm['fqan'] not in i_dat[itm['username']]:
                 i_dat[itm['username']].append(itm['fqan'])
     return i_dat
+
 
 def create_uname_fqan_map():
     jcp = JobsubConfigParser()
@@ -206,17 +210,19 @@ def invert_gmap(data):
     """
     i_dat = {}
     for vo_name in data:
-        #logger.log('checking vo %s' % vo_name)
+        if jobsub.log_verbose():
+            logger.log('checking vo %s' % vo_name)
         vo_dat = data[vo_name]
-        #logger.log('checking vo_dat %s' % vo_dat)
+        if jobsub.log_verbose():
+            logger.log('checking vo_dat %s' % vo_dat)
         for itm in vo_dat:
             if 'ferry_error' in vo_dat:
                 continue
             #logger.log('checking itm %s' % itm)
-            #if isinstance(itm, str):
+            # if isinstance(itm, str):
             #    itm = json.loads(itm)
             if itm['userdn'] not in i_dat:
-                i_dat[itm['userdn']] = {'volist':[],
+                i_dat[itm['userdn']] = {'volist': [],
                                         'mapped_uname':
                                         {'default': itm['mapped_uname']}}
             i_dat[itm['userdn']]['volist'].append(vo_name)
@@ -225,6 +231,7 @@ def invert_gmap(data):
                 i_dat[itm['userdn']]['mapped_uname'][vo_name] = itm['mapped_uname']
 
     return i_dat
+
 
 def create_dn_user_roles_map():
     """
@@ -254,7 +261,7 @@ def invert_vo_role_uid_map(data):
             if fq_parts[1] == 'fermilab':
                 vo = fq_parts[2]
                 if fq_parts[2] == 'mars':
-                    vo = "%s%s" % (fq_parts[2],fq_parts[3])
+                    vo = "%s%s" % (fq_parts[2], fq_parts[3])
             else:
                 vo = fq_parts[1]
             if vo not in fqan_dat:
@@ -263,6 +270,7 @@ def invert_vo_role_uid_map(data):
             fqan_dat[vo][role] = itm['fqan']
 
     return i_dat, fqan_dat
+
 
 def create_fqan_user_map():
     """
@@ -277,6 +285,7 @@ def create_fqan_user_map():
     d1, d2 = invert_vo_role_uid_map(data)
     return d1
 
+
 def create_vo_role_fqan_map():
     """
     create vo_role_fqan_map.json
@@ -289,6 +298,7 @@ def create_vo_role_fqan_map():
     data = json_from_file(api)
     d1, d2 = invert_vo_role_uid_map(data)
     return d2
+
 
 def fetch_from_ferry(fname):
     """ create @param fname : a json file
@@ -316,7 +326,7 @@ def getGridMapFile():
         api = 'getGridMapFile'
     gmf = {}
     for vo in prs.supportedGroups():
-        # We'll do this substitution here because we're not generating 
+        # We'll do this substitution here because we're not generating
         # a file from it anyway
         _append = prs.get('default', 'ferry_getGridMapFile'.lower())
         fname = (api + _append.format(vo)) if _append else api
@@ -374,19 +384,20 @@ def json_from_file(fname):
     if not jpath:
         jpath = '/var/lib/jobsub/ferry'
     jfile = os.path.join(jpath, fname)
-    logger.log('checking for %s'%jfile)
+    if jobsub.log_verbose():
+        logger.log('checking for %s' % jfile)
     dat = None
     if os.path.exists(jfile):
         try:
-            st = os.stat(jfile)  
+            st = os.stat(jfile)
             age = time.time() - st.st_mtime
-            logger.log('age of %s is %s'% (jfile, age))
-            max_age = jcp.get('default','ferry_expire')
+            logger.log('age of %s is %s' % (jfile, age))
+            max_age = jcp.get('default', 'ferry_expire')
             if max_age:
                 max_age = int(max_age)
             else:
                 max_age = 3600
-    
+
             if age > max_age:
                 refresh_ferry_dat(fname, jfile)
             if fname in FERRY_DAT:
@@ -402,6 +413,7 @@ def json_from_file(fname):
     if dat:
         FERRY_DAT[fname] = dat
     return dat
+
 
 def get_voms(acctgroup):
     """get the VOMS string for voms-proxy-init from jobsub.ini config file
@@ -430,7 +442,8 @@ def krbrefresh_query_fmt():
         qf = p.get('default', 'krbrefresh_query_format')
         if qf:
             query_fmt = qf
-    logger.log('query_fmt=%s' % query_fmt)
+    if jobsub.log_verbose():
+        logger.log('query_fmt=%s' % query_fmt)
     return query_fmt
 
 
@@ -447,7 +460,8 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
     """generate a VOMS proxy from x509 cert/key pair
     """
     tmp_proxy_fname = mk_temp_fname(proxy_fname)
-    logger.log("tmp_proxy_fname=%s" % tmp_proxy_fname)
+    if jobsub.log_verbose():
+        logger.log("tmp_proxy_fname=%s" % tmp_proxy_fname)
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
     if not voms_proxy_init_exe:
         err = "Unable to find command 'voms-proxy-init' in the PATH."
@@ -471,7 +485,8 @@ def x509pair_to_vomsproxy(cert, key, proxy_fname, acctgroup, acctrole=None):
             %s -cert %s -key %s""" %\
         (voms_proxy_init_exe, voms_proxy_lifetime,
          voms_attrs, tmp_proxy_fname, cert, key)
-    logger.log(cmd)
+    if jobsub.log_verbose():
+        logger.log(cmd)
     make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname, role=acctrole)
 
 
@@ -553,7 +568,8 @@ def make_proxy_from_cmd(cmd, proxy_fname, tmp_proxy_fname,
             raise
 
     cmd = """%s -all -file %s """ % (voms_proxy_info_exe, tmp_proxy_fname)
-    logger.log(cmd)
+    if jobsub.log_verbose():
+        logger.log(cmd)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         if role:
@@ -691,19 +707,20 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s' % (username, acctrole))
         if acctrole != jobsub.default_voms_role(acctgroup):
-            append_hashes = JobsubConfigParser().get(acctgroup,'hash_nondefault_proxy')
+            append_hashes = JobsubConfigParser().get(acctgroup, 'hash_nondefault_proxy')
             if append_hashes:
                 if not dn:
                     dn = get_client_dn()
                 dn = clean_proxy_dn(dn)
                 dig = hashlib.sha1()
                 dig.update(dn)
-                x509_cache_fname = "%s_%s" % (x509_cache_fname, dig.hexdigest())
-
+                x509_cache_fname = "%s_%s" % (
+                    x509_cache_fname, dig.hexdigest())
 
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s' % username)
-    logger.log('Using x509_proxy_name=%s' % x509_cache_fname)
+    if jobsub.log_verbose():
+        logger.log('Using x509_proxy_name=%s' % x509_cache_fname)
     return x509_cache_fname
 
 
@@ -766,7 +783,8 @@ def needs_refresh(filepath, agelimit=3600):
     """Check if filepath is older than agelimit. If yes,
        filepath needs refreshing
     """
-    logger.log("%s %s" % (filepath, agelimit))
+    if jobsub.log_verbose():
+        logger.log("%s %s" % (filepath, agelimit))
     if not os.path.exists(filepath):
         logger.log("%s does not exist, need to refresh" % filepath)
         return True

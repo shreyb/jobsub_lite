@@ -7,7 +7,6 @@ import base64
 import random
 import os
 import re
-import cherrypy
 import logger
 import logging
 import util
@@ -16,13 +15,10 @@ from datetime import datetime
 from shutil import copyfileobj
 
 from tempfile import NamedTemporaryFile
+import cherrypy
 from auth import check_auth
 from authutils import x509_proxy_fname
-from jobsub import is_supported_accountinggroup
-from jobsub import execute_job_submit_wrapper
-from jobsub import JobsubConfig
-from jobsub import create_dir_as_user
-from jobsub import move_file_as_user
+import jobsub
 from format import format_response
 from condor_commands import constructFilter, ui_condor_q
 from sandbox import SandboxResource
@@ -95,8 +91,9 @@ class AccountJobsResource(object):
         if job_id is None:
             pnfs_list = []
             child_env = os.environ.copy()
-            jobsubConfig = JobsubConfig()
-            logger.log('job.py:doPost:kwargs: %s' % kwargs)
+            jobsubConfig = jobsub.JobsubConfig()
+            if jobsub.log_verbose():
+                logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
             jobsub_client_krb5_principal = kwargs.get(
@@ -135,8 +132,8 @@ class AccountJobsResource(object):
                 child_env['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                 acctgroup, role)
                 # Create the job's working directory as user
-                create_dir_as_user(command_path_user, workdir_id,
-                                   cherrypy.request.username, mode='755')
+                jobsub.create_dir_as_user(command_path_user, workdir_id,
+                                          cherrypy.request.username, mode='755')
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path,
                                                      jobsub_command.filename)
@@ -152,7 +149,7 @@ class AccountJobsResource(object):
                     copyfileobj(jobsub_command.file, tmp_cmd_fd)
 
                     tmp_cmd_fd.close()
-                    move_file_as_user(
+                    jobsub.move_file_as_user(
                         tmp_cmd_fd.name, command_file_path, cherrypy.request.username)
                     # with open(command_file_path, 'wb') as dst_file:
                     #    copyfileobj(jobsub_command.file, dst_file)
@@ -166,7 +163,7 @@ class AccountJobsResource(object):
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                rcode = execute_job_submit_wrapper(
+                rcode = jobsub.execute_job_submit_wrapper(
                     acctgroup=acctgroup, username=cherrypy.request.username,
                     jobsub_args=jobsub_args, workdir_id=workdir_id,
                     role=role, jobsub_client_version=jobsub_client_version,
@@ -209,8 +206,11 @@ class AccountJobsResource(object):
            /jobsub/acctgroups/<group_id>/jobs/
         """
         try:
-            logger.log('job_id=%s ' % (job_id))
-            logger.log('kwargs=%s ' % (kwargs))
+            if jobsub.log_verbose():
+                logger.log('job_id=%s ' % (job_id))
+                logger.log('kwargs=%s ' % (kwargs))
+                logger.log(' dir(request) %s ' % dir(cherrypy.request))
+                logger.log(' headers %s ' % cherrypy.request.headers)
             if not job_id:
                 job_id = kwargs.get('job_id')
             if kwargs.get('role'):
@@ -219,7 +219,7 @@ class AccountJobsResource(object):
                 cherrypy.request.username = kwargs.get('username')
             if kwargs.get('voms_proxy'):
                 cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-            if is_supported_accountinggroup(acctgroup):
+            if jobsub.is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     # create job
                     rcode = self.doPOST(acctgroup, job_id, kwargs)

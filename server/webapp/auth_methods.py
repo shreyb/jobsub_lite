@@ -33,14 +33,21 @@ class AuthMethodsResource(object):
             API is /acctgroups/<group>/authmethods/<method_name>/
         """
         acctgroup = kwargs.get('acctgroup')
-        logger.log('acctgroup=%s' % acctgroup)
+        if jobsub.log_verbose():
+            logger.log('acctgroup=%s' % acctgroup)
         methods = jobsub.get_authentication_methods(acctgroup)
         if not auth_method:
             return {'out': methods}
         elif auth_method in methods:
-            return {'out': '%s is valid for %s' % (auth_method, acctgroup)}
+            stat = '%s is valid for %s' % (auth_method, acctgroup)
+            if jobsub.log_verbose():
+                logger.log(stat)
+            return {'out': stat}
         else:
             cherrypy.response.status = 404
+            stat = '%s is NOT found for %s' % (auth_method, acctgroup)
+            logger.log(stat, severity=logging.ERROR)
+            logger.log(stat, severity=logging.ERROR, logfile='error')
             return {'err': '%s is NOT found for %s' % (auth_method, acctgroup)}
 
     @cherrypy.expose
@@ -49,8 +56,9 @@ class AuthMethodsResource(object):
         """index.html, only GET implemented
         """
         try:
-            logger.log("auth_method %s" % auth_method)
-            logger.log("kwargs %s" % kwargs)
+            if jobsub.log_verbose():
+                logger.log("auth_method %s" % auth_method)
+                logger.log("kwargs %s" % kwargs)
 
             if cherrypy.request.method == 'GET':
                 rc = self.doGET(auth_method, kwargs)

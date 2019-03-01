@@ -37,7 +37,7 @@ def is_supported_accountinggroup(acctgroup):
     try:
         prs = JobsubConfigParser()
         groups = prs.supportedGroups()
-        if debug_level():
+        if log_verbose():
             logger.log("supported groups:%s accountinggroup:%s" %
                       (groups, acctgroup))
         r_code = (acctgroup in groups)
@@ -52,15 +52,19 @@ def is_supported_accountinggroup(acctgroup):
     return r_code
 
 
-def debug_level():
-    """return a configurable logging level
+def log_verbose():
+    """check jobsub.ini for 'log_verbose' entry in 'default'
+       if doesnt exist: return false
+       if exists and == 'False' return false
+       otherwise return true, make debug.log very chatty
     """
 
-    level = ""
+    level = False
     prs = JobsubConfigParser()
-    dlvl = prs.get('default', 'log_verbosity')
+    dlvl = prs.get('default', 'log_verbose')
     if dlvl:
-        level = dlvl
+        if dlvl.lower() != 'false':
+            level = True
     return level
 
 
@@ -78,7 +82,7 @@ def global_superusers():
     if global_susers:
         for itm in global_susers.split():
             g_list.append(itm)
-    if debug_level():
+    if log_verbose():
         logger.log('returning %s' % g_list)
     return g_list
 
@@ -97,7 +101,7 @@ def group_superusers(acctgroup):
     if susers:
         for itm in susers.split():
             g_list.append(itm)
-    if debug_level():
+    if log_verbose():
         logger.log('returning %s' % g_list)
     return g_list
 
@@ -105,12 +109,12 @@ def group_superusers(acctgroup):
 def is_superuser_for_group(acctgroup, user):
     """is user 'user' a superuser in acctgroup 'acctgroup'?
     """
-    if debug_level():
+    if log_verbose():
         logger.log('checking if %s in %s is group_superuser' %
                    (user, acctgroup))
     if is_supported_accountinggroup(acctgroup):
         su_list = group_superusers(acctgroup)
-        if debug_level():
+        if log_verbose():
             logger.log('sulist is %s for %s' % (su_list, acctgroup))
         return user in su_list
     raise Exception('group %s not supported' % acctgroup)
@@ -129,7 +133,7 @@ def sandbox_readable_by_group(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'sandbox_readable_by_group')
-        if debug_level():
+        if log_verbose():
             logger.log('sandbox_readable_by_group:%s is %s' %
                        (acctgroup, r_code))
         return r_code
@@ -156,7 +160,7 @@ def sandbox_allowed_browsable_file_types():
                              'output_files_web_browsable_allowed_types')
         if isinstance(extensions, str):
             r_code = extensions.split()
-        if debug_level():
+        if log_verbose():
             logger.log('output_files_web_browsable_allowed_types %s' %
                        (r_code))
         return r_code
@@ -202,7 +206,7 @@ def default_voms_role(acctgroup="default"):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'default_voms_role')
-        if debug_level():
+        if log_verbose():
             logger.log('default voms role for %s : %s' % (acctgroup, r_code))
     except:
         logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
@@ -235,13 +239,13 @@ def get_dropbox_max_size(acctgroup):
        uses, return a string
     """
     r_code_default = '1073741824'
-    if debug_level():
+    if log_verbose():
         logger.log("default = %s attempting to find dropbox_max_size" %
                    r_code_default)
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_max_size')
-        if debug_level():
+        if log_verbose():
             logger.log("r_code = %s" % r_code)
     except:
         logger.log('Failed to get dropbox_max_size: ',
@@ -261,7 +265,7 @@ def get_dropbox_constraint(acctgroup):
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_constraint')
         cnstr = r_code % acctgroup
-        if debug_level():
+        if log_verbose():
             logger.log("r_code = %s" % r_code)
             logger.log("returning = %s" % cnstr)
         return cnstr
@@ -373,7 +377,7 @@ def get_submit_reject_threshold():
     if prs.has_section('default'):
         if prs.has_option('default', 'submit_reject_threshold'):
             sdf = prs.get('default', 'submit_reject_threshold')
-    if debug_level():
+    if log_verbose():
         logger.log('submit_reject_threshold=%s' % sdf)
     return float(sdf)
 
@@ -405,7 +409,7 @@ def should_transfer_krb5cc(acctgroup):
             can_transfer = prs.get(acctgroup, 'transfer_krbcc_to_job')
             if can_transfer == 'False':
                 can_transfer = False
-    if debug_level():
+    if log_verbose():
         if can_transfer:
             logger.log("group %s is authorized to transfer krb5 cache" %
                        acctgroup)
@@ -657,7 +661,7 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
     # Create the dir as user
     cmd = '%s mkdirsAsUser "%s" "%s" "%s" "%s"' % (exe, base_dir, sub_dirs,
                                                    username, mode)
-    if debug_level():
+    if log_verbose():
         logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
@@ -672,7 +676,7 @@ def move_file_as_user(src, dst, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
-    if debug_level():
+    if log_verbose():
         logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
@@ -686,7 +690,7 @@ def copy_file_as_user(src, dst, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s copyFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
-    if debug_level():
+    if log_verbose():
         logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
@@ -700,7 +704,7 @@ def chown_as_user(path, username):
     exe = get_jobsub_priv_exe()
     cmd = '%s chown "%s" "%s"' % (exe, path, username)
     out = err = ''
-    if debug_level():
+    if log_verbose():
         logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)

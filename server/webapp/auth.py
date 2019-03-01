@@ -45,7 +45,7 @@ def authenticate(dn, acctgroup, acctrole):
 
     """
     methods = jobsub.get_authentication_methods(acctgroup)
-    if jobsub.debug_level():
+    if jobsub.log_verbose():
         logger.log("Authentication method precedence: %s" % methods)
         logger.log("request %s" % cherrypy.request)
         logger.log("headers %s" % cherrypy.request.headers)
@@ -267,7 +267,7 @@ def copy_user_krb5_caches():
             username = base_parts[-1]
             system_cache_fname = os.path.join(krb5cc_dir, cache_basename)
             try:
-                if jobsub.debug_level():
+                if jobsub.log_verbose():
                     logger.log('copying %s to %s' %
                                (system_cache_fname, job_krb5_cache))
                 jobsub.copy_file_as_user(

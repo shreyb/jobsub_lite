@@ -92,7 +92,7 @@ class AccountJobsResource(object):
             pnfs_list = []
             child_env = os.environ.copy()
             jobsubConfig = jobsub.JobsubConfig()
-            if jobsub.debug_level():
+            if jobsub.log_verbose():
                 logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
@@ -206,7 +206,7 @@ class AccountJobsResource(object):
            /jobsub/acctgroups/<group_id>/jobs/
         """
         try:
-            if jobsub.debug_level():
+            if jobsub.log_verbose():
                 logger.log('job_id=%s ' % (job_id))
                 logger.log('kwargs=%s ' % (kwargs))
                 logger.log(' dir(request) %s ' % dir(cherrypy.request))

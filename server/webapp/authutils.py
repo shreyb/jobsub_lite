@@ -703,7 +703,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
 
     else:
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s' % username)
-    if jobsub.debug_level():
+    if jobsub.log_verbose():
         logger.log('Using x509_proxy_name=%s' % x509_cache_fname)
     return x509_cache_fname
 
@@ -767,7 +767,7 @@ def needs_refresh(filepath, agelimit=3600):
     """Check if filepath is older than agelimit. If yes,
        filepath needs refreshing
     """
-    if jobsub.debug_level():
+    if jobsub.log_verbose():
         logger.log("%s %s" % (filepath, agelimit))
     if not os.path.exists(filepath):
         logger.log("%s does not exist, need to refresh" % filepath)

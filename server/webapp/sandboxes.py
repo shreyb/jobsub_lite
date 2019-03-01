@@ -131,7 +131,7 @@ class SandboxesResource(object):
     @format_response
     @check_auth
     def index(self, acctgroup, **kwargs):
-        if jobsub.debug_level():
+        if jobsub.log_verbose():
             logger.log('headers %s' % cherrypy.request.headers)
             logger.log('wsgi_environ %s' % cherrypy.request.wsgi_environ)
             logger.log('params %s' % cherrypy.request.params)

@@ -201,7 +201,8 @@ def doJobAction(acctgroup,
     except:
         cmd_user = request_headers.uid_from_client_dn()
     orig_user = cmd_user
-    acctrole = jobsub.default_voms_role(acctgroup)
+    acctrole = kwargs.get('role',
+                          jobsub.default_voms_role(acctgroup))
     child_env = os.environ.copy()
     is_group_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
     is_global_superuser = jobsub.is_global_superuser(cmd_user)
@@ -214,7 +215,10 @@ def doJobAction(acctgroup,
         logger.log(msg)
 
     else:
-        cmd_proxy = authutils.x509_proxy_fname(cmd_user, acctgroup, acctrole)
+        cmd_proxy = kwargs.get('voms_proxy',
+                                authutils.x509_proxy_fname(cmd_user,
+                                                           acctgroup,
+                                                           acctrole))
         child_env['X509_USER_PROXY'] = cmd_proxy
 
     rc = {'out': None, 'err': None}
@@ -390,11 +394,13 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     job_action = kwargs.get('job_action')
 
     if job_action and job_action.upper() in condorCommands():
+        del kwargs['job_action']
         rc = doJobAction(acctgroup,
                          user=user,
                          constraint=constraint,
                          job_id=job_id,
-                         job_action=job_action.upper())
+                         job_action=job_action.upper(),
+                         **kwargs)
     else:
 
         rc['err'] = '%s is not a valid action on jobs' % job_action

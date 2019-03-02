@@ -25,6 +25,7 @@ from tempfile import NamedTemporaryFile
 from util import mkdir_p
 from auth import check_auth
 from authutils import x509_proxy_fname
+import jobsub
 from jobsub import is_supported_accountinggroup
 from jobsub import JobsubConfig
 from jobsub import execute_job_submit_wrapper
@@ -50,7 +51,8 @@ class DagResource(object):
 
         if job_id is None:
             jscfg = JobsubConfig()
-            logger.log('dag.py:doPost:kwargs: %s' % kwargs)
+            if jobsub.log_verbose():
+                logger.log('dag.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
             jobsub_client_krb5_principal = kwargs.get(
@@ -60,13 +62,15 @@ class DagResource(object):
 
                 jobsub_args = base64.urlsafe_b64decode(
                     str(jobsub_args)).rstrip()
-                logger.log('jobsub_args: %s' % jobsub_args)
+
                 jobsub_command = kwargs.get('jobsub_command')
                 jobsub_payload = kwargs.get('jobsub_payload')
                 role = kwargs.get('role')
-                logger.log('dag.py:doPost:jobsub_command %s' %
-                           (jobsub_command))
-                logger.log('dag.py:doPost:role %s ' % (role))
+                if jobsub.log_verbose():
+                    logger.log('jobsub_args: %s' % jobsub_args)
+                    logger.log('dag.py:doPost:jobsub_command %s' %
+                               (jobsub_command))
+                    logger.log('dag.py:doPost:role %s ' % (role))
 
                 command_path_acctgroup = jscfg.commandPathAcctgroup(acctgroup)
                 mkdir_p(command_path_acctgroup)
@@ -88,7 +92,8 @@ class DagResource(object):
                 command_path = os.path.join(command_path_acctgroup,
                                             uname,
                                             workdir_id)
-                logger.log('command_path: %s' % command_path)
+                if jobsub.log_verbose():
+                    logger.log('command_path: %s' % command_path)
                 child_env['X509_USER_PROXY'] = x509_proxy_fname(uname,
                                                                 acctgroup,
                                                                 role)
@@ -104,8 +109,9 @@ class DagResource(object):
                                                      jobsub_payload.filename)
                     # os.environ['JOBSUB_COMMAND_FILE_PATH']=command_file_path
                     cf_path_w_space = ' %s' % command_file_path
-                    logger.log('command_file_path: %s' % command_file_path)
-                    logger.log('payload_file_path: %s' % payload_file_path)
+                    if jobsub.log_verbose():
+                        logger.log('command_file_path: %s' % command_file_path)
+                        logger.log('payload_file_path: %s' % payload_file_path)
                     # First create a tmp file before moving the command file
                     # in place as correct user under the jobdir
                     tmp_file_prefix = os.path.join(jscfg.tmp_dir,
@@ -118,16 +124,17 @@ class DagResource(object):
                     tmp_payload_fd.close()
                     move_file_as_user(tmp_payload_fd.name, payload_file_path,
                                       uname)
-
-                    logger.log('before: jobsub_args = %s' % jobsub_args)
-                    logger.log("cf_path_w_space='%s'" % cf_path_w_space)
                     command_tag = "\@(\S*)%s" % jobsub_command.filename
-                    logger.log("command_tag='%s'" % command_tag)
+
+                    if jobsub.log_verbose():
+                        logger.log('before: jobsub_args = %s' % jobsub_args)
+                        logger.log("cf_path_w_space='%s'" % cf_path_w_space)
+                        logger.log("command_tag='%s'" % command_tag)
                     _str = '"re.sub(command_tag, cf_path_w_space, jobsub_args)"'
                     logger.log('executing:%s' % _str)
                     jobsub_args = re.sub(command_tag, cf_path_w_space,
                                          str(jobsub_args))
-                    logger.log('jobsub_args (subbed): %s' % jobsub_args)
+                    logger.log('jobsub_args : %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.strip().split(' ')
 

@@ -53,7 +53,8 @@ def authenticate(dn, acctgroup, acctrole):
         logger.log("dir request %s" % dir(cherrypy.request))
     for method in methods:
         cherrypy.response.status = 200
-        logger.log("Authenticating using method: %s" % method)
+        if jobsub.log_verbose():
+            logger.log("Authenticating using method: %s" % method)
         try:
             if method.lower() in ['gums', 'myproxy']:
                 try:
@@ -357,13 +358,14 @@ def check_auth(func=None, pass_through=None):
                        ):
                 return func(*args, **kwargs)
 
-        logger.log(traceback=True)
-        logger.log("args = %s kwargs=%s " % (args, kwargs))
-        logger.log("request method=%s" % cherrypy.request.method)
+        if jobsub.log_verbose():
+            logger.log("args = %s kwargs=%s " % (args, kwargs))
+            logger.log("request method=%s" % cherrypy.request.method)
         dn = get_client_dn()
         err = ''
         if dn and acctgroup:
-            logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
+            if jobsub.log_verbose():
+                logger.log('DN: %s, acctgroup: %s ' % (dn, acctgroup))
             try:
 
                 username, voms_proxy = _check_auth(dn, acctgroup, role)

@@ -391,7 +391,8 @@ def json_from_file(fname):
         try:
             st = os.stat(jfile)
             age = time.time() - st.st_mtime
-            logger.log('age of %s is %s' % (jfile, age))
+            if jobsub.log_verbose():
+                logger.log('age of %s is %s' % (jfile, age))
             max_age = jcp.get('default', 'ferry_expire')
             if max_age:
                 max_age = int(max_age)
@@ -799,8 +800,10 @@ def needs_refresh(filepath, agelimit=3600):
     except Exception:
         err = '%s' % sys.exc_info()[1]
         logger.log(err)
-    logger.log('age of %s is %s, compare to agelimit=%s' %
-               (filepath, age, agelimit))
+    if jobsub.log_verbose():
+        logger.log('age of %s is %s, compare to agelimit=%s' %
+                   (filepath, age, agelimit))
     if age > agelimit:
         rslt = True
+        logger.log("attempting to refresh file %s" % filepath)
     return rslt

@@ -1844,7 +1844,7 @@ class JobSettings(object):
             settings['requirements'] = settings['requirements'] +  sval
 
         if 'blacklist' in settings and settings['blacklist']:
-            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites)) '
+            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites) == FALSE) '
             sval = self.fileParser.get('default', 'requirements_blacklist')
             if not sval:
                 sval = _default

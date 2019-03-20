@@ -18,16 +18,17 @@
 
 import os
 import sys
+import logging
+import pwd
+from functools import wraps, partial
+from distutils import spawn
+
 import cherrypy
 import logger
-import logging
 import jobsub
 import subprocessSupport
 import authutils
-import pwd
 
-from functools import wraps, partial
-from distutils import spawn
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
 from request_headers import uid_from_client_dn
@@ -44,7 +45,12 @@ def authenticate(dn, acctgroup, acctrole):
 
     """
     methods = jobsub.get_authentication_methods(acctgroup)
-    logger.log("Authentication method precedence: %s" % methods)
+    if jobsub.log_verbose():
+        logger.log("Authentication method precedence: %s" % methods)
+        logger.log("request %s" % cherrypy.request)
+        logger.log("headers %s" % cherrypy.request.headers)
+        logger.log("wsgi_environ %s" % cherrypy.request.wsgi_environ)
+        logger.log("dir request %s" % dir(cherrypy.request))
     for method in methods:
         cherrypy.response.status = 200
         logger.log("Authenticating using method: %s" % method)
@@ -55,29 +61,30 @@ def authenticate(dn, acctgroup, acctrole):
                     username = auth_gums.authenticate(dn, acctgroup, acctrole)
                     cherrypy.request.username = username
                     return username
-                except Exception as e:
-                    logger.log('%s failed %s' % (method, e))
+                except Exception as exc:
+                    logger.log('%s failed %s' % (method, exc))
             elif method.lower() in ['ferry']:
                 try:
                     import auth_ferry
                     username = auth_ferry.authenticate(dn, acctgroup, acctrole)
                     cherrypy.request.username = username
                     return username
-                except Exception as e:
-                    logger.log('%s failed %s' % (method, e))
+                except Exception as exc:
+                    logger.log('%s failed %s' % (method, exc))
             elif method.lower() == 'kca-dn':
                 try:
                     import auth_kca
                     return auth_kca.authenticate(dn)
-                except Exception as e:
-                    logger.log('%s failed %s' % (method, e))
+                except Exception as exc:
+                    logger.log('%s failed %s' % (method, exc))
             else:
                 logger.log("Unknown authenticate method: %s" % method)
         except:
             logger.log("Failed to authenticate using method: %s" % method)
 
-    err = "Failed to authenticate dn '%s' for group '%s' with role '%s' using known authentication methods" %\
-        (dn, acctgroup, acctrole)
+    err = "Failed to authenticate dn '%s' " % dn
+    err += "for group '%s' with role '%s' using known authentication methods" %\
+           (acctgroup, acctrole)
     logger.log(err, severity=logging.ERROR)
     logger.log(err, severity=logging.ERROR, logfile='error')
     raise authutils.AuthenticationError(dn, acctgroup)
@@ -106,8 +113,8 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                     import auth_kca
                     return auth_kca.authorize(dn, username,
                                               acctgroup, acctrole, age_limit)
-                except Exception as e:
-                    logger.log('authoriziation failed, %s' % e)
+                except Exception as exc:
+                    logger.log('authoriziation failed, %s' % exc)
 
             elif method.lower() in ['myproxy', 'ferry']:
                 try:
@@ -115,8 +122,8 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                     return auth_myproxy.authorize(dn, username,
                                                   acctgroup, acctrole,
                                                   age_limit)
-                except Exception as e:
-                    logger.log('myproxy authoriziation failed, %s' % e)
+                except Exception as exc:
+                    logger.log('myproxy authoriziation failed, %s' % exc)
 
             else:
                 logger.log("Unknown authorization method: %s" % method)
@@ -193,31 +200,37 @@ def refresh_proxies(agelimit=3600):
                     proxy_name = os.path.basename(check[2])
                     pfn = proxy_name.split('_')
                     role = ''
-                    #for some reason it won't let me iterate on pfn 
+                    # for some reason it won't let me iterate on pfn
                     if pfn[-1] in supported_roles:
                         role = pfn[-1]
                     elif pfn[-2] in supported_roles:
                         role = pfn[-2]
-                    print "checking proxy %s %s %s %s"%(dn, user, grp, role)
+                    print "checking proxy %s %s %s %s" % (dn, user, grp, role)
                     authorize(dn, user, grp, role, agelimit)
-                    x509_fpath = authutils.x509_proxy_fname(user, grp, role, dn)
+                    x509_fpath = authutils.x509_proxy_fname(
+                        user, grp, role, dn)
                     x509_fname = os.path.basename(x509_fpath)
                     fpath = os.path.dirname(x509_fpath)
 
                     if x509_fname != proxy_name:
                         try:
                             proxy_name = os.path.join(fpath, proxy_name)
-                            logger.log("copying %s to %s"%(x509_fpath, proxy_name))
-                            logger.log("copying %s to %s"%(x509_fpath, proxy_name),logfile='krbrefresh')
+                            logger.log("copying %s to %s" %
+                                       (x509_fpath, proxy_name))
+                            logger.log("copying %s to %s" % (
+                                x509_fpath, proxy_name), logfile='krbrefresh')
                             stat_info = os.stat(x509_fpath)
                             uid = stat_info.st_uid
                             username = pwd.getpwuid(uid)[0]
-                            jobsub.copy_file_as_user(x509_fpath, proxy_name, username)
+                            jobsub.copy_file_as_user(
+                                x509_fpath, proxy_name, username)
                         except:
                             err = sys.exc_info()[1]
                             logger.log(err, severity=logging.ERROR)
-                            logger.log(err, severity=logging.ERROR, logfile='error')
-                            logger.log(err, severity=logging.ERROR, logfile='krbrefresh')
+                            logger.log(err, severity=logging.ERROR,
+                                       logfile='error')
+                            logger.log(err, severity=logging.ERROR,
+                                       logfile='krbrefresh')
 
                 except:
                     err = "Error processing %s:%s" % (line, sys.exc_info()[1])
@@ -226,8 +239,8 @@ def refresh_proxies(agelimit=3600):
     # todo: invalidate old proxies
     # one_day_ago=int(time.time())-86400
     # condor_history -format "%s^" accountinggroup \
-    #-format "%s^" x509userproxysubject -format "%s\n" owner \
-    #-constraint 'EnteredCurrentStatus > one_day_ago'
+    # -format "%s^" x509userproxysubject -format "%s\n" owner \
+    # -constraint 'EnteredCurrentStatus > one_day_ago'
     # can be checked against already_processed list to remove x509cc_(user)
     # if user not in queued_users remove krb5cc_(user) and (user).keytab
 
@@ -238,7 +251,8 @@ def copy_user_krb5_caches():
     cmd = spawn.find_executable('condor_q')
     if not cmd:
         raise Exception('Unable to find condor_q in the PATH')
-    cmd += """ -format '%s\n' 'ifthenelse (EncrypInputFiles=?=UNDEFINED, string(EncryptInputFiles),string(""))' """
+    cmd += """ -format '%s\n' 'ifthenelse (EncrypInputFiles=?=UNDEFINED,  """
+    cmd += """string(EncryptInputFiles),string(""))' """
     already_processed = ['']
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     if cmd_err:
@@ -253,8 +267,9 @@ def copy_user_krb5_caches():
             username = base_parts[-1]
             system_cache_fname = os.path.join(krb5cc_dir, cache_basename)
             try:
-                logger.log('copying %s to %s' %
-                           (system_cache_fname, job_krb5_cache))
+                if jobsub.log_verbose():
+                    logger.log('copying %s to %s' %
+                               (system_cache_fname, job_krb5_cache))
                 jobsub.copy_file_as_user(
                     system_cache_fname, job_krb5_cache, username)
             except:
@@ -286,11 +301,11 @@ def check_auth(func=None, pass_through=None):
         #
         if pass_through and cherrypy.request.method in pass_through:
             logger.log(
-                "returning without checking authorization per "+\
+                "returning without checking authorization per " +
                 "request for http methods %s" % pass_through)
             return func(*args, **kwargs)
         #
-        #check that acctgroup and role are valid
+        # check that acctgroup and role are valid
         #
         acctgroup = kwargs.get('acctgroup')
         role = jobsub.default_voms_role(acctgroup)
@@ -304,7 +319,7 @@ def check_auth(func=None, pass_through=None):
                          'Calibration',
                          'Data',
                          'Production',
-                         ]
+                        ]
         supported_roles = JobsubConfigParser().supportedRoles()
         if not supported_roles:
             supported_roles = default_roles
@@ -329,7 +344,7 @@ def check_auth(func=None, pass_through=None):
         # if we are a super user and we are doing anything except submitting
         # a job then bypass authorization
         #
-        if  cherrypy.request.method != 'POST':
+        if cherrypy.request.method != 'POST':
             uid = None
             try:
                 uid = getattr(cherrypy.request, 'username', None)
@@ -337,10 +352,11 @@ def check_auth(func=None, pass_through=None):
                 pass
             if not uid:
                 uid = uid_from_client_dn()
-            if uid and (jobsub.is_superuser_for_group(acctgroup, uid) or jobsub.is_global_superuser(uid)):
+            if uid and (jobsub.is_superuser_for_group(acctgroup, uid)
+                        or jobsub.is_global_superuser(uid)
+                       ):
                 return func(*args, **kwargs)
 
-        
         logger.log(traceback=True)
         logger.log("args = %s kwargs=%s " % (args, kwargs))
         logger.log("request method=%s" % cherrypy.request.method)
@@ -394,7 +410,8 @@ def test():
 
     for group in dns:
         try:
-            create_voms_proxy(dns[group], group, jobsub.default_voms_role(group))
+            create_voms_proxy(dns[group], group,
+                              jobsub.default_voms_role(group))
         except authutils.AuthenticationError as e:
             logger.log("Unauthenticated DN='%s' acctgroup='%s'" %
                        (e.dn, e.acctgroup))
@@ -405,7 +422,7 @@ def test():
 
 if __name__ == '__main__':
     #
-    #Entry point for krbrefresh cron job.
+    # Entry point for krbrefresh cron job.
     #
     if len(sys.argv) > 1:
         if sys.argv[1] == '--test':

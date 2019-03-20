@@ -11,7 +11,6 @@
         Dennis Box
 """
 import os
-import cherrypy
 import logging
 import traceback
 import math
@@ -19,6 +18,8 @@ import platform
 import socket
 import re
 from random import randint
+
+import cherrypy
 
 import JobsubConfigParser
 import subprocessSupport
@@ -60,14 +61,14 @@ def ui_condor_status_totalrunningjobs(acctgroup=None, check_downtime=True):
 
     cmd = """condor_status -schedd"""
 
-    constraint=""
+    constraint = ""
     if acctgroup:
         if constraint:
-            constraint +="&&"
+            constraint += "&&"
         constraint += vo_constraint(acctgroup)
     if check_downtime:
         if constraint:
-            constraint +="&&"
+            constraint += "&&"
         constraint += downtime_constraint()
     if constraint:
         cmd = """%s -constraint '%s'""" % (cmd, constraint)
@@ -105,7 +106,7 @@ def ui_condor_queued_jobs_summary():
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         all_queued = "%s\n%s" % (all_queued1, all_queued2)
         return all_queued
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(tbk)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
@@ -148,7 +149,7 @@ def condor_format(input_switch=None):
         fmtList = [
             """ -dag """,
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
-            """ -format ' %-1s '""", """string(" ")""", 
+            """ -format ' %-1s '""", """string(" ")""",
             """ -format ' %-16s '""", dagStatusStr,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""", runTimeStr, """/(3600*24))'""",
@@ -249,31 +250,32 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
                    Cannot be used with a_format currently
     """
     #logger.log('filter=%s format=%s'%(filter,format))
-    # Until we figure out the various possible modes, can't use a_format and 
+    # Until we figure out the various possible modes, can't use a_format and
     # a_key at the same time
     try:
         assert None in (a_format, a_key)
     except AssertionError:
-        tb = traceback.format_exc()
-        logger.log(tb, severity=logging.ERROR)
-        logger.log(tb, severity=logging.ERROR, logfile='error')
+        tbk = traceback.format_exc()
+        logger.log(tbk, severity=logging.ERROR)
+        logger.log(tbk, severity=logging.ERROR, logfile='error')
         # Do we want an exit here?
-        return tb
+        return tbk
 
     if a_key is None:
-        hdr = condor_header(a_format) 
-        fmt = condor_format(a_format) 
-    else: 
+        hdr = condor_header(a_format)
+        fmt = condor_format(a_format)
+    else:
         hdr = fmt = ''
     s_list = schedd_list()
-    all_jobs = hdr 
+    all_jobs = hdr
     cqef = condor_q_extra_flags()
     for schedd in s_list:
         try:
             if a_filter is None:
                 cmd = 'condor_q %s -name %s  %s ' % (cqef, schedd, fmt)
             else:
-                cmd = 'condor_q %s -name %s %s %s' % (cqef, schedd, fmt, a_filter)
+                cmd = 'condor_q %s -name %s %s %s' % (
+                    cqef, schedd, fmt, a_filter)
             if a_key is not None:
                 cmd = cmd + ' -af %s' % ' '.join((str(elt) for elt in a_key))
             jobs, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -285,7 +287,7 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
                 c_dn = get_client_dn()
                 pts = c_dn.split(':')
                 user = pts[-1]
-            except:
+            except RuntimeError:
                 pass
             log_cmd = "[user:%s] %s" % (
                 user, cmd)
@@ -294,30 +296,30 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
             # logger.log("cmd=%s"%cmd)
             # logger.log("rslt=%s"%all_jobs)
             # return hdr + all_jobs
-        except:
-            tb = traceback.format_exc()
-            logger.log(tb, severity=logging.ERROR)
-            logger.log(tb, severity=logging.ERROR, logfile='error')
+        except RuntimeError:
+            tbk = traceback.format_exc()
+            logger.log(tbk, severity=logging.ERROR)
+            logger.log(tbk, severity=logging.ERROR, logfile='error')
             no_jobs = "All queues are empty"
-            if len(re.findall(no_jobs, tb)):
+            if len(re.findall(no_jobs, tbk)):
                 # return no_jobs
                 empty = schedd + ": " + no_jobs + "\n"
                 all_jobs += empty
             else:
                 cherrypy.response.status = 500
-                if 'CEDAR' in tb or 'SECMAN' in tb:
+                if 'CEDAR' in tbk or 'SECMAN' in tbk:
                     err = 'HTCondor schedd %s appears to be too busy ' % schedd
                     err += 'to respond. Please try again in a few minutes. '
-                    err += tb[-1]
+                    err += tbk[-1]
                     logger.log(err, severity=logging.ERROR,
                                logfile='condor_commands')
                     logger.log(err, severity=logging.ERROR, logfile='error')
                     return err
                 else:
-                    logger.log(tb, severity=logging.ERROR,
+                    logger.log(tbk, severity=logging.ERROR,
                                logfile='condor_commands')
-                    logger.log(tb, severity=logging.ERROR, logfile='error')
-                    return tb
+                    logger.log(tbk, severity=logging.ERROR, logfile='error')
+                    return tbk
     return all_jobs
 
 
@@ -335,7 +337,7 @@ def condor_userprio():
         # logger.log("cmd=%s"%cmd)
         # logger.log("rslt=%s"%all_jobs)
         return users
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(tbk, severity=logging.ERROR)
         return tbk
@@ -355,7 +357,7 @@ def iwd_condor_q(a_filter, a_part='iwd'):
         # logger.log("cmd=%s"%cmd)
         # logger.log("rslt=%s"%all_jobs)
         return iwd
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(tbk, severity=logging.ERROR)
         no_jobs = "All queues are empty"
@@ -421,12 +423,11 @@ def collector_host():
         host = host_list[randint(0, len(host_list) - 1)]
         logger.log('choosing %s from %s' % (host, host_list))
         return host
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(tbk)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
-
 
 
 def schedd_list(acctgroup=None, check_downtime=True):
@@ -436,14 +437,14 @@ def schedd_list(acctgroup=None, check_downtime=True):
 
     try:
         cmd = """condor_status -schedd -af name """
-        constraint=""
+        constraint = ""
         if acctgroup:
             if constraint:
-                constraint +="&&"
+                constraint += "&&"
             constraint += vo_constraint(acctgroup)
         if check_downtime:
             if constraint:
-                constraint +="&&"
+                constraint += "&&"
             constraint += downtime_constraint()
         if constraint:
             cmd = """%s -constraint '%s'""" % (cmd, constraint)
@@ -453,7 +454,7 @@ def schedd_list(acctgroup=None, check_downtime=True):
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         return schedds.split()
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
@@ -467,12 +468,14 @@ def condor_q_extra_flags():
         cqef = ''
     return cqef
 
+
 def collector_constraint():
     jcp = JobsubConfigParser.JobsubConfigParser()
     cl_constraint = jcp.get('default', 'collector_constraint')
     if not cl_constraint:
         cl_constraint = "True"
     return cl_constraint
+
 
 def downtime_constraint():
     jcp = JobsubConfigParser.JobsubConfigParser()
@@ -481,17 +484,19 @@ def downtime_constraint():
         dt_constraint = "InDownTime=!=True"
     return dt_constraint
 
+
 def vo_constraint(acctgroup):
     if not acctgroup:
         return "True"
     jcp = JobsubConfigParser.JobsubConfigParser()
     voc = jcp.get(acctgroup, 'vo_constraint')
     if not voc:
-        voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))""" 
+        voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))"""
     if "{0}" in voc:
         return voc.format(acctgroup)
     else:
         return voc
+
 
 def schedd_load_metric():
     jcp = JobsubConfigParser.JobsubConfigParser()
@@ -500,6 +505,7 @@ def schedd_load_metric():
         metric = "TotalRunningJobs"
     return metric
 
+
 def best_schedd(acctgroup=None, check_remote_schedds=False):
     """
     return schedd with lowest load metric subject to constraints
@@ -507,11 +513,11 @@ def best_schedd(acctgroup=None, check_remote_schedds=False):
 
     try:
         cmd = """condor_status -schedd -af name %s """ % schedd_load_metric()
-        constraint= """%s&&%s""" % (vo_constraint(acctgroup),
-                                    downtime_constraint())
+        constraint = """%s&&%s""" % (vo_constraint(acctgroup),
+                                     downtime_constraint())
         if not check_remote_schedds:
             _name = "%s" % socket.gethostname()
-            constraint +="""&&regexp(".*%s.*",Name)""" % _name
+            constraint += """&&regexp(".*%s.*",Name)""" % _name
 
         cmd += """ -constraint '%s'""" % constraint
 
@@ -522,7 +528,7 @@ def best_schedd(acctgroup=None, check_remote_schedds=False):
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         cycle = 1e+99
         schedd = "no_schedds_meet_submission_criteria"
-        logger.log('cmd: %s cmd_out:%s'%(cmd, cmd_out))
+        logger.log('cmd: %s cmd_out:%s' % (cmd, cmd_out))
         for line in cmd_out.split('\n'):
             vals = line.split(' ')
             logger.log(vals)
@@ -534,14 +540,15 @@ def best_schedd(acctgroup=None, check_remote_schedds=False):
                 if val <= cycle:
                     schedd = nm
                     cycle = val
-        logger.log('chose %s as best schedd'% schedd)
+        logger.log('chose %s as best schedd' % schedd)
         return schedd
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         #logger.log(cmd_err, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR, logfile='condor_commands')
         logger.log(tbk, severity=logging.ERROR, logfile='error')
+
 
 def schedd_recent_duty_cycle(schedd_nm=None):
     """
@@ -558,10 +565,13 @@ def schedd_recent_duty_cycle(schedd_nm=None):
         if cmd_err:
             logger.log(cmd_err)
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
-        duty_cycle = float(cmd_out)
+        try:
+            duty_cycle = float(cmd_out)
+        except RuntimeError:
+            duty_cycle = 0.0
 
         return duty_cycle
-    except:
+    except RuntimeError:
         tbk = traceback.format_exc()
         logger.log(cmd_err, severity=logging.ERROR)
         logger.log(tbk, severity=logging.ERROR)
@@ -607,4 +617,3 @@ if __name__ == '__main__':
     # export JOBSUB_USE_FAKE_LOGGER=true
     # possibly export JOBSUB_SUPPRESS_LOG_OUTPUT=true
     print 'put some test code here'
-

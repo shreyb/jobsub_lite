@@ -176,11 +176,11 @@ def application(environ, start_response):
         'tools.caching.delay': cache_duration,
     })
 
-    fmt_str = """[%s]: jobsub_api.py starting: JOBSUB_INI_FILE:%s """
-    fmt_str += """cacheing:%s cache_duration:%s seconds"""
+    fmt_str = """[%s]: jobsub_api.py starting: %s %s"""
     app.log.error(fmt_str %
                   (current_thread().ident,
-                   os.environ.get('JOBSUB_INI_FILE'), cache_on, cache_duration))
+                   environ.get('REQUEST_METHOD'),
+                   environ.get('PATH_INFO')))
 
     initialize(app.log)
 

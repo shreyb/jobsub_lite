@@ -1837,14 +1837,16 @@ class JobSettings(object):
 
 
         if 'site' in settings and settings['site']:
-            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)) '
+            _default = '&& ((isUndefined(target.GLIDEIN_Site) == FALSE) ' +\
+                    '&& (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites)))'
             sval = self.fileParser.get('default', 'requirements_site')
             if not sval:
                 sval = _default
             settings['requirements'] = settings['requirements'] +  sval
 
         if 'blacklist' in settings and settings['blacklist']:
-            _default = '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites) == FALSE) '
+            _default = '&& ((isUndefined(target.GLIDEIN_Site) == FALSE) ' +\
+                    '&& (stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites) == FALSE))'
             sval = self.fileParser.get('default', 'requirements_blacklist')
             if not sval:
                 sval = _default

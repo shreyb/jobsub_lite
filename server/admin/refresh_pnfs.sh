@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-AUTHORIZED_USER=`grep 'WSGIDaemonProcess jobsub' /etc/httpd/conf.d/jobsub_api.conf | sed s/^.*user=// | sed 's/\ .*$//'`
+AUTHORIZED_USER=`grep 'WSGIDaemonProcess jobsub' /etc/httpd/conf.d/jobsub_api.conf | grep -v '#' | sed s/^.*user=// | sed 's/\ .*$//'`
 thisfile=`basename $0`
 pythonfile=`echo $thisfile | sed -e 's/\.sh$/.py/'`
 

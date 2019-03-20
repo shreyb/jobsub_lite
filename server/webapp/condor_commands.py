@@ -567,7 +567,7 @@ def schedd_recent_duty_cycle(schedd_nm=None):
             logger.log(cmd_err, severity=logging.ERROR, logfile='error')
         try:
             duty_cycle = float(cmd_out)
-        except RuntimeError:
+        except:
             duty_cycle = 0.0
 
         return duty_cycle

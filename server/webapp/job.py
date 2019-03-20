@@ -93,7 +93,7 @@ class AccountJobsResource(object):
             child_env = os.environ.copy()
             jobsubConfig = jobsub.JobsubConfig()
             if jobsub.log_verbose():
-                logger.log('job.py:doPost:kwargs: %s' % kwargs)
+                logger.log('kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
             jobsub_client_krb5_principal = kwargs.get(
@@ -102,16 +102,17 @@ class AccountJobsResource(object):
 
                 jobsub_args = base64.urlsafe_b64decode(
                     str(jobsub_args)).rstrip()
-                logger.log('jobsub_args: %s' % jobsub_args)
                 for arg in jobsub_args.split():
                     if '/pnfs/' in arg:
                         pnfs_list.append(arg)
                         #logger.log(arg,logfile='dropbox')
                 jobsub_command = kwargs.get('jobsub_command')
                 role = kwargs.get('role')
-                logger.log('job.py:doPost:jobsub_command %s' %
-                           (jobsub_command))
-                logger.log('job.py:doPost:role %s ' % (role))
+                if jobsub.log_verbose():
+                    logger.log('jobsub_args: %s' % jobsub_args)
+                    logger.log('jobsub_command %s' %
+                               (jobsub_command))
+                    logger.log('job.py:doPost:role %s ' % (role))
 
                 command_path_acctgroup = jobsubConfig.commandPathAcctgroup(
                     acctgroup)
@@ -160,7 +161,7 @@ class AccountJobsResource(object):
                     command_tag = '\ \@(\S*)%s' % jobsub_command.filename
                     jobsub_args = re.sub(
                         command_tag, cf_path_w_space, jobsub_args)
-                    logger.log('jobsub_args (subbed): %s' % jobsub_args)
+                    logger.log('jobsub_args : %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
                 rcode = jobsub.execute_job_submit_wrapper(

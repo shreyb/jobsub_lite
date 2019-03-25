@@ -176,17 +176,11 @@ def application(environ, start_response):
         'tools.caching.delay': cache_duration,
     })
 
-<<<<<<< HEAD
-    fmt_str = """[%s]: jobsub_api.py starting: %s %s"""
-    app.log.error(fmt_str %
-                  (current_thread().ident,
-=======
     fmt_str = """[%s]: jobsub request starting: %s %s %s %s"""
     app.log.error(fmt_str %
                   (current_thread().ident,
                    environ.get('REMOTE_ADDR'),
                    environ.get('SSL_CLIENT_I_DN_CN_1'),
->>>>>>> 22031
                    environ.get('REQUEST_METHOD'),
                    environ.get('PATH_INFO')))
 

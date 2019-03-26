@@ -757,6 +757,57 @@ class JobSubClient(object):
     def checkID(self, jobid):
         return check_id(jobid)
 
+    def adjust_prio(self, jobid=None, uid=None):
+        jobid = self.checkID(jobid)
+        prio = self.extra_opts.get('prio')
+        if not prio:
+            err = 'you must supply a priority with --prio'
+            raise JobsubClientError(err)
+
+        post_data = [
+            ('job_action', 'ADJUST_PRIO')
+        ]
+        if uid:
+            self.probeSchedds()
+            rslts = []
+            _r_fmt = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE 
+            for schedd in self.schedd_list:
+                srv = "https://%s:8443" % schedd
+                if self.acct_role:
+                    u = _r_fmt \
+                        % (srv, self.account_group, self.acct_role)
+                else:
+                    u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
+                        % (srv, self.account_group )
+                u += 'setprio/%s/user/%s/' % (prio, uid)
+                #u += 'setprio/%s/dbox/' % prio
+
+                self.action_url = u
+                print "Schedd: %s" % schedd
+                self.action_url = u
+                rslts.append(self.changeJobState(self.action_url,
+                                                 'PUT',
+                                                 post_data,
+                                                 ssl_verifyhost=False))
+            return rslts
+        elif jobid:
+            self.server = "https://%s:8443" % jobid.split('@')[-1]
+            if self.acct_role:
+                u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE\
+                    % (self.server, self.account_group, self.acct_role)
+            else:
+                u  = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
+                    % (self.server, self.account_group)
+
+            u += 'setprio/%s/job_id/%s/' % (prio, jobid)
+            #u += 'setprio/%s/1234@yak.fnal.gov/' % prio
+            self.action_url = u
+            return self.changeJobState(self.action_url,
+                                       'PUT',
+                                       post_data,
+                                       ssl_verifyhost=False)
+
+
     def release(self, jobid=None, uid=None, constraint=None):
         jobid = self.checkID(jobid)
         post_data = [

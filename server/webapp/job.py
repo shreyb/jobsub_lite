@@ -27,6 +27,7 @@ from dag import DagResource
 from queued_outformat import QueuedFormattedOutputResource
 from queued_jobstatus import QueuedJobStatusResource
 from by_user import AccountJobsByUserResource
+from job_prio import JobPrioResource
 from forcex_jobid import RemoveForcexByJobIDResource
 from constraint import JobActionByConstraintResource
 
@@ -46,6 +47,7 @@ class AccountJobsResource(object):
         self.sandbox = SandboxResource()
         self.history = HistoryResource()
         self.dag = DagResource()
+        self.setprio = JobPrioResource()
         qfo = QueuedFormattedOutputResource()
         self.long = qfo
         self.dags = qfo

@@ -70,6 +70,12 @@ def parse_opts(argv):
                          action='store',
                          help='REST API ENDPOINT')
 
+    opt_group.add_option('--post-data',
+                         dest='post_data',
+                         action='store',
+                         default=None,
+                         help='post_data')
+
     opt_group.add_option('--action',
                          dest='action',
                          action='store',
@@ -121,8 +127,12 @@ def main(argv):
     try:
 
         url = "%s/%s/" %(js_client.server, options.endpoint)
+        post_data = None
+        if options.post_data:
+            post_data=eval(options.post_data)
         http_code = js_client.changeJobState(url,
-                                             options.action)
+                                             options.action,
+                                             post_data, False)
         rc = http_code_to_rc(http_code)
     except JobSubClientError as e:
         print e

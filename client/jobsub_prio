@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+##########################################################################
+# Project:
+#   JobSub
+#
+# Author:
+#   Parag Mhashilkar
+#
+# Description:
+#   This module implements the JobSub client tool
+#
+##########################################################################
+
+import sys
+import os
+import optparse
+import traceback
+
+import logSupport
+from jobsubClient import JobSubClient
+from jobsubClient import JobSubClientError
+from jobsubClient import version_string
+from jobsubClient import http_code_to_rc
+from jobsubClient import jid_callback
+from defaultServer import defaultServer
+
+
+def print_opts(options):
+    logSupport.dprint('COMMAND LINE OPTIONS:')
+    logSupport.dprint('%s' % options)
+
+
+def required_args_present(options):
+    try:
+        if options.acctGroup and options.jobsubServer and options.prio and\
+                (options.jobId or options.uid):
+            return True
+    except AttributeError:
+        return False
+    return False
+
+
+def parse_opts(argv):
+    usage = '%prog [Client Options]'
+    usage += "\nadjust job priorities of queued jobs"
+    epi_text = """REQUIRED arguments to adjust job priorities  are (-G AND --prio AND  """
+    epi_text += """(--jobid OR --user )).  \nPlease direct questions, """
+    epi_text += """comments, or problems to the service desk.  """
+    epi_text += "For help on --jobid or see "
+    epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
+    epi_text += """wiki/Frequently_Asked_Questions"""
+
+    parser = optparse.OptionParser(usage=usage,
+                                   version=version_string(),
+                                   conflict_handler="resolve",
+                                   epilog=epi_text)
+
+    opt_group = optparse.OptionGroup(parser, "Client Options")
+
+    # Required args
+    opt_group.add_option('-G', '--group',
+                         dest='acctGroup',
+                         type='string',
+                         action='store',
+                         metavar='<Group/Experiment/Subgroup>',
+                         default=os.environ.get('JOBSUB_GROUP'),
+                         help="".join(['Group/Experiment/Subgroup ',
+                                       'for priorities and accounting',
+                                      ]))
+
+    # Optional args
+    opt_group.add_option('--jobsub-server',
+                         dest='jobsubServer',
+                         action='store',
+                         metavar='<JobSub Server>',
+                         default=defaultServer(),
+                         help='Alternate location of JobSub server to use')
+
+    opt_group.add_option('--role',
+                         dest='acctRole',
+                         type='string',
+                         action='store',
+                         metavar='<VOMS Role>',
+                         default=None,
+                         help='VOMS Role for priorities and accounting')
+
+    opt_group.add_option('--jobid',
+                         dest='jobId',
+                         type='string',
+                         action='callback',
+                         callback=jid_callback,
+                         default=None,
+                         metavar='<Job ID>',
+                         help="".join(['CSV list of Job Ids to adjust prio for.  Job ',
+                                       'Ids have format of ',
+                                       '(cluster).(process)@(schedd_name). ',
+                                       'If Job id has a decimal point but no ',
+                                       'process ',
+                                       '(example) 1234.@fifebatch.fnal.gov ',
+                                       'then ALL job ids with that cluster ',
+                                       'and schedd name will be removed',
+                                      ]))
+    opt_group.add_option('--debug',
+                         dest='debug',
+                         action='store_true',
+                         default=False,
+                         help="".join(['Print debug messages including ',
+                                       'server contacted, http response, ',
+                                       'response time',
+                                      ]))
+
+    opt_group.add_option('-h', '--help',
+                         dest='help',
+                         action='store_true',
+                         default=False,
+                         help='Show this help message and exit')
+
+    opt_group.add_option('--user',
+                         dest='uid',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<user ID>',
+                         help='adjust prio of all jobs with this uid ')
+
+    opt_group.add_option('--prio',
+                         dest='prio',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<priority>',
+                         help='change job priority to this (default is 0) ')
+
+
+    parser.add_option_group(opt_group)
+
+    if len(argv) < 1:
+        print "ERROR: Insufficient arguments specified"
+        parser.print_help()
+        sys.exit(1)
+
+    options, remainder = parser.parse_args(argv)
+
+    if options.help or (len(remainder) > 1):
+        parser.print_help()
+        sys.exit(0)
+
+    if not required_args_present(options):
+        print "\nERROR: Missing required arguments\n"
+        parser.print_help()
+        sys.exit(1)
+    return options
+
+
+def main(argv):
+    options = parse_opts(argv)
+    extraOpts = {'debug': options.debug, 'prio':options.prio}
+    logSupport.init_logging(options.debug)
+    logSupport.dprint('CLIENT_ARGS: ', options)
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup,
+                             options.acctRole, None, extra_opts=extraOpts)
+
+    rc = 1
+    try:
+        tmp_rc = 0
+
+        if options.jobId:
+            for jid in options.jobId.split(','):
+                print 'adjusting prio for jobid=%s' % jid
+                http_code = js_client.adjust_prio(jid,
+                                              uid=options.uid)
+                if isinstance(http_code, list):
+                    for code in http_code:
+                        tmp_rc += http_code_to_rc(code)
+                else:
+                    tmp_rc += http_code_to_rc(http_code)
+            rc = tmp_rc
+        else:
+            if options.uid:
+                print 'adjustinog prio of  jobs owned by %s' % options.uid
+            http_code_list = js_client.adjust_prio(uid=options.uid)
+            for http_code in http_code_list:
+                tmp_rc = http_code_to_rc(http_code)
+                if tmp_rc == 0:
+                    rc = tmp_rc
+
+    except JobSubClientError as e:
+        print e
+        logSupport.dprint(traceback.format_exc())
+    except Exception as e:
+        print e
+        logSupport.dprint('%s' % traceback.print_exc())
+    return rc
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

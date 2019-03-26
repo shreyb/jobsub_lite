@@ -178,6 +178,7 @@ def condorCommands():
         'REMOVE': 'condor_rm',
         'HOLD': 'condor_hold',
         'RELEASE': 'condor_release',
+        'ADJUST_PRIO': 'condor_prio',
     }
     return c
 
@@ -189,7 +190,7 @@ def doJobAction(acctgroup,
                 constraint=None,
                 **kwargs):
     """
-    perform a job_action = [HOLD, RELEASE, or REMOVE]
+    perform a job_action = [HOLD, RELEASE, 'ADJUST_PRIO' or REMOVE]
     subject to constraint = (constraint) or
                constraint = (constructed from user, jobid, acctgroup)
     """
@@ -220,8 +221,6 @@ def doJobAction(acctgroup,
                                                           acctgroup,
                                                           acctrole))
         child_env['X509_USER_PROXY'] = cmd_proxy
-
-    rc = {'out': None, 'err': None}
 
     cgroup = """regexp("group_%s.*",AccountingGroup)""" % acctgroup
 
@@ -310,22 +309,47 @@ def doJobAction(acctgroup,
     hostname = socket.gethostname()
     for schedd_name in scheddList:
         if hostname in schedd_name:
+            cmd = []
             try:
-                cmd = [
-                    jobsub.condor_bin(condorCommands()[job_action]), '-totals',
-                    '-name', schedd_name,
-                    '-pool', collector_host,
-                    '-constraint', constraint
-                ]
+                if job_action == 'ADJUST_PRIO':
+                    priority = kwargs.get('prio')
+                    if job_id:
+                        act_on = job_id.split('@')[0]
+                    elif user:
+                        act_on = user
+                    if not priority:
+                        raise RuntimeError(
+                            'tried to do jobsub_prio but did not supply a priority')
+                    if not (user or job_id):
+                        raise RuntimeError(
+                            'must supply a user or job_id to jobsub_prio')
+
+                    cmd = [
+                        jobsub.condor_bin(condorCommands()[job_action]),
+                        '-n', schedd_name,
+                        '-pool', collector_host,
+                        '-p', priority,
+                        act_on
+                    ]
+                else:
+                    cmd = [
+                        jobsub.condor_bin(
+                            condorCommands()[job_action]), '-totals',
+                        '-name', schedd_name,
+                        '-pool', collector_host,
+                        '-constraint', constraint
+                    ]
                 if job_action == 'REMOVE' and kwargs.get('forcex'):
                     cmd.append('-forcex')
+                if jobsub.log_verbose():
+                    logger.log('cmd=%s' % cmd)
                 out, err = jobsub.run_cmd_as_user(cmd,
                                                   cmd_user,
                                                   child_env=child_env)
                 extra_err = err
-                # logger.log('cmd=%s'%cmd)
-                # logger.log('out=%s'%out)
-                # logger.log('err=%s'%err)
+                if jobsub.log_verbose():
+                    logger.log('out=%s' % out)
+                    logger.log('err=%s' % err)
             except:
                 # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
@@ -382,35 +406,46 @@ def doDELETE(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     Executed to remove jobs
     """
 
-    rc = doJobAction(acctgroup,
-                     user=user,
-                     constraint=constraint,
-                     job_id=job_id,
-                     job_action='REMOVE',
-                     **kwargs)
+    r_code = doJobAction(acctgroup,
+                         user=user,
+                         constraint=constraint,
+                         job_id=job_id,
+                         job_action='REMOVE',
+                         **kwargs)
 
-    return rc
+    return r_code
 
 
 def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     """
-    Executed to hold and release jobs
+    Executed to hold,release, or adust job priority
+
     """
 
-    rc = {'out': None, 'err': None}
+    out = None
+    err = None
+    r_code = {'out': out, 'err': err}
     job_action = kwargs.get('job_action')
-    if job_action and job_action.upper() in condorCommands():
-        del kwargs['job_action']
-        rc = doJobAction(acctgroup,
-                         user=user,
-                         constraint=constraint,
-                         job_id=job_id,
-                         job_action=job_action.upper(),
-                         **kwargs)
+    if job_action:
+        job_action = job_action.upper()
+        if job_action == 'ADJUST_PRIO' and constraint:
+            err = "something went wrong, constraints not allowed for"
+            err += " command jobsub_prio "
     else:
+        err = 'must supply a job action'
 
-        rc['err'] = '%s is not a valid action on jobs' % job_action
+    if not err:
+        if job_action in condorCommands():
+            del kwargs['job_action']
+            r_code = doJobAction(acctgroup,
+                                 user=user,
+                                 constraint=constraint,
+                                 job_id=job_id,
+                                 job_action=job_action.upper(),
+                                 **kwargs)
+        else:
+            err = '%s is not a valid action on jobs' % job_action
 
-    logger.log(rc)
+    logger.log(r_code)
 
-    return rc
+    return r_code

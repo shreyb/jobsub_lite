@@ -204,6 +204,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/job.py
 /opt/jobsub/server/webapp/job.pyc
 /opt/jobsub/server/webapp/job.pyo
+/opt/jobsub/server/webapp/job_prio.py
+/opt/jobsub/server/webapp/job_prio.pyc
+/opt/jobsub/server/webapp/job_prio.pyo
 /opt/jobsub/server/webapp/jobid.py
 /opt/jobsub/server/webapp/jobid.pyc
 /opt/jobsub/server/webapp/jobid.pyo

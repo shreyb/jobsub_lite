@@ -94,16 +94,26 @@ def mkdir_p(path):
 
 
 def zipdir(path, zipf, job_id):
+    """ fill a zipfile from a directory
+    @zipf : a previously created zipfile object
+    @job_id: a directory of condor log files and job output
+    """
     for root, dirs, files in os.walk(path, followlinks=False):
-        for file in files:
+        for fil in files:
             if job_id:
-                zipf.write(os.path.join(root, file),
-                           os.path.join(job_id, file))
+                zipf.write(os.path.join(root, fil),
+                           os.path.join(job_id, fil))
             else:
-                zipf.write(os.path.join(root, file))
+                zipf.write(os.path.join(root, fil))
 
 
 def create_zipfile(zip_file, zip_path, job_id=None, partial=None):
+    """create and fill a zipfile
+    @zip_file: name of the zipfile to create
+    @zip_path: directory path to the job_id directory containing job information
+    @job_id: directory named after jobsub_job_id containing job output and
+             condor logs
+    """
     zipf = zipfile.ZipFile(zip_file, 'w')
     zipdir(zip_path, zipf, job_id)
     zipf.close()
@@ -132,7 +142,7 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
             else:
                 tar.add(f1, fname)
 
-        except:
+        except BaseException:
             logger.log('failed to add %s to %s ' %
                        (fname, tar_file), severity=logging.ERROR)
             logger.log('failed to add %s to %s ' % (fname, tar_file),
@@ -161,6 +171,10 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
 
 
 def digest_for_file(fileName, block_size=2**20):
+    """ calculate and return a sha1 hash for file named
+    @fileName
+    """
+
     dig = hashlib.sha1()
     f = open(fileName, 'r')
     while True:
@@ -194,12 +208,17 @@ def doJobAction(acctgroup,
     subject to constraint = (constraint) or
                constraint = (constructed from user, jobid, acctgroup)
     """
-    logger.log("acctgroup=%s job_id=%s user=%s job_action=%s constraint=%s kwargs=%s" %
-               (acctgroup, job_id, user, job_action, constraint, kwargs))
+    out = ''
+    err = ''
+    r_code = {'out': out, 'err': err, 'status': 'starting', 'acctgroup': acctgroup,
+              'user': user, 'job_id': job_id, 'constraint': constraint,
+              'job_action': job_action, 'kwargs': kwargs}
+    if jobsub.log_verbose():
+        logger.log(r_code)
     scheddList = []
     try:
         cmd_user = cherrypy.request.username
-    except:
+    except BaseException:
         cmd_user = request_headers.uid_from_client_dn()
     orig_user = cmd_user
     acctrole = kwargs.get('role',
@@ -213,7 +232,8 @@ def doJobAction(acctgroup,
         child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
         msg = "user %s will perform %s  as queue_superuser %s" %\
             (orig_user, job_action, cmd_user)
-        logger.log(msg)
+        r_code['status'] = msg
+        logger.log(r_code)
 
     else:
         cmd_proxy = kwargs.get('voms_proxy',
@@ -241,7 +261,8 @@ def doJobAction(acctgroup,
         # Split the job_id to get cluster_id and proc_id
         stuff = job_id.split('@')
         schedd_name = '@'.join(stuff[1:])
-        logger.log("schedd_name is %s" % schedd_name)
+        r_code['status'] = "schedd_name is %s" % schedd_name
+        logger.log(r_code)
         scheddList.append(schedd_name)
         ids = stuff[0].split('.')
         constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
@@ -258,27 +279,31 @@ def doJobAction(acctgroup,
     else:
         err = "Failed to supply constraint, job_id or uid, "
         err += "cannot perform any action"
-        logger.log(err, severity=logging.ERROR)
-        logger.log(err, severity=logging.ERROR, logfile='error')
-        return {'err': err}
+        r_code['err'] = err
+        r_code['status'] = 'error_exit'
+        logger.log(r_code, severity=logging.ERROR)
+        logger.log(r_code, severity=logging.ERROR, logfile='error')
+        return r_code
 
     if is_group_superuser or is_global_superuser:
         msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)' %\
             (orig_user, cmd_user, job_action, user, constraint)
-        logger.log(msg)
-        logger.log(msg, logfile='condor_commands')
-        logger.log(msg, logfile='condor_superuser')
+        r_code['status'] = msg
+        logger.log(r_code)
+        logger.log(r_code, logfile='condor_commands')
+        logger.log(r_code, logfile='condor_superuser')
 
     if user and user != cmd_user and not (is_group_superuser or
                                           is_global_superuser):
 
-        err = '%s is not allowed to perform %s on jobs owned by %s ' %\
+        r_code['err'] = '%s is not allowed to perform %s on jobs owned by %s ' %\
             (cmd_user, job_action, user)
-        logger.log(err)
-        logger.log(err, logfile='condor_superuser')
-        logger.log(err, logfile='condor_commands')
-        logger.log(err, logfile='error', severity=logging.ERROR)
-        return {'err': err}
+        r_code['status'] = 'exit_error'
+        logger.log(r_code)
+        logger.log(r_code, logfile='condor_superuser')
+        logger.log(r_code, logfile='condor_commands')
+        logger.log(r_code, logfile='error', severity=logging.ERROR)
+        return r_code
 
     else:
         if is_group_superuser:
@@ -286,14 +311,14 @@ def doJobAction(acctgroup,
                 c_and = """&&(regexp("group_%s.*",AccountingGroup))""" %\
                         acctgroup
                 constraint = constraint + c_and
-        msg = '[user: %s] %s  jobs with constraint (%s)' %\
+        r_code['status'] = '[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
-        logger.log(msg)
-        logger.log(msg, logfile='condor_commands')
+        logger.log(r_code)
+        logger.log(r_code, logfile='condor_commands')
 
     out = err = ''
-    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
-    expr += '(\s+)(\d+)(\s+Permission Denied).*'
+    expr = r'.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
+    expr += r'(\s+)(\d+)(\s+Permission Denied).*'
     expr2 = '.*ailed to connect*'
     expr3 = '.*all jobs matching constraint*'
     regex = re.compile(expr)
@@ -305,7 +330,8 @@ def doJobAction(acctgroup,
     ret_err = ""
 
     collector_host = condor_commands.collector_host()
-    logger.log('collector_host is "%s"' % collector_host)
+    r_code['status'] = 'collector_host is "%s"' % collector_host
+    logger.log(r_code)
     hostname = socket.gethostname()
     for schedd_name in scheddList:
         if hostname in schedd_name:
@@ -343,14 +369,20 @@ def doJobAction(acctgroup,
                     cmd.append('-forcex')
                 if jobsub.log_verbose():
                     logger.log('cmd=%s' % cmd)
+                r_code['status'] = "executing %s as %s" % (cmd, cmd_user)
+                logger.log(r_code)
                 out, err = jobsub.run_cmd_as_user(cmd,
                                                   cmd_user,
                                                   child_env=child_env)
+                r_code['status'] = "returned from  %s as %s" % (cmd, cmd_user)
+                if out:
+                    r_code['out'] = out
+                if err:
+                    r_code['err'] = err
                 extra_err = err
                 if jobsub.log_verbose():
-                    logger.log('out=%s' % out)
-                    logger.log('err=%s' % err)
-            except:
+                    logger.log(r_code)
+            except BaseException:
                 # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
                 # however, as we are iterating over schedds we don't want
@@ -358,14 +390,14 @@ def doJobAction(acctgroup,
                 # continue and process the other ones
                 failures += 1
                 err = "%s: exception:  %s " % (cmd, sys.exc_info()[1])
-                logger.log(err, traceback=True)
-                msg = "%s - %s" % (cmd, err)
-                logger.log(msg, severity=logging.ERROR)
-                logger.log(msg, severity=logging.ERROR,
+                r_code['err'] = err
+                logger.log(r_code, traceback=True)
+                logger.log(r_code, severity=logging.ERROR)
+                logger.log(r_code, severity=logging.ERROR,
                            logfile='condor_commands')
-                logger.log(msg, severity=logging.ERROR, logfile='error')
+                logger.log(r_code, severity=logging.ERROR, logfile='error')
                 if user and user != cmd_user:
-                    logger.log(msg, severity=logging.ERROR,
+                    logger.log(r_code, severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err
                 # return {'out': out, 'err': extra_err}
@@ -398,7 +430,10 @@ def doJobAction(acctgroup,
                     ret_err += line
     if err and not ret_err:
         ret_err = err
-    return {'out': ret_out, 'err': ret_err}
+    r_code['out'] = ret_out
+    r_code['err'] = ret_err
+    r_code['status'] = 'exiting'
+    return r_code
 
 
 def doDELETE(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
@@ -421,31 +456,49 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     Executed to hold,release, or adust job priority
 
     """
-
-    out = None
-    err = None
-    r_code = {'out': out, 'err': err}
+    out = ''
+    err = ''
+    r_code = {'out': out, 'err': err, 'status': 'starting', 'acctgroup': acctgroup,
+              'user': user, 'job_id': job_id, 'constraint': constraint, 'kwargs': kwargs}
+    if jobsub.log_verbose():
+        logger.log(r_code)
     job_action = kwargs.get('job_action')
     if job_action:
         job_action = job_action.upper()
         if job_action == 'ADJUST_PRIO' and constraint:
             err = "something went wrong, constraints not allowed for"
             err += " command jobsub_prio "
+            r_code['err'] = err
+            r_code['status'] = 'error'
     else:
         err = 'must supply a job action'
+        r_code['err'] = err
+        r_code['status'] = 'error'
 
-    if not err:
+    if not r_code['err']:
         if job_action in condorCommands():
             del kwargs['job_action']
-            r_code = doJobAction(acctgroup,
-                                 user=user,
-                                 constraint=constraint,
-                                 job_id=job_id,
-                                 job_action=job_action.upper(),
-                                 **kwargs)
+            r_code['status'] = 'calling doJobAction'
+            r_code2 = doJobAction(acctgroup,
+                                  user=user,
+                                  constraint=constraint,
+                                  job_id=job_id,
+                                  job_action=job_action.upper(),
+                                  **kwargs)
+            if r_code2.get('out'):
+                r_code['out'] = r_code2['out']
+            if r_code2.get('err'):
+                r_code['err'] = r_code2['err']
+            if jobsub.log_verbose():
+                logger.log(r_code)
         else:
-            err = '%s is not a valid action on jobs' % job_action
+            r_code['err'] = '%s is not a valid action on jobs' % job_action
 
-    logger.log(r_code)
+    if r_code['err']:
+        r_code['status'] = 'exit_failure'
+    else:
+        r_code['status'] = 'exit_success'
+    if jobsub.log_verbose():
+        logger.log(r_code)
 
     return r_code

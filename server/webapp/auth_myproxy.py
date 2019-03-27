@@ -109,8 +109,9 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
         logger.log(err, severity=logging.ERROR, logfile='error')
         raise authutils.AuthorizationError(dn, acctgroup)
     if os.path.exists(x509_tmp_fname):
-        os.remove(x509_tmp_fname)
-        if jobsub.log_verbose():
-            logger.log("cleanup:rm %s" % x509_tmp_fname)
+        try:
+            os.remove(x509_tmp_fname)
+        except:
+            logger.log("failed to rm %s" % x509_tmp_fname)
 
     return x509_cache_fname

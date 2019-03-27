@@ -33,22 +33,31 @@ class AuthMethodsResource(object):
             API is /acctgroups/<group>/authmethods/<method_name>/
         """
         acctgroup = kwargs.get('acctgroup')
+        r_code={'status':'start','auth_method':auth_method, 'acctgroup':acctgroup, 'kwargs':kwargs}
         if jobsub.log_verbose():
-            logger.log('acctgroup=%s' % acctgroup)
+            logger.log(r_code)
         methods = jobsub.get_authentication_methods(acctgroup)
         if not auth_method:
-            return {'out': methods}
+            r_code['out'] = methods
+            r_code['status']='exiting'
+            if jobsub.log_verbose():
+                logger.log(r_code)
+            return r_code
         elif auth_method in methods:
             stat = '%s is valid for %s' % (auth_method, acctgroup)
+            r_code['out'] = stat
+            r_code['status']='exiting'
             if jobsub.log_verbose():
-                logger.log(stat)
+                logger.log(r_code)
             return {'out': stat}
         else:
             cherrypy.response.status = 404
             stat = '%s is NOT found for %s' % (auth_method, acctgroup)
-            logger.log(stat, severity=logging.ERROR)
-            logger.log(stat, severity=logging.ERROR, logfile='error')
-            return {'err': '%s is NOT found for %s' % (auth_method, acctgroup)}
+            r_code['err'] = stat
+            r_code['status'] = 'exit_error'
+            logger.log(r_code, severity=logging.ERROR)
+            logger.log(r_code, severity=logging.ERROR, logfile='error')
+            return r_code
 
     @cherrypy.expose
     @format_response

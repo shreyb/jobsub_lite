@@ -220,6 +220,10 @@ def doJobAction(acctgroup,
         cmd_user = cherrypy.request.username
     except BaseException:
         cmd_user = request_headers.uid_from_client_dn()
+    r_code['status'] = "cmd_user set to %s" % cmd_user
+    r_code['cmd_user'] = cmd_user
+    if jobsub.log_verbose():
+        logger.log(r_code)
     orig_user = cmd_user
     acctrole = kwargs.get('role',
                           jobsub.default_voms_role(acctgroup))

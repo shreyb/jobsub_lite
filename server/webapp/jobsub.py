@@ -33,22 +33,25 @@ else:
 def is_supported_accountinggroup(acctgroup):
     """Is acctgroup configured in jobsub.ini?
     """
-    r_code = False
+    r_code = {'status':'start','acctgroup':acctgroup,'ret_val':False}
+    if log_verbose():
+        logger.log(r_code)
     try:
         prs = JobsubConfigParser()
         groups = prs.supportedGroups()
-        if log_verbose():
-            logger.log("supported groups:%s accountinggroup:%s" %
-                      (groups, acctgroup))
-        r_code = (acctgroup in groups)
-    except:
-        logger.log('Failed to get accounting groups: ',
-                   traceback=True, severity=logging.ERROR)
-        logger.log('Failed to get accounting groups: ',
+        r_code['ret_val'] = (acctgroup in groups)
+        r_code['status'] = 'success'
+    except RuntimeError as rte:
+        r_code['status'] = 'error'
+        r_code['err'] = str(rte)
+        logger.log(r_code, traceback=True, severity=logging.ERROR)
+        logger.log(r_code,
                    traceback=True,
                    severity=logging.ERROR,
                    logfile='error')
 
+    if log_verbose():
+        logger.log(r_code)
     return r_code
 
 
@@ -101,23 +104,27 @@ def group_superusers(acctgroup):
     if susers:
         for itm in susers.split():
             g_list.append(itm)
-    if log_verbose():
-        logger.log('returning %s' % g_list)
+    #if log_verbose():
+    #    logger.log('returning %s' % g_list)
     return g_list
 
 
 def is_superuser_for_group(acctgroup, user):
     """is user 'user' a superuser in acctgroup 'acctgroup'?
     """
+    r_code={'status':'start', 'acctgroup':acctgroup, 'user':user}
     if log_verbose():
-        logger.log('checking if %s in %s is group_superuser' %
-                   (user, acctgroup))
+        logger.log(r_code)
     if is_supported_accountinggroup(acctgroup):
         su_list = group_superusers(acctgroup)
+        is_grsu = (user in su_list)
+        r_code['status']='exiting, returning %s' % is_grsu
+        r_code['su_list']=su_list
         if log_verbose():
-            logger.log('sulist is %s for %s' % (su_list, acctgroup))
-        return user in su_list
-    raise Exception('group %s not supported' % acctgroup)
+            logger.log(r_code)
+        return is_grsu
+    else:    
+        raise Exception('group %s not supported' % acctgroup)
 
 
 def is_global_superuser(user):

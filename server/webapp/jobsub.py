@@ -18,6 +18,7 @@ from distutils import spawn
 import StringIO
 import re
 import cherrypy
+import json
 
 import subprocessSupport
 import condor_commands
@@ -35,7 +36,7 @@ def is_supported_accountinggroup(acctgroup):
     """
     r_code = {'status': 'start', 'acctgroup': acctgroup, 'ret_val': False}
     if log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     try:
         prs = JobsubConfigParser()
         groups = prs.supportedGroups()
@@ -44,14 +45,14 @@ def is_supported_accountinggroup(acctgroup):
     except RuntimeError as rte:
         r_code['status'] = 'error'
         r_code['err'] = str(rte)
-        logger.log(r_code, traceback=True, severity=logging.ERROR)
-        logger.log(r_code,
+        logger.log(json.dumps(r_code, sort_keys=True), traceback=True, severity=logging.ERROR)
+        logger.log(json.dumps(r_code, sort_keys=True),
                    traceback=True,
                    severity=logging.ERROR,
                    logfile='error')
 
     if log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     return r_code
 
 
@@ -114,14 +115,14 @@ def is_superuser_for_group(acctgroup, user):
     """
     r_code = {'status': 'start', 'acctgroup': acctgroup, 'user': user}
     if log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     if is_supported_accountinggroup(acctgroup):
         su_list = group_superusers(acctgroup)
         is_grsu = (user in su_list)
         r_code['status'] = 'exiting, returning %s' % is_grsu
         r_code['su_list'] = su_list
         if log_verbose():
-            logger.log(r_code)
+            logger.log(json.dumps(r_code, sort_keys=True))
         return is_grsu
     else:
         raise Exception('group %s not supported' % acctgroup)

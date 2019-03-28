@@ -214,7 +214,7 @@ def doJobAction(acctgroup,
               'user': user, 'job_id': job_id, 'constraint': constraint,
               'job_action': job_action, 'kwargs': kwargs}
     if jobsub.log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     scheddList = []
     try:
         cmd_user = cherrypy.request.username
@@ -223,7 +223,7 @@ def doJobAction(acctgroup,
     r_code['status'] = "cmd_user set to %s" % cmd_user
     r_code['cmd_user'] = cmd_user
     if jobsub.log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     orig_user = cmd_user
     acctrole = kwargs.get('role',
                           jobsub.default_voms_role(acctgroup))
@@ -237,7 +237,7 @@ def doJobAction(acctgroup,
         msg = "user %s will perform %s  as queue_superuser %s" %\
             (orig_user, job_action, cmd_user)
         r_code['status'] = msg
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
 
     else:
         cmd_proxy = kwargs.get('voms_proxy',
@@ -266,7 +266,7 @@ def doJobAction(acctgroup,
         stuff = job_id.split('@')
         schedd_name = '@'.join(stuff[1:])
         r_code['status'] = "schedd_name is %s" % schedd_name
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
         scheddList.append(schedd_name)
         ids = stuff[0].split('.')
         constraint = '%s && (ClusterId == %s)' % (constraint, ids[0])
@@ -285,17 +285,17 @@ def doJobAction(acctgroup,
         err += "cannot perform any action"
         r_code['err'] = err
         r_code['status'] = 'error_exit'
-        logger.log(r_code, severity=logging.ERROR)
-        logger.log(r_code, severity=logging.ERROR, logfile='error')
+        logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR)
+        logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR, logfile='error')
         return r_code
 
     if is_group_superuser or is_global_superuser:
         msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)' %\
             (orig_user, cmd_user, job_action, user, constraint)
         r_code['status'] = msg
-        logger.log(r_code)
-        logger.log(r_code, logfile='condor_commands')
-        logger.log(r_code, logfile='condor_superuser')
+        logger.log(json.dumps(r_code, sort_keys=True))
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='condor_commands')
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='condor_superuser')
 
     if user and user != cmd_user and not (is_group_superuser or
                                           is_global_superuser):
@@ -303,10 +303,10 @@ def doJobAction(acctgroup,
         r_code['err'] = '%s is not allowed to perform %s on jobs owned by %s ' %\
             (cmd_user, job_action, user)
         r_code['status'] = 'exit_error'
-        logger.log(r_code)
-        logger.log(r_code, logfile='condor_superuser')
-        logger.log(r_code, logfile='condor_commands')
-        logger.log(r_code, logfile='error', severity=logging.ERROR)
+        logger.log(json.dumps(r_code, sort_keys=True))
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='condor_superuser')
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='condor_commands')
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='error', severity=logging.ERROR)
         return r_code
 
     else:
@@ -317,8 +317,8 @@ def doJobAction(acctgroup,
                 constraint = constraint + c_and
         r_code['status'] = '[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
-        logger.log(r_code)
-        logger.log(r_code, logfile='condor_commands')
+        logger.log(json.dumps(r_code, sort_keys=True))
+        logger.log(json.dumps(r_code, sort_keys=True), logfile='condor_commands')
 
     out = err = ''
     expr = r'.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
@@ -335,7 +335,7 @@ def doJobAction(acctgroup,
 
     collector_host = condor_commands.collector_host()
     r_code['status'] = 'collector_host is "%s"' % collector_host
-    logger.log(r_code)
+    logger.log(json.dumps(r_code, sort_keys=True))
     hostname = socket.gethostname()
     for schedd_name in scheddList:
         if hostname in schedd_name:
@@ -374,7 +374,7 @@ def doJobAction(acctgroup,
                 if jobsub.log_verbose():
                     logger.log('cmd=%s' % cmd)
                 r_code['status'] = "executing %s as %s" % (cmd, cmd_user)
-                logger.log(r_code)
+                logger.log(json.dumps(r_code, sort_keys=True))
                 out, err = jobsub.run_cmd_as_user(cmd,
                                                   cmd_user,
                                                   child_env=child_env)
@@ -385,7 +385,7 @@ def doJobAction(acctgroup,
                     r_code['err'] = err
                 extra_err = err
                 if jobsub.log_verbose():
-                    logger.log(r_code)
+                    logger.log(json.dumps(r_code, sort_keys=True))
             except BaseException:
                 # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
@@ -395,13 +395,13 @@ def doJobAction(acctgroup,
                 failures += 1
                 err = "%s: exception:  %s " % (cmd, sys.exc_info()[1])
                 r_code['err'] = err
-                logger.log(r_code, traceback=True)
-                logger.log(r_code, severity=logging.ERROR)
-                logger.log(r_code, severity=logging.ERROR,
+                logger.log(json.dumps(r_code, sort_keys=True), traceback=True)
+                logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR)
+                logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR,
                            logfile='condor_commands')
-                logger.log(r_code, severity=logging.ERROR, logfile='error')
+                logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR, logfile='error')
                 if user and user != cmd_user:
-                    logger.log(r_code, severity=logging.ERROR,
+                    logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err
                 # return {'out': out, 'err': extra_err}
@@ -465,7 +465,7 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     r_code = {'out': out, 'err': err, 'status': 'starting', 'acctgroup': acctgroup,
               'user': user, 'job_id': job_id, 'constraint': constraint, 'kwargs': kwargs}
     if jobsub.log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
     job_action = kwargs.get('job_action')
     if job_action:
         job_action = job_action.upper()
@@ -494,7 +494,7 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
             if r_code2.get('err'):
                 r_code['err'] = r_code2['err']
             if jobsub.log_verbose():
-                logger.log(r_code)
+                logger.log(json.dumps(r_code, sort_keys=True))
         else:
             r_code['err'] = '%s is not a valid action on jobs' % job_action
 
@@ -503,6 +503,6 @@ def doPUT(acctgroup, user=None, job_id=None, constraint=None, **kwargs):
     else:
         r_code['status'] = 'exit_success'
     if jobsub.log_verbose():
-        logger.log(r_code)
+        logger.log(json.dumps(r_code, sort_keys=True))
 
     return r_code

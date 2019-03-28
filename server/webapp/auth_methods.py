@@ -16,6 +16,7 @@
 """
 import cherrypy
 import logger
+import json
 import logging
 import jobsub
 from format import format_response
@@ -35,28 +36,28 @@ class AuthMethodsResource(object):
         acctgroup = kwargs.get('acctgroup')
         r_code={'status':'start','auth_method':auth_method, 'acctgroup':acctgroup, 'kwargs':kwargs}
         if jobsub.log_verbose():
-            logger.log(r_code)
+            logger.log(json.dumps(r_code, sort_keys=True))
         methods = jobsub.get_authentication_methods(acctgroup)
         if not auth_method:
             r_code['out'] = methods
             r_code['status']='exiting'
             if jobsub.log_verbose():
-                logger.log(r_code)
+                logger.log(json.dumps(r_code, sort_keys=True))
             return r_code
         elif auth_method in methods:
             stat = '%s is valid for %s' % (auth_method, acctgroup)
             r_code['out'] = stat
             r_code['status']='exiting'
             if jobsub.log_verbose():
-                logger.log(r_code)
+                logger.log(json.dumps(r_code, sort_keys=True))
             return {'out': stat}
         else:
             cherrypy.response.status = 404
             stat = '%s is NOT found for %s' % (auth_method, acctgroup)
             r_code['err'] = stat
             r_code['status'] = 'exit_error'
-            logger.log(r_code, severity=logging.ERROR)
-            logger.log(r_code, severity=logging.ERROR, logfile='error')
+            logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR)
+            logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR, logfile='error')
             return r_code
 
     @cherrypy.expose

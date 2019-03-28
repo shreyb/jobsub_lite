@@ -5,11 +5,13 @@ v1.3
 Client
 ------
 * Feature  13853   access to condor_prio features
+
 Server
 ------
-
-* Bug      22039   improper handling of proxy/role in util.py
+* Feature  16603   support for SL7
 * Support  22031   improve logging
+* Bug      22039   improper handling of proxy/role in util.py
+* Bug      22151   --blacklist option doesn't block sites like its supposed to
 * Bug      22174   admin scripts should ignore commented lines in config files
 
 

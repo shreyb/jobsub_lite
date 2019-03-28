@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-
+"""
 ##########################################################################
+# Module:
+#   jobsub_probe_url
+#
 # Project:
 #   JobSub
 #
 # Author:
-#   Parag Mhashilkar
+#   Dennis Box
 #
 # Description:
-#   This module implements the JobSub client tool
+#   This program sends a single url to a jobsub server and prints out
+#   its response.  Useful for development and debugging
 #
 ##########################################################################
-
+"""
 import sys
 import os
 import optparse
@@ -21,11 +25,13 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import version_string
 from jobsubClient import http_code_to_rc
-from jobsubClient import jid_callback
 from defaultServer import defaultServer
 
 
 def print_opts(options):
+    """
+    print out options from optarg
+    """
     logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
 
@@ -33,6 +39,8 @@ def print_opts(options):
 
 
 def parse_opts(argv):
+    """ Set up optparse object and epilog message
+    """
     usage = '%prog [Client Options]'
     epi_text = "Please direct questions, comments, or problems to the "
     epi_text += "service desk. "
@@ -109,14 +117,17 @@ def parse_opts(argv):
 
 
 def main(argv):
+    """
+    the pain and gain stems mainly from this main()
+    """
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('CLIENT_ARGS: ', options)
-    rc = 1
+    rcd = 1
 
     optDict = {'debug':options.debug,
                'action':options.action,
-                'endpoint':options.endpoint
+               'endpoint':options.endpoint
               }
 
     js_client = JobSubClient(options.jobsubServer,
@@ -129,19 +140,19 @@ def main(argv):
         url = "%s/%s/" %(js_client.server, options.endpoint)
         post_data = None
         if options.post_data:
-            post_data=eval(options.post_data)
+            post_data = eval(options.post_data)
         http_code = js_client.changeJobState(url,
                                              options.action,
                                              post_data, False)
-        rc = http_code_to_rc(http_code)
-    except JobSubClientError as e:
-        print e
+        rcd = http_code_to_rc(http_code)
+    except JobSubClientError as err:
+        print err
         logSupport.dprint(traceback.format_exc())
-    except Exception as e:
-        print e
+    except Exception as err:
+        print err
         logSupport.dprint('%s' % traceback.print_exc())
 
-    return rc
+    return rcd
 
 
 if __name__ == '__main__':

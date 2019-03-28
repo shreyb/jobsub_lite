@@ -33,7 +33,7 @@ else:
 def is_supported_accountinggroup(acctgroup):
     """Is acctgroup configured in jobsub.ini?
     """
-    r_code = {'status':'start','acctgroup':acctgroup,'ret_val':False}
+    r_code = {'status': 'start', 'acctgroup': acctgroup, 'ret_val': False}
     if log_verbose():
         logger.log(r_code)
     try:
@@ -72,9 +72,9 @@ def log_verbose():
 
 
 def global_superusers():
-    """return a list of global_superusers 
+    """return a list of global_superusers
        global_superusers can hold,release,remove other
-       users jobs and browse 
+       users jobs and browse
        other users sandboxes regardless of other
        settings
     """
@@ -104,7 +104,7 @@ def group_superusers(acctgroup):
     if susers:
         for itm in susers.split():
             g_list.append(itm)
-    #if log_verbose():
+    # if log_verbose():
     #    logger.log('returning %s' % g_list)
     return g_list
 
@@ -112,18 +112,18 @@ def group_superusers(acctgroup):
 def is_superuser_for_group(acctgroup, user):
     """is user 'user' a superuser in acctgroup 'acctgroup'?
     """
-    r_code={'status':'start', 'acctgroup':acctgroup, 'user':user}
+    r_code = {'status': 'start', 'acctgroup': acctgroup, 'user': user}
     if log_verbose():
         logger.log(r_code)
     if is_supported_accountinggroup(acctgroup):
         su_list = group_superusers(acctgroup)
         is_grsu = (user in su_list)
-        r_code['status']='exiting, returning %s' % is_grsu
-        r_code['su_list']=su_list
+        r_code['status'] = 'exiting, returning %s' % is_grsu
+        r_code['su_list'] = su_list
         if log_verbose():
             logger.log(r_code)
         return is_grsu
-    else:    
+    else:
         raise Exception('group %s not supported' % acctgroup)
 
 
@@ -144,7 +144,7 @@ def sandbox_readable_by_group(acctgroup):
             logger.log('sandbox_readable_by_group:%s is %s' %
                        (acctgroup, r_code))
         return r_code
-    except:
+    except BaseException:
         logger.log('Failed to get sandbox_readable_by_group: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -171,7 +171,7 @@ def sandbox_allowed_browsable_file_types():
             logger.log('output_files_web_browsable_allowed_types %s' %
                        (r_code))
         return r_code
-    except:
+    except BaseException:
         logger.log('Failed to get output_files_web_browsable_allowed_types: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -191,7 +191,7 @@ def get_supported_accountinggroups():
     try:
         prs = JobsubConfigParser()
         r_code = prs.supportedGroups()
-    except:
+    except BaseException:
         logger.log('Failed to get accounting groups: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -215,7 +215,7 @@ def default_voms_role(acctgroup="default"):
         r_code = prs.get(acctgroup, 'default_voms_role')
         if log_verbose():
             logger.log('default voms role for %s : %s' % (acctgroup, r_code))
-    except:
+    except BaseException:
         logger.log('error fetching voms role for acctgroup :%s' % acctgroup,
                    severity=logging.ERROR,
                    traceback=True)
@@ -236,7 +236,7 @@ def sub_group_pattern(acctgroup):
         sgp = prs.get(acctgroup, 'sub_group_pattern')
         if sgp:
             acg = sgp
-    except:
+    except BaseException:
         pass
     return acg
 
@@ -254,7 +254,7 @@ def get_dropbox_max_size(acctgroup):
         r_code = prs.get(acctgroup, 'dropbox_max_size')
         if log_verbose():
             logger.log("r_code = %s" % r_code)
-    except:
+    except BaseException:
         logger.log('Failed to get dropbox_max_size: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -276,7 +276,7 @@ def get_dropbox_constraint(acctgroup):
             logger.log("r_code = %s" % r_code)
             logger.log("returning = %s" % cnstr)
         return cnstr
-    except:
+    except BaseException:
         logger.log('Failed to get dropbox_constraint: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -305,7 +305,7 @@ def get_dropbox_location(acctgroup):
             except TypeError:
                 # Substitution failed, so return original r_code
                 pass
-    except:
+    except BaseException:
         logger.log('Failed to get dropbox_location: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -360,7 +360,7 @@ def get_authentication_methods(acctgroup):
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'authentication_methods')
-    except:
+    except BaseException:
         logger.log('Failed to get authentication_methods: ',
                    traceback=True,
                    severity=logging.ERROR)
@@ -522,7 +522,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
 
         if recent_duty_cycle > srt:
             err = "schedd %s is overloaded " % schedd_nm
-            err += "at %s percent busy " % (100.0*recent_duty_cycle)
+            err += "at %s percent busy " % (100.0 * recent_duty_cycle)
             err += "rejecting job submission, try again in a few minutes"
             result = {'err': err}
             logger.log(err)

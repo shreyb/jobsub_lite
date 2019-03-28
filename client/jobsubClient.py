@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import contextlib
 """
 ##########################################################################
 # Project:
@@ -48,7 +49,7 @@ def version_string():
     ver_str = ver
 
     # Release candidates are in rpmrelease with specific pattern
-    p = re.compile('\.rc[0-9]+$')
+    p = re.compile(r'\.rc[0-9]+$')
     if rel:
         rc = p.findall(rel)
         if rc:
@@ -69,7 +70,6 @@ class JobSubClientSubmissionError(Exception):
     def __init__(self, errMsg="JobSub remote submission failed."):
         logSupport.dprint(traceback.format_exc())
         sys.exit(errMsg)
-
 
 
 class JobSubClient(object):
@@ -99,33 +99,33 @@ class JobSubClient(object):
         else:
             self.reject_list = [
                 # exclude .git and .svn directories
-                "\.git/",
-                "\.svn/",
+                r"\.git/",
+                r"\.svn/",
                 # exclude .core files
-                "\.core$",
+                r"\.core$",
                 # exclude emacs backups
-                "\~.*$",
+                r"\~.*$",
                 # exclude pdfs and eps files
-                "\.pdf$",
-                "\.eps$",
+                r"\.pdf$",
+                r"\.eps$",
                 # NO PICTURES OF CATS
-                "\.png$",
-                "\.PNG$",
-                "\.gif$",
-                "\.GIF$",
-                "\.jpg$",
-                "\.jpeg$",
-                "\.JPG$",
-                "\.JPEG$",
+                r"\.png$",
+                r"\.PNG$",
+                r"\.gif$",
+                r"\.GIF$",
+                r"\.jpg$",
+                r"\.jpeg$",
+                r"\.JPG$",
+                r"\.JPEG$",
                 # no .log .out or .err files
-                "\.log$",
-                "\.err$",
-                "\.out$",
+                r"\.log$",
+                r"\.err$",
+                r"\.out$",
                 # no tarfiles or zipfiles
-                "\.tar$",
-                "\.tgz$",
-                "\.zip$",
-                "\.gz$",
+                r"\.tar$",
+                r"\.tgz$",
+                r"\.zip$",
+                r"\.gz$",
             ]
 
         constraint = self.extra_opts.get('constraint')
@@ -551,8 +551,8 @@ class JobSubClient(object):
 
             post_data = self.post_data_append(post_data,
                                               'jobsub_payload',
-                                               pycurl.FORM_FILE,
-                                               payloadFileName)
+                                              pycurl.FORM_FILE,
+                                              payloadFileName)
 
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -584,17 +584,19 @@ class JobSubClient(object):
         return http_code
 
     def post_data_append(self, post_data, payload, fmt, fname):
-        #append payload to HTTP post_data payload
-        #fmt is postdata format
-        #fname is file to append
-        print "appending %s fmt %s to %s"%(fname,fmt,payload)
+        # append payload to HTTP post_data payload
+        # fmt is postdata format
+        # fname is file to append
+        print "appending %s fmt %s to %s" % (fname, fmt, payload)
         try:
             assert(os.access(fname, os.R_OK))
             post_data.append((payload, (fmt, fname)))
             return post_data
-        except Exception :
-            raise JobSubClientError("error HTTP POSTing %s - Is it readable?" % fname)
-        
+        except Exception:
+            raise JobSubClientError(
+                "error HTTP POSTing %s - Is it readable?" %
+                fname)
+
     def makeDagPayload(self, infile):
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
@@ -606,7 +608,7 @@ class JobSubClient(object):
         tar = tarfile.open('payload.tgz', 'w:gz')
         lines = z.split('\n')
         for line in lines:
-            wrds = re.split('\s+', line)
+            wrds = re.split(r'\s+', line)
             la = []
             for w in wrds:
                 w2 = uri2path(w)
@@ -722,7 +724,7 @@ class JobSubClient(object):
                 _timeout = int(connect_timeout)
             except ValueError:
                 err = "timeout %s is not valid type (is %s, should be " +\
-                " %s "
+                    " %s "
                 err = err % (connect_timeout, type(connect_timeout), "int")
                 logSupport.dprint(err)
                 raise JobSubClientError(err)
@@ -758,6 +760,11 @@ class JobSubClient(object):
         return check_id(jobid)
 
     def adjust_prio(self, jobid=None, uid=None):
+        """ Adjust condor_prio for jobid or uid
+            uid currently disabled in jobsub_prio
+            actual priority value to adjust to comes
+            from self.extra_opts['prio']
+        """
         jobid = self.checkID(jobid)
         prio = self.extra_opts.get('prio')
         if not prio:
@@ -770,7 +777,7 @@ class JobSubClient(object):
         if uid:
             self.probeSchedds()
             rslts = []
-            _r_fmt = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE 
+            _r_fmt = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE
             for schedd in self.schedd_list:
                 srv = "https://%s:8443" % schedd
                 if self.acct_role:
@@ -778,7 +785,7 @@ class JobSubClient(object):
                         % (srv, self.account_group, self.acct_role)
                 else:
                     u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
-                        % (srv, self.account_group )
+                        % (srv, self.account_group)
                 u += 'setprio/%s/user/%s/' % (prio, uid)
                 #u += 'setprio/%s/dbox/' % prio
 
@@ -796,7 +803,7 @@ class JobSubClient(object):
                 u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE\
                     % (self.server, self.account_group, self.acct_role)
             else:
-                u  = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
+                u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
                     % (self.server, self.account_group)
 
             u += 'setprio/%s/job_id/%s/' % (prio, jobid)
@@ -806,7 +813,6 @@ class JobSubClient(object):
                                        'PUT',
                                        post_data,
                                        ssl_verifyhost=False)
-
 
     def release(self, jobid=None, uid=None, constraint=None):
         jobid = self.checkID(jobid)
@@ -1281,7 +1287,7 @@ class JobSubClient(object):
 
         # We expect better-analyze queries to take longer, so give it 5 min
         if self.better_analyze:
-            return self.changeJobState(url=list_url, 
+            return self.changeJobState(url=list_url,
                                        http_custom_request='GET',
                                        connect_timeout=constants.JOBSUB_BETTER_ANALYZE_CONNECTTIMEOUT)
 
@@ -1528,7 +1534,8 @@ def report_counts(msg):
             elif ' S  ' in line:
                 suspended += 1
     if jobs:
-        print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" % (jobs, completed, removed, idle, running, held, suspended)
+        print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" % (
+            jobs, completed, removed, idle, running, held, suspended)
 
 
 def print_msg(msg):
@@ -1891,7 +1898,7 @@ def get_jobexe_uri(argv):
 
 
 def uri2path(uri):
-    return re.sub('^.\S+://', '', uri)
+    return re.sub(r'^.\S+://', '', uri)
 
 
 def get_dropbox_uri_map(argv):
@@ -1962,7 +1969,7 @@ def check_id(jobid):
         return jobid
     else:
         # p=re.compile('^[0-9]+\.*[0-9]*\@[\w]+-*_*[\w]*.fnal.gov$')
-        p = re.compile('^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
+        p = re.compile(r'^[0-9]+\.*[0-9]*\@[\w]+[\w\-\_\.\@]*.fnal.gov$')
         if not p.match(jobid):
             err = "ERROR: --jobid '%s' is malformed" % jobid
             raise JobSubClientError(err)
@@ -2013,9 +2020,6 @@ def read_re_file(filename):
         if line[0] != '#':
             re_list.append(line.rstrip('\n'))
     return re_list
-
-
-import contextlib
 
 
 @contextlib.contextmanager

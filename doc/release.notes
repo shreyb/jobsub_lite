@@ -4,13 +4,14 @@ v1.3
 ================================================================================
 Client
 ------
-
+* Feature  13853   access to condor_prio features
 Server
 ------
 
 * Bug      22039   improper handling of proxy/role in util.py
 * Support  22031   improve logging
 * Bug      22174   admin scripts should ignore commented lines in config files
+
 
 ================================================================================
 v1.2.9.1

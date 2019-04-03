@@ -50,7 +50,7 @@ def parse_opts(argv):
     # Required args
     parser.add_argument('-G', '--group',
                       dest='acctGroup',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Group/Experiment/Subgroup>',
                       default=os.environ.get('JOBSUB_GROUP'),
@@ -58,7 +58,7 @@ def parse_opts(argv):
 
     parser.add_argument('-J', '--job', '--jobid',
                       dest='jobId',
-                      type='string',
+                      type=str,
 #                      action='callback',
                       action=JID_Callback,
 #                      callback=jid_callback,
@@ -75,7 +75,7 @@ def parse_opts(argv):
 
     parser.add_argument('--timeout',
                       dest='timeout',
-                      type='int',
+                      type=int,
                       action='store',
                       metavar='<Timeout>',
                       default=None,
@@ -83,7 +83,7 @@ def parse_opts(argv):
 
     parser.add_argument('--dest-dir', '--unzipdir', '--destdir',
                       dest='destdir',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Dest Dir>',
                       default=None,
@@ -91,7 +91,7 @@ def parse_opts(argv):
 
     parser.add_argument('--role',
                       dest='acctRole',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<VOMS Role>',
                       default=None,
@@ -99,7 +99,7 @@ def parse_opts(argv):
 
     parser.add_argument('--user',
                       dest='user',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<user>',
                       default=None,
@@ -107,7 +107,7 @@ def parse_opts(argv):
 
     parser.add_argument('--archive-format',
                       dest='format',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Archive Format>',
                       default='tar',

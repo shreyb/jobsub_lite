@@ -145,7 +145,7 @@ def parse_opts(argv):
     # Optional args
     client_options.add_argument('--role',
                          dest='acctRole',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<VOMS Role>',
                          default=None,

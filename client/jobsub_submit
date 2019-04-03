@@ -90,6 +90,9 @@ from defaultServer import defaultServer
 #    return (cli_argv, srv_argv)
 
 def split_client_server_args(parser, argv):
+    end_srv_argv = []
+    working_argv = []
+
     # Find executable, make sure it and all arguments following are considered
     # server args
     exe_idx = get_jobexe_idx(argv)

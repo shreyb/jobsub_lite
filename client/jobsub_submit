@@ -136,7 +136,7 @@ def parse_opts(argv):
     # Required args
     client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=string,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),

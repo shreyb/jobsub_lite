@@ -99,6 +99,8 @@ def split_client_server_args(parser, argv):
     if exe_idx is not None:
         end_srv_argv = argv[exe_idx:]
         working_argv = argv[1:exe_idx] #Don't need to parse the jobsub command
+    else:
+        working_argv = argv[:]
 
     # Parse the known args of what's left to grab client arguments
     cli_argv, extras = parser.parse_known_args(working_argv)

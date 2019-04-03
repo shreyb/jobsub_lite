@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import optparse
+import argparse
 import pycurl
 import time
 import os
@@ -19,13 +19,15 @@ from defaultServer import defaultServer
 from jobsubClient import JobSubClient
 from jobsubClient import get_client_credentials
 from jobsubClient import print_formatted_response
-from jobsubClient import version_string
+#from jobsubClient import version_string
+from jobsubClient import Version_String
 from jobsubClient import print_json_response
 from jobsubClient import servicing_jobsub_server
 from jobsubClient import curl_secure_context
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
-from jobsubClient import jid_callback
+#from jobsubClient import jid_callback
+from jobsubClient import JID_Callback
 from jobsubClient import check_id
 
 
@@ -40,13 +42,13 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    parser = optparse.OptionParser(usage='%prog [options]',
-                                   version=version_string(),
+    parser = argparse.ArgumentParser(usage='%(prog)s [options]',
+                                   # version=version_string(),
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
 
     # Required args
-    parser.add_option('-G', '--group',
+    parser.add_argument('-G', '--group',
                       dest='acctGroup',
                       type='string',
                       action='store',
@@ -54,23 +56,24 @@ def parse_opts(argv):
                       default=os.environ.get('JOBSUB_GROUP'),
                       help='Group/Experiment/Subgroup for priorities and accounting')
 
-    parser.add_option('-J', '--job', '--jobid',
+    parser.add_argument('-J', '--job', '--jobid',
                       dest='jobId',
                       type='string',
-                      action='callback',
-                      callback=jid_callback,
+#                      action='callback',
+                      action=JID_Callback,
+#                      callback=jid_callback,
                       metavar='<Job ID>',
                       help='Job ID')
 
     # Optional args
-    parser.add_option('--jobsub-server',
+    parser.add_argument('--jobsub-server',
                       dest='jobsubServer',
                       action='store',
                       metavar='<JobSub Server>',
                       default=defaultServer(),
                       help='Alternate location of JobSub server to use')
 
-    parser.add_option('--timeout',
+    parser.add_argument('--timeout',
                       dest='timeout',
                       type='int',
                       action='store',
@@ -78,7 +81,7 @@ def parse_opts(argv):
                       default=None,
                       help='Timeout for the operation in sec')
 
-    parser.add_option('--dest-dir', '--unzipdir', '--destdir',
+    parser.add_argument('--dest-dir', '--unzipdir', '--destdir',
                       dest='destdir',
                       type='string',
                       action='store',
@@ -86,7 +89,7 @@ def parse_opts(argv):
                       default=None,
                       help='Directory to automatically unarchive logs into')
 
-    parser.add_option('--role',
+    parser.add_argument('--role',
                       dest='acctRole',
                       type='string',
                       action='store',
@@ -94,7 +97,7 @@ def parse_opts(argv):
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
-    parser.add_option('--user',
+    parser.add_argument('--user',
                       dest='user',
                       type='string',
                       action='store',
@@ -102,7 +105,7 @@ def parse_opts(argv):
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
-    parser.add_option('--archive-format',
+    parser.add_argument('--archive-format',
                       dest='format',
                       type='string',
                       action='store',
@@ -110,33 +113,36 @@ def parse_opts(argv):
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
-    parser.add_option('--partial',
+    parser.add_argument('--partial',
                       dest='partial',
                       action='store_true',
                       metavar='<partial>',
                       default=False,
                       help='download only the stdout and stderr for this jobid, not the entire sandbox')
 
-    parser.add_option('--list-sandboxes', '--list',
+    parser.add_argument('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
                       metavar='<List Sandboxes and creation dates>',
                       default=False,
                       help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
 
-    parser.add_option('--debug',
+    parser.add_argument('--debug',
                       dest='debug',
                       action='store_true',
                       metavar='<debug info>',
                       default=False,
                       help='show debug info like server contacted, http response, response time')
 
+    parser.add_argument('--version',
+                       action=Version_String)
+
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
 
     if len(remainder) > 1:
         # parser.print_help(file)

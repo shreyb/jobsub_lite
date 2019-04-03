@@ -40,6 +40,25 @@ from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 import subprocessSupport
 from distutils import spawn
+import argparse
+
+
+
+class Version_String(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        ver = constants.__rpmversion__
+        rel = constants.__rpmrelease__
+
+        ver_str = ver
+
+        # Release candidates are in rpmrelease with specific pattern
+        p = re.compile('\.rc[0-9]+$')
+        if rel:
+            rc = p.findall(rel)
+            if rc:
+                ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
+
+        print ver_str
 
 
 def version_string():
@@ -2248,6 +2267,15 @@ def jid_callback(option, opt, value, p):
         err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
         sys.exit(err)
     setattr(p.values, option.dest, value)
+
+class JID_Callback(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        if '@' not in value:
+
+            err = "jobid (%s) is missing an '@', it must be of the " % value
+            err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
+            sys.exit(err)
+        setattr(namespace, self.dest, value)
 
 
 def date_callback(option, opt, value, p):

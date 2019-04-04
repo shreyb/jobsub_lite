@@ -45,7 +45,30 @@ import argparse
 
 
 class Version_String(argparse.Action):
+    def __init__(self, 
+                option_strings, 
+                version=None, 
+                dest=argparse.SUPPRESS, 
+                default=argparse.SUPPRESS, 
+                help="Show program's version number and exit"):
+        super(Version_String, self).__init__(
+                option_strings=option_strings,
+                dest=dest,
+                default=default,
+                nargs=0,
+                help=help)
+        self.version = version
+
     def __call__(self, parser, namespace, values=None, option_string=None):
+        version = self.version
+        if version is None:
+            version = self.__get_version()
+        formatter = parser._get_formatter()
+        formatter.add_text(version)
+        parser.exit(message=formatter.format_help())
+
+    @staticmethod
+    def __get_version():
         ver = constants.__rpmversion__
         rel = constants.__rpmrelease__
 
@@ -58,8 +81,7 @@ class Version_String(argparse.Action):
             if rc:
                 ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
 
-        print ver_str
-        sys.exit(0)
+        return ver_str
 
 
 def version_string():

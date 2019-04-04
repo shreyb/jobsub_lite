@@ -45,7 +45,7 @@ import argparse
 
 
 class Version_String(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values=None, option_string=None):
         ver = constants.__rpmversion__
         rel = constants.__rpmrelease__
 
@@ -59,6 +59,7 @@ class Version_String(argparse.Action):
                 ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
 
         print ver_str
+        sys.exit(0)
 
 
 def version_string():

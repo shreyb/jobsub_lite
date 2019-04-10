@@ -144,7 +144,7 @@ def parse_opts(argv):
                          dest='outFormat',
                          action='store_const',
                          const='long',
-                         metavar='<output Format>',
+                         # metavar='<output Format>',
                          default=None,
                          help='show long listing (like condor_q -l)')
 
@@ -192,7 +192,7 @@ def parse_opts(argv):
                          dest='summary',
                          action='store_true',
                          default=False,
-                         metavar='<summary>',
+#                         metavar='<summary>',
                          help='provide a summary (like ifront_q) ')
 
     client_options.add_argument('--debug',

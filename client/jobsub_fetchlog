@@ -116,21 +116,21 @@ def parse_opts(argv):
     parser.add_argument('--partial',
                       dest='partial',
                       action='store_true',
-                      metavar='<partial>',
+                      # metavar='<partial>',
                       default=False,
                       help='download only the stdout and stderr for this jobid, not the entire sandbox')
 
     parser.add_argument('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
-                      metavar='<List Sandboxes and creation dates>',
+                      # metavar='<List Sandboxes and creation dates>',
                       default=False,
                       help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
 
     parser.add_argument('--debug',
                       dest='debug',
                       action='store_true',
-                      metavar='<debug info>',
+                      # metavar='<debug info>',
                       default=False,
                       help='show debug info like server contacted, http response, response time')
 

@@ -147,7 +147,7 @@ def parse_opts(argv):
 def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', vars(options))
     opt_dict = {'debug': options.debug,
                 'qdate_ge': options.qdate_ge, 'qdate_le': options.qdate_le}
     js_client = JobSubClient(options.jobsubServer,

@@ -2281,6 +2281,7 @@ def http_code_to_rc(http_code):
     return 1
 
 
+# TODO delete this function
 def jid_callback(option, opt, value, p):
     """call back function for optparse from jobsub_ client commands
     """
@@ -2294,13 +2295,32 @@ def jid_callback(option, opt, value, p):
 class JID_Callback(argparse.Action):
     def __call__(self, parser, namespace, value, option_string=None):
         if '@' not in value:
-
             err = "jobid (%s) is missing an '@', it must be of the " % value
             err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
             sys.exit(err)
         setattr(namespace, self.dest, value)
 
+class Date_Callback(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        dateOK = False
+        flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
+        for fmt in flist:
+            try:
+                datetime.strptime(value, fmt)
+                dateOK = True
+                break
+            except Exception:
+                pass
+        if dateOK:
+            setattr(namespace, self.dest, value)
+        else:
+            sys.exit(
+                """invalid date format for '%s'.  Must be of the form """ % value +
+                """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
+                """example: '2015-03-01 01:59:03'""")
 
+
+# TODO delete this function
 def date_callback(option, opt, value, p):
     """call back function for optparse from jobsub_ client commands
        check that date is valid and exit if conversion can't be made

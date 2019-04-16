@@ -131,7 +131,7 @@ def print_opts(options):
 def parse_opts(argv):
     usage = '%(prog)s [Client Options] [Server Options] file://user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
     parser = argparse.ArgumentParser(usage=usage,
-                                   # version=version_string(),
+                                   # version=version_string(), TODO
                                    add_help=False,
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are (--group AND  file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")

@@ -58,7 +58,7 @@ def parse_opts(argv):
     client_options = parser.add_argument_group("Client Options")
 
     # Required args
-    opt_group.add_argument('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
                          type='string',
                          action='store',
@@ -67,14 +67,14 @@ def parse_opts(argv):
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
-    opt_group.add_argument('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_argument('--user',
+    client_options.add_argument('--user',
                          dest='histUser',
                          type='string',
                          action='store',
@@ -82,7 +82,7 @@ def parse_opts(argv):
                          default=None,
                          help='username to look at history of')
 
-    opt_group.add_argument('--jobid',
+    client_options.add_argument('--jobid',
                          dest='jobId',
                          type='string',
                          action=JID_Callback,
@@ -91,7 +91,7 @@ def parse_opts(argv):
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
-    opt_group.add_argument('--qdate-ge',
+    client_options.add_argument('--qdate-ge',
                          dest='qdate_ge',
                          type='string',
                          action=Date_Callback,
@@ -101,7 +101,7 @@ def parse_opts(argv):
                          help="""job submission date (qdate)  greater than or equal to <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
-    opt_group.add_argument('--qdate-le',
+    client_options.add_argument('--qdate-le',
                          dest='qdate_le',
                          type='string',
                          action=Date_Callback,
@@ -111,13 +111,13 @@ def parse_opts(argv):
                          help="""job submission date (qdate)  less than or equal to  <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
-    opt_group.add_argument('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
                          help='Print debug messages including server contacted, http response, response time')
 
-    opt_group.add_argument('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,

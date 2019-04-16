@@ -47,7 +47,7 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options]'
+    usage = '%(prog)s [Client Options]'
 #     parser = optparse.OptionParser(usage=usage, TODO
     parser = argparse.ArgumentParser(usage=usage,
                                    # version=version_string(), TODO

@@ -60,7 +60,7 @@ def parse_opts(argv):
     # Required args
     client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
@@ -76,7 +76,7 @@ def parse_opts(argv):
 
     client_options.add_argument('--user',
                          dest='histUser',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<uid>',
                          default=None,
@@ -84,7 +84,7 @@ def parse_opts(argv):
 
     client_options.add_argument('--jobid',
                          dest='jobId',
-                         type='string',
+                         type=str,
                          action=JID_Callback,
                          # callback=jid_callback, TODO
                          metavar='<Job ID>',
@@ -93,7 +93,7 @@ def parse_opts(argv):
 
     client_options.add_argument('--qdate-ge',
                          dest='qdate_ge',
-                         type='string',
+                         type=str,
                          action=Date_Callback,
                          # callback=date_callback, TODO
                          metavar='<submission date>',
@@ -103,7 +103,7 @@ def parse_opts(argv):
 
     client_options.add_argument('--qdate-le',
                          dest='qdate_le',
-                         type='string',
+                         type=str,
                          action=Date_Callback,
                          # callback=date_callback, TODO
                          metavar='<submission date>',

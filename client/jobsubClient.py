@@ -1472,10 +1472,10 @@ def curl_secure_context(url, credentials):
     curl.setopt(curl.SSLCERT, credentials.get('cert'))
     curl.setopt(curl.SSLKEY, credentials.get('key'))
     proxy = credentials.get('proxy')
-    if proxy:
+    #if proxy:
         # When using proxy set the CAINFO to the proxy so curl can correctly
         # pass the X509 credential chain to the server
-        curl.setopt(curl.CAINFO, proxy)
+    #    curl.setopt(curl.CAINFO, proxy)
     curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')

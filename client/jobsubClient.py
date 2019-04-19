@@ -587,7 +587,7 @@ class JobSubClient(object):
         # append payload to HTTP post_data payload
         # fmt is postdata format
         # fname is file to append
-        print "appending %s fmt %s to %s" % (fname, fmt, payload)
+        #print "appending %s fmt %s to %s" % (fname, fmt, payload)
         try:
             assert(os.access(fname, os.R_OK))
             post_data.append((payload, (fmt, fname)))
@@ -1472,10 +1472,12 @@ def curl_secure_context(url, credentials):
     curl.setopt(curl.SSLCERT, credentials.get('cert'))
     curl.setopt(curl.SSLKEY, credentials.get('key'))
     proxy = credentials.get('proxy')
-    #if proxy:
-        # When using proxy set the CAINFO to the proxy so curl can correctly
-        # pass the X509 credential chain to the server
-    #    curl.setopt(curl.CAINFO, proxy)
+    if proxy:
+        cmd = '/usr/bin/voms-proxy-info -type -file %s' % proxy
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd )
+        if 'RFC compliant proxy' in cmd_out:
+            logSupport.dprint("setting CAINFO for %s" % proxy)
+            curl.setopt(curl.CAINFO, proxy)
     curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
     if platform.system() == 'Darwin':
         curl.setopt(curl.CAINFO, './ca-bundle.crt')
@@ -1708,7 +1710,7 @@ def get_capath():
         err += 'Set X509_CERT_DIR in the environment.'
         raise JobSubClientError(err)
 
-    #logSupport.dprint('Using CA_DIR: %s' % ca_dir)
+    logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
 

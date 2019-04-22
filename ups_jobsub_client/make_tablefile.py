@@ -55,13 +55,18 @@ Action=unsetup
        sourceRequired("$JOBSUB_PYCURL_UNSET_SOURCE" , NO_UPS_ENV )
        envUnSet(JOBSUB_PYCURL_UNSET_SOURCE)
     EndIf( test "$PYCURL_DIR" != "" )
+    If( test "$CIGETCERTLIBS_DIR" != "" )
+       Execute( "ups unsetup cigetcertlibs",  NO_UPS_ENV, CIGETCERTLIBS_DIR )
+       envUnSet(CIGETCERTLIBS_DIR)
+    EndIf( test "$CIGETCERTLIBS_DIR" != "" )
+    unsetupOptional(curl)
     pathRemove(PYTHONPATH, ${UPS_PROD_DIR} )
     pathRemove(PATH, ${UPS_PROD_DIR})
     envUnSet(JOBSUB_PYVER)
          
     unproddir()
     unsetupenv()
-              
+
 
 """
 

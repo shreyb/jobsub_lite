@@ -233,7 +233,7 @@ class AccountJobsResource(object):
                     # remove job
                     rcode = util.doDELETE(acctgroup, job_id=job_id, **kwargs)
                 elif cherrypy.request.method == 'PUT':
-                    # hold/release
+                    # hold/release/change priority
                     rcode = util.doPUT(acctgroup, job_id=job_id, **kwargs)
                 else:
                     err = 'Unsupported method: %s' % cherrypy.request.method

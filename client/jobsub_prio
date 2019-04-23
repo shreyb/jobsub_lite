@@ -5,10 +5,11 @@
 #   JobSub
 #
 # Author:
-#   Parag Mhashilkar
+#   Dennis Box
 #
 # Description:
-#   This module implements the JobSub client tool
+#   This module implements jobsub_client calls to condor_prio, adjusting
+#   job priority
 #
 ##########################################################################
 
@@ -32,6 +33,10 @@ def print_opts(options):
 
 
 def required_args_present(options):
+    """
+    check if optargs contains a legal set of arguments
+    to run a jobsub_prio command
+    """
     try:
         if options.acctGroup and options.jobsubServer and options.prio and\
                 (options.jobId or options.uid):
@@ -42,6 +47,9 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
+    """
+    use optparse to digest input arguments
+    """
     usage = '%prog [Client Options]'
     usage += "\nadjust job priorities of queued jobs"
     epi_text = """REQUIRED arguments to adjust job priorities  are (-G AND --prio AND  """
@@ -132,7 +140,9 @@ def parse_opts(argv):
                          action='store',
                          default=None,
                          metavar='<priority>',
-                         help='change job priority to this (default is 0) ')
+                         help='change job priority to this number. Default ' +
+                               'is 0, higher numbers correspond to higher ' +
+                               'priority')
 
     parser.add_option_group(opt_group)
 

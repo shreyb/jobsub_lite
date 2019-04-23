@@ -10,7 +10,11 @@ Client
 
 Server
 ------
-* Feature  16603   support for SL7
+* Feature  16603   support for SL7.  NOTE: A security feature on SL7 that was over
+                   looked for some time is that apache servers have their own
+                   private tmp area by default.  This breaks condor FS authentication
+                   as currently used by jobsub.  This is controlled by the setting
+                   'PrivateTmp' in /etc/systemd/system/multi-user.target.wants/httpd.service
 * Support  22031   improve logging
 * Bug      22039   improper handling of proxy/role in util.py
 * Bug      22151   --blacklist option doesn't block sites like its supposed to

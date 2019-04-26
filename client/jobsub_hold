@@ -15,14 +15,17 @@
 import sys
 import os
 import optparse
+import argparse 
 import traceback
 
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-from jobsubClient import version_string
+# from jobsubClient import version_string
+from jobsubClient import Version_String 
 from jobsubClient import http_code_to_rc
-from jobsubClient import jid_callback
+# from jobsubClient import jid_callback
+from jobsubClient import JID_Callback
 from defaultServer import defaultServer
 
 
@@ -42,7 +45,7 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options]'
+    usage = '%(prog)%s [Client Options]'
     epi_text = """REQUIRED arguments to hold jobs are (-G AND  (--jobid OR """
     epi_text += """--user OR --constraint) ).  Please direct questions, """
     epi_text += """comments, or problems to the service desk.  """
@@ -50,17 +53,17 @@ def parse_opts(argv):
     epi_text += """https://cdcvs.fnal.gov/redmine/projects/"""
     epi_text += """jobsub/wiki/Frequently_Asked_Questions"""
 
-    parser = optparse.OptionParser(usage=usage,
-                                   version=version_string(),
+    parser = argparse.ArgumentParser(usage=usage,
+                                   # version=version_string(), #TODO
                                    conflict_handler="resolve",
                                    epilog=epi_text)
 
-    opt_group = optparse.OptionGroup(parser, "Client Options")
+    client_options = parser.add_argument_group("Client Options")
 
     # Required args
-    opt_group.add_option('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
@@ -69,26 +72,26 @@ def parse_opts(argv):
                                       ]))
 
     # Optional args
-    opt_group.add_option('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--role',
+    client_options.add_argument('--role',
                          dest='acctRole',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<VOMS Role>',
                          default=None,
                          help='VOMS Role for priorities and accounting')
 
-    opt_group.add_option('--jobid',
+    client_options.add_argument('--jobid',
                          dest='jobId',
-                         type='string',
+                         type=str,
                          action='callback',
-                         callback=jid_callback,
+                         callback=JID_Callback,
                          metavar='<Job ID>',
                          default=None,
                          help="".join(['CSV list of Job Ids to hold.  Job ',
@@ -100,7 +103,7 @@ def parse_opts(argv):
                                        'then ALL job ids with that cluster ',
                                        'and schedd name will be removed',
                                       ]))
-    opt_group.add_option('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
@@ -109,36 +112,37 @@ def parse_opts(argv):
                                        'response time',
                                       ]))
 
-    opt_group.add_option('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
 
-    opt_group.add_option('--user',
+    client_options.add_argument('--user',
                          dest='uid',
-                         type='string',
+                         type=str,
                          action='store',
                          default=None,
                          metavar='<user ID>',
                          help='hold all jobs with this uid ')
 
-    opt_group.add_option('--constraint',
+    client_options.add_argument('--constraint',
                          dest='constraint',
-                         type='string',
+                         type=str,
                          action='store',
                          default=None,
                          metavar='<constraint>',
                          help='hold all jobs with this constraint ')
 
-    parser.add_option_group(opt_group)
+    client_options.add_argument('--version', 
+                        action=Version_String)
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
 
     if options.help or (len(remainder) > 1):
         parser.print_help()
@@ -155,7 +159,7 @@ def parse_opts(argv):
 def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', vars(options))
     extraOpts = {'debug': options.debug, 'uid': options.uid,
                  'constraint': options.constraint}
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,

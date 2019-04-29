@@ -4,7 +4,6 @@ v1.3
 ================================================================================
 Client
 ------
-* Bug      22428   remove nss dependency in pycurl
 * Bug      22399   change in behavior of (some) clients after server cert updated
 * Feature  13853   access to condor_prio features
 
@@ -16,7 +15,12 @@ Server
 * Bug      22151   --blacklist option doesn't block sites like its supposed to
 * Bug      22174   admin scripts should ignore commented lines in config files
 
-
+============================================================================
+v1.2.10
+============================================================================
+Client
+----------
+* Bug      22428   remove nss dependency in pycurl
 ================================================================================
 v1.2.9.1
 ================================================================================

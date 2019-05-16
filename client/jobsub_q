@@ -14,7 +14,7 @@
 
 import sys
 import os
-import optparse
+# import optparse
 import argparse
 import traceback
 import logSupport

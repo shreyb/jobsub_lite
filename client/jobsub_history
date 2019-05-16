@@ -15,7 +15,7 @@
 import sys
 import os
 import getopt
-import optparse
+# import optparse
 import argparse
 import time
 import traceback

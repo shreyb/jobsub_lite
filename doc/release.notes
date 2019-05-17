@@ -20,6 +20,7 @@ Server
 * Bug      22039   improper handling of proxy/role in util.py
 * Bug      22151   --blacklist option doesn't block sites like its supposed to
 * Bug      22174   admin scripts should ignore commented lines in config files
+* Bug      19547   on worker nodes, jobs not getting a valid production proxy
 
 ============================================================================
 v1.2.10

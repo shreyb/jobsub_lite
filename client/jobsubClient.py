@@ -188,7 +188,6 @@ class JobSubClient(object):
         self.submit_url = None
         self.dropbox_uri_map = {}
         self.directory_tar_map = {}
-        # self.is_tardir = False
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
@@ -245,11 +244,18 @@ class JobSubClient(object):
                 tfiles = []
 
                 # upload the files
-                logSupport.dprint('calling ifdh_upload')
-                result = self.ifdh_upload()
-                logSupport.dprint('ifdh_upload result=%s' % result)
-                if not result:
-                    raise JobSubClientSubmissionError('ifdh_upload failed')
+                if self.extra_opts.get('cvmfs_upload',False):
+                    result = logSupport.dprint('calling dropbox_upload')
+                    self.dropbox_upload()
+                    logSupport.dprint('dropbox_upload result=%s' % result)
+                    if not result:
+                        raise JobSubClientSubmissionError('dropbox_upload failed')
+                else:
+                    logSupport.dprint('calling ifdh_upload')
+                    result = self.ifdh_upload()
+                    logSupport.dprint('ifdh_upload result=%s' % result)
+                    if not result:
+                        raise JobSubClientSubmissionError('ifdh_upload failed')
 
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
@@ -288,8 +294,6 @@ class JobSubClient(object):
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
 
-            # if self.is_tardir:
-            #    srv_argv.append('--is_tardir')
 
             if server_env_exports:
                 srv_env_export_b64en = \
@@ -321,7 +325,6 @@ class JobSubClient(object):
                 tar_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[tar_url] = digest
                 self.directory_tar_map[arg] = tar_url
-                # self.is_tardir = True
                 logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
                                   (self.dropbox_uri_map, self.directory_tar_map))
 

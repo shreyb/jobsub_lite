@@ -182,6 +182,14 @@ def parse_opts(argv):
 
     options, srv_argv = parser.parse_known_args(argv)
 
+    # ArgumentParser.parse_known_args will by default include the command
+    # name - in this case jobsub_submit_dag.  Remove that from the server
+    # args
+    try:
+        srv_argv.remove(argv[0])
+    except ValueError:
+        pass
+
     if not srv_argv:
         # No server side args or exe provided. Just print help.
         options.help = True

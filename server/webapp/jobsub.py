@@ -242,6 +242,32 @@ def sub_group_pattern(acctgroup):
     return acg
 
 
+def get_dropbox_cvmfs_server(acctgroup):
+    """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
+       uses, return a string
+    """
+    r_code_default = 'distdev01.fnal.gov'
+    r_code = None
+    if log_verbose():
+        logger.log("default = %s attempting to find dropbox_server" %
+                   r_code_default)
+    try:
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'dropbox_cvmfs_server')
+        if not r_code:
+            r_code = prs.get('default', 'dropbox_cvmfs_server')
+
+
+        logger.log("r_code = %s" % r_code)
+    except BaseException:
+        logger.log('Failed to get dropbox_max_size: ',
+                   traceback=True,
+                   severity=logging.ERROR)
+    if r_code:
+        return r_code
+    else:
+        return r_code_default
+
 def get_dropbox_max_size(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
        uses, return a string

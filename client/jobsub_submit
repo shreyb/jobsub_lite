@@ -331,20 +331,20 @@ def print_acctgroup_help(options):
 
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [
         ], extra_opts={})
-    response = js_client.help()
+    return js_client.help()
 
-    out = response.get('out')
+    # out = response
 
     # Remove the duplicate lines from the server response
     #    --help message
     #    Options:
-    for lineno in range(len(out)):
-        if out[lineno].lstrip().startswith(
-                '-h, --help') or (out[lineno].strip() == 'Options:'):
-            out[lineno] = ''
-            break
-    help_str = '  '.join(out[4:])
-    print help_str
+    # for lineno in range(len(out)):
+    #     if out[lineno].lstrip().startswith(
+    #             '-h, --help') or (out[lineno].strip() == 'Options:'):
+    #         out[lineno] = ''
+    #         break
+    # help_str = '  '.join(out[4:])
+    # print help_str
 
 
 def main(argv):

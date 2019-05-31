@@ -13,6 +13,7 @@ import contextlib
 #
 ##########################################################################
 """
+import requests
 import sys
 import os
 import re
@@ -244,10 +245,12 @@ class JobSubClient(object):
                 tfiles = []
 
                 # upload the files
-                if self.extra_opts.get('cvmfs_upload',False):
-                    result = logSupport.dprint('calling dropbox_upload')
-                    self.dropbox_upload()
+                #if self.extra_opts.get('cvmfs_upload',False):
+                if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
+                    logSupport.dprint('calling dropbox_upload')
+                    result = self.dropbox_upload()
                     logSupport.dprint('dropbox_upload result=%s' % result)
+                    #logSupport.dprint('dropbox_upload result=%s' % result.headers)
                     if not result:
                         raise JobSubClientSubmissionError('dropbox_upload failed')
                 else:
@@ -448,7 +451,80 @@ class JobSubClient(object):
 
         return result
 
+
+
     def dropbox_upload(self):
+        """
+        upload files from dropbox_uri_map to dropbox_location
+        via requests lib to cvmfs server
+        dropbox_uri_map has form:
+        {'dropbox://annie_stuff.tar':'d618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
+
+        RETURNS dictionary result of form after upload:
+        {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43':
+        {'path': '/pubapi/exists?cid=annie/d618fa5ff463c6e4070ebebc7bc0058e9b644d43',
+         'host': 'distdev01.fnal.gov'}}
+
+        """
+        result = {}
+        print "server=%s" %self.server
+        fmt = constants.JOBSUB_DROPBOX_CVMFS_SERVER_PATTERN
+        print "fmt=%s" %fmt
+
+        dropbox_server_url = fmt % (self.server, self.account_group)
+        print "url = %s" % dropbox_server_url
+        try:
+            self.dropboxServer  = self.requestValue(dropbox_server_url)
+            print "self.dropboxServer=%s" % self.dropboxServer
+        except RuntimeError as err:
+            msg = "failed to find cvmfs dropbox server"
+            msg += str(err)
+            raise JobSubClientSubmissionError(msg)
+
+        for file_name, cid in self.dropbox_uri_map.items():
+            exists_url = constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
+                (self.dropboxServer, self.account_group, cid) 
+            upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
+                (self.dropboxServer, self.account_group, cid) 
+            path = '/' + '/'.join(upload_url.split('/')[3:])
+            print 'exists_url = %s'% exists_url
+            resp = self.performRequest(exists_url, 'GET')
+            exists = resp[0].text.strip()
+            print "exists = %s" % exists
+            if exists == 'PRESENT':
+                result[cid] = {'path': path,
+                               'host': self.dropboxServer
+                              }
+            else:
+                cert = self.credentials.get('cert')
+                key = self.credentials.get('key')
+                cmd = """curl --cert %s --key %s """ % (cert,key)
+                #cmd += """ --capath /etc/grid-security/certificates """
+                cmd += """--url %s  -X POST --data-binary @%s """ % (upload_url,
+                                                        uri2path(file_name))
+                try:
+                    print "cmd = %s" % cmd
+                    resp,err = subprocessSupport.iexe_cmd(cmd)
+                    resp = resp.strip()
+                    err = err.strip()
+                    print "resp = '%s'" % resp
+                    if resp in ['OK', 'PRESENT']:
+                        result[cid] = {'path': path,
+                                       'host': self.dropboxServer
+                                       }
+                    else:
+                        err += "failed to upload %s" % uri2path(file_name)
+                        err += "\nto %s" % upload_url
+                        for pt in resp,err:
+                            err += "\noutput=%s" % pt
+                        raise JobSubClientError(err)
+                except RuntimeError as err:
+                    raise JobSubClientError(err)
+
+        return result
+
+
+    def dropbox_upload_old(self):
         """
         upload a tarball or file to the dropbox server
         currently not used
@@ -707,58 +783,69 @@ class JobSubClient(object):
         response.close()
         return http_code
 
-    def changeJobState(self, url, http_custom_request, post_data=None,
-                       ssl_verifyhost=False, connect_timeout=None):
-        """
-        Generic API to perform job actions like remove/hold/release
-        """
+    
 
+    def changeJobState(self, url, http_custom_request, post_data=None,
+                       ssl_verifyhost=True, connect_timeout=None):
+        """
+        perform job actions like remove/hold/release
+        """
+        
+        resp, ses = self.performRequest(url, http_custom_request, post_data,
+                                        ssl_verifyhost, connect_timeout)
+        http_code = resp.status_code
+        self.print_response(resp, ses) 
+
+        return http_code
+
+    def requestValue(self, url, http_custom_request='GET', post_data=None,
+                     ssl_verifyhost=True, connect_timeout=None):
+
+        resp, ses = self.performRequest(url, http_custom_request, post_data,
+                                        ssl_verifyhost, connect_timeout)
+        
+        doc = json.loads(resp.text)
+        val = doc.get('out')
+        if not val:
+            err = doc.get('err')
+            raise jobsubClientError(err)
+        return val
+
+    def performRequest(self, url, http_custom_request, post_data=None,
+                       ssl_verifyhost=True, connect_timeout=None):
+        """
+        Generic request lib interface  
+        """
+        
         logSupport.dprint('ACTION URL     : %s\n' % url)
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
-
-        # Get curl & resposne object to use
-        curl, response = curl_secure_context(url, self.credentials)
-        curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
-        if post_data:
-            curl.setopt(curl.HTTPPOST, post_data)
-        if not ssl_verifyhost:
-            curl.setopt(curl.SSL_VERIFYHOST, 0)
-        if connect_timeout is not None:
-            try:
-                _timeout = int(connect_timeout)
-            except ValueError:
-                err = "timeout %s is not valid type (is %s, should be " +\
-                    " %s "
-                err = err % (connect_timeout, type(connect_timeout), "int")
-                logSupport.dprint(err)
-                raise JobSubClientError(err)
-            else:
-                curl.setopt(curl.CONNECTTIMEOUT, _timeout)
+        my_hd={'Accept':'application/json'}
 
         http_code = 200
         response_time = 0
         try:
-            stime = time.time()
-            curl.perform()
-            etime = time.time()
-            response_time = etime - stime
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        except pycurl.error as error:
-            errno, errstr = error
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" %\
-                (http_code, errno, errstr)
-            if errno == 60:
-                err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?" %\
-                    self.server
-            # logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError(err)
+            ses = requests.Session()
+            req = requests.Request(http_custom_request,
+                                   url,
+                                   data=post_data,
+                                   headers=my_hd)
+            prep = req.prepare()
+            cred = (self.credentials.get('proxy'),
+                    self.credentials.get('proxy')
+                   )
+            if not cred:
+                cred = (self.credentials.get('cert'),
+                        self.credentials.get('key')
+                       )
+            resp = ses.send(prep,
+                            verify=ssl_verifyhost,
+                            cert=cred,
+                            timeout=connect_timeout)
+        except RuntimeError as error:
+            raise JobSubClientError(error)
 
-        self.printResponse(curl, response, response_time)
-        curl.close()
-        response.close()
-        return http_code
+        return (resp, ses)
+
 
     def checkID(self, jobid):
         return check_id(jobid)
@@ -1056,71 +1143,30 @@ class JobSubClient(object):
         """Get max size of file allowed in dropbox location from server"""
         if not acct_group:
             acct_group = self.account_group
-        # check for down servers DNS RR
-#        for server in self.serverAliases:
-#            if is_port_open(server, self.serverPort):
-#                self.server = server
-#                break
 
-        dropbox_url = constants.JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN %\
+        dropbox_size_url = constants.JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN %\
             (self.server, acct_group)
 
-        curl, response = curl_secure_context(dropbox_url, self.credentials)
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, self.ca_path)
         default_size = '1073741824'
 
         try:
-            curl.perform()
-            doc = json.loads(response.getvalue())
-            size = doc.get('out')
+            size = self.requestValue(dropbox_size_url)
             return size
         except Exception:
             return default_size
-        finally:
-            curl.close()
-            response.close()
 
     def dropboxLocation(self, acct_group=None):
         """Get location of dropbox from server"""
         if not acct_group:
             acct_group = self.account_group
-        # check for down servers DNS RR
-#        for server in self.serverAliases:
-#            if is_port_open(server, self.serverPort):
-#                self.server = server
-#                break
 
         dropbox_url = constants.JOBSUB_DROPBOX_LOCATION_URL_PATTERN %\
             (self.server, acct_group)
-
-        curl, response = curl_secure_context(dropbox_url, self.credentials)
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, self.ca_path)
-        curl.setopt(curl.FAILONERROR, True)
-
         try:
-            curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            doc = json.loads(response.getvalue())
-            location = doc.get('out')
+            location = self.requestValue(dropbox_url)
             return location
-        except pycurl.error as error:
-            errno, errstr = error
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (
-                http_code, errno, errstr)
-            if http_code == 403:
-                msg = "Dropbox upload for %s has been turned off.\n" % acct_group
-                print msg
-            # logSupport.dprint(traceback.format_exc(limit=10))
-            # traceback.print_stack()
-            raise JobSubClientError(err)
-        finally:
-            curl.close()
-            response.close()
+        except RuntimeError as error:
+            raise JobSubClientError(error)
 
     def serverAuthMethods(self, acct_group=None):
         """
@@ -1139,17 +1185,10 @@ class JobSubClient(object):
         auth_method_url = constants.JOBSUB_AUTHMETHODS_URL_PATTERN %\
             (self.server, acct_group)
 
-        curl, response = curl_secure_context(auth_method_url, self.credentials)
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.CAPATH, self.ca_path)
-
+        methods = []
         try:
-            curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            method_list = json.loads(response.getvalue())
-            methods = []
-            for m in method_list.get('out'):
+            method_list = self.requestValue(auth_method_url)
+            for m in method_list:
                 methods.append(str(m))
             need_cigetcert_methods = ['myproxy', 'ferry']
             for meth in need_cigetcert_methods:
@@ -1164,23 +1203,8 @@ class JobSubClient(object):
                         self.credentials['proxy'] = cred
             return methods
 
-        except pycurl.error as error:
-            errno, errstr = error
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (
-                http_code, errno, errstr)
-            # logSupport.dprint(traceback.format_exc(limit=10))
-            # traceback.print_stack()
-            raise JobSubClientError(err)
-        # except:
-            # probably called a server that doesnt support this URL, just continue
-            # and let round robin do its thing
-            #err = "Error: %s "% sys.exc_info()[0]
-            # logSupport.dprint(err)
-            # raise
-
-        curl.close()
-        response.close()
+        except RuntimeError as error:
+            raise JobSubClientError(error)
 
     def probeSchedds(self, ignore_secondary_schedds=True):
         """query all the schedds behind the jobsub-server.  Create a list of
@@ -1194,18 +1218,12 @@ class JobSubClient(object):
         if self.account_group:
             listScheddsURL = "%s%s/" % (listScheddsURL, self.account_group)
 
-        curl, response = curl_secure_context(listScheddsURL, self.credentials)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
         best_schedd = self.server.replace("https://", "").split(":")[0]
         best_jobload = sys.maxsize
         condor_port = int(os.environ.get("JOBSUB_CONDOR_PORT", "9615"))
         try:
-            curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            #r = response.getvalue()
-            schedd_list = json.loads(response.getvalue())
-            for line in schedd_list['out']:
+            schedd_list = self.requestValue(listScheddsURL)
+            for line in schedd_list:
                 pts = line.split()
                 if len(pts[:1]) and len(pts[-1:]):
                     schedd = pts[:1][0]
@@ -1226,24 +1244,11 @@ class JobSubClient(object):
                             if jobload < best_jobload:
                                 best_schedd = schedd
                                 best_jobload = jobload
-            # this will fail for secondary schedd with @ in name
-            # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
-        except pycurl.error as error:
-            errno, errstr = error
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (
-                http_code, errno, errstr)
-            # logSupport.dprint(traceback.format_exc(limit=10))
-            # traceback.print_stack()
+        except RuntimeError as error:
+            errno, errstr = err
+            http_code = response.status_code
             raise JobSubClientError(err)
-        except Exception:            # probably called a server that doesnt support this URL, just continue
-            # and let round robin do its thing
-            logSupport.dprint("Error: %s " % sys.exc_info()[0])
-            pass
-
-        curl.close()
-        response.close()
 
     def listConfiguredSites(self):
         """ jobsub_status --sites
@@ -1316,31 +1321,7 @@ class JobSubClient(object):
         if helpType == 'dag':
             help_url = self.dag_help_url
 
-        curl, response = curl_secure_context(help_url, self.credentials)
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
-        return_value = None
-
-        try:
-            curl.perform()
-        except pycurl.error as error:
-            errno, errstr = error
-            err = "PyCurl Error %s: %s" % (errno, errstr)
-            # logSupport.dprint(err)
-            # logSupport.dprint(traceback.format_exc())
-            raise JobSubClientError(err)
-
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-        curl.close()
-
-        if response_code == 200:
-            value = response.getvalue()
-            if response_content_type == 'application/json':
-                return_value = json.loads(value)
-            else:
-                return_value = value
-        response.close()
-        return return_value
+        return self.changeJobState(help_url, 'GET')
 
     def extractResponseDetails(self, curl, response):
         """
@@ -1355,6 +1336,27 @@ class JobSubClient(object):
         serving_server = servicing_jobsub_server(curl)
         return (content_type, code, value, serving_server)
 
+    def print_response(self, response, session=None):
+        """
+        """
+        logSupport.dprint("dir response=%s" % dir(response))
+        logSupport.dprint("response.headers=%s" % response.headers)
+        if session:
+            logSupport.dprint("dir session%s" % dir(session))
+            logSupport.dprint("session.headers=%s" % session.headers)
+        content_type = response.headers.get('content-type')
+        code = response.status_code
+        value = response.content
+        serving_server='UNKNOWN'
+        self.service_print_request(content_type,
+                                   code,
+                                   value,
+                                   serving_server,
+                                   response.elapsed)
+
+
+
+
     def printResponse(self, curl, response, response_time):
         """
         Given the curl and response objects print the response on screen
@@ -1362,6 +1364,16 @@ class JobSubClient(object):
 
         content_type, code, value, serving_server =\
             self.extractResponseDetails(curl, response)
+        self.service_print_request(content_type,
+                                   code,
+                                   value,
+                                   serving_server,
+                                   response_time)
+
+
+
+
+    def service_print_request(self, content_type, code, value, serving_server, response_time):
         if self.extra_opts.get('jobid_output_only'):
             matchObj = re.match(r'(.*)Use job id (.*) to retrieve (.*)',
                                 value, re.S | re.I)

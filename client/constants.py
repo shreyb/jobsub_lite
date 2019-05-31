@@ -68,8 +68,9 @@ JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN = '%s/jobsub/acctgroups/%s/sandboxes/%s/'
 JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/sandboxes/%s/'
 
 #JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
-JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/pubapi/publish?cid=%s'
-JOBSUB_EXISTS_URL_PATTERN = '%s/pubapi/exists?cid=%s'
+JOBSUB_DROPBOX_CVMFS_SERVER_PATTERN = '%s/jobsub/acctgroups/%s/dropboxcvmfsserver/'
+JOBSUB_CID_PUBLISH_URL_PATTERN = 'https://%s/pubapi/publish?cid=%s/%s'
+JOBSUB_CID_EXISTS_URL_PATTERN = 'https://%s/pubapi/exists?cid=%s/%s'
 
 
 #JOBSUB_JOB_CONSTRAINT_URL_PATTERN = '%s/jobsub/jobs/constraint/%s/'

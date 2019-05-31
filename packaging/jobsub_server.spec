@@ -185,6 +185,9 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/webapp/dropbox_location.py
 /opt/jobsub/server/webapp/dropbox_location.pyc
 /opt/jobsub/server/webapp/dropbox_location.pyo
+/opt/jobsub/server/webapp/dropbox_cvmfs_server.py
+/opt/jobsub/server/webapp/dropbox_cvmfs_server.pyc
+/opt/jobsub/server/webapp/dropbox_cvmfs_server.pyo
 /opt/jobsub/server/webapp/dropbox_size.py
 /opt/jobsub/server/webapp/dropbox_size.pyc
 /opt/jobsub/server/webapp/dropbox_size.pyo

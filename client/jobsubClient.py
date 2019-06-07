@@ -804,11 +804,14 @@ class JobSubClient(object):
         resp, ses = self.performRequest(url, http_custom_request, post_data,
                                         ssl_verifyhost, connect_timeout)
         
-        doc = json.loads(resp.text)
-        val = doc.get('out')
-        if not val:
-            err = doc.get('err')
-            raise jobsubClientError(err)
+        try:
+            doc = json.loads(resp.text)
+            val = doc.get('out')
+        except Exception as err:
+            s_err = resp.text
+            if s_err:
+                raise JobSubClientError(s_err)
+            raise JobSubClientError(err)
         return val
 
     def performRequest(self, url, http_custom_request, post_data=None,

@@ -271,8 +271,12 @@ class JobSettings(object):
         if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
             settings['grid'] = True
         if settings['tar_file_name']:
-            settings['tar_file_basename'] = os.path.basename(
-                settings['tar_file_name'])
+            if 'cid=' in settings['tar_file_name']:
+                settings['cvmfs_tarball']=True
+                settings['tar_file_name'] = settings['tar_file_name'].split('=')[-1]
+            else:
+                settings['tar_file_basename'] = os.path.basename(
+                    settings['tar_file_name'])
 
     def findConfigFile(self):
         if 'jobsub_ini_file' in self.settings:
@@ -919,6 +923,22 @@ class JobSettings(object):
             "parrot file generation has been turned off.  Please report this error to the service desk")
         # print "makeParrotFile"
 
+
+    def handle_cvmfs_tarfile(self,f):
+        f.write("\n#*****handle_cvmfs_tarfile********\n")
+        codestr= """
+                for endpoint in $dropbox_cvmfs_endpoints; do
+                    dropbox_cvmfs_pattern="/cvmfs/${endpoint}/sw/${CID}"
+                    echo testing $dropbox_cvmfs_pattern
+                    if test -d $dropbox_cvmfs_pattern; then 
+                        break
+                    fi
+                    false
+                done
+            """
+        f.write(codestr)
+
+
     def makeWrapFilePreamble(self):
         """ Make beginning part of wrapfile. ($CONDOR_TMP/user_job_(numbers)_wrap.sh  Change env
             variables so that default behavior is for condor generated files NOT to come back to
@@ -979,18 +999,21 @@ class JobSettings(object):
 
         if 'tar_file_basename' in settings:
             if 'tar_file_name' in settings:
-                f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
+                if 'cid=' in settings['tar_file_name']:
+                    self.handle_cvmfs_tarfile(f)
+                else:
+                    f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
                                                            settings['tar_file_basename']))
-            f.write(
-                "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %
-                settings['tar_file_basename'])
-            # this is not the right way to do this, should look at ini file
-            # to see where to  untar it or whether to untar it at all
-            # done in a hurry to get  this out the door
-            if settings['group'] != 'cdf':
-                f.write(
-                    """if [ -e "$INPUT_TAR_FILE" ]; """ +
-                    """then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
+                    f.write(
+                    "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %
+                        settings['tar_file_basename'])
+                    # this is not the right way to do this, should look at ini file
+                    # to see where to  untar it or whether to untar it at all
+                    # done in a hurry to get  this out the door
+                    if settings['group'] != 'cdf':
+                        f.write(
+                            """if [ -e "$INPUT_TAR_FILE" ]; """ +
+                            """then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
         f.close()
         self.wrapFileCopyInput()

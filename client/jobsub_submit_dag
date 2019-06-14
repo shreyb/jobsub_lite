@@ -146,6 +146,12 @@ def parse_opts(argv):
                          default=None,
                          help='Alternate location of Dropbox server to use')
 
+    opt_group.add_option('--use-cvmfs-dropbox',
+                         dest=use_cvmfs_dropbox,
+                         default=False,
+                         action='store_true',
+                         help="use cvmfs for dropbox (default is pnfs)")
+
     opt_group.add_option('--debug',
                          dest='debug',
                          action='store_true',
@@ -219,7 +225,8 @@ def main(argv):
                              options.acctRole, srv_argv,
                              options.dropboxServer, useDag=True,
                              extra_opts={'debug':options.debug,
-                                         'jobid_output_only':options.jobid_output_only})
+                                         'jobid_output_only':options.jobid_output_only,
+                                         'use_cvmfs_dropbox':options.use_cvmfs_dropbox,})
     rc = 1
     try:
         http_code = js_client.submit_dag()

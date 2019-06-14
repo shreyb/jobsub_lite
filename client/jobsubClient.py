@@ -189,6 +189,7 @@ class JobSubClient(object):
         self.submit_url = None
         self.dropbox_uri_map = {}
         self.directory_tar_map = {}
+        self.uploaded = {}
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
@@ -245,45 +246,37 @@ class JobSubClient(object):
                 tfiles = []
 
                 # upload the files
-                #if self.extra_opts.get('cvmfs_upload',False):
-                if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
+                #if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
+                if self.extra_opts.get('use_cvmfs_dropbox',False):
                     logSupport.dprint('calling dropbox_upload')
-                    result = self.dropbox_upload()
-                    logSupport.dprint('dropbox_upload result=%s' % result)
-                    #logSupport.dprint('dropbox_upload result=%s' % result.headers)
-                    if not result:
+                    self.uploaded = self.dropbox_upload()
+                    logSupport.dprint('dropbox_upload result=%s' % self.uploaded)
+                    if not self.uploaded:
                         raise JobSubClientSubmissionError('dropbox_upload failed')
-                else:
-                    logSupport.dprint('calling ifdh_upload')
-                    result = self.ifdh_upload()
-                    logSupport.dprint('ifdh_upload result=%s' % result)
-                    if not result:
-                        raise JobSubClientSubmissionError('ifdh_upload failed')
+                
+                logSupport.dprint('calling ifdh_upload')
+                result = self.ifdh_upload()
+                logSupport.dprint('ifdh_upload result=%s' % result)
+                if not result:
+                    raise JobSubClientSubmissionError('ifdh_upload failed')
 
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
-                    if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                    if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: #tardir://
                         arg = self.directory_tar_map[arg]
-                    if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
+                    if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0: #dropbox://
                         key = self.dropbox_uri_map.get(arg)
                         if key is not None:
                             values = result.get(key)
                             if values is not None:
-                                if self.dropboxServer is None:
-                                    srv_argv[idx] = values.get('path')
-                                    # actual_server = "https://%s:8443/" % \
-                                    #    str(values.get('host'))
-                                else:
-                                    url = values.get('url')
-                                    srv_argv[idx] = '%s%s' % \
-                                        (self.dropboxServer, url)
+                                srv_argv[idx] = values.get('path')
                                 if srv_argv[idx] not in tfiles:
                                     tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
-                if len(tfiles) > 0:
+                if len(tfiles) > 0 and not self.extra_opts.get('use_cvmfs_dropbox'):
                     transfer_input_files = ','.join(tfiles)
                     fmt_str = "export PNFS_INPUT_FILES=%s;%s"
                     server_env_exports = fmt_str % (transfer_input_files,
@@ -308,26 +301,32 @@ class JobSubClient(object):
 
     def get_directory_tar_map(self, argv):
         """
-        @argv: list of directorys to tar /path/to/somedir/,
-               /path/to/anotherdir/, etc
-        foreach arg:
-            create somedir.tar from /path/to/somedir/
-        return a directory_tar_map of the form
-        {"dropbox://somedir.tar":"sha1 digest of somedir.tar",
-         "dropbox//anotherdir.tar": "sha1 digest of anotherdir.tar"}
+        @argv: list of arguments to jobsub_* client command 
+               some of these are directories to be tarred up
+               prefixed with tardir: i.e tardir://path/to/dir/
+        foreach arg in argv:
+            create somedir.tar from dir_url=tardir://path/to/somedir/
+            compute digest of somedir.tar:
+            create box_url = dropbox://somedir.tar
+
+            set self.dropbox_uri_map[box_url] = digest
+            sel self.directory_tar_map[dir_url] = box_url
+
+        use these mapfiles later to get tarfiles to submitted jobs
         """
         for arg in argv:
-            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
-                tarpath = uri2path(arg)
+            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: #tardir://
+                dir_url = arg
+                tarpath = uri2path(dir_url)
                 if tarpath[-1] == '/':
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
                 create_tarfile(tarname, tarpath, reject_list=self.reject_list)
                 digest = digest_for_file(tarname)
-                tar_url = "dropbox://%s" % tarname
-                self.dropbox_uri_map[tar_url] = digest
-                self.directory_tar_map[arg] = tar_url
+                box_url = "dropbox://%s" % tarname
+                self.dropbox_uri_map[box_url] = digest
+                self.directory_tar_map[dir_url] = box_url
                 logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
                                   (self.dropbox_uri_map, self.directory_tar_map))
 
@@ -355,6 +354,11 @@ class JobSubClient(object):
         # logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
         for dropbox in self.dropbox_uri_map.iterkeys():
+            # if we uploaded it to cvmfs don't re-upload
+            # it to pnfs
+            digest = self.dropbox_uri_map[dropbox]
+            if digest in self.uploaded:
+                continue
             val = {}
             srcpath = uri2path(dropbox)
             file_size = int(os.stat(srcpath).st_size)
@@ -462,57 +466,53 @@ class JobSubClient(object):
 
         RETURNS dictionary result of form after upload:
         {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43':
-        {'path': '/pubapi/exists?cid=annie/d618fa5ff463c6e4070ebebc7bc0058e9b644d43',
+        {'path': 'cid=annie/d618fa5ff463c6e4070ebebc7bc0058e9b644d43',
          'host': 'distdev01.fnal.gov'}}
 
         """
         result = {}
-        print "server=%s" %self.server
         fmt = constants.JOBSUB_DROPBOX_CVMFS_SERVER_PATTERN
-        print "fmt=%s" %fmt
 
         dropbox_server_url = fmt % (self.server, self.account_group)
-        print "url = %s" % dropbox_server_url
         try:
             self.dropboxServer  = self.requestValue(dropbox_server_url)
-            print "self.dropboxServer=%s" % self.dropboxServer
+            logSupport.dprint("self.dropboxServer=%s" % self.dropboxServer)
         except RuntimeError as err:
             msg = "failed to find cvmfs dropbox server"
             msg += str(err)
             raise JobSubClientSubmissionError(msg)
 
-        for file_name, cid in self.dropbox_uri_map.items():
+        for file_name, digest in self.dropbox_uri_map.items():
+            if not is_tarfile(uri2path(file_name)):
+                continue
             exists_url = constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
-                (self.dropboxServer, self.account_group, cid) 
+                (self.dropboxServer, self.account_group, digest)
             upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
-                (self.dropboxServer, self.account_group, cid) 
-            path = '/' + '/'.join(upload_url.split('/')[3:])
-            print 'exists_url = %s'% exists_url
+                (self.dropboxServer, self.account_group, digest)
+            logSupport.dprint('exists_url = %s'% exists_url)
             resp = self.performRequest(exists_url, 'GET')
-            exists = resp[0].text.strip()
-            print "exists = %s" % exists
-            if exists == 'PRESENT':
-                result[cid] = {'path': path,
-                               'host': self.dropboxServer
-                              }
-            else:
+            parts = resp[0].text.strip().split(':')
+            exists = parts[0]
+            path = parts[-1]
+            logSupport.dprint("exists = %s" % exists)
+            if exists == path:
+                path = "%s/%s" % (self.account_group, digest)
+            result[digest] = {'path': "cid=%s" % path,
+                              'host': self.dropboxServer
+                             }
+            if exists != 'PRESENT':
                 cert = self.credentials.get('cert')
                 key = self.credentials.get('key')
                 cmd = """curl --cert %s --key %s """ % (cert,key)
-                #cmd += """ --capath /etc/grid-security/certificates """
                 cmd += """--url %s  -X POST --data-binary @%s """ % (upload_url,
                                                         uri2path(file_name))
                 try:
-                    print "cmd = %s" % cmd
+                    logSupport.dprint("cmd = %s" % cmd)
                     resp,err = subprocessSupport.iexe_cmd(cmd)
                     resp = resp.strip()
                     err = err.strip()
-                    print "resp = '%s'" % resp
-                    if resp in ['OK', 'PRESENT']:
-                        result[cid] = {'path': path,
-                                       'host': self.dropboxServer
-                                       }
-                    else:
+                    logSupport.dprint("resp = '%s'" % resp)
+                    if resp not in ['OK', 'PRESENT']:
                         err += "failed to upload %s" % uri2path(file_name)
                         err += "\nto %s" % upload_url
                         for pt in resp,err:
@@ -799,7 +799,7 @@ class JobSubClient(object):
         return http_code
 
     def requestValue(self, url, http_custom_request='GET', post_data=None,
-                     ssl_verifyhost=True, connect_timeout=None):
+                     ssl_verifyhost=False, connect_timeout=None):
 
         resp, ses = self.performRequest(url, http_custom_request, post_data,
                                         ssl_verifyhost, connect_timeout)
@@ -1405,6 +1405,7 @@ class JobSubClient(object):
                                      response_time,
                                      verbose=self.verbose,
                                      suppress_server_details=suppress_server_details)
+
 
 
 def is_port_open(server, port):
@@ -2031,6 +2032,11 @@ def date_callback(option, opt, value, p):
             """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
             """example: '2015-03-01 01:59:03'""")
     return p
+
+def is_tarfile(filename):
+    if not os.path.exists(filename):
+        return False
+    return tarfile.is_tarfile(filename)
 
 
 def read_re_file(filename):

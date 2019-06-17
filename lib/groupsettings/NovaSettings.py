@@ -3,7 +3,7 @@
 from JobSettings import JobSettings
 import os
 import string
-from optparse import OptionGroup
+# from optparse import OptionGroup
 
 
 class NovaSettings(JobSettings):
@@ -20,16 +20,15 @@ class NovaSettings(JobSettings):
     def initCmdParser(self):
         cmdParser = self.cmdParser
         # print "NovaSettings.initCmdParser()"
-        self.nova_group = OptionGroup(self.cmdParser, "Nova Specific Options")
-        self.cmdParser.add_option_group(self.nova_group)
-        self.nova_group.add_option("-i", dest="reldir",
-                                   action="store", type="string",
+        self.nova_group = self.cmdParser.add_argument_group("Nova Specific Options")
+        self.nova_group.add_argument("-i", dest="reldir",
+                                   action="store", type=str,
                                    help="release_directory for Nova Software ")
-        self.nova_group.add_option("-t", dest="testreldir",
-                                   action="store", type="string",
+        self.nova_group.add_argument("-t", dest="testreldir",
+                                   action="store", type=str,
                                    help="release_directory for test Nova Software ")
-        self.nova_group.add_option("-r", dest="rel",
-                                   action="store", type="string",
+        self.nova_group.add_argument("-r", dest="rel",
+                                   action="store", type=str,
                                    help="release_version for  Nova Software ")
         return super(NovaSettings, self).initCmdParser()
 

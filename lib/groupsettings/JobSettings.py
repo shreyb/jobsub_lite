@@ -98,11 +98,6 @@ class JobSettings(object):
                 "CONDOR_TMP not defined! setup_condor and try again")
 
         self.settings['condor_exec'] = os.environ.get("CONDOR_EXEC", "/tmp")
-        self.settings['condor_config'] = os.environ.get("CONDOR_CONFIG")
-        self.settings['local_condor'] = os.environ.get(
-            "LOCAL_CONDOR", "/opt/condor/bin")
-        self.settings['group_condor'] = os.environ.get(
-            "GROUP_CONDOR", "/this/is/bogus")
 
         self.settings['x509_user_proxy'] = os.environ.get("X509_USER_PROXY")
         if self.settings['x509_user_proxy'] is None:
@@ -164,7 +159,6 @@ class JobSettings(object):
         self.settings['filebase'] = ''
         self.settings['filetag'] = ''
         self.settings['wrapfile'] = ''
-        self.settings['parrotfile'] = ''
         self.settings['cmdfile'] = ''
         self.settings['dagfile'] = ''
         self.settings['dagbeginfile'] = ''
@@ -194,7 +188,6 @@ class JobSettings(object):
         self.settings['jobsub_tools_dir'] = os.environ.get(
             "JOBSUB_TOOLS_DIR", "/tmp")
         self.settings['ups_shell'] = os.environ.get("UPS_SHELL")
-        #self.settings['condor_setup_cmd']='. /opt/condor/condor.sh; '
         self.settings[
             'downtime_file'] = '/grid/fermiapp/common/jobsub_MOTD/JOBSUB_UNAVAILABLE'
         self.settings['motd_file'] = '/grid/fermiapp/common/jobsub_MOTD/MOTD'
@@ -268,8 +261,8 @@ class JobSettings(object):
                 settings[x] = False
         if 'transfer_wrapfile' in settings:
             settings['tranfer_executable'] = settings['transfer_wrapfile']
-        if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
-            settings['grid'] = True
+        #if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
+        #    settings['grid'] = True
         if settings['tar_file_name']:
             if 'cid=' in settings['tar_file_name']:
                 settings['cvmfs_tarball']=True
@@ -921,21 +914,13 @@ class JobSettings(object):
     def makeParrotFile(self):
         raise Exception(
             "parrot file generation has been turned off.  Please report this error to the service desk")
-        # print "makeParrotFile"
 
 
-    def handle_cvmfs_tarfile(self,f):
-        f.write("\n#*****handle_cvmfs_tarfile********\n")
-        codestr= """
-                for endpoint in $dropbox_cvmfs_endpoints; do
-                    dropbox_cvmfs_pattern="/cvmfs/${endpoint}/sw/${CID}"
-                    echo testing $dropbox_cvmfs_pattern
-                    if test -d $dropbox_cvmfs_pattern; then 
-                        break
-                    fi
-                    false
-                done
-            """
+    def write_locate_cvmfs_dir(self,f):
+        endpoints = self.fileParser.get(
+                            'default', 'dropbox_cvmfs_endpoints')
+        fmt_str = JobUtils().locate_cvmfs_str()
+        codestr = fmt_str % endpoints
         f.write(codestr)
 
 
@@ -961,6 +946,8 @@ class JobSettings(object):
                 (os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])))
 
         f.write("\n")
+        if settings.get('cvmfs_tarball'):
+            self.write_locate_cvmfs_dir(f)
         f.write("%s\n" % JobUtils().logTruncateString())
         ifdh_pgm_text = JobUtils().ifdhString() %\
             (settings['ifdh_cmd'],
@@ -991,29 +978,30 @@ class JobSettings(object):
         f.write("""redirect_output_start\n""")
 
         f.write("\n")
-        # f.write(JobUtils().krb5ccNameString())
-        f.write("\n")
         f.write("setup_ifdh_env\n")
         if 'set_up_ifdh' in settings and settings['set_up_ifdh']:
             f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
 
-        if 'tar_file_basename' in settings:
-            if 'tar_file_name' in settings:
-                if 'cid=' in settings['tar_file_name']:
-                    self.handle_cvmfs_tarfile(f)
-                else:
-                    f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
-                                                           settings['tar_file_basename']))
+        if 'tar_file_name' in settings:
+            if settings.get('cvmfs_tarball'):
+                f.write("export INPUT_TAR_DIR=$(locate_cvmfs_dir %s)\n" % settings['tar_file_name'])
+                f.write("echo found tar dir $INPUT_TAR_DIR\n")
+                f.write("${JSB_TMP}/ifdh.sh log found tar dir $INPUT_TAR_DIR\n")
+                f.write("ln -s $INPUT_TAR_DIR/* . \n")
+
+            elif 'tar_file_basename' in settings:
+                f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
+                                                       settings['tar_file_basename']))
+                f.write(
+                "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %
+                    settings['tar_file_basename'])
+                # this is not the right way to do this, should look at ini file
+                # to see where to  untar it or whether to untar it at all
+                # done in a hurry to get  this out the door
+                if settings['group'] != 'cdf':
                     f.write(
-                    "export INPUT_TAR_FILE=${_CONDOR_JOB_IWD}/%s\n" %
-                        settings['tar_file_basename'])
-                    # this is not the right way to do this, should look at ini file
-                    # to see where to  untar it or whether to untar it at all
-                    # done in a hurry to get  this out the door
-                    if settings['group'] != 'cdf':
-                        f.write(
-                            """if [ -e "$INPUT_TAR_FILE" ]; """ +
-                            """then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
+                        """if [ -e "$INPUT_TAR_FILE" ]; """ +
+                        """then tar xvf "$INPUT_TAR_FILE" ; fi\n""")
 
         f.close()
         self.wrapFileCopyInput()
@@ -1154,7 +1142,10 @@ class JobSettings(object):
         f.write("exit $JOB_RET_STATUS\n")
         if settings['verbose']:
             f.write("########END JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
-        f.close
+        f.write("\n#settings for creating this file\n")
+        for key in settings:
+            f.write("#%s=%s\n"%(key,settings[key]))
+        f.close()
         cmd = "chmod +x %s" % settings['wrapfile']
         commands = JobUtils()
         (retVal, rslt) = commands.getstatusoutput(cmd)
@@ -1621,15 +1612,12 @@ class JobSettings(object):
 
             settings['wrapfile'] = "%s/%s_%s_wrap.sh" % \
                 (settings['condor_exec'], filebase, uniquer)
-            settings['parrotfile'] = "%s/%s_%s_parrot.sh" % \
-                (settings['condor_exec'], filebase, uniquer)
             settings['filebase'] = "%s/%s_%s_" % \
                 (settings['condor_tmp'], filebase, uniquer)
             settings['cmdfile'] = settings['filebase'] + ".cmd"
 
             if settings['verbose']:
                 print "settings['wrapfile'] =", settings['wrapfile']
-                print "settings['parrotfile'] =", settings['parrotfile']
                 print "settings['filebase'] =", settings['filebase']
                 print "settings['cmdfile'] =", settings['cmdfile']
 
@@ -1669,12 +1657,9 @@ class JobSettings(object):
             if uniquer == 1:
                 self.makeCommandFile(job_iter)
                 if settings['nowrapfile'] == False:
-                    if settings['useparrot'] == False:
-                        self.makeWrapFilePreamble()
-                        self.makeWrapFile()
-                        self.makeWrapFilePostamble()
-                    else:
-                        self.makeParrotFile()
+                    self.makeWrapFilePreamble()
+                    self.makeWrapFile()
+                    self.makeWrapFilePostamble()
 
     def shouldTransferInput(self):
         settings = self.settings
@@ -1689,14 +1674,13 @@ class JobSettings(object):
                     tInputFiles = tInputFiles + ",%s" % eScript
                 else:
                     tInputFiles = eScript
-        if settings['tar_file_name']:
-            t = settings['tar_file_name']
-            # this won't work if tar_file in pnfs
-            if t not in tInputFiles and os.path.exists(t):
-                if len(tInputFiles) > 0:
-                    tInputFiles = tInputFiles + ",%s" % t
-                else:
-                    tInputFiles = t
+        #if settings['tar_file_name']:
+        #    t = settings['tar_file_name']
+        #    if t not in tInputFiles and os.path.exists(t):
+        #        if len(tInputFiles) > 0:
+        #            tInputFiles = tInputFiles + ",%s" % t
+        #        else:
+        #            tInputFiles = t
         if len(tInputFiles) > 0:
             rsp = rsp + "transfer_input_files = %s\n" % tInputFiles
 
@@ -1938,7 +1922,6 @@ class JobSettings(object):
         if settings['grid']:
             self.addToLineSetting("x509userproxy = %s" %
                                   settings['x509_user_proxy'])
-            self.addToLineSetting("+RunOnGrid                          = True")
 
             if not settings['site']:
                 if settings['default_grid_site']:

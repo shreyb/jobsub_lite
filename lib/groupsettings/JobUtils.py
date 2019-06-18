@@ -297,6 +297,38 @@ done
         """
         return sam_start_str
 
+    def locate_cvmfs_str(self):
+        fmt_str = """
+
+locate_cvmfs_dir(){
+    cid=$1
+    if  test -d "$cid" ; then
+        echo $cid
+        return 0
+    fi
+    endpoints="%s"
+    num_tries=0
+    max_tries=30
+    while [ $num_tries -lt $max_tries ]; do
+    num_tries=$(($num_tries + 1))
+    for endpoint in $endpoints; do
+       dropbox_cvmfs_pattern="/cvmfs/${endpoint}/sw/${cid}"
+       if test -d $dropbox_cvmfs_pattern; then 
+          echo $dropbox_cvmfs_pattern
+          return 0
+       fi
+    done
+    msg="$cid not found, retry $num_tries of $max_tries  in 30 seconds"
+    echo $msg  1>&2
+    ${JSB_TMP}/ifdh.sh log $msg
+    sleep 30
+    done
+    echo "NOT_FOUND"
+    return 1
+}
+        """
+        return fmt_str
+
     def print_usage(self):
         usage = """
                 This method should never be called.  Please open a service desk ticket

@@ -208,6 +208,7 @@ class JobSubClient(object):
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
             server_env_exports = get_server_env_exports(self.server_argv)
+            print "DEBUG server_env_exports = %s" % server_env_exports
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
                 err = "You must supply a job executable, preceded by the "
@@ -244,7 +245,7 @@ class JobSubClient(object):
                 self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
                 tfiles = []
-
+                print "DEBUG tfiles=%s"%tfiles
                 # upload the files
                 #if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
                 if self.extra_opts.get('use_cvmfs_dropbox',False):
@@ -256,8 +257,8 @@ class JobSubClient(object):
                 
                 logSupport.dprint('calling ifdh_upload')
                 result = self.ifdh_upload()
-                logSupport.dprint('ifdh_upload result=%s' % result)
-                if not result:
+                self.uploaded.update(result)
+                if not self.uploaded:
                     raise JobSubClientSubmissionError('ifdh_upload failed')
 
                 for idx in range(0, len(srv_argv)):
@@ -267,16 +268,18 @@ class JobSubClient(object):
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0: #dropbox://
                         key = self.dropbox_uri_map.get(arg)
                         if key is not None:
-                            values = result.get(key)
+                            values = self.uploaded.get(key)
                             if values is not None:
                                 srv_argv[idx] = values.get('path')
                                 if srv_argv[idx] not in tfiles:
-                                    tfiles.append(srv_argv[idx])
+                                    if 'cid=' not in srv_argv[idx]:
+                                        #print "DEBUG adding %s to tfiles" % srv_argv[idx]
+                                        tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
-                if len(tfiles) > 0 and not self.extra_opts.get('use_cvmfs_dropbox'):
+                if len(tfiles) > 0:
                     transfer_input_files = ','.join(tfiles)
                     fmt_str = "export PNFS_INPUT_FILES=%s;%s"
                     server_env_exports = fmt_str % (transfer_input_files,
@@ -285,6 +288,8 @@ class JobSubClient(object):
                             self.server != actual_server:
                         self.server = actual_server
 
+            print "DEBUG 2 server_env_exports = %s" % server_env_exports
+            print "DEBUG 2 tfiles=%s"%tfiles
             if self.job_exe_uri and self.job_executable:
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.job_exe_uri):
@@ -799,7 +804,7 @@ class JobSubClient(object):
         return http_code
 
     def requestValue(self, url, http_custom_request='GET', post_data=None,
-                     ssl_verifyhost=False, connect_timeout=None):
+                     ssl_verifyhost=True, connect_timeout=None):
 
         resp, ses = self.performRequest(url, http_custom_request, post_data,
                                         ssl_verifyhost, connect_timeout)
@@ -1127,7 +1132,7 @@ class JobSubClient(object):
 
             try:
                 http_code = self.changeJobState(hist_URL, 'GET',
-                                                ssl_verifyhost=False)
+                                                ssl_verifyhost=True)
                 rc += http_code_to_rc(http_code)
             except Exception:
                 print 'Error retrieving history from the server %s' % server

@@ -302,26 +302,54 @@ done
 
 locate_cvmfs_dir(){
     cid=$1
-    if  test -d "$cid" ; then
-        echo $cid
-        return 0
-    fi
-    endpoints="%s"
+    ldir=$2
     num_tries=0
     max_tries=30
+    slp=30
+    if echo $cid | grep -q '/cvmfs/' ; then
+        while [ $num_tries -lt $max_tries ]; do
+            num_tries=$(($num_tries + 1))
+            if  test -d "$cid" ; then
+                cd $CONDOR_DIR_INPUT
+                ln -s $cid $ldir
+                cd -
+                msg="$JOBSUBJOBID found $cid"
+                ${JSB_TMP}/ifdh.sh log $msg
+                echo $cid
+                return 0
+            fi
+            msg="$JOBSUBJOBID $cid not found, retry $num_tries of $max_tries  in $slp seconds"
+            echo $msg >> /dev/stderr 
+            ${JSB_TMP}/ifdh.sh log $msg
+            sleep $slp
+        done
+        echo "NOT_FOUND"
+        return 1
+    fi
+    endpoints="%s"
     while [ $num_tries -lt $max_tries ]; do
-    num_tries=$(($num_tries + 1))
-    for endpoint in $endpoints; do
-       dropbox_cvmfs_pattern="/cvmfs/${endpoint}/sw/${cid}"
-       if test -d $dropbox_cvmfs_pattern; then 
-          echo $dropbox_cvmfs_pattern
-          return 0
-       fi
-    done
-    msg="$cid not found, retry $num_tries of $max_tries  in 30 seconds"
-    echo $msg  1>&2
-    ${JSB_TMP}/ifdh.sh log $msg
-    sleep 30
+        num_tries=$(($num_tries + 1))
+        for endpoint in $endpoints; do
+           mnt_point="/cvmfs/${endpoint}"
+           if ! test -d ${mnt_point} ; then
+               msg="WARNING $JOBSUBJOBID ${mnt_point} not mounted! Job will probably fail"
+               ${JSB_TMP}/ifdh.sh log $msg
+               echo $msg >> /dev/stderr
+           fi
+           dropbox_dir="${mnt_point}/sw/${cid}"
+           if test -d $dropbox_dir; then 
+              cd $CONDOR_DIR_INPUT
+              ln -s $dropbox_dir $ldir
+              msg="$JOBSUBJOBID found $dropbox_dir"
+              ${JSB_TMP}/ifdh.sh log $msg
+              echo $dropbox_dir
+              return 0
+           fi
+        done
+        msg="$JOBSUBJOBID $cid not found, retry $num_tries of $max_tries  in $slp seconds"
+        echo $msg >> /dev/stderr 
+        ${JSB_TMP}/ifdh.sh log $msg
+        sleep $slp
     done
     echo "NOT_FOUND"
     return 1

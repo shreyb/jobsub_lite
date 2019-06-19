@@ -208,7 +208,7 @@ class JobSubClient(object):
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
             server_env_exports = get_server_env_exports(self.server_argv)
-            print "DEBUG server_env_exports = %s" % server_env_exports
+            #print "DEBUG server_env_exports = %s" % server_env_exports
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
                 err = "You must supply a job executable, preceded by the "
@@ -245,7 +245,6 @@ class JobSubClient(object):
                 self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
                 tfiles = []
-                print "DEBUG tfiles=%s"%tfiles
                 # upload the files
                 #if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
                 if self.extra_opts.get('use_cvmfs_dropbox',False):
@@ -288,8 +287,8 @@ class JobSubClient(object):
                             self.server != actual_server:
                         self.server = actual_server
 
-            print "DEBUG 2 server_env_exports = %s" % server_env_exports
-            print "DEBUG 2 tfiles=%s"%tfiles
+            #print "DEBUG 2 server_env_exports = %s" % server_env_exports
+            #print "DEBUG 2 tfiles=%s"%tfiles
             if self.job_exe_uri and self.job_executable:
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.job_exe_uri):
@@ -471,8 +470,9 @@ class JobSubClient(object):
 
         RETURNS dictionary result of form after upload:
         {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43':
-        {'path': 'cid=annie/d618fa5ff463c6e4070ebebc7bc0058e9b644d43',
-         'host': 'distdev01.fnal.gov'}}
+            {'path': 'cid=annie/d618fa5ff463c6e4070ebebc7bc0058e9b644d43,cdir=annie_stuff.tar',
+             'host': 'distdev01.fnal.gov',}
+         }
 
         """
         result = {}
@@ -490,6 +490,12 @@ class JobSubClient(object):
         for file_name, digest in self.dropbox_uri_map.items():
             if not is_tarfile(uri2path(file_name)):
                 continue
+            cdir = os.path.basename(uri2path(file_name))
+            parts = cdir.split('.')
+            if parts[-1] in ['tar','tgz']:
+                cdir = '.'.join(parts[0:-1])
+            if parts[-2] == 'tar':
+                cdir = '.'.join(parts[0:-2])
             exists_url = constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
                 (self.dropboxServer, self.account_group, digest)
             upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
@@ -502,8 +508,8 @@ class JobSubClient(object):
             logSupport.dprint("exists = %s" % exists)
             if exists == path:
                 path = "%s/%s" % (self.account_group, digest)
-            result[digest] = {'path': "cid=%s" % path,
-                              'host': self.dropboxServer
+            result[digest] = {'path': "cid=%s,cdir=%s" % (path,cdir),
+                              'host': self.dropboxServer,
                              }
             if exists != 'PRESENT':
                 cert = self.credentials.get('cert')

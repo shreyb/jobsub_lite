@@ -264,10 +264,7 @@ class JobSettings(object):
         #if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
         #    settings['grid'] = True
         if settings['tar_file_name']:
-            if 'cid=' in settings['tar_file_name']:
-                settings['cvmfs_tarball']=True
-                settings['tar_file_name'] = settings['tar_file_name'].split('=')[-1]
-            else:
+            if 'cid=' not in settings['tar_file_name']:
                 settings['tar_file_basename'] = os.path.basename(
                     settings['tar_file_name'])
 
@@ -946,8 +943,18 @@ class JobSettings(object):
                 (os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])))
 
         f.write("\n")
-        if settings.get('cvmfs_tarball'):
-            self.write_locate_cvmfs_dir(f)
+        checked_for_locate_cvmfs=False
+        if 'tar_file_name' in settings:
+            if 'cid=' in settings.get('tar_file_name'):
+                self.write_locate_cvmfs_dir(f)
+                checked_for_locate_cvmfs=True
+        if not checked_for_locate_cvmfs:
+            if settings.get('input_dir_array'):
+                for idir in settings['input_dir_array']:
+                    if 'cid=' in idir:
+                        self.write_locate_cvmfs_dir(f)
+                        checked_for_locate_cvmfs = True
+                        break
         f.write("%s\n" % JobUtils().logTruncateString())
         ifdh_pgm_text = JobUtils().ifdhString() %\
             (settings['ifdh_cmd'],
@@ -975,6 +982,9 @@ class JobSettings(object):
         f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
         f.write("export TMPDIR=$_CONDOR_SCRATCH_DIR\n")
         f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
+        f.write(
+            "export CONDOR_DIR_INPUT=${_CONDOR_SCRATCH_DIR}/${PROCESS}/TRANSFERRED_INPUT_FILES\n")
+        f.write("mkdir -p $CONDOR_DIR_INPUT\n")
         f.write("""redirect_output_start\n""")
 
         f.write("\n")
@@ -983,11 +993,11 @@ class JobSettings(object):
             f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
 
         if 'tar_file_name' in settings:
-            if settings.get('cvmfs_tarball'):
-                f.write("export INPUT_TAR_DIR=$(locate_cvmfs_dir %s)\n" % settings['tar_file_name'])
+            if 'cid=' in settings['tar_file_name']:
+                parts = re.split('[=,]', settings['tar_file_name'])
+                f.write("export INPUT_TAR_DIR=$(locate_cvmfs_dir %s %s)\n" % (parts[1],parts[3]))
                 f.write("echo found tar dir $INPUT_TAR_DIR\n")
                 f.write("${JSB_TMP}/ifdh.sh log found tar dir $INPUT_TAR_DIR\n")
-                f.write("ln -s $INPUT_TAR_DIR/* . \n")
 
             elif 'tar_file_basename' in settings:
                 f.write("${JSB_TMP}/ifdh.sh cp %s %s\n" % (settings['tar_file_name'],
@@ -1037,7 +1047,7 @@ class JobSettings(object):
             f.write("########BEGIN JOBSETTINGS makeWrapFile #############\n")
         for x in settings['script_args']:
             script_args = script_args + x + " "
-        log_msg = """BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  %s \n""" % (
+        log_msg = """$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  %s \n""" % (
             script_args)
         log_cmd = """%s log "%s:%s "\n""" %\
             (ifdh_cmd, settings['user'], log_msg)
@@ -1064,7 +1074,7 @@ class JobSettings(object):
         f.write(
             "echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2\n")
 
-        log_cmd = """%s log "%s:%s COMPLETED with return code $JOB_RET_STATUS" \n""" % \
+        log_cmd = """%s log "$JOBSUBJOBID %s:%s COMPLETED with return code $JOB_RET_STATUS" \n""" % \
             (ifdh_cmd, settings['user'], os.path.basename(exe_script))
         f.write(log_cmd)
         if settings['verbose']:
@@ -1111,9 +1121,9 @@ class JobSettings(object):
                     #append_cmd=append_cmd+"""; chmod g+w %s/*"""%tag[1]
                 cnt = '\;'
 
-            log_cmd1 = """\t%s log "%s BEGIN %s "\n""" % (
+            log_cmd1 = """\t%s log "%s $JOBSUBJOBID BEGIN %s "\n""" % (
                 ifdh_cmd, my_tag, copy_cmd)
-            log_cmd2 = """\t%s log "%s FINISHED %s "\n""" % (
+            log_cmd2 = """\t%s log "%s $JOBSUBJOBID FINISHED %s "\n""" % (
                 ifdh_cmd, my_tag, copy_cmd)
             f.write("echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
             f.write(">&2 echo `date` BEGIN WRAPFILE COPY-OUT %s\n" % copy_cmd)
@@ -1173,10 +1183,6 @@ class JobSettings(object):
             f.write("ls -lrt ${CONDOR_DIR_%s}\n" % tag[0])
             f.write("chmod g+rwx $CONDOR_DIR_%s\n\n" % tag[0])
 
-        f.write(
-            "export CONDOR_DIR_INPUT=${_CONDOR_SCRATCH_DIR}/${PROCESS}/TRANSFERRED_INPUT_FILES\n")
-        f.write("mkdir -p ${_CONDOR_SCRATCH_DIR}/${PROCESS}\n")
-        f.write("mkdir -p ${CONDOR_DIR_INPUT}\n")
         if settings['use_gftp']:
             cmd = """%s cp --force=expgridftp  """ % ifdh_cmd
         else:
@@ -1189,16 +1195,19 @@ class JobSettings(object):
             if idir in transfer_file_list:
                 ifile = os.path.basename(idir)
                 f.write("""mv %s ${CONDOR_DIR_INPUT}/\n""" % ifile)
+            elif 'cid=' in idir:
+                parts = re.split('[=,]',idir) 
+                f.write("locate_cvmfs_dir %s %s\n" % (parts[1],parts[3]))
             else:
                 cmd = cmd + """ %s %s ${CONDOR_DIR_INPUT}/""" % (cnt, idir)
                 cnt = "\;"
         if cnt == "\;":
             f.write("""echo `date` BEGIN WRAPFILE COPY-IN %s\n""" % (cmd))
-            f.write(""">&2 echo `date` BEGIN WRAPFILE COPY-IN %s\n""" % (cmd))
-            f.write("""%s  log "%s BEGIN %s"\n""" %
+            f.write(""">&2 echo  `date` BEGIN WRAPFILE COPY-IN %s\n""" % (cmd))
+            f.write("""%s  log "$JOBSUBJOBID %s BEGIN %s"\n""" %
                     (ifdh_cmd, settings['user'], cmd))
             f.write("%s\n" % cmd)
-            f.write("""%s  log "%s FINISHED %s"\n""" %
+            f.write("""%s  log "$JOBSUBJOBID %s FINISHED %s"\n""" %
                     (ifdh_cmd, settings['user'], cmd))
             f.write("""echo `date` FINISHED WRAPFILE COPY-IN %s\n""" % (cmd))
             f.write(
@@ -1485,7 +1494,6 @@ class JobSettings(object):
             settings['condor_exec'], settings['filetag'])
         f = open(samendexe, 'wx')
         f.write("#!/bin/sh -x\n")
-        # f.write("%s\n"%JobUtils().logTruncateString())
         ifdh_pgm_text = JobUtils().ifdhString() % (settings['ifdh_cmd'], settings[
             'wn_ifdh_location'], settings['ifdh_cmd'])
         f.write("%s\n" % ifdh_pgm_text)

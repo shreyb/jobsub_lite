@@ -24,7 +24,6 @@ import platform
 import json
 import copy
 import traceback
-import optparse
 import pprint
 import constants
 import jobsubClientCredentials
@@ -1353,11 +1352,12 @@ class JobSubClient(object):
     def print_response(self, response, session=None):
         """
         """
-        logSupport.dprint("dir response=%s" % dir(response))
-        logSupport.dprint("response.headers=%s" % response.headers)
-        if session:
-            logSupport.dprint("dir session%s" % dir(session))
-            logSupport.dprint("session.headers=%s" % session.headers)
+        if os.environ.get('DEBUG_REQUEST'):
+            logSupport.dprint("dir response=%s" % dir(response))
+            logSupport.dprint("response.headers=%s" % response.headers)
+            if session:
+                logSupport.dprint("dir session%s" % dir(session))
+                logSupport.dprint("session.headers=%s" % session.headers)
         content_type = response.headers.get('content-type')
         code = response.status_code
         value = response.content
@@ -1388,6 +1388,8 @@ class JobSubClient(object):
 
 
     def service_print_request(self, content_type, code, value, serving_server, response_time):
+        """
+        """
         if self.extra_opts.get('jobid_output_only'):
             matchObj = re.match(r'(.*)Use job id (.*) to retrieve (.*)',
                                 value, re.S | re.I)
@@ -1420,7 +1422,7 @@ class JobSubClient(object):
 
 
 def is_port_open(server, port):
-    """ is port on server open?
+    """ is @port on @server open?
     """
     is_open = False
     server = server.strip().replace('https://', '')
@@ -2120,8 +2122,8 @@ if __name__ == '__main__':
             print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
                 (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
     elif sys.argv[1] == 'TEST_RE_LIST':
-        re_list = read_re_file(sys.argv[2])
-        print "re_list = %s" % re_list
+        x_re_list = read_re_file(sys.argv[2])
+        print "re_list = %s" % x_re_list
 
     elif sys.argv[1] == "TEST_DATE_CALLBACK":
         def P_DUCK(): return None

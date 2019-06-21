@@ -36,7 +36,7 @@ from distutils import spawn
 from tempfile import NamedTemporaryFile
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
-
+import jobsub
 
 class AuthenticationError(Exception):
     """Authentication Exception.  I do not recognize you as who you
@@ -144,6 +144,17 @@ class Krb5Ticket(object):
 
 FERRY_DAT = {}
 
+
+def rcds_url():
+    """ return url for rcds server.  Configured from jobsub.ini
+    """
+    jcp = JobsubConfigParser()
+    f_server = jobsub.get_dropbox_cvmfs_server()
+    f_port = jcp.get('default', 'dropbox_cvmfs_port')
+    url = "http://%s/pubapi" % f_server
+    if f_port:
+        url = "%s:%s" % (url, f_port)
+    return url
 
 def ferry_url():
     """ return url for ferry server.  Configured from jobsub.ini
@@ -299,6 +310,10 @@ def create_vo_role_fqan_map():
     d1, d2 = invert_vo_role_uid_map(data)
     return d2
 
+def create_rcds_server_map():
+    data = _fetch_from_rcds()
+    return data
+
 
 def fetch_from_ferry(fname):
     """ create @param fname : a json file
@@ -314,6 +329,8 @@ def fetch_from_ferry(fname):
         return create_vo_role_fqan_map()
     elif fname == "getGridMapFile":
         return getGridMapFile()
+    elif fname == "rcds_server_map.json":
+        return create_rcds_server_map()
     else:
         return _fetch_from_ferry(fname)
 
@@ -337,6 +354,34 @@ def getGridMapFile():
             gmf[vo] = dat
     return gmf
 
+
+def _fetch_from_rcds(fname='config'):
+    """
+    use curl to request @param fname from its API
+    """
+    try:
+        url = "%s/%s" % (rcds_url(), fname)
+        jcp = JobsubConfigParser()
+        co = curl_obj()
+        response = cStringIO.StringIO()
+        co.setopt(co.WRITEFUNCTION, response.write)
+        co.setopt(co.URL, url)
+        logger.log("Calling  url: {0}".format(url))
+        co.perform()
+        co.close()
+        resp = response.getvalue()
+        ret_val = {}
+        parts = re.split('[:,\s]',resp)
+        ret_val[url] = parts[1:]
+        return ret_val
+        
+    except Exception as e:
+        logger.log(e, traceback=True, severity=logging.ERROR)
+        logger.log(e, traceback=True, severity=logging.ERROR,
+                   logfile='error')
+
+        logger.log(e, traceback=True)
+        return {}
 
 def _fetch_from_ferry(fname):
     """

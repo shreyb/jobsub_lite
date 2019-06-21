@@ -914,8 +914,7 @@ class JobSettings(object):
 
 
     def write_locate_cvmfs_dir(self,f):
-        endpoints = self.fileParser.get(
-                            'default', 'dropbox_cvmfs_endpoints')
+        endpoints = os.environ.get("JOBSUB_CVMFS_ENDPOINTS")
         fmt_str = JobUtils().locate_cvmfs_str()
         codestr = fmt_str % endpoints
         f.write(codestr)

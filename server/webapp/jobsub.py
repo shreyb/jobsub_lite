@@ -19,11 +19,13 @@ import StringIO
 import re
 import cherrypy
 import json
+import random
 
 import subprocessSupport
 import condor_commands
 from JobsubConfigParser import JobsubConfigParser
 from request_headers import get_client_dn
+import authutils
 
 if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
     import FakeLogger as logger
@@ -242,15 +244,12 @@ def sub_group_pattern(acctgroup):
     return acg
 
 
-def get_dropbox_cvmfs_server(acctgroup):
-    """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
-       uses, return a string
+def get_dropbox_cvmfs_server(acctgroup='default'):
+    """Scan jobsub.ini for list of cvmfs rcds servers acctgroup
+       uses, return random member of list
     """
-    r_code_default = 'distdev01.fnal.gov'
+    r_code_default_list = ['rcds01.fnal.gov','rcds02.fnal.gov']
     r_code = None
-    if log_verbose():
-        logger.log("default = %s attempting to find dropbox_server" %
-                   r_code_default)
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_cvmfs_server')
@@ -260,13 +259,14 @@ def get_dropbox_cvmfs_server(acctgroup):
 
         logger.log("r_code = %s" % r_code)
     except BaseException:
-        logger.log('Failed to get dropbox_max_size: ',
+        logger.log('Failed to get dropbox_cvmfs_server: ',
                    traceback=True,
                    severity=logging.ERROR)
     if r_code:
-        return r_code
+        rcl = r_code.split(' ')
     else:
-        return r_code_default
+        rcl = rcode_default_list
+    return random.choice(rcl)
 
 def get_dropbox_max_size(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
@@ -555,7 +555,12 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
             logger.log(err)
             cherrypy.response.status = 500
             return result
+        ep_dict = authutils.json_from_file('rcds_server_map.json')
+        endpoints = ""
+        for k in ep_dict:
+            endpoints += " ".join(ep_dict[k])
 
+        child_env['JOBSUB_CVMFS_ENDPOINTS'] = '%s' % endpoints
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_nm
         if role:

@@ -128,7 +128,7 @@ class JobSettings(object):
         self.settings['notify'] = notify_setting
 
         self.settings['submit'] = True
-        self.settings['grid'] = False
+        self.settings['grid'] = True
 
         self.settings['usepwd'] = True
         self.settings['forceparrot'] = False
@@ -261,8 +261,6 @@ class JobSettings(object):
                 settings[x] = False
         if 'transfer_wrapfile' in settings:
             settings['tranfer_executable'] = settings['transfer_wrapfile']
-        #if 'always_run_on_grid' in settings and settings['always_run_on_grid']:
-        #    settings['grid'] = True
         if settings['tar_file_name']:
             if 'cid=' not in settings['tar_file_name']:
                 settings['tar_file_basename'] = os.path.basename(
@@ -995,6 +993,8 @@ class JobSettings(object):
             if 'cid=' in settings['tar_file_name']:
                 parts = re.split('[=,]', settings['tar_file_name'])
                 f.write("export INPUT_TAR_DIR=$(locate_cvmfs_dir %s %s)\n" % (parts[1],parts[3]))
+                f.write("export INPUT_TAR_DIR_LOCAL=$CONDOR_DIR_INPUT/%s\n" % (parts[3]))
+                f.write("ln -s $INPUT_TAR_DIR_LOCAL/* .\n")
                 f.write("echo found tar dir $INPUT_TAR_DIR\n")
                 f.write("${JSB_TMP}/ifdh.sh log found tar dir $INPUT_TAR_DIR\n")
 
@@ -1151,9 +1151,10 @@ class JobSettings(object):
         f.write("exit $JOB_RET_STATUS\n")
         if settings['verbose']:
             f.write("########END JOBSETTINGS MAKEWRAPFILEPOSTAMBLE#############\n")
-        f.write("\n#settings for creating this file\n")
-        for key in settings:
-            f.write("#%s=%s\n"%(key,settings[key]))
+        if 'JOBSUB_DEBUG' in settings['added_environment']:
+            f.write("\n#settings for creating this file\n")
+            for key in settings:
+                f.write("#%s=%s\n"%(key,settings[key]))
         f.close()
         cmd = "chmod +x %s" % settings['wrapfile']
         commands = JobUtils()

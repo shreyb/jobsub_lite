@@ -8,6 +8,8 @@ Client
 * Feature  13853   access to condor_prio features
 * Bug      20988   client parsing kcron generated DNs incorrectly, marking them
                    invalid too soon
+* Feature 21409    new flag for jobsub_submit:  --use-cvmfs-dropbox implements
+                   the rapid code distribution project using cvmfs
 
 Server
 ------

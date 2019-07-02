@@ -13,7 +13,7 @@ import contextlib
 #
 ##########################################################################
 """
-import requests
+
 import sys
 import os
 import re
@@ -207,7 +207,6 @@ class JobSubClient(object):
             self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
             self.get_directory_tar_map(self.server_argv)
             server_env_exports = get_server_env_exports(self.server_argv)
-            #print "DEBUG server_env_exports = %s" % server_env_exports
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
                 err = "You must supply a job executable, preceded by the "
@@ -463,7 +462,7 @@ class JobSubClient(object):
     def dropbox_upload(self):
         """
         upload files from dropbox_uri_map to dropbox_location
-        via requests lib to cvmfs server
+        to cvmfs server
         dropbox_uri_map has form:
         {'dropbox://annie_stuff.tar':'d618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
 
@@ -500,8 +499,8 @@ class JobSubClient(object):
             upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
                 (self.dropboxServer, self.account_group, digest)
             logSupport.dprint('exists_url = %s'% exists_url)
-            resp = self.performRequest(exists_url, 'GET')
-            parts = resp[0].text.strip().split(':')
+            resp = self.requestValue(exists_url, 'GET')
+            parts = resp.strip().split(':')
             exists = parts[0]
             path = parts[-1]
             logSupport.dprint("exists = %s" % exists)
@@ -793,7 +792,7 @@ class JobSubClient(object):
         response.close()
         return http_code
 
-    
+   
 
     def changeJobState(self, url, http_custom_request, post_data=None,
                        ssl_verifyhost=True, connect_timeout=None):
@@ -801,34 +800,139 @@ class JobSubClient(object):
         perform job actions like remove/hold/release
         """
         
-        resp, ses = self.performRequest(url, http_custom_request, post_data,
-                                        ssl_verifyhost, connect_timeout)
-        http_code = resp.status_code
-        self.print_response(resp, ses) 
+        rtv = self.perform_(url, http_custom_request, post_data,
+                                ssl_verifyhost, connect_timeout)
+        if 'curl' in rtv:
+            self.printResponse(rtv['curl'],
+                               rtv['response'],
+                               rtv['response_time'])
+            rtv['curl'].close()
+            rtv['response'].close()
+            http_code = rtv['http_code']
+
+        elif 'resp' in rtv:
+            resp = rtv['resp']
+            ses = rtv['session']
+            http_code = resp.status_code
+            self.print_response(resp, ses) 
 
         return http_code
 
     def requestValue(self, url, http_custom_request='GET', post_data=None,
                      ssl_verifyhost=True, connect_timeout=None):
 
-        resp, ses = self.performRequest(url, http_custom_request, post_data,
-                                        ssl_verifyhost, connect_timeout)
+        rtv  = self.perform_(url, http_custom_request, post_data,
+                                 ssl_verifyhost, connect_timeout)
         
-        try:
-            doc = json.loads(resp.text)
-            val = doc.get('out')
-        except Exception as err:
-            s_err = resp.text
-            if s_err:
-                raise JobSubClientError(s_err)
-            raise JobSubClientError(err)
+        if 'curl' in rtv:
+            try:
+                jsn = json.loads(rtv['response'].getvalue())
+                val = jsn['out']
+            except:
+                try:
+                    val = rtv['response'].getvalue()
+                except Exception as err:
+                    raise JobsubClientError(err)
+            finally:
+                rtv['curl'].close()
+                rtv['response'].close()
+
+        elif 'resp' in rtv:
+            resp = rtv['resp']
+            ses = rtv['session']
+            try:
+                doc = json.loads(resp.text)
+                val = doc.get('out')
+            except Exception as err:
+                if resp:
+                    val = resp.text
+                else:
+                    raise JobSubClientError(err)
         return val
 
-    def performRequest(self, url, http_custom_request, post_data=None,
+    def perform_(self, url, http_custom_request, post_data=None,
+                 ssl_verifyhost=True, connect_timeout=None):
+        
+        if os.environ.get('JOBSUB_CURL_ONLY'):
+            return self.perform_curl(url, http_custom_request,
+                                 post_data, ssl_verifyhost,
+                                 connect_timeout)
+        try:
+            return self.perform_request(url, http_custom_request,
+                                   post_data, ssl_verifyhost,
+                                   connect_timeout)
+        except:
+            print "jobsub will be migrating to the requests library soon"
+            print "open a service desk ticket to have python-requests installed"
+            print "on this machine. To suppress this message, set envionment variable"
+            print "export JOBSUB_CURL_ONLY=TRUE"
+
+
+        return self.perform_curl(url, http_custom_request,
+                                 post_data, ssl_verifyhost,
+                                 connect_timeout)
+
+                 
+    def perform_curl(self, url, http_custom_request, post_data=None,
+                     ssl_verifyhost=True, connect_timeout=None):
+        """
+        Generic curl API 
+        """
+
+        logSupport.dprint('ACTION URL     : %s\n' % url)
+        logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
+
+        # Get curl & resposne object to use
+        curl, response = curl_secure_context(url, self.credentials)
+        curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
+        if post_data:
+            curl.setopt(curl.HTTPPOST, post_data)
+        if not ssl_verifyhost:
+            curl.setopt(curl.SSL_VERIFYHOST, 0)
+        if connect_timeout is not None:
+            try:
+                _timeout = int(connect_timeout)
+            except ValueError:
+                err = "timeout %s is not valid type (is %s, should be " +\
+                    " %s "
+                err = err % (connect_timeout, type(connect_timeout), "int")
+                logSupport.dprint(err)
+                raise JobSubClientError(err)
+            else:
+                curl.setopt(curl.CONNECTTIMEOUT, _timeout)
+
+        http_code = 200
+        response_time = 0
+        try:
+            stime = time.time()
+            curl.perform()
+            etime = time.time()
+            response_time = etime - stime
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        except pycurl.error as error:
+            errno, errstr = error
+            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            err = "HTTP response:%s PyCurl Error %s: %s" %\
+                (http_code, errno, errstr)
+            if errno == 60:
+                err += "\nDid you remember to include the port number to "
+                err += "your server specification \n( --jobsub-server %s )?" %\
+                    self.server
+            raise JobSubClientError(err)
+        return {'curl':curl, 'response':response, 'http_code':http_code,'response_time':response_time}
+
+
+
+
+
+
+
+    def perform_request(self, url, http_custom_request, post_data=None,
                        ssl_verifyhost=True, connect_timeout=None):
         """
-        Generic request lib interface  
+        Generic  python request lib interface  
         """
+        import requests
         
         logSupport.dprint('ACTION URL     : %s\n' % url)
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
@@ -857,7 +961,7 @@ class JobSubClient(object):
         except RuntimeError as error:
             raise JobSubClientError(error)
 
-        return (resp, ses)
+        return {'resp':resp, 'session':ses}
 
 
     def checkID(self, jobid):
@@ -891,7 +995,6 @@ class JobSubClient(object):
                     u = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN\
                         % (srv, self.account_group)
                 u += 'setprio/%s/user/%s/' % (prio, uid)
-                #u += 'setprio/%s/dbox/' % prio
 
                 self.action_url = u
                 print "Schedd: %s" % schedd
@@ -1001,7 +1104,7 @@ class JobSubClient(object):
                 print "Schedd: %s" % schedd
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
-                                                 post_data,
+                                                 post_data=post_data,
                                                  ssl_verifyhost=False))
             return rslts
         elif uid:
@@ -1023,7 +1126,7 @@ class JobSubClient(object):
                 print "Schedd: %s" % schedd
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
-                                                 post_data,
+                                                 post_data=post_data,
                                                  ssl_verifyhost=False))
             return rslts
         elif jobid:
@@ -1038,7 +1141,7 @@ class JobSubClient(object):
                     % (self.server, self.account_group, item)
             return self.changeJobState(self.action_url,
                                        'PUT',
-                                       post_data,
+                                       post_data=post_data,
                                        ssl_verifyhost=False)
         else:
             err = "hold requires one of a jobid or uid or constraint"
@@ -1718,6 +1821,7 @@ def get_client_credentials(acctGroup=None, server=None):
                                                    default_proxy_file)
             cred_dict['cert'] = default_proxy_file
             cred_dict['key'] = default_proxy_file
+            cred_dict['proxy'] = default_proxy_file
         else:
             raise JobSubClientError(long_err_msg)
 
@@ -1733,7 +1837,6 @@ def get_capath():
 
     if not ca_dir:
         for system_ca_dir in ca_dir_list:
-            #logSupport.dprint('checking %s' % system_ca_dir)
             if (os.path.exists(system_ca_dir)):
                 ca_dir = system_ca_dir
                 break

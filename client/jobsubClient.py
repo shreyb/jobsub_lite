@@ -495,22 +495,42 @@ class JobSubClient(object):
                 cdir = '.'.join(parts[0:-1])
             if parts[-2] == 'tar':
                 cdir = '.'.join(parts[0:-2])
-            exists_url = constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
-                (self.dropboxServer, self.account_group, digest)
-            upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
-                (self.dropboxServer, self.account_group, digest)
+            exists_url = []
+            if isinstance(self.dropboxServer, list):
+                
+                for srv in self.dropboxServer:
+                    exists_url.append(constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
+                        (srv, self.account_group, digest))
+            else:
+                exists_url.append(constants.JOBSUB_CID_EXISTS_URL_PATTERN %\
+                    (self.dropboxServer, self.account_group, digest))
+                dslist = []
+                dslist.append(self.dropboxServer)
+                self.dropboxServer = dslist
+
+
             logSupport.dprint('exists_url = %s'% exists_url)
-            resp = self.performRequest(exists_url, 'GET')
-            parts = resp[0].text.strip().split(':')
-            exists = parts[0]
-            path = parts[-1]
-            logSupport.dprint("exists = %s" % exists)
-            if exists == path:
-                path = "%s/%s" % (self.account_group, digest)
-            result[digest] = {'path': "cid=%s,cdir=%s" % (path,cdir),
-                              'host': self.dropboxServer,
-                             }
+            idx = 0
+            for url in exists_url:
+                resp = self.performRequest(url, 'GET')
+                parts = resp[0].text.strip().split(':')
+                exists = parts[0]
+                path = parts[-1]
+                logSupport.dprint("exists = %s" % exists)
+                if exists == 'PRESENT':
+                    break
+                if exists not in ['MISSING' , 'OK']:
+                    exists_url.remove(url)
+                    del self.dropboxServer[idx]
+                idx += 1
             if exists != 'PRESENT':
+                srv = random.choice(self.dropboxServer)
+                upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
+                    (srv, self.account_group, digest)
+                path = "%s/%s" % (self.account_group, digest)
+                result[digest] = {'path': "cid=%s,cdir=%s" % (path,cdir),
+                                  'host': srv,
+                                 }
                 cert = self.credentials.get('cert')
                 key = self.credentials.get('key')
                 cmd = """curl --cert %s --key %s """ % (cert,key)

@@ -19,7 +19,7 @@ import StringIO
 import re
 import cherrypy
 import json
-import random
+#import random
 
 import subprocessSupport
 import condor_commands
@@ -266,7 +266,8 @@ def get_dropbox_cvmfs_server(acctgroup='default'):
         rcl = r_code.split(' ')
     else:
         rcl = rcode_default_list
-    return random.choice(rcl)
+    #return random.choice(rcl)
+    return rcl
 
 def get_dropbox_max_size(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup

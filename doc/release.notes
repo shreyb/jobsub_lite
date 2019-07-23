@@ -10,6 +10,7 @@ Client
                    invalid too soon
 * Feature 21409    new flag for jobsub_submit:  --use-cvmfs-dropbox implements
                    the rapid code distribution project using cvmfs
+* Feature 22981    Detect and work around misconfigured cvmfs rcd servers
 
 Server
 ------
@@ -23,6 +24,7 @@ Server
 * Bug      22151   --blacklist option doesn't block sites like its supposed to
 * Bug      22174   admin scripts should ignore commented lines in config files
 * Bug      19547   on worker nodes, jobs not getting a valid production proxy
+* Bug      22961   admin cron jobs incorrectly parsing config file
 
 ============================================================================
 v1.2.10

@@ -512,16 +512,21 @@ class JobSubClient(object):
             logSupport.dprint('exists_url = %s'% exists_url)
             idx = 0
             for url in exists_url:
-                resp = self.performRequest(url, 'GET')
-                parts = resp[0].text.strip().split(':')
-                exists = parts[0]
-                path = parts[-1]
-                logSupport.dprint("exists = %s" % exists)
-                if exists == 'PRESENT':
-                    break
-                if exists not in ['MISSING' , 'OK']:
-                    exists_url.remove(url)
-                    del self.dropboxServer[idx]
+                try:
+                    resp = self.performRequest(url, 'GET')
+                    parts = resp[0].text.strip().split(':')
+                    exists = parts[0]
+                    path = parts[-1]
+                    logSupport.dprint("exists = %s" % exists)
+                    if exists == 'PRESENT':
+                        break
+                    if exists not in ['MISSING' , 'OK']:
+                        exists_url.remove(url)
+                        del self.dropboxServer[idx]
+                except:
+                        exists_url.remove(url)
+                        del self.dropboxServer[idx]
+
                 idx += 1
             if exists != 'PRESENT':
                 srv = random.choice(self.dropboxServer)

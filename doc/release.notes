@@ -11,6 +11,8 @@ Client
 * Feature 21409    new flag for jobsub_submit:  --use-cvmfs-dropbox implements
                    the rapid code distribution project using cvmfs
 * Feature 22981    Detect and work around misconfigured cvmfs rcd servers
+* Feature 22987    Detect and work around misconfigured cvmfs rcd servers, part II: 
+                   different bad behavior, now worked around as well.
 
 Server
 ------

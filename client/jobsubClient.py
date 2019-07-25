@@ -535,31 +535,37 @@ class JobSubClient(object):
 
             logSupport.dprint('exists_url = %s' % exists_url)
             idx = 0
+            exists = ''
+            srv = None
             for url in exists_url:
                 try:
                     resp = self.requestValue(url, 'GET')
-                    parts = resp[0].text.strip().split(':')
+                    #print "resp = %s" %resp
+                    parts = resp.strip().split(':')
                     exists = parts[0]
                     path = parts[-1]
-                    logSupport.dprint("exists = %s" % exists)
+                    logSupport.dprint("exists = '%s'" % exists)
                     if exists == 'PRESENT':
+                        srv = self.dropboxServer[idx]
                         break
                     if exists not in ['MISSING', 'OK']:
                         exists_url.remove(url)
                         del self.dropboxServer[idx]
-                except:
+                    idx += 1
+                except Exception as err:
+                    print "%s" % err
                     exists_url.remove(url)
                     del self.dropboxServer[idx]
 
-                idx += 1
-            if exists != 'PRESENT':
+            if not srv:
                 srv = random.choice(self.dropboxServer)
-                upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
-                    (srv, self.account_group, digest)
-                path = "%s/%s" % (self.account_group, digest)
-                result[digest] = {'path': "cid=%s,cdir=%s" % (path, cdir),
+            path = "%s/%s" % (self.account_group, digest)
+            result[digest] = {'path': "cid=%s,cdir=%s" % (path, cdir),
                                   'host': srv,
                                   }
+            if exists != 'PRESENT':
+                upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
+                    (srv, self.account_group, digest)
                 cert = self.credentials.get('cert')
                 key = self.credentials.get('key')
                 cmd = """curl --cert %s --key %s """ % (cert, key)
@@ -582,65 +588,11 @@ class JobSubClient(object):
 
         return result
 
-    def dropbox_upload_old(self):
-        """
-        upload a tarball or file to the dropbox server
-        currently not used
-        """
-        result = dict()
-        post_data = list()
-
-        dropboxURL = constants.JOBSUB_DROPBOX_POST_URL_PATTERN %\
-            (self.dropboxServer or self.server, self.account_group)
-        # Create curl object and set curl options to use
-        curl, response = curl_secure_context(dropboxURL, self.credentials)
-        curl.setopt(curl.POST, True)
-        curl.setopt(curl.SSL_VERIFYHOST, 0)
-
-        # If it is a local file upload the file
-        for file_name, key in self.dropbox_uri_map.items():
-            post_data = self.post_data_append(post_data,
-                                              key,
-                                              pycurl.FORM_FILE,
-                                              uri2path(file_name))
-        curl.setopt(curl.HTTPPOST, post_data)
-        response_time = 0
-        try:
-            stime = time.time()
-            curl.perform()
-            etime = time.time()
-            response_time = etime - stime
-        except pycurl.error as error:
-            errno, errstr = error
-            err = "PyCurl Error %s: %s" % (errno, errstr)
-            # logSupport.dprint(traceback.format_exc())
-            raise JobSubClientSubmissionError(err)
-
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-        serving_server = servicing_jobsub_server(curl)
-        curl.close()
-
-        if self.verbose:
-            print "SERVER RESPONSE CODE: %s" % response_code
-        value = response.getvalue()
-        if response_content_type == 'application/json':
-            result = json.loads(value)
-        else:
-            print_formatted_response(value, response_code, self.server,
-                                     serving_server, response_time,
-                                     verbose=self.verbose)
-        if response_code == 200:
-            response.close()
-            return result
-        else:
-            import ast
-            err = ast.literal_eval(value).get('err')
-            if not err:
-                err = value
-            raise JobSubClientSubmissionError(err)
 
     def submit_dag(self):
+        """ called from jobsub_submit_dag to uh well,
+            submit a dag
+        """
         self.init_submission()
         # if (not self.dropbox_uri_map) or self.dropboxServer:
         #    self.probeSchedds()
@@ -722,10 +674,14 @@ class JobSubClient(object):
         return http_code
 
     def post_data_append(self, post_data, payload, fmt, fname):
-        # append payload to HTTP post_data payload
-        # fmt is postdata format
-        # fname is file to append
-        # print "appending %s fmt %s to %s" % (fname, fmt, payload)
+        """
+        append payload to HTTP post_data payload
+        Params:
+            @post_data: list of http post data objects
+            @payload
+            @fmt is postdata format
+            @fname is file to append
+        """
         try:
             assert(os.access(fname, os.R_OK))
             post_data.append((payload, (fmt, fname)))
@@ -736,6 +692,11 @@ class JobSubClient(object):
                 fname)
 
     def makeDagPayload(self, infile):
+        """ create a tarfile with all the files that
+            go in a dag so it can be uploaded to the 
+            jobsub server
+            @infile: an xml input file for jobsub_submit_dag
+        """
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
         fin = open(infile, 'r')
@@ -769,6 +730,9 @@ class JobSubClient(object):
         return "%s/payload.tgz" % dirpath
 
     def submit(self):
+        """submit a job to jobsub server
+           called by jobsub_submit client 
+        """
         self.init_submission()
         # if (not self.dropbox_uri_map) or self.dropboxServer:
         #    self.probeSchedds()
@@ -845,6 +809,13 @@ class JobSubClient(object):
                        ssl_verifyhost=True, connect_timeout=None):
         """
         perform job actions like remove/hold/release
+        @url: REST API call to jobsub server that performs action
+        @http_custom_request: ''POST', 'DELETE', etc
+        @post_data: data to send with POST
+        @ssl_verify_host: True or False, if True make sure the host
+                          is who they claim they are
+        @connect_timeout: how long to wait for server to return
+                          response
         """
 
         rtv = self.perform_(url, http_custom_request, post_data,
@@ -867,6 +838,17 @@ class JobSubClient(object):
 
     def requestValue(self, url, http_custom_request='GET', post_data=None,
                      ssl_verifyhost=True, connect_timeout=None):
+        """
+        Retrieve values from jobsub server
+        @url: REST API call to jobsub server that performs action
+        @http_custom_request: 'GET' , no other requests make sense
+                               in this context
+        @post_data: unused? 
+        @ssl_verify_host: True or False, if True make sure the host
+                          is who they claim they are
+        @connect_timeout: how long to wait for server to return
+                          response
+        """
 
         rtv = self.perform_(url, http_custom_request, post_data,
                             ssl_verifyhost, connect_timeout)
@@ -899,6 +881,19 @@ class JobSubClient(object):
 
     def perform_(self, url, http_custom_request, post_data=None,
                  ssl_verifyhost=True, connect_timeout=None):
+        """
+        Try to use requests library to send
+        @url to jobsub server
+        @http_custom_request: ''POST', 'DELETE', etc
+        @post_data: data to send with POST
+        @ssl_verify_host: True or False, if True make sure the host
+                          is who they claim they are
+        @connect_timeout: how long to wait for server to return
+                          response
+
+        if requests library not installed, complain and then use
+        curl library
+        """
 
         if os.environ.get('JOBSUB_CURL_ONLY'):
             return self.perform_curl(url, http_custom_request,
@@ -908,7 +903,7 @@ class JobSubClient(object):
             return self.perform_request(url, http_custom_request,
                                         post_data, ssl_verifyhost,
                                         connect_timeout)
-        except:
+        except ImportError:
             print "jobsub will be migrating to the requests library soon"
             print "open a service desk ticket to have python-requests installed"
             print "on this machine. To suppress this message, set envionment variable"
@@ -959,6 +954,13 @@ class JobSubClient(object):
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" %\
                 (http_code, errno, errstr)
+            if errno == 7:
+                etime = time.time()
+                response_time = etime - stime
+                return {'curl': curl, 'response': response,
+                    'http_code': http_code, 'response_time': response_time,
+                    'error':err}
+                
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?" %\
@@ -998,13 +1000,14 @@ class JobSubClient(object):
                             verify=ssl_verifyhost,
                             cert=cred,
                             timeout=connect_timeout)
-        except RuntimeError as error:
+        except requests.ConnectionError as error:
+            return {'resp': resp, 'session': ses, 'error': error}
+        except Exception as error:
+            print '%s' % error
             raise JobSubClientError(error)
 
         return {'resp': resp, 'session': ses}
 
-    def checkID(self, jobid):
-        return check_id(jobid)
 
     def adjust_prio(self, jobid=None, uid=None):
         """ Adjust condor_prio for jobid or uid
@@ -1012,7 +1015,7 @@ class JobSubClient(object):
             actual priority value to adjust to comes
             from self.extra_opts['prio']
         """
-        jobid = self.checkID(jobid)
+        jobid = check_id(jobid)
         prio = self.extra_opts.get('prio')
         if not prio:
             err = 'you must supply a priority with --prio'
@@ -1061,7 +1064,15 @@ class JobSubClient(object):
                                        ssl_verifyhost=False)
 
     def release(self, jobid=None, uid=None, constraint=None):
-        jobid = self.checkID(jobid)
+        """
+        generate API call to server to do a condor_release
+        called from jobsub_release client
+        Params:
+            @jobid: jobsubjobid (NNN.N@server.fnal.gov)
+            @uid: user id
+            @constraint: condor constraint
+        """
+        jobid = check_id(jobid)
         post_data = [
             ('job_action', 'RELEASE')
         ]
@@ -1124,7 +1135,15 @@ class JobSubClient(object):
             raise JobSubClientError("release requires either a jobid or uid")
 
     def hold(self, jobid=None, uid=None, constraint=None):
-        jobid = self.checkID(jobid)
+        """
+        generate API call to server to do a condor_hold
+        called from jobsub_hold client
+        Params:
+            @jobid: jobsubjobid (NNN.N@server.fnal.gov)
+            @uid: user id
+            @constraint: condor constraint
+        """
+        jobid = check_id(jobid)
         post_data = [
             ('job_action', 'HOLD')
         ]
@@ -1188,7 +1207,12 @@ class JobSubClient(object):
 
     def remove(self, jobid=None, uid=None, constraint=None):
         """
-        jobsub_rm aka condor_rm
+        generate API call to server to do a condor_rm
+        called from jobsub_rm client
+        Params:
+            @jobid: jobsubjobid (NNN.N@server.fnal.gov)
+            @uid: user id
+            @constraint: condor constraint
         """
 
         # url_pattern = constants.remove_url_dict.get((jobid is not None,
@@ -1235,7 +1259,7 @@ class JobSubClient(object):
             return rslts
         elif jobid:
             _role_fmt = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE
-            jobid = self.checkID(jobid)
+            jobid = check_id(jobid)
             self.server = "https://%s:8443" % jobid.split('@')[-1]
             item = jobid
             if self.acct_role:
@@ -1256,8 +1280,15 @@ class JobSubClient(object):
     def history(self, userid=None, jobid=None, outFormat=None):
         """
         jobsub_history aka condor_history
+        Params:
+            @userid: unix user name
+            @jobid: jobsubjobid
+            @outFormat: not used, was for condor_history -l back
+                        when this was a direct call to condor_history
+                        it now goes to a sqlite database on the 
+                        jobsub server for speedup 
         """
-        jobid = self.checkID(jobid)
+        jobid = check_id(jobid)
         self.probeSchedds()
         rc = 0
         for schedd in self.schedd_list:
@@ -1327,7 +1358,8 @@ class JobSubClient(object):
         """
         Retrieve accepted authorization methods from jobsub-server
         URL to server is https://jobsub-server:(port)jobsub/acctgroups/%s/authmethods/
-        @parameter acct_group (nova, mu2e etc) goes in %s of URL
+        Parameters:
+            @acct_group (nova, mu2e etc) goes in %s of URL
         """
         if not acct_group:
             acct_group = self.account_group
@@ -1413,9 +1445,13 @@ class JobSubClient(object):
         return self.changeJobState(list_url, 'GET')
 
     def listJobs(self, jobid=None, userid=None, outFormat=None):
-        """ jobsub_q
+        """ condor_q interface, called from jobsub_q
+            Params:
+                @jobid: jobsubjobid
+                @userid: unix user name
+                @outFormat: --long and --dag are currently supported
         """
-        jobid = self.checkID(jobid)
+        jobid = check_id(jobid)
         constraint = self.extra_opts.get('constraint')
         if constraint:
             list_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN %\
@@ -1493,6 +1529,8 @@ class JobSubClient(object):
 
     def print_response(self, response, session=None):
         """
+        Given the requestlib response and session objects
+        print response details to screen
         """
         if os.environ.get('DEBUG_REQUEST'):
             logSupport.dprint("dir response=%s" % dir(response))
@@ -1526,6 +1564,8 @@ class JobSubClient(object):
     def service_print_request(
             self, content_type, code, value, serving_server, response_time):
         """
+        Do the actual printing to the screen from a printResponse(curl)
+        or print_response(responselib) call to jobsub server
         """
         if self.extra_opts.get('jobid_output_only'):
             matchObj = re.match(r'(.*)Use job id (.*) to retrieve (.*)',
@@ -1742,6 +1782,8 @@ def print_server_details(response_code, server, serving_server, response_time):
 def print_json_response(response, response_code, server, serving_server,
                         response_time, suppress_server_details=False,
                         verbose=False):
+    """called by service_print_request if server returned json object
+    """
     response_dict = json.loads(response)
     output = response_dict.get('out')
     error = response_dict.get('err')
@@ -1765,6 +1807,8 @@ def print_formatted_response(msg, response_code, server, serving_server,
                              response_time, msg_type='OUTPUT',
                              suppress_server_details=False,
                              print_msg_type=True, verbose=False):
+    """called by service_print_request if server returned text
+    """
     if suppress_server_details and not msg:
         return
     if print_msg_type:
@@ -1962,7 +2006,8 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
 
 
 def get_acct_role(acct_role, proxy):
-    # If no role is specified, try to extract it from VOMS proxy
+    """If no role is specified, try to extract it from VOMS proxy
+    """
     role = acct_role
     if not role:
         voms_proxy = jobsubClientCredentials.VOMSProxy(proxy)
@@ -1983,9 +2028,10 @@ def is_uri_supported(uri):
 
 
 def get_server_env_exports(argv):
-    # Any option -e should be extracted from the client and exported to the
-    # also --environment and --environment=
-    # server appropriately.
+    """Any option -e should be extracted from the client and exported to the
+       server appropriately.
+       also --environment and --environment=
+    """
     env_vars = []
     exports = ''
     i = 0
@@ -2014,11 +2060,12 @@ def get_server_env_exports(argv):
 
 
 def get_jobexe_idx(argv):
-    # Starting from the first arg parse the strings till you get one of the
-    # supported URIs that indicate the job exe.
-    # Skip the URI that follows certain options like -f which indicates input
-    # files to upload
-
+    """
+    Starting from the first arg parse the strings till you get one of the
+    supported URIs that indicate the job exe.
+    Skip the URI that follows certain options like -f which indicates input
+    files to upload
+    """
     i = 0
 
     while(i < len(argv)):
@@ -2087,7 +2134,9 @@ def uri2path(uri):
 
 
 def get_dropbox_uri_map(argv):
-    # make a map with keys of file path and value of sequence
+    """
+    make a map with keys of file path and value of sequence
+    """
     amap = dict()
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
@@ -2141,6 +2190,9 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
 
 
 def find_ifdh_exe():
+    """"
+    dont just sit there, find it!
+    """
     ifdh_exe = spawn.find_executable("ifdh.sh")
     if not ifdh_exe:
         here = os.path.dirname(os.path.realpath(__file__))
@@ -2150,6 +2202,11 @@ def find_ifdh_exe():
 
 
 def check_id(jobid):
+    """check that jobsubjobid is of correct form
+        NNN.N@host.fnal.gov or
+        NNN.N@schedd@host.fnal.gov
+        TODO: probably shouldnt just be fnal.gov
+    """
     if jobid is None:
         return jobid
     else:
@@ -2162,12 +2219,18 @@ def check_id(jobid):
 
 
 def http_code_to_rc(http_code):
+    """return 0 (unix shell true or OK) if
+       http code within range, 
+       return 1 otherwise
+    """
     if http_code >= 200 and http_code < 300:
         return 0
     return 1
 
 
 def jid_callback(option, opt, value, p):
+    """call back function for optparse from jobsub_ client commands
+    """
     if '@' not in value:
 
         err = "jobid (%s) is missing an '@', it must be of the " % value
@@ -2177,7 +2240,9 @@ def jid_callback(option, opt, value, p):
 
 
 def date_callback(option, opt, value, p):
-    # check that date is valid and exit if conversion can't be made
+    """call back function for optparse from jobsub_ client commands
+       check that date is valid and exit if conversion can't be made
+    """
     dateOK = False
     flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
     for fmt in flist:
@@ -2198,12 +2263,17 @@ def date_callback(option, opt, value, p):
 
 
 def is_tarfile(filename):
+    """ well, is it?
+    """
     if not os.path.exists(filename):
         return False
     return tarfile.is_tarfile(filename)
 
 
 def read_re_file(filename):
+    """ read and return a list from
+        @filename: a list of python regular expressions
+    """
     re_list = []
     f = open(filename, "r")
     lines = f.readlines()

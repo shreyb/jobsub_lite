@@ -28,7 +28,8 @@ Server
 * Bug      22174   admin scripts should ignore commented lines in config files
 * Bug      19547   on worker nodes, jobs not getting a valid production proxy
 * Bug      22961   admin cron jobs incorrectly parsing config file
-
+* Bug      23027   auth_methods returns too much debug info
+* Bug      23028   syntax error in previously unexercised log message
 ============================================================================
 v1.2.10
 ============================================================================

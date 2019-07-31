@@ -111,7 +111,7 @@ def create_statedir(log):
                     getpass.getuser(),
                     s_dir[1])
                 out, err = iexe_priv_cmd(cmd)
-                log.error('Created statedir/subdirectories' % s_dir[0])
+                log.error('Created statedir/subdirectories %s' % s_dir[0])
             except RuntimeError:
                 err = 'Failed creating internal state directory %s' % state_dir
                 log.error(err)

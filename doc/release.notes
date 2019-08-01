@@ -14,6 +14,7 @@ Client
 * Feature 22987    Detect and work around misconfigured cvmfs rcd servers, part II: 
                    different bad behavior, now worked around as well.
 * Bug      22992   create rc9, client missed a merge for rc8
+* Bug      23040   random error on jobsub_q --better-analyze
 
 Server
 ------

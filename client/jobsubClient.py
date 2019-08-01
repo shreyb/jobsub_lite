@@ -540,11 +540,12 @@ class JobSubClient(object):
             for url in exists_url:
                 try:
                     resp = self.requestValue(url, 'GET')
-                    #print "resp = %s" %resp
+                    if 'resp' in resp:
+                        resp = resp['resp'].text
                     parts = resp.strip().split(':')
                     exists = parts[0]
                     path = parts[-1]
-                    logSupport.dprint("exists = '%s'" % exists)
+                    logSupport.dprint("url=%s exists='%s'" % (url,exists))
                     if exists == 'PRESENT':
                         srv = self.dropboxServer[idx]
                         break
@@ -818,6 +819,8 @@ class JobSubClient(object):
                           response
         """
 
+        http_code = 503 #service unavailable
+
         rtv = self.perform_(url, http_custom_request, post_data,
                             ssl_verifyhost, connect_timeout)
         if 'curl' in rtv:
@@ -833,6 +836,9 @@ class JobSubClient(object):
             ses = rtv['session']
             http_code = resp.status_code
             self.print_response(resp, ses)
+        
+        elif 'error' in rtv:
+            print rtv['error']
 
         return http_code
 
@@ -873,10 +879,9 @@ class JobSubClient(object):
                 doc = json.loads(resp.text)
                 val = doc.get('out')
             except Exception as err:
-                if resp:
-                    val = resp.text
-                else:
-                    raise JobSubClientError(err)
+                val = rtv
+        elif 'error' in rtv:
+            val = rtv['error']
         return val
 
     def perform_(self, url, http_custom_request, post_data=None,
@@ -918,12 +923,14 @@ class JobSubClient(object):
         """
         Generic curl API
         """
-
+        r_dict = {}
         logSupport.dprint('ACTION URL     : %s\n' % url)
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
 
         # Get curl & resposne object to use
         curl, response = curl_secure_context(url, self.credentials)
+        r_dict['curl'] = curl
+        r_dict['response'] = response
         curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
         if post_data:
             curl.setopt(curl.HTTPPOST, post_data)
@@ -949,25 +956,27 @@ class JobSubClient(object):
             etime = time.time()
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r_dict['response_time'] = response_time
+            r_dict['http_code'] = http_code
         except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            r_dict['http_code'] = http_code
             err = "HTTP response:%s PyCurl Error %s: %s" %\
                 (http_code, errno, errstr)
+            r_dict['error'] = err
             if errno == 7:
                 etime = time.time()
                 response_time = etime - stime
-                return {'curl': curl, 'response': response,
-                    'http_code': http_code, 'response_time': response_time,
-                    'error':err}
+                r_dict['response_time'] = response_time
+                return r_dict
                 
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?" %\
                     self.server
             raise JobSubClientError(err)
-        return {'curl': curl, 'response': response,
-                'http_code': http_code, 'response_time': response_time}
+        return r_dict
 
     def perform_request(self, url, http_custom_request, post_data=None,
                         ssl_verifyhost=True, connect_timeout=None):
@@ -982,8 +991,10 @@ class JobSubClient(object):
 
         http_code = 200
         response_time = 0
+        r_dict = {}
         try:
             ses = requests.Session()
+            r_dict['session'] = ses
             req = requests.Request(http_custom_request,
                                    url,
                                    data=post_data,
@@ -1000,13 +1011,15 @@ class JobSubClient(object):
                             verify=ssl_verifyhost,
                             cert=cred,
                             timeout=connect_timeout)
+            r_dict['resp'] = resp
+        
         except requests.ConnectionError as error:
-            return {'resp': resp, 'session': ses, 'error': error}
+            r_dict['error'] =  error
         except Exception as error:
             print '%s' % error
             raise JobSubClientError(error)
 
-        return {'resp': resp, 'session': ses}
+        return r_dict
 
 
     def adjust_prio(self, jobid=None, uid=None):
@@ -1038,8 +1051,6 @@ class JobSubClient(object):
                         % (srv, self.account_group)
                 u += 'setprio/%s/user/%s/' % (prio, uid)
 
-                self.action_url = u
-                print "Schedd: %s" % schedd
                 self.action_url = u
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',

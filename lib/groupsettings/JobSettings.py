@@ -328,10 +328,10 @@ class JobSettings(object):
         # print "callback opt=%s val=%s"%(opt,value)
         self.settings['resource_list'].append(value)
 
-    def _resource_callback(self):
+    def _resource_callback(self, **kwargs):
         parent_cls = self
         class resourceCallback(Action):
-            def __call__(self, parser, namespace, value, option_string=None):
+            def __call__(self, parser, namespace, value, option_string=None, **kwargs):
                 parent_cls.settings['resource_list'].append(value)
         return resourceCallback
 
@@ -493,7 +493,7 @@ class JobSettings(object):
                 dump internal state of program (useful for debugging)"""))
 
         generic_group.add_argument("--resource-provides", type=str,
-                                 action=self._resource_callback,
+                                 action=self._resource_callback(), 
                                  # callback=self.resource_callback, #TODO 
                                  help=re.sub('  \s+', ' ', """request specific
                                  resources by changing condor jdf file.

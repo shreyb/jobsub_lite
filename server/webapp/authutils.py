@@ -394,7 +394,7 @@ def _get_ferry_output_from_response(fname):
     try:
         assert len(ferry_response['ferry_error']) == 0
     except AssertionError:
-        _error= "AssertionError: Call to FERRY returned FERRY errors: {0}"\
+        _error= "AssertionError: Call to FERRY returned FERRY errors: {0}\n"\
                     .format(', '.join(ferry_response['ferry_error']))
         logger.log(_error, traceback=True, severity=logging.ERROR)
         logger.log(_error, traceback=True, severity=logging.ERROR,

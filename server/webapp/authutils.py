@@ -332,7 +332,7 @@ def fetch_from_ferry(fname):
     elif fname == "rcds_server_map.json":
         return create_rcds_server_map()
     else:
-        return _fetch_from_ferry(fname)
+        return _get_ferry_output_from_response(fname)
 
 
 def getGridMapFile():
@@ -349,7 +349,7 @@ def getGridMapFile():
         fname = (api + _append.format(vo)) if _append else api
         # Note that if _append is None, we will save all the grid map file
         # data in each vo key
-        dat = _fetch_from_ferry(fname)
+        dat = _get_ferry_output_from_response(fname)
         if dat:
             gmf[vo] = dat
     return gmf
@@ -382,6 +382,29 @@ def _fetch_from_rcds(fname='config'):
 
         logger.log(e, traceback=True)
         return {}
+
+def _get_ferry_output_from_response(fname):
+    """
+    With FERRY 2.0, we need to get data from response.ferry_output.  
+    Further, we need to check ferry_error to see if it's empty or not.
+    """
+    ferry_response = _fetch_from_ferry(fname)
+
+    # Make sure ferry_error is empty
+    try:
+        assert len(ferry_response['ferry_error']) == 0
+    except AssertionError:
+        _error= "AssertionError: Call to FERRY returned FERRY errors: {0}"\
+                    .format(', '.join(ferry_response['ferry_error']))
+        logger.log(_error, traceback=True, severity=logging.ERROR)
+        logger.log(_error, traceback=True, severity=logging.ERROR,
+                   logfile='error')
+
+        logger.log(_error, traceback=True)
+        return {}
+
+    return ferry_response.get('ferry_output', {})
+
 
 def _fetch_from_ferry(fname):
     """

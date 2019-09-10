@@ -66,7 +66,7 @@ def get_ferry_mapping(dn, fqan):
         if vo_map:
             return vo_map
         else:
-            return dn_map['mapped_uname']['default']
+            return dn_map['username']['default']
     return None
 
 def default_user(dn):
@@ -84,7 +84,7 @@ def default_user(dn):
     dn_dat = authutils.json_from_file(dn_dat_file)
     dn_map = dn_dat.get(dn)
     if dn_map:
-        default_user = dn_map['mapped_uname']['default']
+        default_user = dn_map['username']['default']
     return default_user
 
 def vos_for_dn(dn):

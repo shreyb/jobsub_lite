@@ -19,7 +19,7 @@ import StringIO
 import re
 import cherrypy
 import json
-#import random
+import random
 
 import subprocessSupport
 import condor_commands
@@ -269,8 +269,8 @@ def get_dropbox_cvmfs_server(acctgroup='default'):
     if r_code:
         rcl = r_code.split(' ')
     else:
-        rcl = rcode_default_list
-    # return random.choice(rcl)
+        rcl = r_code_default_list
+    return random.choice(rcl)
     return rcl
 
 

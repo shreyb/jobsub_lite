@@ -232,14 +232,14 @@ def invert_gmap(data):
             #logger.log('checking itm %s' % itm)
             # if isinstance(itm, str):
             #    itm = json.loads(itm)
-            if itm['userdn'] not in i_dat:
-                i_dat[itm['userdn']] = {'volist': [],
-                                        'mapped_uname':
-                                        {'default': itm['mapped_uname']}}
-            i_dat[itm['userdn']]['volist'].append(vo_name)
-            mapped_name = i_dat[itm['userdn']]['mapped_uname']['default']
-            if itm['mapped_uname'] != mapped_name:
-                i_dat[itm['userdn']]['mapped_uname'][vo_name] = itm['mapped_uname']
+            if itm['dn'] not in i_dat:
+                i_dat[itm['dn']] = {'volist': [],
+                                        'username':
+                                        {'default': itm['username']}}
+            i_dat[itm['dn']]['volist'].append(vo_name)
+            mapped_name = i_dat[itm['dn']]['username']['default']
+            if itm['username'] != mapped_name:
+                i_dat[itm['dn']]['username'][vo_name] = itm['username']
 
     return i_dat
 
@@ -266,7 +266,7 @@ def invert_vo_role_uid_map(data):
     i_dat = {}
     fqan_dat = {}
     for itm in data:
-        i_dat[itm['fqan']] = itm['mapped_uname']
+        i_dat[itm['fqan']] = itm['username']
         fq_parts = itm['fqan'].split('/')
         if len(fq_parts) > 1:
             if fq_parts[1] == 'fermilab':

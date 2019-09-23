@@ -15,7 +15,8 @@
 import sys
 import os
 import getopt
-import optparse
+# import optparse
+import argparse
 import time
 import traceback
 
@@ -23,9 +24,11 @@ import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-from jobsubClient import version_string
-from jobsubClient import jid_callback
-from jobsubClient import date_callback
+# from jobsubClient import version_string
+from jobsubClient import Version_String
+from jobsubClient import  JID_Callback
+#from jobsubClient import date_callback
+from jobsubClient import Date_Callback 
 from defaultServer import defaultServer
 
 
@@ -44,88 +47,90 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options]'
-    parser = optparse.OptionParser(usage=usage,
-                                   version=version_string(),
+    usage = '%(prog)s [Client Options]'
+#     parser = optparse.OptionParser(usage=usage, TODO
+    parser = argparse.ArgumentParser(usage=usage,
+                                   # version=version_string(), TODO
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: --group  .Please direct questions, comments, or problems to the service desk")
 
-    opt_group = optparse.OptionGroup(parser, "Client Options")
+    # opt_group = optparse.OptionGroup(parser, "Client Options") TODO
+    client_options = parser.add_argument_group("Client Options")
 
     # Required args
-    opt_group.add_option('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
-    opt_group.add_option('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--user',
+    client_options.add_argument('--user',
                          dest='histUser',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<uid>',
                          default=None,
                          help='username to look at history of')
 
-    opt_group.add_option('--jobid',
+    client_options.add_argument('--jobid',
                          dest='jobId',
-                         type='string',
-                         action='callback',
-                         callback=jid_callback,
+                         type=str,
+                         action=JID_Callback,
+                         # callback=jid_callback, TODO
                          metavar='<Job ID>',
                          default=None,
                          help='Job Id (Cluster ID)  to query')
 
-    opt_group.add_option('--qdate-ge',
+    client_options.add_argument('--qdate-ge',
                          dest='qdate_ge',
-                         type='string',
-                         action='callback',
-                         callback=date_callback,
+                         type=str,
+                         action=Date_Callback,
+                         # callback=date_callback, TODO
                          metavar='<submission date>',
                          default=None,
                          help="""job submission date (qdate)  greater than or equal to <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
-    opt_group.add_option('--qdate-le',
+    client_options.add_argument('--qdate-le',
                          dest='qdate_le',
-                         type='string',
-                         action='callback',
-                         callback=date_callback,
+                         type=str,
+                         action=Date_Callback,
+                         # callback=date_callback, TODO
                          metavar='<submission date>',
                          default=None,
                          help="""job submission date (qdate)  less than or equal to  <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
-    opt_group.add_option('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
                          help='Print debug messages including server contacted, http response, response time')
 
-    opt_group.add_option('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
 
-    parser.add_option_group(opt_group)
+    # parser.add_option_group(opt_group) TODO
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
 
     if options.help or (len(remainder) > 1):
         parser.print_help()
@@ -142,7 +147,7 @@ def parse_opts(argv):
 def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', vars(options))
     opt_dict = {'debug': options.debug,
                 'qdate_ge': options.qdate_ge, 'qdate_le': options.qdate_le}
     js_client = JobSubClient(options.jobsubServer,

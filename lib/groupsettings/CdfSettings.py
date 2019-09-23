@@ -7,7 +7,7 @@ from JobSettings import InitializationError
 from JobSettings import JobUtils
 from JobSettings import InitializationError
 
-from optparse import OptionGroup
+# from optparse import OptionGroup TODO
 
 
 class CdfSettings(JobSettings):
@@ -20,86 +20,85 @@ class CdfSettings(JobSettings):
 
     def initCmdParser(self):
         super(CdfSettings, self).initCmdParser()
-        self.cdf_group = OptionGroup(self.cmdParser, "Cdf Specific Options")
-        self.cmdParser.add_option_group(self.cdf_group)
+        self.cdf_group = self.cmdParser.add_argument_group("Cdf Specific Options")
 
-        self.cdf_group.add_option("--tarFile", dest="tar_file_name",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--tarFile", dest="tar_file_name",
+                                  action="store", type=str,
                                   help="path for tar file to be submitted " +
                                        "(e.g. dropbox://./submitme.tar.gz)")
 
-        self.cdf_group.add_option("--sendtkt", dest="send_kb_tkt",
+        self.cdf_group.add_argument("--sendtkt", dest="send_kb_tkt",
                                   action="store_true",
                                   default=False,
                                   help="send kerberos ticket to worker" +
                                        " nodes (default==False)")
 
-        self.cdf_group.add_option("--outLocation", dest="outLocation",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--outLocation", dest="outLocation",
+                                  action="store", type=str,
                                   help="full path for output file (e.g. " +
                                        "me@ncdfxx.fnal.gov:/home/me/" +
                                        "my_data_dir)")
 
-        self.cdf_group.add_option("--procType", dest="procType",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--procType", dest="procType",
+                                  action="store", type=str,
                                   help="desired process type (e.g. short)")
 
-        self.cdf_group.add_option("--start", dest="firstSection",
-                                  action="store", type="int",
+        self.cdf_group.add_argument("--start", dest="firstSection",
+                                  action="store", type=int,
                                   help="beginning segment number (e.g. 1)")
 
-        self.cdf_group.add_option("--end", dest="lastSection",
-                                  action="store", type="int",
+        self.cdf_group.add_argument("--end", dest="lastSection",
+                                  action="store", type=int,
                                   help="ending segment number (e.g. 100))")
 
-        self.cdf_group.add_option("--sections", dest="sectionList",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--sections", dest="sectionList",
+                                  action="store", type=str,
                                   help="segment range (e.g. 1-100)) " +
                                        "start-end, use instead of " +
                                        "--start --end")
 
-        self.cdf_group.add_option("--dhaccess", dest="dhaccess",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--dhaccess", dest="dhaccess",
+                                  action="store", type=str,
                                   help="method for dataset access, " +
                                        "options are SAM,userSAM,dcache," +
                                        "diskpool,MCGen,rootd,fcp/rcp, None")
 
-        self.cdf_group.add_option("--sam_station", dest="sam_station",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--sam_station", dest="sam_station",
+                                  action="store", type=str,
                                   help="=qualifier:version:station. To " +
                                        "use a sam station different from " +
                                        "the default,to specify only if " +
                                        "dhaccess=SAM is used (default is SAM)")
 
-        self.cdf_group.add_option("--maxParallelSec", dest="maxConcurrent",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--maxParallelSec", dest="maxConcurrent",
+                                  action="store", type=str,
                                   help="max parallel running section number (e.g. 30) ")
 
-        self.cdf_group.add_option("--email", dest="notify_user",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--email", dest="notify_user",
+                                  action="store", type=str,
                                   help="optional email address for summary output")
 
-        self.cdf_group.add_option("--dataset", dest="dataset_definition",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--dataset", dest="dataset_definition",
+                                  action="store", type=str,
                                   help="")
 
-        self.cdf_group.add_option("--farm", dest="farm",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--farm", dest="farm",
+                                  action="store", type=str,
                                   help="")
 
-        self.cdf_group.add_option("--os", dest="os",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--os", dest="os",
+                                  action="store", type=str,
                                   help="")
 
-        self.cdf_group.add_option("--cdfsoft", dest="cdfsoft",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--cdfsoft", dest="cdfsoft",
+                                  action="store", type=str,
                                   help="")
 
-        self.cdf_group.add_option("--site", dest="site",
-                                  action="store", type="string",
+        self.cdf_group.add_argument("--site", dest="site",
+                                  action="store", type=str,
                                   help="")
 
-        self.cdf_group.add_option("--donotdrain", dest="drain",
+        self.cdf_group.add_argument("--donotdrain", dest="drain",
                                   action="store_false",
                                   help="")
 

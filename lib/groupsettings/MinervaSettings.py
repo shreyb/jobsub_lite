@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id$
 from JobSettings import JobSettings
-from optparse import OptionGroup
+# from optparse import OptionGroup
 import os
 import datetime
 
@@ -31,34 +31,32 @@ class MinervaSettings(JobSettings):
 
     def initCmdParser(self):
         # print "MinervaSettings initCmdParser"
-        self.minerva_group = OptionGroup(
-            self.cmdParser, "Minerva Specific Options")
-        self.cmdParser.add_option_group(self.minerva_group)
+        self.minerva_group = self.cmdParser.add_argument_group("Minerva Specific Options")
 
-        self.minerva_group.add_option("-i", dest="reldir",
-                                      action="store", type="string",
+        self.minerva_group.add_argument("-i", dest="reldir",
+                                      action="store", type=str,
                                       help="release_directory for Minerva Software ")
 
-        self.minerva_group.add_option("-t", dest="testreldir",
-                                      action="store", type="string",
+        self.minerva_group.add_argument("-t", dest="testreldir",
+                                      action="store", type=str,
                                       help="release_directory for test Minerva Software ")
 
-        self.minerva_group.add_option("-r", dest="rel",
-                                      action="store", type="string",
+        self.minerva_group.add_argument("-r", dest="rel",
+                                      action="store", type=str,
                                       help="release_version for  Minerva Software ")
 
-        self.minerva_group.add_option("-y", dest="enstorefiles",
+        self.minerva_group.add_argument("-y", dest="enstorefiles",
                                       action="append",
                                       help="enstore files ")
 
-        self.minerva_group.add_option("-O", dest="msopt",
+        self.minerva_group.add_argument("-O", dest="msopt",
                                       action="store_const", const="-O",
                                       help="optimize flag")
-        self.minerva_group.add_option("--prefix", dest="prefix",
+        self.minerva_group.add_argument("--prefix", dest="prefix",
                                       action="store",
                                       help="The jobs and files created by this scrip will be PREFIX_<timestamp>.  Default is executable name.")
 
-        self.minerva_group.add_option("--cmtconfig", dest="cmtconfig",
+        self.minerva_group.add_argument("--cmtconfig", dest="cmtconfig",
                                       action="store",
                                       help="Set up minervasoft release built with cmt configuration. default is $CMTCONFIG")
 

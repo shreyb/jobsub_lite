@@ -14,14 +14,17 @@
 
 import sys
 import os
-import optparse
+# import optparse
+import argparse
 import traceback
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-from jobsubClient import version_string
+# from jobsubClient import version_string
+from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
-from jobsubClient import jid_callback
+# from jobsubClient import jid_callback
+from jobsubClient import JID_Callback
 from defaultServer import defaultServer
 
 
@@ -73,23 +76,23 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options]'
+    usage = '%(prog)s [Client Options]'
     epi_text = "Please direct questions, comments, or problems to the "
     epi_text += "service desk. "
     epi_text += "For help on --jobid or --constraint see "
     epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
     epi_text += """wiki/Frequently_Asked_Questions"""
-    parser = optparse.OptionParser(usage=usage,
-                                   version=version_string(),
+    parser = argparse.ArgumentParser(usage=usage,
+                                   # version=version_string(),
                                    conflict_handler="resolve",
                                    epilog=epi_text)
 
-    opt_group = optparse.OptionGroup(parser, "Client Options")
+    client_options = parser.add_argument_group("Client Options")
 
     # Optional args
-    opt_group.add_option('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
@@ -97,34 +100,34 @@ def parse_opts(argv):
                                        'for priorities and accounting',
                                       ]))
 
-    opt_group.add_option('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--role',
+    client_options.add_argument('--role',
                          dest='acctRole',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<VOMS Role>',
                          default=None,
                          help='VOMS Role for priorities and accounting')
 
-    opt_group.add_option('--user',
+    client_options.add_argument('--user',
                          dest='uid',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<user ID>',
                          default=None,
                          help='User Id  to query')
 
-    opt_group.add_option('--jobid',
+    client_options.add_argument('--jobid',
                          dest='jobId',
-                         type='string',
-                         action='callback',
-                         callback=jid_callback,
+                         type=str,
+                         action=JID_Callback,
+                         #callback=jid_callback, TODO
                          metavar='<Job ID>',
                          default=None,
                          help="".join(['Job Ids to query.  Job ',
@@ -137,15 +140,15 @@ def parse_opts(argv):
                                        'and schedd name will be returned',
                                       ]))
 
-    opt_group.add_option('--long',
+    client_options.add_argument('--long',
                          dest='outFormat',
                          action='store_const',
                          const='long',
-                         metavar='<output Format>',
+                         # metavar='<output Format>',
                          default=None,
                          help='show long listing (like condor_q -l)')
 
-    opt_group.add_option('--dag',
+    client_options.add_argument('--dag',
                          dest='outFormat',
                          action='store_const',
                          const='dags',
@@ -153,7 +156,7 @@ def parse_opts(argv):
                          default=None,
                          help='show dags (like condor_q -dag)')
 
-    opt_group.add_option('--hold',
+    client_options.add_argument('--hold',
                          dest='outFormat',
                          action='store_const',
                          const='hold',
@@ -161,7 +164,7 @@ def parse_opts(argv):
                          default=None,
                          help='show held jobs (like condor_q -hold)')
 
-    opt_group.add_option('--run',
+    client_options.add_argument('--run',
                          dest='outFormat',
                          action='store_const',
                          const='run',
@@ -169,7 +172,7 @@ def parse_opts(argv):
                          default=None,
                          help='show running jobs (like condor_q -run)')
 
-    opt_group.add_option('--idle',
+    client_options.add_argument('--idle',
                          dest='outFormat',
                          action='store_const',
                          const='idle',
@@ -177,47 +180,50 @@ def parse_opts(argv):
                          default=None,
                          help='show idle jobs ')
 
-    opt_group.add_option('--constraint',
+    client_options.add_argument('--constraint',
                          dest='constraint',
                          action='store',
-                         type='string',
+                         type=str,
                          metavar='<constraint>',
                          default=None,
                          help='like condor_q -constraint <constraint>')
 
-    opt_group.add_option('--summary',
+    client_options.add_argument('--summary',
                          dest='summary',
                          action='store_true',
                          default=False,
-                         metavar='<summary>',
+#                         metavar='<summary>',
                          help='provide a summary (like ifront_q) ')
 
-    opt_group.add_option('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
                          help='Print debug messages to including server contacted, http response, response time')
 
-    opt_group.add_option('--better-analyze',
+    client_options.add_argument('--better-analyze',
                          dest='better_analyze',
                          action='store_true',
                          default=False,
                          help='do condor_q -better-analyze on job (must use with --jobid)')
 
-    opt_group.add_option('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
 
-    parser.add_option_group(opt_group)
+    client_options.add_argument('--version', 
+                        action=Version_String)
+
 
     if len(argv) < 1:
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    # options, remainder = parser.parse_args(argv) TODO
+    options, remainder = parser.parse_known_args(argv)
 
     if options.help or (len(remainder) > 1):
         parser.print_help()
@@ -234,7 +240,7 @@ def parse_opts(argv):
 def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', vars(options))
     rc = 1
 
     optDict = {'debug':options.debug,

@@ -8,7 +8,7 @@ import logging
 import sqlite3
 import socket
 import shutil
-import optparse
+import argparse 
 import time
 import JobsubConfigParser
 
@@ -376,86 +376,86 @@ def loadDatabase(filebase, cleanup=False):
 
 
 def run_prog():
-    usage = '%prog [ Options]'
+    usage = '%(prog)s [ Options]'
 
-    parser = optparse.OptionParser(usage=usage,
+    parser = argparse.ArgumentParser(usage=usage,
                                    description='parse htcondor history logs into jobsub_history database')
 
-    parser.add_option('-v',
+    parser.add_argument('-v',
                       dest='verbose',
                       action='store_true',
                       help='verbose mode')
 
-    parser.add_option('--keepUp',
+    parser.add_argument('--keepUp',
                       dest='keepUp',
                       action='store_true',
                       help='incrementally parse and load history file from last run')
 
-    parser.add_option('--pruneDB',
+    parser.add_argument('--pruneDB',
                       dest='pruneDB',
                       metavar='<number of days>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='remove history records older than ' +
                            '<number of days> from jobsub_history.db')
 
-    parser.add_option('--pruneDBName',
+    parser.add_argument('--pruneDBName',
                       dest='pruneDBName',
                       metavar='<db name>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='prune records from <db name>' +
                            'the default is to prune the master db configured for server on this host')
 
-    parser.add_option('--loadDBFromSQL',
+    parser.add_argument('--loadDBFromSQL',
                       dest='loadDBFromSQL',
                       metavar='<history_file>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='load history db from <history_file>.sql ')
 
-    parser.add_option('--createHistoryDump',
+    parser.add_argument('--createHistoryDump',
                       dest='createHistoryDump',
                       metavar='<history_file>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='parse htcondor history log into intermediate <history_file>.dat ')
 
-    parser.add_option('--createSqlFile',
+    parser.add_argument('--createSqlFile',
                       dest='createSqlFile',
                       metavar='<history_file>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='load history db from <history_file>.sql')
 
-    parser.add_option('--loadArchive',
+    parser.add_argument('--loadArchive',
                       dest='loadArchive',
                       metavar='<archived_history_file>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='load history db from <archived_history_file> (typically named history.YYYYMMDDhhmmss (a date)')
 
-    parser.add_option('--createDB',
+    parser.add_argument('--createDB',
                       dest='createDB',
                       metavar='<db_dir>',
                       default=None,
-                      type='string',
+                      type=str,
                       help='create jobsub_history.db <db_dir> if it does not already exist')
 
-    parser.add_option('--loadNewestArchive',
+    parser.add_argument('--loadNewestArchive',
                       dest='loadNewestArchive',
                       action='store_true',
                       help='populate jobsub_history.db with newest htcondor history archive ')
 
-    parser.add_option('--cleanup',
+    parser.add_argument('--cleanup',
                       dest='cleanup',
                       action='store_true',
                       help='clean up the intermediate sql and dat files')
 
-    options, remainder = parser.parse_args(sys.argv)
+    options, remainder = parser.parse_known_args(sys.argv)
 
     if options.verbose:
-        print "options: %s" % options
+        print "options: %s" % vars(options)
         print "remainder %s" % remainder
 
     if options.loadDBFromSQL:

@@ -15,6 +15,7 @@ Client
                    different bad behavior, now worked around as well.
 * Bug      22992   create rc9, client missed a merge for rc8
 * Bug      23040   random error on jobsub_q --better-analyze
+* Maint    22164   replace optparse library with argparse 
 
 Server
 ------

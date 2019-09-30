@@ -943,19 +943,15 @@ class JobSubClient(object):
         curl library
         """
 
-        if os.environ.get('JOBSUB_CURL_ONLY'):
-            return self.perform_curl(url, http_custom_request,
-                                     post_data, ssl_verifyhost,
-                                     connect_timeout)
-        try:
-            return self.perform_request(url, http_custom_request,
+        if os.environ.get('JOBSUB_USE_REQUESTLIB'):
+            try:
+                return self.perform_request(url, http_custom_request,
                                         post_data, ssl_verifyhost,
                                         connect_timeout)
-        except ImportError:
-            print "jobsub will be migrating to the requests library soon"
-            print "open a service desk ticket to have python-requests installed"
-            print "on this machine. To suppress this message, set envionment variable"
-            print "export JOBSUB_CURL_ONLY=TRUE"
+            except ImportError:
+                print "jobsub will be migrating to the requests library soon"
+                print "open a service desk ticket to have python-requests installed"
+                print "on this machine. "
 
         return self.perform_curl(url, http_custom_request,
                                  post_data, ssl_verifyhost,

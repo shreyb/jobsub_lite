@@ -16,7 +16,8 @@ Client
 * Bug      22992   create rc9, client missed a merge for rc8
 * Bug      23040   random error on jobsub_q --better-analyze
 * Maint    22164   replace optparse library with argparse 
-
+* Maint    23353   optionally use request library instead of pycurl library.
+                   To enable, set env variable JOBSUB_USE_REQUESTLIB 
 Server
 ------
 * Feature  16603   support for SL7.  NOTE: A security feature on SL7 that was over

@@ -564,10 +564,10 @@ class JobSettings(object):
             USE SPARINGLY. """))
 
         generic_group.add_argument("-g", "--grid", dest="grid",
-                                 action="store_true",
+                                 action="store_true", default=True, 
                                  help=re.sub('  \s+', ' ', """run job on the
-            FNAL GP  grid. Other flags can modify target sites to include other
-            areas of the Open Science Grid"""))
+            OSG grid. Other flags can modify target sites to include
+            public or private clouds"""))
 
         generic_group.add_argument("--nowrapfile", dest="nowrapfilex",
                                  action="store_true",

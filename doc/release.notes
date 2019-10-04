@@ -34,6 +34,7 @@ Server
 * Bug      23027   auth_methods returns too much debug info
 * Bug      23028   syntax error in previously unexercised log message
 * Bug      23251   typo in jobsub.py makes logs ugly
+* Bug      23379   x509_use_proxy not always set in generated jdl
 
 ============================================================================
 v1.2.10

@@ -9,7 +9,7 @@ from JobUtils import JobUtils
 # from optparse import OptionParser
 # from optparse import OptionGroup
 # from optparse import SUPPRESS_HELP
-from argparse import SUPPRESS
+from argparse import SUPPRESS, REMAINDER
 import JobsubConfigParser
 
 
@@ -687,7 +687,7 @@ class JobSettings(object):
 
         generic_group.add_argument("user_command")
 
-        generic_group.add_argument("user_args", nargs=argparse.REMAINDER)
+        generic_group.add_argument("user_args", nargs=REMAINDER)
 
     def expectedLifetimeOK(self, a_str):
         if 'lines' in self.settings:

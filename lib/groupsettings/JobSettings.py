@@ -243,11 +243,17 @@ class JobSettings(object):
         # sys.exit
 
     def runCmdParser(self, a=None, b=None):
-        # (options, args) = self.cmdParser.parse_args(a, b)
-        (options, args) = self.cmdParser.parse_known_args(a, b)
+        options = self.cmdParser.parse_args(a, b)
+        #(options, args) = self.cmdParser.parse_known_args(a, b)
 
         self.runFileParser()
         new_settings = vars(options)
+
+        # Separate out the jobsub options from the user script options
+        args = new_settings.pop('user_args')
+        user_command = new_settings.pop('user_command')
+        args.insert(0, user_command)
+
         if 'verbose' in new_settings and new_settings['verbose']:
             print "new_settings = ", new_settings
         for x in new_settings.keys():
@@ -678,6 +684,10 @@ class JobSettings(object):
             exist on the execution node.  After job completion,
             its contents will be moved to <dir> automatically
             Specify as many <tag>/<dir> pairs as you need. """))
+
+        generic_group.add_argument("user_command")
+
+        generic_group.add_argument("user_args", nargs=argparse.REMAINDER)
 
     def expectedLifetimeOK(self, a_str):
         if 'lines' in self.settings:

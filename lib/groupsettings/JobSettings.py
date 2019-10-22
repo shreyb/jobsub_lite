@@ -680,7 +680,7 @@ class JobSettings(object):
                               action="append", type=str,
                               nargs=2,
                               help=re.sub('  \s+', ' ', """
-            -d<tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
+            -d <tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
             exist on the execution node.  After job completion,
             its contents will be moved to <dir> automatically
             Specify as many <tag>/<dir> pairs as you need. """))

@@ -222,7 +222,13 @@ class Krb5Ticket(Credentials):
         if not klist_cmd:
             raise Exception("Unable to find command 'klist' in the PATH")
         cmd = '{0:s} -c {1:s} -s'.format(klist_cmd, self.krb5CredCache)
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        try:
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        except subprocessSupport.CalledProcessError:
+            logSupport.dprint('Credential validation failed for krb5cache {0}'
+                .format(self.krb5CredCache))
+            return False
+
         logSupport.dprint('Credential validation passed for krb5cache {0}'
                 .format(self.krb5CredCache))
         return True 

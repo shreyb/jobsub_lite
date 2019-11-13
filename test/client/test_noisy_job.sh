@@ -32,6 +32,7 @@ fi
 
 cp noisy.sh ${GROUP}_noisy.sh
 JOBFILE=${GROUP}_noisy.sh
+python --version
 $EXEPATH/jobsub_submit.py $GROUP_SPEC --debug \
        $SERVER_SPEC   $SUBMIT_FLAGS \
             -e SERVER   file://$JOBFILE "here are some args"  2>$0.$GROUP.err

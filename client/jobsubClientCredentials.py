@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
+from builtins import object
 import os
 import time
 import sys
@@ -10,7 +18,7 @@ import traceback
 import logSupport
 import constants
 import subprocessSupport
-import jobsubClient
+from jobsubClient import get_capath
 
 
 class CredentialsNotFoundError(Exception):
@@ -30,7 +38,7 @@ class CredentialsError(Exception):
         sys.exit(errMsg)
 
 
-class Credentials():
+class Credentials(object):
     """
     Abstract Class for Credentials
     """
@@ -127,7 +135,7 @@ class VOMSProxy(X509Proxy):
         if not voms_cmd:
             wrn = "Unable to find command 'voms-proxy-info' in the PATH, "
             wrn += "used to verify  accounting role(s). Continuing."
-            print wrn
+            print(wrn)
             return []
 
         cmd = '%s -file %s -fqan' % (voms_cmd, self.proxyFile)
@@ -251,7 +259,7 @@ def krb5_default_principal(cache=None):
         prn = (re.findall(
             constants.KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN, cmd_out))[0]
     except:
-        print sys.exc_info()[1]
+        print(sys.exc_info()[1])
         prn = "UNKNOWN"
     return prn
 
@@ -295,7 +303,7 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     proxy_file = os.environ.get('X509_USER_PROXY', default_proxy_file)
     cmd_out = cmd_err = ""
     child_env = os.environ.copy()
-    child_env['X509_CERT_DIR'] = jobsubClient.get_capath()
+    child_env['X509_CERT_DIR'] = get_capath()
     cmd_out = 1
     itry = 0
     ntries = 3
@@ -309,17 +317,17 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
             cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
             break
         except:
-            print ' cigetcert try %s of %s failed' % (itry,ntries)
+            print(' cigetcert try %s of %s failed' % (itry,ntries))
             err = "%s %s" % (cmd_err, sys.exc_info()[1])
-            print err
-            
+            print(err)
+
     if err:
         raise CredentialsError(err)
 
     logSupport.dprint("stdout: %s" % cmd_out)
     logSupport.dprint("stderr: %s" % cmd_err)
     if len(cmd_err):
-        print 'error: %s' % cmd_err
+        print('error: %s' % cmd_err)
         return ""
     return proxy_file
 
@@ -334,7 +342,7 @@ def krb5_ticket_lifetime(cache):
     vstring = lt[2]
     date_parts = vstring.split()
     ld = len(date_parts)
-    mid = ld / 2
+    mid = old_div(ld, 2)
 
     ltdict = {'stime': ' '.join(date_parts[:mid]),
               'etime': ' '.join(date_parts[mid:ld - 1])}
@@ -396,5 +404,5 @@ if __name__ == '__main__':
         if a == '--debug':
             logSupport.init_logging(True)
     k = Krb5Ticket()
-    print k
-    print 'VALID: %s' % k.isValid()
+    print(k)
+    print('VALID: %s' % k.isValid())

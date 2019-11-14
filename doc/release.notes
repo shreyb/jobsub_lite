@@ -6,11 +6,11 @@ Client
 ------
 * Feature  23314  Client runs both under python 2.7 and 3.
                   Python libraries required for this version:
-                  six future pycurl
+                  six futures pycurl
                   Python libraries strongly suggested: requests
                   so to run under python36 (for example)
 
-                  yum install -y python36-six python36-future python36-pycurl python36-requests
+                  yum install -y python36-six python36-futures python36-pycurl python36-requests
 
 
 ================================================================================

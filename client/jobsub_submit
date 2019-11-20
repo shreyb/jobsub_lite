@@ -12,6 +12,14 @@
 #
 ##########################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import sys
 import os
 import getopt
@@ -21,15 +29,15 @@ import time
 import traceback
 import json
 
-import constants
-import logSupport
-from jobsubClient import JobSubClient
-from jobsubClient import JobSubClientSubmissionError
+from . import constants
+from . import logSupport
+from .jobsubClient import JobSubClient
+from .jobsubClient import JobSubClientSubmissionError
 # from jobsubClient import version_string
-from jobsubClient import Version_String
-from jobsubClient import http_code_to_rc
-from jobsubClient import get_jobexe_idx
-from defaultServer import defaultServer
+from .jobsubClient import Version_String
+from .jobsubClient import http_code_to_rc
+from .jobsubClient import get_jobexe_idx
+from .defaultServer import defaultServer
 
 #def split_client_server_args(parser, argv):
 #    # NOTE: We need to correctly distinguish jobsub client's args from
@@ -113,7 +121,7 @@ def split_client_server_args(parser, argv):
 def required_args_present(options):
     try:
         if options.debug and options.jobid_output_only:
-            print "ERROR: --debug and --jobid_output_only are incompatible"
+            print("ERROR: --debug and --jobid_output_only are incompatible")
             return False
         if (options.acctGroup and options.jobsubServer):
             return True
@@ -224,7 +232,7 @@ def parse_opts(argv):
 
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
     
@@ -260,21 +268,21 @@ def parse_opts(argv):
             argv_job_idx = len(argv)
             argv_job_present = False
         for opt in sd:
-            if isinstance(opt,unicode):
+            if isinstance(opt,str):
                 opt = str(opt)
             if opt[0] == "#":
                 continue
 
-            if sd.get(opt) and isinstance(sd[opt],unicode):
+            if sd.get(opt) and isinstance(sd[opt],str):
                 sd[opt] = str(sd[opt])
             if str(sd[opt]).lower() == "true": 
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
             elif "file://" in opt:
                 if argv_job_present:
-                    print "ERROR: you specified %s in %s" % (opt,submit_config)
-                    print "and %s in the command line" % (argv_job_present)
-                    print "these conflict, exiting"
+                    print("ERROR: you specified %s in %s" % (opt,submit_config))
+                    print("and %s in the command line" % (argv_job_present))
+                    print("these conflict, exiting")
                     exit(1)
                 else:
                     argv.insert(argv_job_idx, opt)
@@ -316,13 +324,13 @@ def parse_opts(argv):
         parser.print_help()
         if required_args_present(cli_argv_namespace):
             header = "  Server Options:"
-            print '\n%s' % header
+            print('\n%s' % header)
             print_acctgroup_help(cli_argv_namespace)
         sys.exit(0)
 
     if not required_args_present(cli_argv_namespace):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return (cli_argv_namespace, srv_argv)
@@ -368,10 +376,10 @@ def main(argv):
         http_code = js_client.submit()
         rc = http_code_to_rc(http_code)
     except JobSubClientSubmissionError as e:
-        print e
+        print(e)
         logSupport.dprint(traceback.format_exc())
     except Exception as e:
-        print e
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

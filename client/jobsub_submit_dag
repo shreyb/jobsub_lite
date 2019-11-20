@@ -12,6 +12,12 @@
 #
 ################################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import getopt
@@ -19,13 +25,13 @@ import argparse
 import time
 import traceback
 
-import constants
-import logSupport
-from jobsubClient import JobSubClient
-from jobsubClient import JobSubClientSubmissionError
-from jobsubClient import Version_String
-from jobsubClient import http_code_to_rc
-from defaultServer import defaultServer
+from . import constants
+from . import logSupport
+from .jobsubClient import JobSubClient
+from .jobsubClient import JobSubClientSubmissionError
+from .jobsubClient import Version_String
+from .jobsubClient import http_code_to_rc
+from .defaultServer import defaultServer
 
 
 ## TODO
@@ -65,7 +71,7 @@ from defaultServer import defaultServer
 def required_args_present(options):
     try:
         if options.debug and options.jobid_output_only:
-            print "ERROR: --debug and --jobid_output_only are incompatible"
+            print("ERROR: --debug and --jobid_output_only are incompatible")
             return False
         if (options.acctGroup and options.jobsubServer):
             return True
@@ -175,7 +181,7 @@ def parse_opts(argv):
 
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -198,13 +204,13 @@ def parse_opts(argv):
         parser.print_help()
         if required_args_present(options):
             header = "  Server Options:"
-            print '\n%s' % header
+            print('\n%s' % header)
             print_acctgroup_help(options)
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return (options, srv_argv)
@@ -235,11 +241,11 @@ def main(argv):
     try:
         http_code = js_client.submit_dag()
         rc = http_code_to_rc(http_code)
-    except JobSubClientSubmissionError, e:
-        print e
+    except JobSubClientSubmissionError as e:
+        print(e)
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

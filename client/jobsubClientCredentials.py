@@ -320,7 +320,7 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
             print(' cigetcert try %s of %s failed' % (itry,ntries))
             err = "%s %s" % (cmd_err, sys.exc_info()[1])
             print(err)
-            
+
     if err:
         raise CredentialsError(err)
 
@@ -400,6 +400,7 @@ def proxy_subject(proxy_fname):
 
 if __name__ == '__main__':
     # Simple tests that work on SL5,6,7, OSX 10
+    # tested python 2.7.5 and python 3.6
     for a in sys.argv:
         if a == '--debug':
             logSupport.init_logging(True)

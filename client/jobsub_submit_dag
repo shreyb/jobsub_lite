@@ -25,13 +25,13 @@ import argparse
 import time
 import traceback
 
-from . import constants
-from . import logSupport
-from .jobsubClient import JobSubClient
-from .jobsubClient import JobSubClientSubmissionError
-from .jobsubClient import Version_String
-from .jobsubClient import http_code_to_rc
-from .defaultServer import defaultServer
+import constants
+import logSupport
+from jobsubClient import JobSubClient
+from jobsubClient import JobSubClientSubmissionError
+from jobsubClient import Version_String
+from jobsubClient import http_code_to_rc
+from defaultServer import defaultServer
 
 
 ## TODO

@@ -29,15 +29,15 @@ import time
 import traceback
 import json
 
-from . import constants
-from . import logSupport
-from .jobsubClient import JobSubClient
-from .jobsubClient import JobSubClientSubmissionError
+import constants
+import logSupport
+from jobsubClient import JobSubClient
+from jobsubClient import JobSubClientSubmissionError
 # from jobsubClient import version_string
-from .jobsubClient import Version_String
-from .jobsubClient import http_code_to_rc
-from .jobsubClient import get_jobexe_idx
-from .defaultServer import defaultServer
+from jobsubClient import Version_String
+from jobsubClient import http_code_to_rc
+from jobsubClient import get_jobexe_idx
+from defaultServer import defaultServer
 
 #def split_client_server_args(parser, argv):
 #    # NOTE: We need to correctly distinguish jobsub client's args from

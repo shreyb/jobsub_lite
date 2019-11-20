@@ -12,6 +12,12 @@
 #
 ##########################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 # import optparse
@@ -137,7 +143,7 @@ def parse_opts(argv):
                         action=Version_String)
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -148,8 +154,8 @@ def parse_opts(argv):
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return options
@@ -169,7 +175,7 @@ def main(argv):
 
         if options.jobId:
             for jid in options.jobId.split(','):
-                print 'Holding job with jobid=%s' % jid
+                print('Holding job with jobid=%s' % jid)
                 http_code = js_client.hold(jid,
                                            uid=options.uid,
                                            constraint=options.constraint)
@@ -182,9 +188,9 @@ def main(argv):
             rc = tmp_rc
         else:
             if options.uid:
-                print 'Holding jobs owned by %s' % options.uid
+                print('Holding jobs owned by %s' % options.uid)
             if options.constraint:
-                print 'Holding jobs with constraint=%s' % options.constraint
+                print('Holding jobs with constraint=%s' % options.constraint)
             http_code_list = js_client.hold(uid=options.uid,
                                             constraint=options.constraint)
             for http_code in http_code_list:
@@ -193,10 +199,10 @@ def main(argv):
                     rc = 0
 
     except JobSubClientError as e:
-        print e
+        print(e)
         logSupport.dprint(traceback.format_exc())
     except Exception as e:
-        print e
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

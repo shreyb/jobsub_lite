@@ -39,38 +39,38 @@ def required_args_present(options):
             if options.outFormat == 'long':
                 err = 'ERROR: --summary and --long options conflict. '
                 err += 'Choose one, not both.'
-                print err
+                print(err)
                 return False
 
             if options.outFormat == 'dags':
                 err = 'ERROR: --summary and --dag options conflict. '
                 err += 'Choose one, not both.'
-                print err
+                print(err)
                 return False
 
             if options.outFormat == 'hold':
                 err = 'ERROR: --summary and --hold options conflict. '
                 err += 'Choose one, not both.'
-                print err
+                print(err)
                 return False
 
             if options.help or options.better_analyze or options.uid or \
                     options.jobId or options.acctRole:
                 err = """ERROR: --summary conflicts with all of ( -better"""
                 err += """-analyze, --user --jobid --role --dag --long)."""
-                print err
+                print(err)
                 return False
 
         if options.better_analyze and not options.jobId:
             err =  """ERROR --better-analyze must be used with --jobid"""
-            print err
+            print(err)
             return False
 
         if options.jobsubServer:
             return True
     except AttributeError as e:
-        print 'ERROR'
-        print e
+        print('ERROR')
+        print(e)
         return False
     return False
 
@@ -213,12 +213,12 @@ def parse_opts(argv):
                          default=False,
                          help='Show this help message and exit')
 
-    client_options.add_argument('--version', 
+    client_options.add_argument('--version',
                         action=Version_String)
 
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -230,8 +230,8 @@ def parse_opts(argv):
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return options
@@ -265,10 +265,10 @@ def main(argv):
                                            options.outFormat)
         rc = http_code_to_rc(http_code)
     except JobSubClientError as e:
-        print e
+        print(e)
         logSupport.dprint(traceback.format_exc())
     except Exception as e:
-        print e
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

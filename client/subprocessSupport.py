@@ -4,11 +4,14 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from encoding import force_text
 from future import standard_library
 standard_library.install_aliases()
 import os
 import subprocess
-import shlex
+import six
+
+#import shlex
 
 
 class CalledProcessError(Exception):
@@ -65,7 +68,8 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
         if useShell:
             command_list = ['%s' % cmd, ]
         else:
-            command_list = shlex.split(cmd.encode('utf8'))
+            #command_list = shlex.split(cmd.encode('utf8'))
+            command_list = cmd.split()
         # launch process - Converted to using the subprocess module
         process = subprocess.Popen(command_list, shell=useShell,
                                    stdin=subprocess.PIPE,
@@ -90,4 +94,22 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
         raise RuntimeError(err_str % (cmd, stdoutdata, stderrdata, e))
     if exitStatus:
         raise CalledProcessError(exitStatus, cmd, output="".join(stderrdata))
-    return (stdoutdata, stderrdata)
+    return (force_text(stdoutdata), force_text(stderrdata))
+
+
+
+if __name__ == '__main__':
+    # tested with python2.7 and python3.6
+    # quick test of a command that should work
+    cmd = 'ls'
+    out,err = iexe_cmd(cmd)
+    assert(out != "")
+    assert(err == "")
+    #quick test of a command that should not work
+    try:
+        cmd = 'lssssssssss'
+        out,err = iexe_cmd(cmd)
+        assert(False)
+    except RuntimeError as err:
+        pass
+    print("passed tests: OK")

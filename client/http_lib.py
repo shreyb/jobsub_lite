@@ -2,7 +2,7 @@ import os
 import pycurl
 import platform
 import io
-
+import six
 import logSupport
 import constants
 import subprocessSupport
@@ -17,8 +17,8 @@ def curl_secure_context(url, credentials):
 
     curl, response = curl_context(url)
 
-    curl.setopt(curl.SSLCERT, credentials.get('cert'))
-    curl.setopt(curl.SSLKEY, credentials.get('key'))
+    curl.setopt(curl.SSLCERT, coerce_str(credentials.get('cert')))
+    curl.setopt(curl.SSLKEY, coerce_str(credentials.get('key')))
     proxy = credentials.get('proxy')
     if proxy:
         cmd = '/usr/bin/voms-proxy-info -type -file %s' % proxy
@@ -44,7 +44,8 @@ def curl_context(url):
     """
 
     # Reponse from executing curl
-    response = io.StringIO()
+    response = six.BytesIO()
+
 
     # Create curl object and set curl options to use
     curl = pycurl.Curl()
@@ -81,25 +82,39 @@ def get_capath():
     return ca_dir
 
 def curl_setopt_str(a_curl, an_opt, a_type):
+    a_curl.setopt(an_opt, coerce_str(a_type))
     pass
 
 def coerce_str(a_str):
-    pass
-def post_data_append(post_data, payload, fmt, fname):
+    a_str = six.b(str(a_str))
+    logSupport.dprint('coerce_str returns %s' % a_str)
+    return a_str
+
+def post_data_append(post_data, item_descr, in_data, fmt=None):
     """
-    append payload to HTTP post_data payload
+    append item_descr to HTTP post_data item_descr
     Params:
         @post_data: list of http post data objects
-        @payload
+        @item_descr
+        @in_data string or file to append
         @fmt is postdata format
-        @fname is file to append
+    Returns:
+        post_data appended with input
     """
-    try:
-        assert(os.access(fname, os.R_OK))
-        post_data.append((payload, (fmt, fname)))
+    #import pdb; pdb.set_trace()
+    if not fmt:
+        post_data.append((coerce_str(item_descr), coerce_str(in_data)))
+        logSupport.dprint('post_data=%s'% post_data)
         return post_data
-    except Exception:
-        raise RuntimeError(
-            "error HTTP POSTing %s - Is it readable?" %
-            fname)
+    else:
+        try:
+            assert(os.access(in_data, os.R_OK))
+            post_data.append((coerce_str(item_descr),
+                              (fmt, coerce_str(in_data))))
+            #logSupport.dprint('post_data=%s'% post_data)
+            return post_data
+        except Exception:
+            raise RuntimeError(
+                "error HTTP POSTing %s - Is it readable?" %
+                in_data)
 

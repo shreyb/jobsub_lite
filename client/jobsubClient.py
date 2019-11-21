@@ -19,7 +19,6 @@ from http_lib import get_capath
 from http_lib import post_data_append
 from http_lib import curl_setopt_str
 from http_lib import coerce_str
-
 """
 ##########################################################################
 # Project:
@@ -62,8 +61,8 @@ from signal import signal, SIGPIPE, SIG_DFL
 import subprocessSupport
 from distutils import spawn
 import argparse
-
-
+from encoding import force_text
+import six
 
 class Version_String(argparse.Action):
     def __init__(self,
@@ -386,11 +385,11 @@ class JobSubClient(object):
 
             if server_env_exports:
                 srv_env_export_b64en = \
-                    base64.urlsafe_b64encode(server_env_exports)
+                    force_text(base64.urlsafe_b64encode(six.b(server_env_exports)))
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
-            self.serverargs_b64en = base64.urlsafe_b64encode(
-                ' '.join(srv_argv))
+            self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
+                six.b(' '.join(srv_argv))))
 
     def get_directory_tar_map(self, argv):
         """
@@ -442,7 +441,7 @@ class JobSubClient(object):
         os.environ['GROUP'] = self.account_group
         os.environ['EXPERIMENT'] = self.account_group
 
-        orig_dir = os.getcwdu()
+        orig_dir = os.getcwd()
         # logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         # logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
@@ -669,11 +668,11 @@ class JobSubClient(object):
             self.submit_url = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN %\
                 (self.server, self.account_group)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
-        post_data = [
-            ('jobsub_args_base64', self.serverargs_b64en),
-            ('jobsub_client_version', version_string()),
-            ('jobsub_client_krb5_principal', krb5_principal),
-        ]
+
+        post_data = []
+        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
+        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
+        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
@@ -697,16 +696,16 @@ class JobSubClient(object):
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
 
-            post_data = self.post_data_append(post_data,
-                                              'jobsub_command',
-                                              pycurl.FORM_FILE,
-                                              self.job_executable)
+            post_data = post_data_append(post_data,
+                                         'jobsub_command',
+                                          self.job_executable,
+                                          fmt=pycurl.FORM_FILE)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
 
-            post_data = self.post_data_append(post_data,
+            post_data = post_data_append(post_data,
                                               'jobsub_payload',
-                                              pycurl.FORM_FILE,
-                                              payloadFileName)
+                                              payloadFileName,
+                                              fmt=pycurl.FORM_FILE)
 
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -737,13 +736,14 @@ class JobSubClient(object):
         response.close()
         return http_code
 
+
     def makeDagPayload(self, infile):
         """ create a tarfile with all the files that
             go in a dag so it can be uploaded to the
             jobsub server
             @infile: an xml input file for jobsub_submit_dag
         """
-        orig = os.getcwdu()
+        orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
         fin = open(infile, 'r')
         z = fin.read()
@@ -791,18 +791,17 @@ class JobSubClient(object):
             self.submit_url = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN %\
                 (self.server, self.account_group)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
-        post_data = [
-            ('jobsub_args_base64', self.serverargs_b64en),
-            ('jobsub_client_version', version_string()),
-            ('jobsub_client_krb5_principal', krb5_principal),
-        ]
+        post_data = []
+        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
+        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
+        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submit_url)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' %
-                          base64.urlsafe_b64decode(self.serverargs_b64en))
+                          base64.urlsafe_b64decode(coerce_str(self.serverargs_b64en)))
         # cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
         #       (self.serverargs_b64en, self.submit_url)
 
@@ -816,14 +815,14 @@ class JobSubClient(object):
         # always have to do this now as we select the best schedd
         # and submit directly to it
         curl.setopt(curl.SSL_VERIFYHOST, 0)
-
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data = self.post_data_append(post_data,
+            post_data = post_data_append(post_data,
                                               'jobsub_command',
-                                              pycurl.FORM_FILE,
-                                              self.job_executable)
-        #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+                                              self.job_executable,
+                                              fmt=pycurl.FORM_FILE)
+        # curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+        # logSupport.dprint('post_data = %s ' % post_data)
         curl.setopt(curl.HTTPPOST, post_data)
 
         http_code = 200
@@ -835,14 +834,13 @@ class JobSubClient(object):
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error as error:
-            errno, errstr = error
+            #errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
-                                                            errstr)
-            if errno == 60:
-                err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?" %\
-                    self.server
+            err = "HTTP response:%s PyCurl Error %s" % (http_code, error)
+            #if errno == 60:
+            #    err += "\nDid you remember to include the port number to "
+            #    err += "your server specification \n( --jobsub-server %s )?" %\
+            #        self.server
             # logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
@@ -945,15 +943,19 @@ class JobSubClient(object):
         curl library
         """
 
-        if os.environ.get('JOBSUB_USE_REQUESTLIB'):
-            try:
-                return self.perform_request(url, http_custom_request,
+        if os.environ.get('JOBSUB_CURL_ONLY'):
+            return self.perform_curl(url, http_custom_request,
+                                     post_data, ssl_verifyhost,
+                                     connect_timeout)
+        try:
+            return self.perform_request(url, http_custom_request,
                                         post_data, ssl_verifyhost,
                                         connect_timeout)
-            except ImportError:
-                print("jobsub will be migrating to the requests library soon")
-                print("open a service desk ticket to have python-requests installed")
-                print("on this machine. ")
+        except ImportError:
+            print("jobsub will be migrating to the requests library soon")
+            print("open a service desk ticket to have python-requests installed")
+            print("on this machine. To suppress this message, set envionment variable")
+            print("export JOBSUB_CURL_ONLY=TRUE")
 
         return self.perform_curl(url, http_custom_request,
                                  post_data, ssl_verifyhost,
@@ -972,7 +974,7 @@ class JobSubClient(object):
         curl, response = curl_secure_context(url, self.credentials)
         r_dict['curl'] = curl
         r_dict['response'] = response
-        curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
+        curl_setopt_str(curl, curl.CUSTOMREQUEST, http_custom_request)
         if post_data:
             curl.setopt(curl.HTTPPOST, post_data)
         if not ssl_verifyhost:
@@ -1674,7 +1676,6 @@ def is_port_open(server, port):
 def get_jobsub_server_aliases(server):
     # Set of hosts in the HA mode
     aliases = []
-
     host_port = server.replace('https://', '')
     host_port = host_port.replace('/', '')
     tokens = host_port.split(':')
@@ -1685,7 +1686,8 @@ def get_jobsub_server_aliases(server):
         else:
             port = constants.JOBSUB_SERVER_DEFAULT_PORT
         # Filter bu TCP ports (5th arg = 6 below)
-        addr_info = socket.getaddrinfo(host, int(port), 0, 0, 6)
+        port = int(port)
+        addr_info = socket.getaddrinfo(host, port, 0, 0, 6)
         for info in addr_info:
             # Each info is of the form (2, 1, 6, '', ('131.225.67.139', 8443))
             ip, p = info[4]
@@ -1718,6 +1720,8 @@ def servicing_jobsub_server(curl):
     except Exception:        # Ignore errors. This is not critical
         pass
     return server
+
+
 
 
 def report_counts(msg):
@@ -1906,7 +1910,6 @@ def get_client_credentials(acctGroup=None, server=None):
 
 
 
-
 def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     """
     create a compressed tarfile
@@ -1922,7 +1925,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
         Raises:
             None
     """
-    orig_dir = os.getcwdu()
+    orig_dir = os.getcwd()
     logSupport.dprint('tar_file=%s tar_path=%s cwd=%s' %
                       (tar_file, tar_path, orig_dir))
     temp_name = tempfile.mktemp()
@@ -1934,7 +1937,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
         reject_list.append('%s$' % tar_file)
 
     os.chdir(tar_path)
-    tar_dir = os.getcwdu()
+    tar_dir = os.getcwd()
     failed_file_list = []
     ftar_d = os.path.realpath(tar_dir)
     for root, dirs, files in os.walk(ftar_d):

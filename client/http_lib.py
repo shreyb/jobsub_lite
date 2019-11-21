@@ -1,3 +1,11 @@
+import os
+import pycurl
+import platform
+import io
+
+import logSupport
+import constants
+import subprocessSupport
 
 def curl_secure_context(url, credentials):
     """
@@ -72,7 +80,11 @@ def get_capath():
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir
 
+def curl_setopt_str(a_curl, an_opt, a_type):
+    pass
 
+def coerce_str(a_str):
+    pass
 def post_data_append(post_data, payload, fmt, fname):
     """
     append payload to HTTP post_data payload
@@ -87,7 +99,7 @@ def post_data_append(post_data, payload, fmt, fname):
         post_data.append((payload, (fmt, fname)))
         return post_data
     except Exception:
-        raise JobSubClientError(
+        raise RuntimeError(
             "error HTTP POSTing %s - Is it readable?" %
             fname)
 

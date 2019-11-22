@@ -31,7 +31,8 @@ from jobsubClient import print_formatted_response
 from jobsubClient import Version_String
 from jobsubClient import print_json_response
 from jobsubClient import servicing_jobsub_server
-from jobsubClient import curl_secure_context
+from http_lib import curl_secure_context
+from http_lib import coerce_str
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
 #from jobsubClient import jid_callback
@@ -265,7 +266,7 @@ def get_sandbox(options):
     else:
         fn = '%s.tgz' % options.jobId
 
-    fp = open(fn, 'w')
+    fp = open(fn, 'wb')
     # Create curl object and set curl options to use
     curl, response = curl_secure_context(sandboxURL, creds)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
@@ -274,8 +275,8 @@ def get_sandbox(options):
     if options.timeout:
         timeout = options.timeout
     curl.setopt(curl.TIMEOUT, timeout)
-    curl.setopt(curl.HTTPHEADER,
-                ['Accept: application/x-download,application/json'])
+    app_type = coerce_str('Accept: application/x-download,application/json')
+    curl.setopt(curl.HTTPHEADER, [ app_type ])
 
     response_code = 200
     response_time = 0
@@ -287,13 +288,9 @@ def get_sandbox(options):
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
     except pycurl.error as error:
-        errno, errstr = error
+        #errno, errstr = error
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        err = "HTTP response:%s PyCurl Error %s: %s" % (response_code,
-                                                        errno, errstr)
-        if errno == 60:
-            err += "\nDid you remember to include the port number to "
-            err += "your server specification \n( --jobsub-server %s )?" % options.jobsubServer
+        err = "HTTP response:%s PyCurl Error %s" % (response_code, error)
         print(traceback.format_exc())
         raise JobSubClientError(err)
 

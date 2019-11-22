@@ -679,7 +679,7 @@ class JobSubClient(object):
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submit_url)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' %
-                          base64.urlsafe_b64decode(self.serverargs_b64en))
+                          base64.urlsafe_b64decode(coerce_str(self.serverargs_b64en)))
         # cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
         #        (self.serverargs_b64en, self.submit_url)
 
@@ -2141,8 +2141,8 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             sha1 digest of file_name (string)
         Raises:
     """
-    dig = hashlib.sha1()
-    fhdl = open(file_name, 'r')
+    dig  = hashlib.sha1()
+    fhdl = open(file_name, 'rb')
     block_size = int(block_size)
     if write_chunks:
         dirpath = tempfile.mkdtemp()

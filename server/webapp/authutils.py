@@ -232,14 +232,14 @@ def invert_gmap(data):
             #logger.log('checking itm %s' % itm)
             # if isinstance(itm, str):
             #    itm = json.loads(itm)
-            if itm['userdn'] not in i_dat:
-                i_dat[itm['userdn']] = {'volist': [],
-                                        'mapped_uname':
-                                        {'default': itm['mapped_uname']}}
-            i_dat[itm['userdn']]['volist'].append(vo_name)
-            mapped_name = i_dat[itm['userdn']]['mapped_uname']['default']
-            if itm['mapped_uname'] != mapped_name:
-                i_dat[itm['userdn']]['mapped_uname'][vo_name] = itm['mapped_uname']
+            if itm['dn'] not in i_dat:
+                i_dat[itm['dn']] = {'volist': [],
+                                        'username':
+                                        {'default': itm['username']}}
+            i_dat[itm['dn']]['volist'].append(vo_name)
+            mapped_name = i_dat[itm['dn']]['username']['default']
+            if itm['username'] != mapped_name:
+                i_dat[itm['dn']]['username'][vo_name] = itm['username']
 
     return i_dat
 
@@ -266,7 +266,7 @@ def invert_vo_role_uid_map(data):
     i_dat = {}
     fqan_dat = {}
     for itm in data:
-        i_dat[itm['fqan']] = itm['mapped_uname']
+        i_dat[itm['fqan']] = itm['username']
         fq_parts = itm['fqan'].split('/')
         if len(fq_parts) > 1:
             if fq_parts[1] == 'fermilab':
@@ -332,7 +332,7 @@ def fetch_from_ferry(fname):
     elif fname == "rcds_server_map.json":
         return create_rcds_server_map()
     else:
-        return _fetch_from_ferry(fname)
+        return _get_ferry_output_from_response(fname)
 
 
 def getGridMapFile():
@@ -349,7 +349,7 @@ def getGridMapFile():
         fname = (api + _append.format(vo)) if _append else api
         # Note that if _append is None, we will save all the grid map file
         # data in each vo key
-        dat = _fetch_from_ferry(fname)
+        dat = _get_ferry_output_from_response(fname)
         if dat:
             gmf[vo] = dat
     return gmf
@@ -382,6 +382,29 @@ def _fetch_from_rcds(fname='config'):
 
         logger.log(e, traceback=True)
         return {}
+
+def _get_ferry_output_from_response(fname):
+    """
+    With FERRY 2.0, we need to get data from response.ferry_output.  
+    Further, we need to check ferry_error to see if it's empty or not.
+    """
+    ferry_response = _fetch_from_ferry(fname)
+
+    # Make sure ferry_error is empty
+    try:
+        assert len(ferry_response['ferry_error']) == 0
+    except AssertionError:
+        _error= "AssertionError: Call to FERRY returned FERRY errors: {0}\n"\
+                    .format(', '.join(ferry_response['ferry_error']))
+        logger.log(_error, traceback=True, severity=logging.ERROR)
+        logger.log(_error, traceback=True, severity=logging.ERROR,
+                   logfile='error')
+
+        logger.log(_error, traceback=True)
+        return {}
+
+    return ferry_response.get('ferry_output', {})
+
 
 def _fetch_from_ferry(fname):
     """

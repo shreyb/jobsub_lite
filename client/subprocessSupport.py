@@ -90,8 +90,25 @@ def iexe_cmd(cmd, useShell=False, stdin_data=None, child_env=None):
         exitStatus = process.returncode
 
     except OSError as e:
-        err_str = "Error running '%s'\nStdout:%s\nStderr:%s\nException OSError:%s"
+        err_str = "Error running '%s'\nStdout:%s\n"
+        err_str += "Stderr:%s\nException OSError:%s"
         raise RuntimeError(err_str % (cmd, stdoutdata, stderrdata, e))
-    if exitStatus:
-        raise CalledProcessError(exitStatus, cmd, output="".join(stderrdata))
     return (force_text(stdoutdata), force_text(stderrdata))
+
+
+
+if __name__ == '__main__':
+    # tested with python2.7 and python3.6
+    # quick test of a command that should work
+    cmd = 'ls'
+    out,err = iexe_cmd(cmd)
+    assert(out != "")
+    assert(err == "")
+    #quick test of a command that should not work
+    try:
+        cmd = 'lssssssssss'
+        out,err = iexe_cmd(cmd)
+        assert(False)
+    except RuntimeError as err:
+        pass
+    print("passed tests: OK")

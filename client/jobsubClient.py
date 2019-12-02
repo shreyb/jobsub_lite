@@ -506,7 +506,7 @@ class JobSubClient(object):
                 sts = "ifdh cp %s %s attempt" % (srcpath, destpath)
                 logSupport.dprint(sts)
                 cmd = "%s cp %s %s" % (ifdh_exe, srcpath, destpath)
-                subprocessSupport.iexe_cmd(cmd)
+                subprocessSupport.iexe_cmd(str(cmd))
             except Exception as error:
                 if 'File exists' in str(error):
                     already_exists = True
@@ -679,7 +679,7 @@ class JobSubClient(object):
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submit_url)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' %
-                          base64.urlsafe_b64decode(self.serverargs_b64en))
+                          base64.urlsafe_b64decode(coerce_str(self.serverargs_b64en)))
         # cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
         #        (self.serverargs_b64en, self.submit_url)
 
@@ -699,13 +699,13 @@ class JobSubClient(object):
             post_data = post_data_append(post_data,
                                          'jobsub_command',
                                           self.job_executable,
-                                          form=pycurl.FORM_FILE)
+                                          fmt=pycurl.FORM_FILE)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
 
             post_data = post_data_append(post_data,
                                               'jobsub_payload',
                                               payloadFileName,
-                                              form=pycurl.FORM_FILE)
+                                              fmt=pycurl.FORM_FILE)
 
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -820,8 +820,9 @@ class JobSubClient(object):
             post_data = post_data_append(post_data,
                                               'jobsub_command',
                                               self.job_executable,
-                                              form=pycurl.FORM_FILE)
-        #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+                                              fmt=pycurl.FORM_FILE)
+        # curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+        # logSupport.dprint('post_data = %s ' % post_data)
         curl.setopt(curl.HTTPPOST, post_data)
 
         http_code = 200
@@ -833,14 +834,13 @@ class JobSubClient(object):
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error as error:
-            errno, errstr = error
+            #errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
-                                                            errstr)
-            if errno == 60:
-                err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?" %\
-                    self.server
+            err = "HTTP response:%s PyCurl Error %s" % (http_code, error)
+            #if errno == 60:
+            #    err += "\nDid you remember to include the port number to "
+            #    err += "your server specification \n( --jobsub-server %s )?" %\
+            #        self.server
             # logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
@@ -2141,8 +2141,8 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             sha1 digest of file_name (string)
         Raises:
     """
-    dig = hashlib.sha1()
-    fhdl = open(file_name, 'r')
+    dig  = hashlib.sha1()
+    fhdl = open(file_name, 'rb')
     block_size = int(block_size)
     if write_chunks:
         dirpath = tempfile.mkdtemp()

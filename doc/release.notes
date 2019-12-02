@@ -1,17 +1,65 @@
-
 ================================================================================
-v1.3.1.rc0
+v1.3.1.rc02
 ================================================================================
 Client
 ------
-* Feature  23314  Client runs both under python 2.7 and 3.
+* Feature   23314  Client runs both under python 2.7 and 3.
                   Python libraries required for this version:
-                  six futures pycurl
+                  six future pycurl
                   Python libraries strongly suggested: requests
-                  so to run under python36 (for example)
 
-                  yum install -y python36-six python36-futures python36-pycurl python36-requests
+                  to run under python36 the following yum command
+                  has been tested and is known to work:
 
+                  yum install --enablerepo epel -y python36-six python36-future python36-pycurl python36-requests
+
+                  to run under python2.7 this has been tested and
+                  is known to work:
+
+                  yum install --enablerepo epel -y python2-six python2-future python-pycurl python-requests
+
+                  IMPORTANT: It is easy to get confused as to which python
+                  is being used in a mixed environment, as most python
+                  applications (including this one)  use the shebang
+                  convention #!/usr/bin/env python and run by default
+                  under whichever python that resolves to.  Python 3 was
+                  tested by creating a soft link from /usr/bin/python3 to
+                  something in the path ahead of /usr/bin/python (which is
+                  currently python2).
+                  Another way to enforce python2 or 3 at the command line
+                  would be like so:
+                      python2 `which jobsub_q` --user uboonepro
+                      python3 `which jobsub_rm` --jobid some job
+================================================================================
+v1.3.1
+================================================================================
+Server
+-------
+
+* Feature    23242   Make server compatible with FERRY 2.0
+
+
+================================================================================
+v1.3.03
+================================================================================
+Server
+--------
+* Bug   23561 make sure wrapper exits from correct directory when
+              locate_cvmfs_dir() called
+
+================================================================================
+v1.3.02
+================================================================================
+Server
+--------
+* Bug    23468    typo in online help
+
+================================================================================
+v1.3.01
+================================================================================
+Server
+--------
+* Bug    23413    argparse library too greedy on jobsub server
 
 ================================================================================
 v1.3
@@ -30,7 +78,8 @@ Client
 * Bug      22992   create rc9, client missed a merge for rc8
 * Bug      23040   random error on jobsub_q --better-analyze
 * Maint    22164   replace optparse library with argparse
-
+* Maint    23353   optionally use request library instead of pycurl library.
+                   To enable, set env variable JOBSUB_USE_REQUESTLIB
 Server
 ------
 * Feature  16603   support for SL7.  NOTE: A security feature on SL7 that was over
@@ -47,6 +96,7 @@ Server
 * Bug      23027   auth_methods returns too much debug info
 * Bug      23028   syntax error in previously unexercised log message
 * Bug      23251   typo in jobsub.py makes logs ugly
+* Bug      23379   x509_use_proxy not always set in generated jdl
 
 ============================================================================
 v1.2.10

@@ -9,7 +9,7 @@ from JobUtils import JobUtils
 # from optparse import OptionParser
 # from optparse import OptionGroup
 # from optparse import SUPPRESS_HELP
-from argparse import SUPPRESS
+from argparse import SUPPRESS, REMAINDER
 import JobsubConfigParser
 
 
@@ -243,11 +243,17 @@ class JobSettings(object):
         # sys.exit
 
     def runCmdParser(self, a=None, b=None):
-        # (options, args) = self.cmdParser.parse_args(a, b)
-        (options, args) = self.cmdParser.parse_known_args(a, b)
+        options = self.cmdParser.parse_args(a, b)
+        #(options, args) = self.cmdParser.parse_known_args(a, b)
 
         self.runFileParser()
         new_settings = vars(options)
+
+        # Separate out the jobsub options from the user script options
+        args = new_settings.pop('user_args')
+        user_command = new_settings.pop('user_command')
+        args.insert(0, user_command)
+
         if 'verbose' in new_settings and new_settings['verbose']:
             print "new_settings = ", new_settings
         for x in new_settings.keys():
@@ -564,10 +570,10 @@ class JobSettings(object):
             USE SPARINGLY. """))
 
         generic_group.add_argument("-g", "--grid", dest="grid",
-                                 action="store_true",
+                                 action="store_true", default=True, 
                                  help=re.sub('  \s+', ' ', """run job on the
-            FNAL GP  grid. Other flags can modify target sites to include other
-            areas of the Open Science Grid"""))
+            OSG grid. Other flags can modify target sites to include
+            public or private clouds"""))
 
         generic_group.add_argument("--nowrapfile", dest="nowrapfilex",
                                  action="store_true",
@@ -674,10 +680,14 @@ class JobSettings(object):
                               action="append", type=str,
                               nargs=2,
                               help=re.sub('  \s+', ' ', """
-            -d<tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
+            -d <tag> <dir>  Writable directory $CONDOR_DIR_<tag> will
             exist on the execution node.  After job completion,
             its contents will be moved to <dir> automatically
             Specify as many <tag>/<dir> pairs as you need. """))
+
+        generic_group.add_argument("user_command")
+
+        generic_group.add_argument("user_args", nargs=REMAINDER)
 
     def expectedLifetimeOK(self, a_str):
         if 'lines' in self.settings:

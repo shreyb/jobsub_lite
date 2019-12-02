@@ -294,7 +294,7 @@ fi
 grep URL ${SERVER}*${GROUP}*log | sed 's/.*https/https/' | sed 's/ .*$//' | sort | uniq -u > ${SERVER}.${GROUP}.urls_covered.log
 
 lg_echo testing api coverage of URLS
-sh ${TEST_FLAG} ./api_coverage_test.sh MACH=$SERVER GROUP=$GROUP X509_USER_CERT=$X509_USER_CERT  X509_USER_KEY=$X509_USER_KEY >$OUTFILE 2>&1
+sh ${TEST_FLAG} ./api_coverage_test.sh $SERVER GROUP=$GROUP X509_USER_CERT=$X509_USER_CERT  X509_USER_KEY=$X509_USER_KEY >$OUTFILE 2>&1
 RSLT=$?
 #grep 'HTTP/1.1' `echo $SERVER | cut -d '.' -f1`*out | cut -d ' ' -f2-4 | sort | uniq -c
 tail -6 $OUTFILE

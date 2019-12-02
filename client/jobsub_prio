@@ -13,6 +13,12 @@
 #
 ##########################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import optparse
@@ -38,8 +44,13 @@ def required_args_present(options):
     to run a jobsub_prio command
     """
     try:
+        if options.uid:
+            print("\n\nthe --user option has been disabled, adjust jobs individually")
+            return False
         if options.acctGroup and options.jobsubServer and options.prio and\
-                (options.jobId or options.uid):
+            options.jobId:
+            # have to disable options.uid for now
+            # (options.jobId or options.uid):
             return True
     except AttributeError:
         return False
@@ -124,15 +135,15 @@ def parse_opts(argv):
                          default=False,
                          help='Show this help message and exit')
 
-    # commenting this out for now, we don't know what to do about
-    # group superusers affecting other groups priorities en masse
-    # opt_group.add_option('--user',
-    #                      dest='uid',
-    #                      type='string',
-    #                      action='store',
-    #                      default=None,
-    #                      metavar='<user ID>',
-    #                      help='adjust prio of all jobs with this uid ')
+    #commenting this out for now, we don't know what to do about
+    #group superusers affecting other groups priorities en masse
+    opt_group.add_option('--user',
+                         dest='uid',
+                         type='string',
+                         action='store',
+                         default=None,
+                         metavar='<user ID>',
+                         help='****DISABLED****adjust prio of all jobs with this uid ')
 
     opt_group.add_option('--prio',
                          dest='prio',
@@ -147,7 +158,7 @@ def parse_opts(argv):
     parser.add_option_group(opt_group)
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -158,7 +169,7 @@ def parse_opts(argv):
         sys.exit(0)
 
     if not required_args_present(options):
-        print "\nERROR: Missing required arguments\n"
+        print("\nERROR: Missing required arguments\n")
         parser.print_help()
         sys.exit(1)
     return options
@@ -178,18 +189,23 @@ def main(argv):
 
         if options.jobId:
             for jid in options.jobId.split(','):
-                print 'adjusting prio for jobid=%s' % jid
+                trc = 0
                 http_code = js_client.adjust_prio(jid,
                                                   uid=options.uid)
                 if isinstance(http_code, list):
                     for code in http_code:
-                        tmp_rc += http_code_to_rc(code)
+                        trc += http_code_to_rc(code)
+                    tmp_rc += trc
                 else:
                     tmp_rc += http_code_to_rc(http_code)
+                if trc == 0:
+                    print('\n\npriority adjustment for job %s to %s succeeded' % (jid, extraOpts['prio']))
+                else:
+                    print('\n\npriority adjustment for job %s to %s failed' % (jid, extraOpts['prio']))
             rc = tmp_rc
         else:  # the options to execute this branch are temporarily commented out
             if options.uid:
-                print 'adjustinog prio of  jobs owned by %s' % options.uid
+                print('adjusting prio of  jobs owned by %s' % options.uid)
             http_code_list = js_client.adjust_prio(uid=options.uid)
             for http_code in http_code_list:
                 tmp_rc = http_code_to_rc(http_code)
@@ -197,10 +213,10 @@ def main(argv):
                     rc = tmp_rc
 
     except JobSubClientError as e:
-        print e
+        print(e)
         logSupport.dprint(traceback.format_exc())
     except Exception as e:
-        print e
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
     return rc
 

@@ -506,7 +506,7 @@ class JobSubClient(object):
                 sts = "ifdh cp %s %s attempt" % (srcpath, destpath)
                 logSupport.dprint(sts)
                 cmd = "%s cp %s %s" % (ifdh_exe, srcpath, destpath)
-                subprocessSupport.iexe_cmd(cmd)
+                subprocessSupport.iexe_cmd(str(cmd))
             except Exception as error:
                 if 'File exists' in str(error):
                     already_exists = True

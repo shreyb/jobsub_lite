@@ -709,6 +709,7 @@ class JobSubClient(object):
                 err += "your server specification \n( --jobsub-server %s )?" %\
                     self.server
             # logSupport.dprint(traceback.format_exc())
+            shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
             raise JobSubClientSubmissionError(err)
         shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
 

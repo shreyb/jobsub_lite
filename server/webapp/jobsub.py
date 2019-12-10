@@ -86,16 +86,7 @@ def global_superusers():
        other users sandboxes regardless of other
        settings
     """
-
-    g_list = []
-    prs = JobsubConfigParser()
-    global_susers = prs.get('default', 'global_superusers')
-    if global_susers:
-        for itm in global_susers.split():
-            g_list.append(itm)
-    if log_verbose():
-        logger.log('returning %s' % g_list)
-    return g_list
+    return authutils.json_from_file(fname='global_superusers.json', group='_global')
 
 
 def group_superusers(acctgroup):
@@ -105,16 +96,7 @@ def group_superusers(acctgroup):
        other users sandboxes in that group regardless of other
        settings
     """
-
-    g_list = []
-    prs = JobsubConfigParser()
-    susers = prs.get(acctgroup, 'group_superusers')
-    if susers:
-        for itm in susers.split():
-            g_list.append(itm)
-    # if log_verbose():
-    #    logger.log('returning %s' % g_list)
-    return g_list
+    return authutils.json_from_file(fname='global_superusers.json', group=acctgroup)
 
 
 def is_superuser_for_group(acctgroup, user):

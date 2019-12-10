@@ -1,3 +1,16 @@
+
+================================================================================
+v1.3.1.rc04
+================================================================================
+Client
+-------
+
+*Bug       22408  Jobsub_submit_dag saves multiple copies of files in payload.tgz
+                  AND leaves cruft in /tmp when submission fails
+
+*Bug       23399  Jobsub client shouldnt care about date format when checking
+                  validity of kerberos tickets
+
 ================================================================================
 v1.3.1.rc02
 ================================================================================

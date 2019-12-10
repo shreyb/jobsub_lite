@@ -198,7 +198,7 @@ class Krb5Ticket(Credentials):
                 if os.path.exists(self.krb5CredCache):
                     return True
         return False
-
+    
     def expired(self):
         if not self.exists():
             raise CredentialsNotFoundError
@@ -221,6 +221,25 @@ class Krb5Ticket(Credentials):
             err = "error parsing KRB5 ticket start time:%s or end time:%s" %\
                 (self.validFrom, self.validTo)
             raise CredentialsError(err)
+
+    # Override Credentials.isValid.  We're using klist -c <cache> -s to have
+    # klist check the return code itself.  If the credential isn't valid,
+    # iexe_cmd will raise a CalledProcessError
+    def isValid(self):
+        klist_cmd = spawn.find_executable("klist")
+        if not klist_cmd:
+            raise Exception("Unable to find command 'klist' in the PATH")
+        cmd = '{0:s} -c {1:s} -s'.format(klist_cmd, self.krb5CredCache)
+        try:
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        except subprocessSupport.CalledProcessError:
+            logSupport.dprint('Credential validation failed for krb5cache {0}'
+                .format(self.krb5CredCache))
+            return False
+
+        logSupport.dprint('Credential validation passed for krb5cache {0}'
+                .format(self.krb5CredCache))
+        return True 
 
 
 def mk_temp_fname(fname):

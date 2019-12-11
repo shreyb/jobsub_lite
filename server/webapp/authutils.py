@@ -360,7 +360,7 @@ def get_superusers(group=None):
     if not api:
         api = 'getGroupMembers?grouptype=BatchSuperusers&groupname={group}'
     
-    dat = _get_ferry_output_from_response(api.format(group))
+    dat = _get_ferry_output_from_response(api.format(group=group))
     if dat:
         superusers = [elt['username'] for elt in dat]
         return superusers 
@@ -453,7 +453,8 @@ def refresh_ferry_dat(fname, jfile, **kwargs):
         fd.write(json.dumps(dat, indent=4))
         fd.close()
         os.rename(jtmp, jfile)
-        FERRY_DAT[fname] = dat
+        fname_withkwargs = os.path.basename(jfile)
+        FERRY_DAT[fname_withkwargs] = dat
     return dat
 
 

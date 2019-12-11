@@ -86,7 +86,7 @@ def global_superusers():
        other users sandboxes regardless of other
        settings
     """
-    return authutils.json_from_file(fname='superusers', group='_global')
+    return authutils.json_from_file('superusers', group='_global')
 
 
 def group_superusers(acctgroup):
@@ -96,7 +96,7 @@ def group_superusers(acctgroup):
        other users sandboxes in that group regardless of other
        settings
     """
-    return authutils.json_from_file(fname='superusers', group=acctgroup)
+    return authutils.json_from_file('superusers', group=acctgroup)
 
 
 def is_superuser_for_group(acctgroup, user):

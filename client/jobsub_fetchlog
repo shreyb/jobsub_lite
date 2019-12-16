@@ -19,14 +19,12 @@ from defaultServer import defaultServer
 from jobsubClient import JobSubClient
 from jobsubClient import get_client_credentials
 from jobsubClient import print_formatted_response
-#from jobsubClient import version_string
 from jobsubClient import Version_String
 from jobsubClient import print_json_response
 from jobsubClient import servicing_jobsub_server
 from jobsubClient import curl_secure_context
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
-#from jobsubClient import jid_callback
 from jobsubClient import JID_Callback
 from jobsubClient import check_id
 
@@ -43,7 +41,6 @@ def required_args_present(options):
 
 def parse_opts(argv):
     parser = argparse.ArgumentParser(usage='%(prog)s [options]',
-                                   # version=version_string(),
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
 
@@ -59,9 +56,7 @@ def parse_opts(argv):
     parser.add_argument('-J', '--job', '--jobid',
                       dest='jobId',
                       type=str,
-#                      action='callback',
                       action=JID_Callback,
-#                      callback=jid_callback,
                       metavar='<Job ID>',
                       help='Job ID')
 

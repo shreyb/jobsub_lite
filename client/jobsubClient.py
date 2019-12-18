@@ -218,7 +218,8 @@ class JobSubClient(object):
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
                 self.serverHost = serverParts[1].replace("//", "")
-        self.serverAliases = get_jobsub_server_aliases(self.server)
+        #self.serverAliases = get_jobsub_server_aliases(self.server)
+        self.serverAliases = [ self.server ]
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
@@ -1725,7 +1726,7 @@ def curl_secure_context(url, credentials):
 
     Returns the curl along with the response object
     """
-
+    logSupport.dprint("url=%s credentials=%s"%(url,credentials))
     curl, response = curl_context(url)
 
     curl.setopt(curl.SSLCERT, credentials.get('cert'))

@@ -4,6 +4,13 @@ v1.3.1.rc04
 ================================================================================
 Client
 -------
+* Maint.  23379   get_jobsub_server_aliases() in client not needed
+
+================================================================================
+v1.3.1.rc04
+================================================================================
+Client
+-------
 
 *Bug       22408  Jobsub_submit_dag saves multiple copies of files in payload.tgz
                   AND leaves cruft in /tmp when submission fails

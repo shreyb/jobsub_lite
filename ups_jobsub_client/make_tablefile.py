@@ -42,19 +42,9 @@ Action=setup
     execute( "ups setup  python_future_six_request -q ${JOBSUB_PYVER}", NO_UPS_ENV, PY_FUTURE_SOURCE )
     sourceRequired( ${PY_FUTURE_SOURCE}, NO_UPS_ENV )
     envUnSet( PY_FUTURE_SOURCE )
-    If( test "$JOBSUB_PYVER" = "python2.7" )
-           Execute( "ups setup pycurl",  NO_UPS_ENV, JOBSUB_PYCURL_SET_SOURCE )
-           sourceRequired("$JOBSUB_PYCURL_SET_SOURCE", NO_UPS_ENV )
-           envUnSet(JOBSUB_PYCURL_SET_SOURCE)
-    EndIf( test "$JOBSUB_PYVER" = "python2.7" )
 
 Action=unsetup
 
-    If( test "$PYCURL_DIR" != "" )
-      execute( "ups unsetup pycurl",  NO_UPS_ENV, JOBSUB_PYCURL_UNSET_SOURCE )
-      sourceRequired("$JOBSUB_PYCURL_UNSET_SOURCE" , NO_UPS_ENV )
-      envUnSet(JOBSUB_PYCURL_UNSET_SOURCE)
-    EndIf( test "$PYCURL_DIR" != "" )
     envUnSet( JOBSUB_PYVER )
     execute ( "ups unsetup python_future_six_request", NO_UPS_ENV, _unsetup_py_six )
     sourceRequired( ${_unsetup_py_six}, NO_UPS_ENV )

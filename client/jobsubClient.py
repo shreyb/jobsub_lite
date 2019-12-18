@@ -35,6 +35,7 @@ from http_lib import coerce_str
 
 import sys
 import os
+import stat
 import re
 import base64
 import pycurl
@@ -745,6 +746,8 @@ class JobSubClient(object):
         """
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
+        mod_755 = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+        os.chmod(dirpath, mod_755)
         fin = open(infile, 'r')
         z = fin.read()
         os.chdir(dirpath)

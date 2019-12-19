@@ -231,10 +231,13 @@ class JobSubClient(object):
             err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
             err += "  This probably means voms-proxy-init has been used to "
             err += "refresh it too many "
-            err += " times.  The easist way to fix the problem is to remove "
+            err += " times.  The easiest way to fix the problem is to remove "
             err += "the file %s and re-create it. The easiest way " % cert
             err += "to re-create it is to re-submit your job after "
-            err += "removing the file."
+            err += "removing the file.  If you are attempting to use a "
+            err += "Managed Proxy, please submit a ServiceNow ticket to "
+            err += "Distributed Computing Support to have the proxy "
+            err += "regenerated."
             raise JobSubClientError(err)
 
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)

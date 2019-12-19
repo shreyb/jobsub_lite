@@ -1095,7 +1095,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1112,7 +1112,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
 
     def release(self, jobid=None, uid=None, constraint=None):
         """
@@ -1143,7 +1143,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1166,7 +1166,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1181,7 +1181,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -1214,7 +1214,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1236,7 +1236,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1251,7 +1251,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data=post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             err = "hold requires one of a jobid or uid or constraint"
             raise JobSubClientError(err)
@@ -1284,7 +1284,7 @@ class JobSubClient(object):
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print "Schedd: %s" % schedd
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif uid:
             item = uid
@@ -1306,7 +1306,7 @@ class JobSubClient(object):
                         self.action_url = "%sforcex/" % (self.action_url)
                 print "Schedd: %s" % schedd
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif jobid:
             _role_fmt = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE
@@ -1323,7 +1323,7 @@ class JobSubClient(object):
                 self.action_url = "%sforcex/" % (self.action_url)
             return self.changeJobState(self.action_url,
                                        'DELETE',
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError(
                 "remove requires either a jobid or uid or constraint")

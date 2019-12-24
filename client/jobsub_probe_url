@@ -39,7 +39,7 @@ def print_opts(options):
 
 
 def parse_opts(argv):
-    """ Set up optparse object and epilog message
+    """ Set up argparse object and epilog message
     """
     usage = '%(prog)s [Client Options]'
     epi_text = "Please direct questions, comments, or problems to the "
@@ -48,7 +48,6 @@ def parse_opts(argv):
     epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
     epi_text += """wiki/Frequently_Asked_Questions"""
     parser = argparse.ArgumentParser(usage=usage,
-                                   # version=version_string(), TODO
                                    conflict_handler="resolve",
                                    epilog=epi_text)
 

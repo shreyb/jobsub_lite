@@ -38,15 +38,17 @@ Action=setup
     prodDir()
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR},':' )
     envPrepend(PATH, ${UPS_PROD_DIR},':' )
-    #envSet(JOBSUB_CLIENT_DIR, ${UPS_PROD_DIR})
-
-    setupRequired(cigetcert)
+    execute( "python -V 2>&1 | sed -e 's/ //' -e's/\.[0-9]*$//' -e's/P/p/'"  , NO_UPS_ENV, JOBSUB_PYVER )
+    execute( "ups setup  python_future_six_request -q ${JOBSUB_PYVER}", NO_UPS_ENV, PY_FUTURE_SOURCE )
+    sourceRequired( ${PY_FUTURE_SOURCE}, NO_UPS_ENV )
+    envUnSet( PY_FUTURE_SOURCE )
 
 Action=unsetup
-    If( test "$CIGETCERTLIBS_DIR" != "" )
-       Execute( "ups unsetup cigetcertlibs",  NO_UPS_ENV, CIGETCERTLIBS_DIR )
-       envUnSet(CIGETCERTLIBS_DIR)
-    EndIf( test "$CIGETCERTLIBS_DIR" != "" )
+
+    envUnSet( JOBSUB_PYVER )
+    execute ( "ups unsetup python_future_six_request", NO_UPS_ENV, _unsetup_py_six )
+    sourceRequired( ${_unsetup_py_six}, NO_UPS_ENV )
+    envUnSet( _unsetup_py_six )
     pathRemove(PYTHONPATH, ${UPS_PROD_DIR} )
     pathRemove(PATH, ${UPS_PROD_DIR})
 

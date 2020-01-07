@@ -35,6 +35,7 @@ from http_lib import coerce_str
 
 import sys
 import os
+import stat
 import re
 import base64
 import pycurl
@@ -237,7 +238,8 @@ class JobSubClient(object):
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
                 self.serverHost = serverParts[1].replace("//", "")
-        self.serverAliases = get_jobsub_server_aliases(self.server)
+        #self.serverAliases = get_jobsub_server_aliases(self.server)
+        self.serverAliases = [ self.server ]
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
@@ -722,12 +724,11 @@ class JobSubClient(object):
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
                                                             errstr)
-            # logSupport.dprint(traceback.format_exc())
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?" %\
                     self.server
-            # logSupport.dprint(traceback.format_exc())
+            shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
             raise JobSubClientSubmissionError(err)
         shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
 
@@ -745,6 +746,8 @@ class JobSubClient(object):
         """
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
+        mod_755 = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+        os.chmod(dirpath, mod_755)
         fin = open(infile, 'r')
         z = fin.read()
         os.chdir(dirpath)
@@ -752,6 +755,7 @@ class JobSubClient(object):
         fout = open(fnameout, 'w')
         tar = tarfile.open('payload.tgz', 'w:gz')
         lines = z.split('\n')
+        contents=[]
         for line in lines:
             wrds = re.split(r'\s+', line)
             la = []
@@ -761,9 +765,11 @@ class JobSubClient(object):
                     b = os.path.basename(w2)
                     w3 = " ${JOBSUB_EXPORTS} ./%s" % b
                     la.append(w3)
-                    os.chdir(orig)
-                    tar.add(uri2path(w), b)
-                    os.chdir(dirpath)
+                    if b not in contents:
+                        os.chdir(orig)
+                        tar.add(w2, b)
+                        contents.append(b)
+                        os.chdir(dirpath)
                 else:
                     la.append(w)
             la.append('\n')
@@ -1098,7 +1104,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1115,7 +1121,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
 
     def release(self, jobid=None, uid=None, constraint=None):
         """
@@ -1146,7 +1152,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1169,7 +1175,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1184,7 +1190,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -1217,7 +1223,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1239,7 +1245,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1254,7 +1260,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data=post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             err = "hold requires one of a jobid or uid or constraint"
             raise JobSubClientError(err)
@@ -1287,7 +1293,7 @@ class JobSubClient(object):
                     self.action_url = "%s%s/" % (self.action_url, uid)
                 print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif uid:
             item = uid
@@ -1309,7 +1315,7 @@ class JobSubClient(object):
                         self.action_url = "%sforcex/" % (self.action_url)
                 print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif jobid:
             _role_fmt = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE
@@ -1326,7 +1332,7 @@ class JobSubClient(object):
                 self.action_url = "%sforcex/" % (self.action_url)
             return self.changeJobState(self.action_url,
                                        'DELETE',
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError(
                 "remove requires either a jobid or uid or constraint")

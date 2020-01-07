@@ -87,7 +87,7 @@ def curl_setopt_str(a_curl, an_opt, a_type):
 
 def coerce_str(a_str):
     a_str = six.b(str(a_str))
-    logSupport.dprint('coerce_str returns %s' % a_str)
+    #logSupport.dprint('coerce_str returns %s' % a_str)
     return a_str
 
 def post_data_append(post_data, item_descr, in_data, fmt=None):

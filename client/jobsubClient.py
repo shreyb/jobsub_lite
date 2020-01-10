@@ -125,7 +125,7 @@ class JobSubClient(object):
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, useDag=False,
                  extra_opts={}):
-        """An over-ambitious init class
+        """init class
            @server: the jobsub server fqdn (could be a load balancer,
                     will be determined later)
            @acct_group: condor accounting group, corresponds to
@@ -152,7 +152,6 @@ class JobSubClient(object):
         self.better_analyze = extra_opts.get('better_analyze', False)
         self.forcex = extra_opts.get('forcex', False)
         self.schedd_list = []
-        serverParts = re.split(':', self.server)
         self.dropbox_max_size = None
         self.dropbox_location = None
         self.ca_path = get_capath()
@@ -160,50 +159,19 @@ class JobSubClient(object):
             self.reject_list = read_re_file(
                 self.extra_opts.get('tarball_reject_list'))
         else:
-            self.reject_list = [
-                # exclude .git and .svn directories
-                r"\.git/",
-                r"\.svn/",
-                # exclude .core files
-                r"\.core$",
-                # exclude emacs backups
-                r"\~.*$",
-                # exclude pdfs and eps files
-                r"\.pdf$",
-                r"\.eps$",
-                # NO PICTURES OF CATS
-                r"\.png$",
-                r"\.PNG$",
-                r"\.gif$",
-                r"\.GIF$",
-                r"\.jpg$",
-                r"\.jpeg$",
-                r"\.JPG$",
-                r"\.JPEG$",
-                # no .log .out or .err files
-                r"\.log$",
-                r"\.err$",
-                r"\.out$",
-                # no tarfiles or zipfiles
-                r"\.tar$",
-                r"\.tgz$",
-                r"\.zip$",
-                r"\.gz$",
-            ]
-
+            self.reject_list = self.default_reject_list()
         constraint = self.extra_opts.get('constraint')
         uid = self.extra_opts.get('uid')
         if constraint and uid:
             if uid not in constraint:
                 constraint = """Owner=?="%s"&&%s""" % (uid, constraint)
                 self.extra_opts['constraint'] = constraint
-
+        serverParts = re.split(':', self.server)
         if len(serverParts) != 3:
             if len(serverParts) == 1:
                 self.server = "https://%s:%s" % (
                     serverParts[0], self.serverPort)
                 self.serverHost = serverParts[0]
-
             if len(serverParts) == 2:
                 if serverParts[0].find('http') >= 0:
                     self.server = "%s:%s:%s" % (serverParts[0],
@@ -218,28 +186,11 @@ class JobSubClient(object):
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
                 self.serverHost = serverParts[1].replace("//", "")
-        #self.serverAliases = get_jobsub_server_aliases(self.server)
         self.serverAliases = [ self.server ]
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
-        subject = jobsubClientCredentials.proxy_subject(cert)
-        regex = re.compile('/CN=[0-9]+')
-        # VerifyDepth = 10 -> 9 CN=/12323123/ chains fails
-        if len(regex.findall(subject)) > 8:
-            err = "\nERROR\n"
-            err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
-            err += "  This probably means voms-proxy-init has been used to "
-            err += "refresh it too many "
-            err += " times.  The easiest way to fix the problem is to remove "
-            err += "the file %s and re-create it. The easiest way " % cert
-            err += "to re-create it is to re-submit your job after "
-            err += "removing the file.  If you are attempting to use a "
-            err += "Managed Proxy, please submit a ServiceNow ticket to "
-            err += "Distributed Computing Support to have the proxy "
-            err += "regenerated."
-            raise JobSubClientError(err)
-
+        self.checkProxyDepth(cert)
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acct_role = get_acct_role(acct_role, cert)
         self.serverAuthMethods()
@@ -260,12 +211,91 @@ class JobSubClient(object):
         self.job_exe_uri = None
         self.serverargs_b64en = None
 
+    def checkProxyDepth(self, cert):
+        """ check that proxy has not been derived from itself too 
+            many times for web server to trust it 
+        """
+        subject = jobsubClientCredentials.proxy_subject(cert)
+        regex = re.compile('/CN=[0-9]+')
+        # VerifyDepth = 10 -> 9 CN=/12323123/ chains fails
+        if len(regex.findall(subject)) > 8:
+            err = "\nERROR\n"
+            err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
+            err += "  This probably means voms-proxy-init has been used to "
+            err += "refresh it too many "
+            err += " times.  The easiest way to fix the problem is to remove "
+            err += "the file %s and re-create it. The easiest way " % cert
+            err += "to re-create it is to re-submit your job after "
+            err += "removing the file.  If you are attempting to use a "
+            err += "Managed Proxy, please submit a ServiceNow ticket to "
+            err += "Distributed Computing Support to have the proxy "
+            err += "regenerated."
+            raise JobSubClientError(err)
+
+    def default_reject_list(self):
+        """return list of file types to be rejected from client
+           generated tarball
+        """
+        reject_list = [
+            # exclude .git and .svn directories
+            r"\.git/",
+            r"\.svn/",
+            # exclude .core files
+            r"\.core$",
+            # exclude emacs backups
+            r"\~.*$",
+            # exclude pdfs and eps files
+            r"\.pdf$",
+            r"\.eps$",
+            # NO PICTURES OF CATS
+            r"\.png$",
+            r"\.PNG$",
+            r"\.gif$",
+            r"\.GIF$",
+            r"\.jpg$",
+            r"\.jpeg$",
+            r"\.JPG$",
+            r"\.JPEG$",
+            # no .log .out or .err files
+            r"\.log$",
+            r"\.err$",
+            r"\.out$",
+            # no tarfiles or zipfiles
+            r"\.tar$",
+            r"\.tgz$",
+            r"\.zip$",
+            r"\.gz$",
+        ]
+        return reject_list
+
     def init_submission(self):
         """ A refactor of __init__ ,
             only do this stuff if a job submission is requested
         """
         self.probeSchedds()
 
+        # make sure all the file:// dropbox:// uris
+        # are accessible from submission node.
+        # if not, raise error
+        for idx in range(0, len(self.server_argv)):
+            arg_v = self.server_argv[idx]
+            parts = []         
+            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
+                parts = arg_v.split(constants.DROPBOX_SUPPORTED_URI)
+            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                parts = arg_v.split(constants.DIRECTORY_SUPPORTED_URI)
+            for uri in constants.JOB_EXE_SUPPORTED_URIs:
+                if arg_v.find(uri) >= 0:
+                    parts = arg_v.split(uri)
+            if parts:
+                if not os.path.exists(parts[-1]):
+                    err_msg = "ERROR: %s " % arg_v
+                    err_msg +="""does not point to accessible file or direct"""
+                    err_msg +="""ory. Try adjusting the slashes in the uri"""
+                    raise JobSubClientError(err_msg)
+
+        # now that we uris are accessible, package them
+        # for transport to jobsub server, pnfs, cvmfs etc
         if self.server_argv:
             self.job_exe_uri = get_jobexe_uri(self.server_argv)
             self.job_executable = uri2path(self.job_exe_uri)
@@ -308,13 +338,13 @@ class JobSubClient(object):
                 except Exception:
                     raise JobSubClientError(err)
 
+            # if dropbox files to be uploaded
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
                 tfiles = []
-                # upload the files
-                # if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
+                # upload cvmfs rapid code distribution files, if any
                 if self.extra_opts.get('use_cvmfs_dropbox', False):
                     logSupport.dprint('calling dropbox_upload')
                     self.uploaded = self.dropbox_upload()
@@ -326,11 +356,15 @@ class JobSubClient(object):
                             'dropbox_upload failed')
 
                 logSupport.dprint('calling ifdh_upload')
+                # upload pnfs files, if any
                 result = self.ifdh_upload()
                 self.uploaded.update(result)
                 if not self.uploaded:
                     raise JobSubClientSubmissionError('ifdh_upload failed')
 
+                # now create an encoded url to send to jobsub server
+                # informing it of what dropbox files to look for
+                # and where 
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
                     # tardir://
@@ -399,7 +433,7 @@ class JobSubClient(object):
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
-                create_tarfile(tarname, tarpath, reject_list=self.reject_list)
+                create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
                 box_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[box_url] = digest
@@ -914,7 +948,7 @@ class JobSubClient(object):
                 try:
                     val = rtv['response'].getvalue()
                 except Exception as err:
-                    raise JobsubClientError(err)
+                    raise JobSubClientError(err)
             finally:
                 rtv['curl'].close()
                 rtv['response'].close()
@@ -1075,7 +1109,7 @@ class JobSubClient(object):
         prio = self.extra_opts.get('prio')
         if not prio:
             err = 'you must supply a priority with --prio'
-            raise JobsubClientError(err)
+            raise JobSubClientError(err)
 
         post_data = [
             ('job_action', 'ADJUST_PRIO')
@@ -2139,6 +2173,8 @@ def get_dropbox_idx(argv):
 
     i = 0
     while(i < len(argv)):
+
+
         if argv[i].find(constants.DROPBOX_SUPPORTED_URI) < 0 and\
                 argv[i].find(constants.DIRECTORY_SUPPORTED_URI) < 0:
             i += 1
@@ -2403,15 +2439,15 @@ if __name__ == '__main__':
                        "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
-        reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
+        REJECT_LIST = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
                        "\.log$", "\.err$", "\.out$"]
         if len(sys.argv) >= 7:
             print 'reading reject_list file %s' % sys.argv[6]
-            reject_list = read_re_file(sys.argv[6])
-            print 'reject_list = %s' % reject_list
+            REJECT_LIST = read_re_file(sys.argv[6])
+            print 'reject_list = %s' % REJECT_LIST
 
         create_tarfile(sys.argv[1 + 1], sys.argv[2 + 1],
-                       reject_list=reject_list)
+                       reject_list=REJECT_LIST)
         WRITE_CHUNKS = False
         if len(sys.argv) >= 6:
             WRITE_CHUNKS = True

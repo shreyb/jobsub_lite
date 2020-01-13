@@ -38,7 +38,7 @@ Action=setup
     prodDir()
     envPrepend(PYTHONPATH, ${UPS_PROD_DIR},':' )
     envPrepend(PATH, ${UPS_PROD_DIR},':' )
-    execute( "python -V 2>&1 | sed -e 's/ //' -e's/\.[0-9]*$//' -e's/P/p/'"  , NO_UPS_ENV, JOBSUB_PYVER )
+    execute( "pyflavor"  , NO_UPS_ENV, JOBSUB_PYVER )
     execute( "ups setup  python_future_six_request -q ${JOBSUB_PYVER}", NO_UPS_ENV, PY_FUTURE_SOURCE )
     sourceRequired( ${PY_FUTURE_SOURCE}, NO_UPS_ENV )
     envUnSet( PY_FUTURE_SOURCE )

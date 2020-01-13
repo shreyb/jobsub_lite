@@ -1,0 +1,14 @@
+These files make the ups product python_future_six_request in all its multi-lingual glory.
+
+To make a single flavor:
+
+make clean && make && . ups_sourceme.sh && setup curl && make the_rest
+
+This will result in a ups product directory (sl6_ups or sl7_ups) containing
+a python_future_six_request product matching up to the python version /bin/env
+finds and the ups flavor of the OS the makefile was executed on.
+
+To make additional flavors after the first flavor:
+
+setup python (new_desired_flavor)
+make && make the_rest

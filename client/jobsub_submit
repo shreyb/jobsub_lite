@@ -123,6 +123,10 @@ def required_args_present(options):
         if options.debug and options.jobid_output_only:
             print("ERROR: --debug and --jobid_output_only are incompatible")
             return False
+        if options.use_cvmfs_dropbox and options.acctRole:
+            if options.acctRole.lower() == 'mars':
+                print "jobs with --role mars are not allowed to use --use-cvmfs-dropbox"
+                sys.exit(1)
         if (options.acctGroup and options.jobsubServer):
             return True
     except AttributeError:

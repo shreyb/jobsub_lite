@@ -75,7 +75,7 @@ def required_args_present(options):
             return False
         if options.use_cvmfs_dropbox and options.acctRole:
             if options.acctRole.lower() == 'mars':
-                print "jobs with --role mars are not allowed to use --use-cvmfs-dropbox"
+                print ("jobs with --role mars are not allowed to use --use-cvmfs-dropbox")
                 sys.exit(1)
         if (options.acctGroup and options.jobsubServer):
             return True

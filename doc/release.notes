@@ -1,59 +1,20 @@
 
 ================================================================================
-v1.3.1.rc04
+v1.3.1
 ================================================================================
 Client
 -------
 * Maint.  23781   always verify host on ssl commands
 * Maint.  23379   get_jobsub_server_aliases() in client not needed
-
-================================================================================
-v1.3.1.rc04
-================================================================================
-Client
--------
-
 *Bug       22408  Jobsub_submit_dag saves multiple copies of files in payload.tgz
                   AND leaves cruft in /tmp when submission fails
-
 *Bug       23399  Jobsub client shouldnt care about date format when checking
                   validity of kerberos tickets
 
-================================================================================
-v1.3.1.rc02
-================================================================================
-Client
-------
-* Feature   23314  Client runs both under python 2.7 and 3.
-                  Python libraries required for this version:
-                  six future pycurl
-                  Python libraries strongly suggested: requests
+* Feature   23314  Client runs both under python 2 and 3.
+                   ups product python_future_six_request is
+                   required to make this work
 
-                  to run under python36 the following yum command
-                  has been tested and is known to work:
-
-                  yum install --enablerepo epel -y python36-six python36-future python36-pycurl python36-requests
-
-                  to run under python2.7 this has been tested and
-                  is known to work:
-
-                  yum install --enablerepo epel -y python2-six python2-future python-pycurl python-requests
-
-                  IMPORTANT: It is easy to get confused as to which python
-                  is being used in a mixed environment, as most python
-                  applications (including this one)  use the shebang
-                  convention #!/usr/bin/env python and run by default
-                  under whichever python that resolves to.  Python 3 was
-                  tested by creating a soft link from /usr/bin/python3 to
-                  something in the path ahead of /usr/bin/python (which is
-                  currently python2).
-                  Another way to enforce python2 or 3 at the command line
-                  would be like so:
-                      python2 `which jobsub_q` --user uboonepro
-                      python3 `which jobsub_rm` --jobid some job
-================================================================================
-v1.3.1
-================================================================================
 Server
 -------
 

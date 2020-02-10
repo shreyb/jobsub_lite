@@ -20,23 +20,13 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-<<<<<<< HEAD
 import argparse 
-=======
-# import optparse
-import argparse
->>>>>>> branch_v1_3_1_rc2
 import traceback
 
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-<<<<<<< HEAD
-from jobsubClient import Version_String 
-=======
-# from jobsubClient import version_string
 from jobsubClient import Version_String
->>>>>>> branch_v1_3_1_rc2
 from jobsubClient import http_code_to_rc
 from jobsubClient import JID_Callback
 from defaultServer import defaultServer
@@ -145,12 +135,8 @@ def parse_opts(argv):
                          metavar='<constraint>',
                          help='hold all jobs with this constraint ')
 
-<<<<<<< HEAD
-    client_options.add_argument('--version', action=Version_String)
-=======
     client_options.add_argument('--version',
                         action=Version_String)
->>>>>>> branch_v1_3_1_rc2
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")

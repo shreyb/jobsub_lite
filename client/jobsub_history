@@ -29,12 +29,7 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import Version_String
 from jobsubClient import  JID_Callback
-<<<<<<< HEAD
-from jobsubClient import Date_Callback 
-=======
-#from jobsubClient import date_callback
 from jobsubClient import Date_Callback
->>>>>>> branch_v1_3_1_rc2
 from defaultServer import defaultServer
 
 

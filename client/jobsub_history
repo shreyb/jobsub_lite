@@ -12,6 +12,12 @@
 #
 ##########################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import argparse
@@ -23,7 +29,12 @@ from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import Version_String
 from jobsubClient import  JID_Callback
+<<<<<<< HEAD
 from jobsubClient import Date_Callback 
+=======
+#from jobsubClient import date_callback
+from jobsubClient import Date_Callback
+>>>>>>> branch_v1_3_1_rc2
 from defaultServer import defaultServer
 
 
@@ -113,7 +124,7 @@ def parse_opts(argv):
                          help='Show this help message and exit')
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -124,8 +135,8 @@ def parse_opts(argv):
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return options
@@ -143,10 +154,10 @@ def main(argv):
     try:
         rc = js_client.history(options.histUser, options.jobId)
     except JobSubClientError as e:
-        print e
+        print(e)
         logSupport.dprint(traceback.format_exc())
     except Exception as e:
-        print e
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

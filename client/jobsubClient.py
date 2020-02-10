@@ -1,5 +1,24 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from builtins import dict
+from builtins import super
+from builtins import open
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import hex
+from builtins import range
+from builtins import object
 import contextlib
+from http_lib import curl_secure_context
+from http_lib import get_capath
+from http_lib import post_data_append
+from http_lib import curl_setopt_str
+from http_lib import coerce_str
 """
 ##########################################################################
 # Project:
@@ -16,10 +35,11 @@ import contextlib
 
 import sys
 import os
+import stat
 import re
 import base64
 import pycurl
-import cStringIO
+import io
 import platform
 import json
 import copy
@@ -34,22 +54,22 @@ import tarfile
 import socket
 import time
 import shutil
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
 import subprocessSupport
 from distutils import spawn
 import argparse
-
-
+from encoding import force_text
+import six
 
 class Version_String(argparse.Action):
-    def __init__(self, 
-                option_strings, 
-                version=None, 
-                dest=argparse.SUPPRESS, 
-                default=argparse.SUPPRESS, 
+    def __init__(self,
+                option_strings,
+                version=None,
+                dest=argparse.SUPPRESS,
+                default=argparse.SUPPRESS,
                 help="Show program's version number and exit"):
         super(Version_String, self).__init__(
                 option_strings=option_strings,
@@ -108,7 +128,7 @@ class JobSubClient(object):
     def __init__(self, server, acct_group, acct_role, server_argv,
                  dropboxServer=None, useDag=False,
                  extra_opts={}):
-        """An over-ambitious init class
+        """init class
            @server: the jobsub server fqdn (could be a load balancer,
                     will be determined later)
            @acct_group: condor accounting group, corresponds to
@@ -135,7 +155,6 @@ class JobSubClient(object):
         self.better_analyze = extra_opts.get('better_analyze', False)
         self.forcex = extra_opts.get('forcex', False)
         self.schedd_list = []
-        serverParts = re.split(':', self.server)
         self.dropbox_max_size = None
         self.dropbox_location = None
         self.ca_path = get_capath()
@@ -143,50 +162,19 @@ class JobSubClient(object):
             self.reject_list = read_re_file(
                 self.extra_opts.get('tarball_reject_list'))
         else:
-            self.reject_list = [
-                # exclude .git and .svn directories
-                r"\.git/",
-                r"\.svn/",
-                # exclude .core files
-                r"\.core$",
-                # exclude emacs backups
-                r"\~.*$",
-                # exclude pdfs and eps files
-                r"\.pdf$",
-                r"\.eps$",
-                # NO PICTURES OF CATS
-                r"\.png$",
-                r"\.PNG$",
-                r"\.gif$",
-                r"\.GIF$",
-                r"\.jpg$",
-                r"\.jpeg$",
-                r"\.JPG$",
-                r"\.JPEG$",
-                # no .log .out or .err files
-                r"\.log$",
-                r"\.err$",
-                r"\.out$",
-                # no tarfiles or zipfiles
-                r"\.tar$",
-                r"\.tgz$",
-                r"\.zip$",
-                r"\.gz$",
-            ]
-
+            self.reject_list = self.default_reject_list()
         constraint = self.extra_opts.get('constraint')
         uid = self.extra_opts.get('uid')
         if constraint and uid:
             if uid not in constraint:
                 constraint = """Owner=?="%s"&&%s""" % (uid, constraint)
                 self.extra_opts['constraint'] = constraint
-
+        serverParts = re.split(':', self.server)
         if len(serverParts) != 3:
             if len(serverParts) == 1:
                 self.server = "https://%s:%s" % (
                     serverParts[0], self.serverPort)
                 self.serverHost = serverParts[0]
-
             if len(serverParts) == 2:
                 if serverParts[0].find('http') >= 0:
                     self.server = "%s:%s:%s" % (serverParts[0],
@@ -201,28 +189,11 @@ class JobSubClient(object):
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
                 self.serverHost = serverParts[1].replace("//", "")
-        #self.serverAliases = get_jobsub_server_aliases(self.server)
         self.serverAliases = [ self.server ]
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
-        subject = jobsubClientCredentials.proxy_subject(cert)
-        regex = re.compile('/CN=[0-9]+')
-        # VerifyDepth = 10 -> 9 CN=/12323123/ chains fails
-        if len(regex.findall(subject)) > 8:
-            err = "\nERROR\n"
-            err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
-            err += "  This probably means voms-proxy-init has been used to "
-            err += "refresh it too many "
-            err += " times.  The easiest way to fix the problem is to remove "
-            err += "the file %s and re-create it. The easiest way " % cert
-            err += "to re-create it is to re-submit your job after "
-            err += "removing the file.  If you are attempting to use a "
-            err += "Managed Proxy, please submit a ServiceNow ticket to "
-            err += "Distributed Computing Support to have the proxy "
-            err += "regenerated."
-            raise JobSubClientError(err)
-
+        self.checkProxyDepth(cert)
         self.issuer = jobsubClientCredentials.proxy_issuer(cert)
         self.acct_role = get_acct_role(acct_role, cert)
         self.serverAuthMethods()
@@ -243,12 +214,91 @@ class JobSubClient(object):
         self.job_exe_uri = None
         self.serverargs_b64en = None
 
+    def checkProxyDepth(self, cert):
+        """ check that proxy has not been derived from itself too 
+            many times for web server to trust it 
+        """
+        subject = jobsubClientCredentials.proxy_subject(cert)
+        regex = re.compile('/CN=[0-9]+')
+        # VerifyDepth = 10 -> 9 CN=/12323123/ chains fails
+        if len(regex.findall(subject)) > 8:
+            err = "\nERROR\n"
+            err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
+            err += "  This probably means voms-proxy-init has been used to "
+            err += "refresh it too many "
+            err += " times.  The easiest way to fix the problem is to remove "
+            err += "the file %s and re-create it. The easiest way " % cert
+            err += "to re-create it is to re-submit your job after "
+            err += "removing the file.  If you are attempting to use a "
+            err += "Managed Proxy, please submit a ServiceNow ticket to "
+            err += "Distributed Computing Support to have the proxy "
+            err += "regenerated."
+            raise JobSubClientError(err)
+
+    def default_reject_list(self):
+        """return list of file types to be rejected from client
+           generated tarball
+        """
+        reject_list = [
+            # exclude .git and .svn directories
+            r"\.git/",
+            r"\.svn/",
+            # exclude .core files
+            r"\.core$",
+            # exclude emacs backups
+            r"\~.*$",
+            # exclude pdfs and eps files
+            r"\.pdf$",
+            r"\.eps$",
+            # NO PICTURES OF CATS
+            r"\.png$",
+            r"\.PNG$",
+            r"\.gif$",
+            r"\.GIF$",
+            r"\.jpg$",
+            r"\.jpeg$",
+            r"\.JPG$",
+            r"\.JPEG$",
+            # no .log .out or .err files
+            r"\.log$",
+            r"\.err$",
+            r"\.out$",
+            # no tarfiles or zipfiles
+            r"\.tar$",
+            r"\.tgz$",
+            r"\.zip$",
+            r"\.gz$",
+        ]
+        return reject_list
+
     def init_submission(self):
         """ A refactor of __init__ ,
             only do this stuff if a job submission is requested
         """
         self.probeSchedds()
 
+        # make sure all the file:// dropbox:// uris
+        # are accessible from submission node.
+        # if not, raise error
+        for idx in range(0, len(self.server_argv)):
+            arg_v = self.server_argv[idx]
+            parts = []         
+            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
+                parts = arg_v.split(constants.DROPBOX_SUPPORTED_URI)
+            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+                parts = arg_v.split(constants.DIRECTORY_SUPPORTED_URI)
+            for uri in constants.JOB_EXE_SUPPORTED_URIs:
+                if arg_v.find(uri) >= 0:
+                    parts = arg_v.split(uri)
+            if parts:
+                if not os.path.exists(parts[-1]):
+                    err_msg = "ERROR: %s " % arg_v
+                    err_msg +="""does not point to accessible file or direct"""
+                    err_msg +="""ory. Try adjusting the slashes in the uri"""
+                    raise JobSubClientError(err_msg)
+
+        # now that we uris are accessible, package them
+        # for transport to jobsub server, pnfs, cvmfs etc
         if self.server_argv:
             self.job_exe_uri = get_jobexe_uri(self.server_argv)
             self.job_executable = uri2path(self.job_exe_uri)
@@ -291,13 +341,13 @@ class JobSubClient(object):
                 except Exception:
                     raise JobSubClientError(err)
 
+            # if dropbox files to be uploaded
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
                 tfiles = []
-                # upload the files
-                # if os.environ.get('JOBSUB_USE_CVMFS_TARBALLS'):
+                # upload cvmfs rapid code distribution files, if any
                 if self.extra_opts.get('use_cvmfs_dropbox', False):
                     logSupport.dprint('calling dropbox_upload')
                     self.uploaded = self.dropbox_upload()
@@ -309,11 +359,15 @@ class JobSubClient(object):
                             'dropbox_upload failed')
 
                 logSupport.dprint('calling ifdh_upload')
+                # upload pnfs files, if any
                 result = self.ifdh_upload()
                 self.uploaded.update(result)
                 if not self.uploaded:
                     raise JobSubClientSubmissionError('ifdh_upload failed')
 
+                # now create an encoded url to send to jobsub server
+                # informing it of what dropbox files to look for
+                # and where 
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
                     # tardir://
@@ -332,8 +386,8 @@ class JobSubClient(object):
                                         # srv_argv[idx]
                                         tfiles.append(srv_argv[idx])
                             else:
-                                print "Dropbox upload failed with error:"
-                                print json.dumps(result)
+                                print("Dropbox upload failed with error:")
+                                print(json.dumps(result))
                                 raise JobSubClientSubmissionError
                 if len(tfiles) > 0:
                     transfer_input_files = ','.join(tfiles)
@@ -353,11 +407,11 @@ class JobSubClient(object):
 
             if server_env_exports:
                 srv_env_export_b64en = \
-                    base64.urlsafe_b64encode(server_env_exports)
+                    force_text(base64.urlsafe_b64encode(six.b(server_env_exports)))
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
-            self.serverargs_b64en = base64.urlsafe_b64encode(
-                ' '.join(srv_argv))
+            self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
+                six.b(' '.join(srv_argv))))
 
     def get_directory_tar_map(self, argv):
         """
@@ -382,7 +436,7 @@ class JobSubClient(object):
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
                 tarname = dirname + ".tar"
-                create_tarfile(tarname, tarpath, reject_list=self.reject_list)
+                create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
                 box_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[box_url] = digest
@@ -413,7 +467,7 @@ class JobSubClient(object):
         # logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         # logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
-        for dropbox in self.dropbox_uri_map.iterkeys():
+        for dropbox in self.dropbox_uri_map.keys():
             # if we uploaded it to cvmfs don't re-upload
             # it to pnfs
             digest = self.dropbox_uri_map[dropbox]
@@ -430,7 +484,7 @@ class JobSubClient(object):
 
             # If we've tarred up the dir, we need to look in the CWD for
             # the tar file
-            if dropbox in self.directory_tar_map.itervalues():
+            if dropbox in iter(self.directory_tar_map.values()):
                 srcpath = os.path.join(orig_dir, srcpath)
 
             destpath = os.path.join(self.dropbox_location,
@@ -474,7 +528,7 @@ class JobSubClient(object):
                 sts = "ifdh cp %s %s attempt" % (srcpath, destpath)
                 logSupport.dprint(sts)
                 cmd = "%s cp %s %s" % (ifdh_exe, srcpath, destpath)
-                subprocessSupport.iexe_cmd(cmd)
+                subprocessSupport.iexe_cmd(str(cmd))
             except Exception as error:
                 if 'File exists' in str(error):
                     already_exists = True
@@ -541,7 +595,7 @@ class JobSubClient(object):
             msg += str(err)
             raise JobSubClientSubmissionError(msg)
 
-        for file_name, digest in self.dropbox_uri_map.items():
+        for file_name, digest in list(self.dropbox_uri_map.items()):
             if not is_tarfile(uri2path(file_name)):
                 continue
             cdir = os.path.basename(uri2path(file_name))
@@ -584,7 +638,7 @@ class JobSubClient(object):
                         del self.dropboxServer[idx]
                     idx += 1
                 except Exception as err:
-                    print "%s" % err
+                    print("%s" % err)
                     exists_url.remove(url)
                     del self.dropboxServer[idx]
 
@@ -636,18 +690,18 @@ class JobSubClient(object):
             self.submit_url = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN %\
                 (self.server, self.account_group)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
-        post_data = [
-            ('jobsub_args_base64', self.serverargs_b64en),
-            ('jobsub_client_version', version_string()),
-            ('jobsub_client_krb5_principal', krb5_principal),
-        ]
+
+        post_data = []
+        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
+        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
+        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submit_url)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' %
-                          base64.urlsafe_b64decode(self.serverargs_b64en))
+                          base64.urlsafe_b64decode(coerce_str(self.serverargs_b64en)))
         # cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
         #        (self.serverargs_b64en, self.submit_url)
 
@@ -664,16 +718,16 @@ class JobSubClient(object):
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
 
-            post_data = self.post_data_append(post_data,
-                                              'jobsub_command',
-                                              pycurl.FORM_FILE,
-                                              self.job_executable)
+            post_data = post_data_append(post_data,
+                                         'jobsub_command',
+                                          self.job_executable,
+                                          fmt=pycurl.FORM_FILE)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
 
-            post_data = self.post_data_append(post_data,
+            post_data = post_data_append(post_data,
                                               'jobsub_payload',
-                                              pycurl.FORM_FILE,
-                                              payloadFileName)
+                                              payloadFileName,
+                                              fmt=pycurl.FORM_FILE)
 
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -690,12 +744,11 @@ class JobSubClient(object):
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
                                                             errstr)
-            # logSupport.dprint(traceback.format_exc())
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?" %\
                     self.server
-            # logSupport.dprint(traceback.format_exc())
+            shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
             raise JobSubClientSubmissionError(err)
         shutil.rmtree(os.path.dirname(payloadFileName), ignore_errors=True)
 
@@ -704,32 +757,17 @@ class JobSubClient(object):
         response.close()
         return http_code
 
-    def post_data_append(self, post_data, payload, fmt, fname):
-        """
-        append payload to HTTP post_data payload
-        Params:
-            @post_data: list of http post data objects
-            @payload
-            @fmt is postdata format
-            @fname is file to append
-        """
-        try:
-            assert(os.access(fname, os.R_OK))
-            post_data.append((payload, (fmt, fname)))
-            return post_data
-        except Exception:
-            raise JobSubClientError(
-                "error HTTP POSTing %s - Is it readable?" %
-                fname)
 
     def makeDagPayload(self, infile):
         """ create a tarfile with all the files that
-            go in a dag so it can be uploaded to the 
+            go in a dag so it can be uploaded to the
             jobsub server
             @infile: an xml input file for jobsub_submit_dag
         """
         orig = os.getcwd()
         dirpath = tempfile.mkdtemp()
+        mod_755 = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+        os.chmod(dirpath, mod_755)
         fin = open(infile, 'r')
         z = fin.read()
         os.chdir(dirpath)
@@ -737,6 +775,7 @@ class JobSubClient(object):
         fout = open(fnameout, 'w')
         tar = tarfile.open('payload.tgz', 'w:gz')
         lines = z.split('\n')
+        contents=[]
         for line in lines:
             wrds = re.split(r'\s+', line)
             la = []
@@ -746,9 +785,11 @@ class JobSubClient(object):
                     b = os.path.basename(w2)
                     w3 = " ${JOBSUB_EXPORTS} ./%s" % b
                     la.append(w3)
-                    os.chdir(orig)
-                    tar.add(uri2path(w), b)
-                    os.chdir(dirpath)
+                    if b not in contents:
+                        os.chdir(orig)
+                        tar.add(w2, b)
+                        contents.append(b)
+                        os.chdir(dirpath)
                 else:
                     la.append(w)
             la.append('\n')
@@ -762,7 +803,7 @@ class JobSubClient(object):
 
     def submit(self):
         """submit a job to jobsub server
-           called by jobsub_submit client 
+           called by jobsub_submit client
         """
         self.init_submission()
         # if (not self.dropbox_uri_map) or self.dropboxServer:
@@ -776,18 +817,17 @@ class JobSubClient(object):
             self.submit_url = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN %\
                 (self.server, self.account_group)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
-        post_data = [
-            ('jobsub_args_base64', self.serverargs_b64en),
-            ('jobsub_client_version', version_string()),
-            ('jobsub_client_krb5_principal', krb5_principal),
-        ]
+        post_data = []
+        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
+        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
+        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
         logSupport.dprint('CREDENTIALS    : %s\n' % self.credentials)
         logSupport.dprint('SUBMIT_URL     : %s\n' % self.submit_url)
         logSupport.dprint('SERVER_ARGS_B64: %s\n' %
-                          base64.urlsafe_b64decode(self.serverargs_b64en))
+                          base64.urlsafe_b64decode(coerce_str(self.serverargs_b64en)))
         # cmd = 'curl -k -X POST -d jobsub_args_base64=%s %s' %\
         #       (self.serverargs_b64en, self.submit_url)
 
@@ -801,14 +841,14 @@ class JobSubClient(object):
         # always have to do this now as we select the best schedd
         # and submit directly to it
         curl.setopt(curl.SSL_VERIFYHOST, 0)
-
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
-            post_data = self.post_data_append(post_data,
+            post_data = post_data_append(post_data,
                                               'jobsub_command',
-                                              pycurl.FORM_FILE,
-                                              self.job_executable)
-        #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+                                              self.job_executable,
+                                              fmt=pycurl.FORM_FILE)
+        # curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
+        # logSupport.dprint('post_data = %s ' % post_data)
         curl.setopt(curl.HTTPPOST, post_data)
 
         http_code = 200
@@ -820,14 +860,13 @@ class JobSubClient(object):
             response_time = etime - stime
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
         except pycurl.error as error:
-            errno, errstr = error
+            #errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
-            err = "HTTP response:%s PyCurl Error %s: %s" % (http_code, errno,
-                                                            errstr)
-            if errno == 60:
-                err += "\nDid you remember to include the port number to "
-                err += "your server specification \n( --jobsub-server %s )?" %\
-                    self.server
+            err = "HTTP response:%s PyCurl Error %s" % (http_code, error)
+            #if errno == 60:
+            #    err += "\nDid you remember to include the port number to "
+            #    err += "your server specification \n( --jobsub-server %s )?" %\
+            #        self.server
             # logSupport.dprint(traceback.format_exc())
             raise JobSubClientSubmissionError(err)
 
@@ -866,9 +905,9 @@ class JobSubClient(object):
             ses = rtv['session']
             http_code = resp.status_code
             self.print_response(resp, ses)
-        
+
         elif 'error' in rtv:
-            print rtv['error']
+            print(rtv['error'])
 
         return http_code
 
@@ -879,7 +918,7 @@ class JobSubClient(object):
         @url: REST API call to jobsub server that performs action
         @http_custom_request: 'GET' , no other requests make sense
                                in this context
-        @post_data: unused? 
+        @post_data: unused?
         @ssl_verify_host: True or False, if True make sure the host
                           is who they claim they are
         @connect_timeout: how long to wait for server to return
@@ -897,7 +936,7 @@ class JobSubClient(object):
                 try:
                     val = rtv['response'].getvalue()
                 except Exception as err:
-                    raise JobsubClientError(err)
+                    raise JobSubClientError(err)
             finally:
                 rtv['curl'].close()
                 rtv['response'].close()
@@ -930,15 +969,19 @@ class JobSubClient(object):
         curl library
         """
 
-        if os.environ.get('JOBSUB_USE_REQUESTLIB'):
-            try:
-                return self.perform_request(url, http_custom_request,
+        if os.environ.get('JOBSUB_CURL_ONLY'):
+            return self.perform_curl(url, http_custom_request,
+                                     post_data, ssl_verifyhost,
+                                     connect_timeout)
+        try:
+            return self.perform_request(url, http_custom_request,
                                         post_data, ssl_verifyhost,
                                         connect_timeout)
-            except ImportError:
-                print "jobsub will be migrating to the requests library soon"
-                print "open a service desk ticket to have python-requests installed"
-                print "on this machine. "
+        except ImportError:
+            print("jobsub will be migrating to the requests library soon")
+            print("open a service desk ticket to have python-requests installed")
+            print("on this machine. To suppress this message, set envionment variable")
+            print("export JOBSUB_CURL_ONLY=TRUE")
 
         return self.perform_curl(url, http_custom_request,
                                  post_data, ssl_verifyhost,
@@ -957,7 +1000,7 @@ class JobSubClient(object):
         curl, response = curl_secure_context(url, self.credentials)
         r_dict['curl'] = curl
         r_dict['response'] = response
-        curl.setopt(curl.CUSTOMREQUEST, http_custom_request)
+        curl_setopt_str(curl, curl.CUSTOMREQUEST, http_custom_request)
         if post_data:
             curl.setopt(curl.HTTPPOST, post_data)
         if not ssl_verifyhost:
@@ -996,7 +1039,7 @@ class JobSubClient(object):
                 response_time = etime - stime
                 r_dict['response_time'] = response_time
                 return r_dict
-                
+
             if errno == 60:
                 err += "\nDid you remember to include the port number to "
                 err += "your server specification \n( --jobsub-server %s )?" %\
@@ -1038,11 +1081,11 @@ class JobSubClient(object):
                             cert=cred,
                             timeout=connect_timeout)
             r_dict['resp'] = resp
-        
+
         except requests.ConnectionError as error:
             r_dict['error'] =  error
         except Exception as error:
-            print '%s' % error
+            print('%s' % error)
             raise JobSubClientError(error)
 
         return r_dict
@@ -1058,7 +1101,7 @@ class JobSubClient(object):
         prio = self.extra_opts.get('prio')
         if not prio:
             err = 'you must supply a priority with --prio'
-            raise JobsubClientError(err)
+            raise JobSubClientError(err)
 
         post_data = [
             ('job_action', 'ADJUST_PRIO')
@@ -1081,7 +1124,7 @@ class JobSubClient(object):
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1098,7 +1141,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
 
     def release(self, jobid=None, uid=None, constraint=None):
         """
@@ -1122,14 +1165,14 @@ class JobSubClient(object):
                 if self.acct_role:
                     acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                    % (srv, acct, urllib.quote(constraint))
+                    % (srv, acct, urllib.parse.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1148,11 +1191,11 @@ class JobSubClient(object):
                     self.action_url = u
                 if jobid:
                     self.action_url = "%s%s/" % (self.action_url, jobid)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1167,7 +1210,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError("release requires either a jobid or uid")
 
@@ -1193,14 +1236,14 @@ class JobSubClient(object):
                 if self.acct_role:
                     acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN \
-                    % (srv, acct, urllib.quote(constraint))
+                    % (srv, acct, urllib.parse.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif uid:
             self.probeSchedds()
@@ -1218,11 +1261,11 @@ class JobSubClient(object):
                     self.action_url = u
                 if jobid:
                     self.action_url = "%s%s/" % (self.action_url, jobid)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(self.action_url,
                                                  'PUT',
                                                  post_data=post_data,
-                                                 ssl_verifyhost=False))
+                                                 ssl_verifyhost=True))
             return rslts
         elif jobid:
             self.server = "https://%s:8443" % jobid.split('@')[-1]
@@ -1237,7 +1280,7 @@ class JobSubClient(object):
             return self.changeJobState(self.action_url,
                                        'PUT',
                                        post_data=post_data,
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             err = "hold requires one of a jobid or uid or constraint"
             raise JobSubClientError(err)
@@ -1265,12 +1308,12 @@ class JobSubClient(object):
                 if self.acct_role:
                     acct = "%s--ROLE--%s" % (acct, self.acct_role)
                 self.action_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN\
-                    % (srv, acct, urllib.quote(constraint))
+                    % (srv, acct, urllib.parse.quote(constraint))
                 if uid:
                     self.action_url = "%s%s/" % (self.action_url, uid)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif uid:
             item = uid
@@ -1290,9 +1333,9 @@ class JobSubClient(object):
                     self.action_url = "%s%s/" % (self.action_url, jobid)
                     if self.forcex:
                         self.action_url = "%sforcex/" % (self.action_url)
-                print "Schedd: %s" % schedd
+                print("Schedd: %s" % schedd)
                 rslts.append(self.changeJobState(
-                    self.action_url, 'DELETE', ssl_verifyhost=False))
+                    self.action_url, 'DELETE', ssl_verifyhost=True))
             return rslts
         elif jobid:
             _role_fmt = constants.JOBSUB_JOB_REMOVE_URL_PATTERN_WITH_ROLE
@@ -1309,7 +1352,7 @@ class JobSubClient(object):
                 self.action_url = "%sforcex/" % (self.action_url)
             return self.changeJobState(self.action_url,
                                        'DELETE',
-                                       ssl_verifyhost=False)
+                                       ssl_verifyhost=True)
         else:
             raise JobSubClientError(
                 "remove requires either a jobid or uid or constraint")
@@ -1322,8 +1365,8 @@ class JobSubClient(object):
             @jobid: jobsubjobid
             @outFormat: not used, was for condor_history -l back
                         when this was a direct call to condor_history
-                        it now goes to a sqlite database on the 
-                        jobsub server for speedup 
+                        it now goes to a sqlite database on the
+                        jobsub server for speedup
         """
         jobid = check_id(jobid)
         self.probeSchedds()
@@ -1350,7 +1393,7 @@ class JobSubClient(object):
                                                 ssl_verifyhost=True)
                 rc += http_code_to_rc(http_code)
             except Exception:
-                print 'Error retrieving history from the server %s' % server
+                print('Error retrieving history from the server %s' % server)
                 rc += 1
                 logSupport.dprint(traceback.format_exc())
         return rc
@@ -1458,13 +1501,13 @@ class JobSubClient(object):
                         if not is_port_open(schedd_host, self.serverPort):
                             err_fmt = 'ERROR jobsub server on %s port %s '
                             err_fmt += 'is not responding'
-                            print err_fmt % (schedd_host, self.serverPort)
+                            print(err_fmt % (schedd_host, self.serverPort))
                         elif not is_port_open(schedd_host, condor_port):
-                            print 'ERROR condor on  %s port %s not responding' %\
-                                (schedd_host, condor_port)
+                            print('ERROR condor on  %s port %s not responding' %\
+                                (schedd_host, condor_port))
                         else:
                             self.schedd_list.append(schedd)
-                            jobload = long(pts[-1:][0])
+                            jobload = int(pts[-1:][0])
                             if jobload < best_jobload:
                                 best_schedd = schedd
                                 best_jobload = jobload
@@ -1492,7 +1535,7 @@ class JobSubClient(object):
         constraint = self.extra_opts.get('constraint')
         if constraint:
             list_url = constants.JOBSUB_JOB_CONSTRAINT_URL_PATTERN %\
-                (self.server, self.account_group, urllib.quote(constraint))
+                (self.server, self.account_group, urllib.parse.quote(constraint))
         elif self.better_analyze and jobid:
             list_url = constants.JOBSUB_Q_JOBID_BETTER_ANALYZE_URL_PATTERN %\
                 (self.server, jobid)
@@ -1608,7 +1651,7 @@ class JobSubClient(object):
             matchObj = re.match(r'(.*)Use job id (.*) to retrieve (.*)',
                                 value, re.S | re.I)
             if matchObj and matchObj.group(2):
-                print matchObj.group(2)
+                print(matchObj.group(2))
                 return
         suppress_server_details = False
         if (self.extra_opts.get('uid')
@@ -1659,7 +1702,6 @@ def is_port_open(server, port):
 def get_jobsub_server_aliases(server):
     # Set of hosts in the HA mode
     aliases = []
-
     host_port = server.replace('https://', '')
     host_port = host_port.replace('/', '')
     tokens = host_port.split(':')
@@ -1670,6 +1712,7 @@ def get_jobsub_server_aliases(server):
         else:
             port = constants.JOBSUB_SERVER_DEFAULT_PORT
         # Filter bu TCP ports (5th arg = 6 below)
+        port = int(port)
         addr_info = socket.getaddrinfo(host, port, 0, 0, 6)
         for info in addr_info:
             # Each info is of the form (2, 1, 6, '', ('131.225.67.139', 8443))
@@ -1705,56 +1748,6 @@ def servicing_jobsub_server(curl):
     return server
 
 
-def curl_secure_context(url, credentials):
-    """
-    Create a standard curl object for talking to http/https url set with most
-    standard options used. Does not set client credentials.
-
-    Returns the curl along with the response object
-    """
-    logSupport.dprint("url=%s credentials=%s"%(url,credentials))
-    curl, response = curl_context(url)
-
-    curl.setopt(curl.SSLCERT, credentials.get('cert'))
-    curl.setopt(curl.SSLKEY, credentials.get('key'))
-    proxy = credentials.get('proxy')
-    if proxy:
-        cmd = '/usr/bin/voms-proxy-info -type -file %s' % proxy
-        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        if 'RFC compliant proxy' in cmd_out:
-            logSupport.dprint("setting CAINFO for %s" % proxy)
-            curl.setopt(curl.CAINFO, proxy)
-    curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
-    if platform.system() == 'Darwin':
-        curl.setopt(curl.CAINFO, './ca-bundle.crt')
-    else:
-        curl.setopt(curl.CAPATH, get_capath())
-
-    return (curl, response)
-
-
-def curl_context(url):
-    """
-    Create a standard curl object for talking to https url set with most
-    standard options used
-
-    Returns the curl along with the response object
-    """
-
-    # Reponse from executing curl
-    response = cStringIO.StringIO()
-
-    # Create curl object and set curl options to use
-    curl = pycurl.Curl()
-    curl.setopt(curl.URL, str(url))
-    curl.setopt(curl.FAILONERROR, False)
-    curl.setopt(curl.TIMEOUT, constants.JOBSUB_PYCURL_TIMEOUT)
-    curl.setopt(curl.CONNECTTIMEOUT, constants.JOBSUB_PYCURL_CONNECTTIMEOUT)
-    curl.setopt(curl.WRITEFUNCTION, response.write)
-    curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
-    curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
-
-    return (curl, response)
 
 
 def report_counts(msg):
@@ -1782,17 +1775,17 @@ def report_counts(msg):
             elif ' S  ' in line:
                 suspended += 1
     if jobs:
-        print "%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" % (
-            jobs, completed, removed, idle, running, held, suspended)
+        print("%s jobs; %s completed, %s removed, %s idle, %s running, %s held, %s suspended" % (
+            jobs, completed, removed, idle, running, held, suspended))
 
 
 def print_msg(msg):
     signal(SIGPIPE, SIG_DFL)
-    if isinstance(msg, (str, int, float, unicode)):
-        print '%s' % (msg)
+    if isinstance(msg, (str, int, float, str)):
+        print('%s' % (msg))
     elif isinstance(msg, (list, tuple)):
         for itm in msg:
-            print itm
+            print(itm)
         report_counts(msg)
     elif isinstance(msg, (dict)):
         pp = pprint.PrettyPrinter(indent=4)
@@ -1802,18 +1795,18 @@ def print_msg(msg):
 def print_server_details(response_code, server, serving_server, response_time):
     """ all the gory details in CAPTIAL LETTERS.
     """
-    print >> sys.stderr, ''
-    print >> sys.stderr, 'JOBSUB SERVER CONTACTED     : %s' % server
-    print >> sys.stderr, 'JOBSUB SERVER RESPONDED     : %s' % serving_server
-    print >> sys.stderr, 'JOBSUB SERVER RESPONSE CODE : %s (%s)' %\
+    print('', file=sys.stderr)
+    print('JOBSUB SERVER CONTACTED     : %s' % server, file=sys.stderr)
+    print('JOBSUB SERVER RESPONDED     : %s' % serving_server, file=sys.stderr)
+    print('JOBSUB SERVER RESPONSE CODE : %s (%s)' %\
         (response_code,
          constants.HTTP_RESPONSE_CODE_STATUS.get(response_code,
-                                                 'Failed'))
-    print >> sys.stderr, 'JOBSUB SERVER SERVICED IN   : %s sec' % response_time
-    print >> sys.stderr, 'JOBSUB CLIENT FQDN          : %s' %\
-        socket.gethostname()
-    print >> sys.stderr, 'JOBSUB CLIENT SERVICED TIME : %s' %\
-        time.strftime('%d/%b/%Y %X')
+                                                 'Failed')), file=sys.stderr)
+    print('JOBSUB SERVER SERVICED IN   : %s sec' % response_time, file=sys.stderr)
+    print('JOBSUB CLIENT FQDN          : %s' %\
+        socket.gethostname(), file=sys.stderr)
+    print('JOBSUB CLIENT SERVICED TIME : %s' %\
+        time.strftime('%d/%b/%Y %X'), file=sys.stderr)
 
 
 def print_json_response(response, response_code, server, serving_server,
@@ -1832,7 +1825,7 @@ def print_json_response(response, response_code, server, serving_server,
         if not verbose and 'all jobs matching constraint' in str(error):
             pass
         else:
-            print "ERROR:"
+            print("ERROR:")
             print_msg(error)
 
     if verbose or (error and not suppress_server_details):
@@ -1849,7 +1842,7 @@ def print_formatted_response(msg, response_code, server, serving_server,
     if suppress_server_details and not msg:
         return
     if print_msg_type:
-        print 'Response %s:' % msg_type
+        print('Response %s:' % msg_type)
     print_msg(msg)
     rsp = constants.HTTP_RESPONSE_CODE_STATUS.get(response_code)
     if verbose or (rsp != 'Success' and not suppress_server_details):
@@ -1909,8 +1902,8 @@ def get_client_credentials(acctGroup=None, server=None):
         #            cred_dict['cert']
         #    cred_dict = {}
         if not x509.isValid():
-            print "WARNING: %s is not valid.  Attempting to regenerate " %\
-                cred_dict['cert']
+            print("WARNING: %s is not valid.  Attempting to regenerate " %\
+                cred_dict['cert'])
             cred_dict = {}
 
     if not cred_dict:
@@ -1941,27 +1934,6 @@ def get_client_credentials(acctGroup=None, server=None):
 
     return cred_dict
 
-
-def get_capath():
-    ca_dir_list = ['/etc/grid-security/certificates',
-                   '/cvmfs/oasis.opensciencegrid.org/mis/certificates',
-                   '/cvmfs/grid.cern.ch/etc/grid-security/certificates',
-                   ]
-    ca_dir = os.environ.get('X509_CERT_DIR')
-
-    if not ca_dir:
-        for system_ca_dir in ca_dir_list:
-            if (os.path.exists(system_ca_dir)):
-                ca_dir = system_ca_dir
-                break
-
-    if not ca_dir:
-        err = 'Could not find CA Certificates in %s. ' % system_ca_dir
-        err += 'Set X509_CERT_DIR in the environment.'
-        raise JobSubClientError(err)
-
-    logSupport.dprint('Using CA_DIR: %s' % ca_dir)
-    return ca_dir
 
 
 def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
@@ -2122,6 +2094,8 @@ def get_dropbox_idx(argv):
 
     i = 0
     while(i < len(argv)):
+
+
         if argv[i].find(constants.DROPBOX_SUPPORTED_URI) < 0 and\
                 argv[i].find(constants.DIRECTORY_SUPPORTED_URI) < 0:
             i += 1
@@ -2195,8 +2169,8 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             sha1 digest of file_name (string)
         Raises:
     """
-    dig = hashlib.sha1()
-    fhdl = open(file_name, 'r')
+    dig  = hashlib.sha1()
+    fhdl = open(file_name, 'rb')
     block_size = int(block_size)
     if write_chunks:
         dirpath = tempfile.mkdtemp()
@@ -2257,7 +2231,7 @@ def check_id(jobid):
 
 def http_code_to_rc(http_code):
     """return 0 (unix shell true or OK) if
-       http code within range, 
+       http code within range,
        return 1 otherwise
     """
     if http_code >= 200 and http_code < 300:
@@ -2344,22 +2318,22 @@ if __name__ == '__main__':
     # put anything you want to test without using the entire client here
 
     if len(sys.argv) == 1 or 'help' in sys.argv[1].lower():
-        print "".join(("\n", "usage:", "\n",
+        print("".join(("\n", "usage:", "\n",
                        "%s --help\n" % sys.argv[0],
                        "%s TEST_TAR_FUNCS output_tarfile " % sys.argv[0],
                        "input_directory[write_chunks (1|0)]  [block_size (int)]\n",
-                       "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],))
+                       "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],)))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
-        reject_list = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
+        REJECT_LIST = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
                        "\.log$", "\.err$", "\.out$"]
         if len(sys.argv) >= 7:
-            print 'reading reject_list file %s' % sys.argv[6]
+            print('reading reject_list file %s' % sys.argv[6])
             reject_list = read_re_file(sys.argv[6])
-            print 'reject_list = %s' % reject_list
+            print('reject_list = %s' % reject_list)
 
         create_tarfile(sys.argv[1 + 1], sys.argv[2 + 1],
-                       reject_list=reject_list)
+                       reject_list=REJECT_LIST)
         WRITE_CHUNKS = False
         if len(sys.argv) >= 6:
             WRITE_CHUNKS = True
@@ -2368,14 +2342,14 @@ if __name__ == '__main__':
                                   block_size=int(sys.argv[5]))
         else:
             DIG = digest_for_file(sys.argv[2], write_chunks=int(sys.argv[4]))
-        print "digest for %s is %s" % (sys.argv[2], DIG)
+        print("digest for %s is %s" % (sys.argv[2], DIG))
         if WRITE_CHUNKS:
-            print "to test directory /tmp/%s contents use commands " % DIG
-            print "'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
-                (DIG, sys.argv[2], sys.argv[2], sys.argv[2])
+            print("to test directory /tmp/%s contents use commands " % DIG)
+            print("'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
+                (DIG, sys.argv[2], sys.argv[2], sys.argv[2]))
     elif sys.argv[1] == 'TEST_RE_LIST':
         x_re_list = read_re_file(sys.argv[2])
-        print "re_list = %s" % x_re_list
+        print("re_list = %s" % x_re_list)
 
     elif sys.argv[1] == "TEST_DATE_CALLBACK":
         def P_DUCK(): return None
@@ -2384,8 +2358,8 @@ if __name__ == '__main__':
         def OPT_DUCK(): return None
         OPT_DUCK.dest = "values"
         if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
-            print "date format OK"
+            print("date format OK")
 
     else:
-        print "syntax error for command input:  %s" % sys.argv
-        print "try:  %s --help" % sys.argv[0]
+        print("syntax error for command input:  %s" % sys.argv)
+        print("try:  %s --help" % sys.argv[0])

@@ -2,6 +2,19 @@
 ================================================================================
 v1.3.1
 ================================================================================
+Client
+-------
+* Maint.  23781   always verify host on ssl commands
+* Maint.  23379   get_jobsub_server_aliases() in client not needed
+*Bug       22408  Jobsub_submit_dag saves multiple copies of files in payload.tgz
+                  AND leaves cruft in /tmp when submission fails
+*Bug       23399  Jobsub client shouldnt care about date format when checking
+                  validity of kerberos tickets
+
+* Feature   23314  Client runs both under python 2 and 3.
+                   ups product python_future_six_request is
+                   required to make this work
+
 Server
 -------
 
@@ -13,8 +26,8 @@ v1.3.03
 ================================================================================
 Server
 --------
-* Bug   23561 make sure wrapper exits from correct directory when 
-              locate_cvmfs_dir() called 
+* Bug   23561 make sure wrapper exits from correct directory when
+              locate_cvmfs_dir() called
 
 ================================================================================
 v1.3.02
@@ -42,13 +55,13 @@ Client
 * Feature 21409    new flag for jobsub_submit:  --use-cvmfs-dropbox implements
                    the rapid code distribution project using cvmfs
 * Feature 22981    Detect and work around misconfigured cvmfs rcd servers
-* Feature 22987    Detect and work around misconfigured cvmfs rcd servers, part II: 
+* Feature 22987    Detect and work around misconfigured cvmfs rcd servers, part II:
                    different bad behavior, now worked around as well.
 * Bug      22992   create rc9, client missed a merge for rc8
 * Bug      23040   random error on jobsub_q --better-analyze
-* Maint    22164   replace optparse library with argparse 
+* Maint    22164   replace optparse library with argparse
 * Maint    23353   optionally use request library instead of pycurl library.
-                   To enable, set env variable JOBSUB_USE_REQUESTLIB 
+                   To enable, set env variable JOBSUB_USE_REQUESTLIB
 Server
 ------
 * Feature  16603   support for SL7.  NOTE: A security feature on SL7 that was over
@@ -82,7 +95,7 @@ Server
 
 * Feature  16603  Changes to make server work on SL7
 * Feature  21902  Make selection of collectors configurable via  a jobsub.ini
-                  entry: collector_constraint 
+                  entry: collector_constraint
 
 
 ================================================================================
@@ -104,24 +117,24 @@ Client
 
 Server
 ------
-* Bug      20496  Handle case where there are no jobs in the queue differently 
+* Bug      20496  Handle case where there are no jobs in the queue differently
                   than a failure to contact server
 * Bug      20659  Change tarball creation algorithm to gzip from bzip as bzip
                   makes for slow extractions on worker nodes
 
 * Feature  20874  Ferry APIS/URLS should be read from a config file.  New entries
 		  in the jobsub.ini configuration file should be the following:
-		  - ferry_uname_fqan_map 
+		  - ferry_uname_fqan_map
 		  - ferry_dn_user_roles_map
-		  - ferry_fqan_user_map 
-		  - ferry_vo_role_fqan_map 
+		  - ferry_fqan_user_map
+		  - ferry_vo_role_fqan_map
 
-		  (The following are optional and should be used in conjunction 
+		  (The following are optional and should be used in conjunction
 		  with the values of the above keys, like ferry_<value_of_above_key>.
-                  They should be used to add conditional filters to any of the 
+                  They should be used to add conditional filters to any of the
                   above values)
-		  - ferry_getgridmapfile 
-		  - ferry_getvorolemapfile 
+		  - ferry_getgridmapfile
+		  - ferry_getvorolemapfile
 
 * Bug      21440  Make the dagBegins use less memory
                   New jobsub.ini parameter in [default]:
@@ -129,9 +142,9 @@ Server
 
 * Bug      21572  Extra quote in CdfSettings.py causing ALL CDF jobs to fail
 
-* Bug      21615  CDF wrapper copyback failing if --outLocation is a file as 
+* Bug      21615  CDF wrapper copyback failing if --outLocation is a file as
                   opposed to a directory
- 
+
 ================================================================================
 v1.2.8.2
 ================================================================================
@@ -159,7 +172,7 @@ v1.2.8
 ================================================================================
 Client
 ---------
-* Feature   6591  jobsub_submit accepts a json config file 
+* Feature   6591  jobsub_submit accepts a json config file
 * Bug      20715  --json-config (file) works, --json-config=(file) doesn't
 
 Server
@@ -185,7 +198,7 @@ v1.2.7
 ================================================================================
 Client
 -------
-* Feature 19808   Ability to exclude files from submitted tarballs based on 
+* Feature 19808   Ability to exclude files from submitted tarballs based on
                   patterns in file names
 
 * Bug     18608   jobsub_fetchlog --list not contacting all servers behind proxy
@@ -194,17 +207,17 @@ Server
 -------
 * Feature  19700  Return a listing of tarballs older than specified date that are
 		  configured VOMS FQAN for a configued jobsub group.  Cleanup
-		  tool is maintained outside of jobsub distribution, and 
-   		  documentation can be found here: 
+		  tool is maintained outside of jobsub distribution, and
+   		  documentation can be found here:
 		  https://cdcvs.fnal.gov/redmine/projects/discompsupp/wiki/Jobsub_Dropbox_Cleanup_Tool
-		  
+
 * Bug     20203   wrapper script failing if execuable both on command line and in tarball
 
-* KNOWN ISSUE 	  There is a known issue related to Bug 20203.  If the job 
-		  executable specified by the file:// URI has the same filename 
-		  as a file in the top-level directory of a tarball that's passed 
-		  to jobsub through either the --tar_file_name or -f flags, the 
-		  tarball's version of this file will take precedence and the job 
+* KNOWN ISSUE 	  There is a known issue related to Bug 20203.  If the job
+		  executable specified by the file:// URI has the same filename
+		  as a file in the top-level directory of a tarball that's passed
+		  to jobsub through either the --tar_file_name or -f flags, the
+		  tarball's version of this file will take precedence and the job
 		  executable will be overwritten.  This will be fixed in the next release.
 
 
@@ -216,7 +229,7 @@ Client
 * Bug      17009  Set +Jobsub_Group correctly for dags so hold/release by group
                   works as intended
 
-* Bug      19430  Change JobsubJobID occurences in classad to JobsubJobId to 
+* Bug      19430  Change JobsubJobID occurences in classad to JobsubJobId to
                   make monitoring work better
 
 * Bug      19312  Use correct URL so that server can use acct_group to select
@@ -240,12 +253,12 @@ v1.2.6
 ================================================================================
 Client
 ------
-* Bug	     16775 Using --tar_file_name with dropbox:// or tardir:// URI will 
-                   send a tarball or tar up a directory, respectively, and send 
-                   that tarball to a location specified in the jobsub configuration 
-                   file. This file will get transferred to the worker node via 
-                   ifdh when the job starts, and will be unpacked in the job's 
-                   default Condor working directory.  The tarball will no longer 
+* Bug	     16775 Using --tar_file_name with dropbox:// or tardir:// URI will
+                   send a tarball or tar up a directory, respectively, and send
+                   that tarball to a location specified in the jobsub configuration
+                   file. This file will get transferred to the worker node via
+                   ifdh when the job starts, and will be unpacked in the job's
+                   default Condor working directory.  The tarball will no longer
                    be transferred to the jobsub server itself.
 
                     NEW jobsub.ini settings:
@@ -254,19 +267,19 @@ Client
                    files are now sent to this location on submission and
                    user jobs load files from this area instead of dropbox
                    file system on jobsub server
-                
+
                    dropbox_max_size = max size of file in bytes that will
                    be transported to the new location and on to user job
 
-* Bug	     18291 Warning message from jobsub_fetchlog is now corrected to 
-                   reflect new jobsub server naming convention. 
+* Bug	     18291 Warning message from jobsub_fetchlog is now corrected to
+                   reflect new jobsub server naming convention.
 
 Server
 ------
 * Bug        18034 summary script fails to parse DAG jobs killed by signal
 
-* Feature    18290 CDF Kerberos tickets are no longer transferred to the worker 
-                   node by default.  
+* Feature    18290 CDF Kerberos tickets are no longer transferred to the worker
+                   node by default.
 
 
 ================================================================================
@@ -274,7 +287,7 @@ v1.2.5
 ================================================================================
 Client
 ------
-* Feature    17787 check for jobsub_submit conditions that will result in jobs 
+* Feature    17787 check for jobsub_submit conditions that will result in jobs
                    never starting (ex request_memory=0), warn user, exit
 * Bug        17833 make jobsub_history --jobid wildcards act like other client commands
 
@@ -302,18 +315,18 @@ Client
 
 * Feature  17679  Handle failure modes more robustly
 
-* Bug      16891  jobsub client commands should not fail when one of several servers 
+* Bug      16891  jobsub client commands should not fail when one of several servers
 
 Server
 ------
 
 * Bug       17548  voms-proxy-init errors (Role problem) when using hashed production proxy
 
-* Bug       17604  Provide better error message when condor_q fails  
+* Bug       17604  Provide better error message when condor_q fails
 
 * Bug       17697  Still a ups dependency in jobsub
 
-* Feature   17736  Enable caching of http GETS through jobsub.ini settings  
+* Feature   17736  Enable caching of http GETS through jobsub.ini settings
                    NEW jobsub.ini settings:
                    enable_http_cache = (True || False)  default is False
                                        if True, cache http GETS to server
@@ -321,9 +334,9 @@ Server
                    http_cache_duration = (integer)
                                        cache GETs from server for this many
                                        seconds.  Default is 120
-            
 
- 
+
+
 
 
 ================================================================================
@@ -354,9 +367,9 @@ Client
                     otherwise can be absent or blank, i.e.
                     condor_q_extra_flags = ''
 
-* Bug      15047  jobsub_q sometimes over-matches and sometimes undermatches on jobsub jobid 
+* Bug      15047  jobsub_q sometimes over-matches and sometimes undermatches on jobsub jobid
 
-* Bug      16564  typo in client mishandled existing user proxies 
+* Bug      16564  typo in client mishandled existing user proxies
 
 * Bug      16409  jobsub_q --hold stopped reporting holdreason for jobs
 
@@ -366,21 +379,21 @@ Client
 Server
 -------
 
-* Feature  15674  job requirements configurable by operations 
-                  new entry in jobsub.ini:  
+* Feature  15674  job requirements configurable by operations
+                  new entry in jobsub.ini:
 
                   * requirements_base: job start requirements
-                  that will be appended to 
+                  that will be appended to
                   requirements_base = '' is default if setting is absent
-                  
 
-* Feature  16630  make configurable to remove 'Is_Glidein' from start requirements 
+
+* Feature  16630  make configurable to remove 'Is_Glidein' from start requirements
                   new entry in jobsub.ini:
 
                   * requirements_is_glidein
                   requirements_is_glidein = '&& (target.IS_Glidein==true) '
                   is default if setting is absent
-                  to remove this from start requirements change to 
+                  to remove this from start requirements change to
                   requirements_is_glidein = ' '
 
 * Feature  16875  Modify schedd selection algorithm.  Schedd selection algorithm
@@ -390,11 +403,11 @@ Server
                   good choices are TotalRunningJobs, RecentDaemonCoreDutyCycle, TotalJobAds
                   schedd_load_metric = TotalRunningJobs is  default
 
-                  * downtime_constraint: used to select usable schedds from all available 
+                  * downtime_constraint: used to select usable schedds from all available
                   downtime_constraint = '(InDownTime=!=True&&InDownTime=!="True")' is default
 
                   * vo_constraint: used to match schedds to supported vos
-                  default value is 
+                  default value is
                   vo_constraint = '(supportedvolist=?=Null || stringlistimember("{0}",supportedvolist)=?=true)'
 
                   If all of these settings are absent from jobsub.ini the schedd selection algorithm
@@ -405,7 +418,7 @@ Server
                   from 'default' section of jobsub.ini.  If 'max_logfile_cache_age'
                   is not configured, cache output for 1200 seconds.  This is to
                   protect against jobsub_fetchlog denial of service attacks
-                  To clean up the cached tarfiles  a new jobsub_preen cron entry 
+                  To clean up the cached tarfiles  a new jobsub_preen cron entry
                   is required
                   29,59 * * * * /opt/jobsub/server/admin/jobsub_preen.sh /fife/local/scratch/uploads 1 doSubDirs 1
 
@@ -414,7 +427,7 @@ Server
                   'downtime_constraint', and 'ha_proxy_picks_schedd'
 
 * Bug      14262  hold/release/remove information incorrectly written to submit log
-        
+
 
 * Bug      16757  group_superusers have the same rights as global_superusers,
                   and can hold/remove other groups jobs
@@ -422,16 +435,16 @@ Server
 * Bug      15823  Users with underscores in their names not getting thier proxies
                   refreshed
 
-* Bug      17074  JobSub (hold,release,rm) ignores --user and --groups flags 
+* Bug      17074  JobSub (hold,release,rm) ignores --user and --groups flags
                   in favor of --constraint
 
 
 ================================================================================
-v1.2.3.3 
+v1.2.3.3
 ================================================================================
 Server
 -------
-* Bug       15586 DN of nova production proxy not getting hashed properly 
+* Bug       15586 DN of nova production proxy not getting hashed properly
                   causing intermittent submission failure
 
 
@@ -441,13 +454,13 @@ v1.2.3.2 - bugfix for v1.2.3
 Client
 ------
 
-* Bug       15403 jobsub_rm drops role when constraint is specified   
-* Bug       15250 jobsub_client ups product needs to set up pycurl in certain 
+* Bug       15403 jobsub_rm drops role when constraint is specified
+* Bug       15250 jobsub_client ups product needs to set up pycurl in certain
                   instances
 
 Server
 ------
-* Bug       15413 setting X509_USER_PROXY to a managed proxy results in failure 
+* Bug       15413 setting X509_USER_PROXY to a managed proxy results in failure
                   to hold,release,remove
 * Bug       15500 fetchlog also not working with X509_USER_PROXY set to managed
                   proxy
@@ -465,25 +478,25 @@ Client
 
 * Feature 12243 compress output from -L command if --compress option is included
 
-* Bug     12405 Kerberos tickets incorrectly parsed for RH7 variants, fixed.  
+* Bug     12405 Kerberos tickets incorrectly parsed for RH7 variants, fixed.
                 Fix other SL7 problems found by testing so submission works
 
 * Task    13897 use default location for grid proxy, /tmp/x509_up`uid` instead
-                of /tmp/jobsub_x509up`uid`_`gid -n` 
+                of /tmp/jobsub_x509up`uid`_`gid -n`
 
 * Bug     13954 setup jobsub_client leaves unnecessary /tmp/ups* files
 
 Server
 ------
 
-* Feature 12534 Protect the schedd from submissions when it 
+* Feature 12534 Protect the schedd from submissions when it
                 is very busy with following algorithm:
                 - query RecentDaemonCoreDutyCycle of schedd
                 - read submit_reject_threshold from jobsub.ini
                 -if the first value is greater than the second,
                      refuse to submit job and exit with informative
                      error message and non zero exit code
-               
+
 * Bug     12063 jobsub_q show current run time instead of cumulative
 
 * Feature 13515 Allow superusers access to sandboxes
@@ -498,9 +511,9 @@ Server
                 As part of fix, is a new parameter introduced to jobsub.ini for
                 affected groups: hash_nondefault_proxy
 
-                If 'hash_nondefault_proxy = True'  is present in 'group' section 
-                for that group, append a hash of the submitters DN to the user 
-                proxy file name. 
+                If 'hash_nondefault_proxy = True'  is present in 'group' section
+                for that group, append a hash of the submitters DN to the user
+                proxy file name.
 
                 For example user 'a' s   novaPro proxy is named
                 x509cc_novapro_Production_<hash of a's DN>
@@ -516,33 +529,33 @@ v1.2.2
 Client
 ------
 * Feature 12244 new url type: tardir://(path/to/some_directory) .  When this
-                url is encountered during job submission, create a tar file 
+                url is encountered during job submission, create a tar file
                 some_directory.tar in the cwd, and upload it to the dropbox
                 as if the dropbox://some_directory.tar url had been in the
                 command line.  Can be used with --tar_file_name to save a
                 step.  In other words: tar cvzf some_directory some_directory.tar;
                 jobsub_submit --tar_file_name dropbox://some_directory.tar and
                 jobsub_submit --tar_file_name tardir://some_directoy are
-                equivalent. 
+                equivalent.
 
-* Bug     13349 jobid 'malformed' using fifebatch-dev jobids due to regular 
+* Bug     13349 jobid 'malformed' using fifebatch-dev jobids due to regular
                 expression over-constraints.
 * Bug     13375 client should not remove X509_USER_PROXY when nothing found in
                 myproxy server
 * Bug     13433 unhelpful message when authentication fails during dropbox upload
- 
+
 
 Server
 ------
 
 * Maint  8379  Get rid of jobsub_tools ups product, merge into jobsub rpm
-* Bug   12394  jobsub_submit with --dataset-definition crashes in sambegin 
+* Bug   12394  jobsub_submit with --dataset-definition crashes in sambegin
                under certain conditions
-* Bug   12423  jobsub_(hold|release|rm) noisy with hard to understand 
+* Bug   12423  jobsub_(hold|release|rm) noisy with hard to understand
                error messages
 * Bug   12869  Unhandled error logging in jobsub.py
 * Bug   12912  jobsub_history exits with status 0 when it should not
-* Bug   12870  check for validitiy of --role and return an understandable error 
+* Bug   12870  check for validitiy of --role and return an understandable error
 * Bug   13279  marslbne marsgm2 etc not authenticating with cilogon
 
 
@@ -566,7 +579,7 @@ Server
 v1.2.1.5.1
 ================================================================================
 Client
-------    
+------
 * Bug    13084 use correct kx509 depending on whether VO has transitioned or not
                actually use old kx509 (for now) to authenticate with server
                so you can then ask it what method to use to authenticate :-/
@@ -577,9 +590,9 @@ Client
 v1.2.1.5
 ================================================================================
 Client
-------    
+------
 * Bug     13060  client fails to upload to dropbox if proxy expired
-* Bug     12930  SLF5 submission failing due to zero length file 
+* Bug     12930  SLF5 submission failing due to zero length file
 * Maint   12926  Change error message when authentication fails
 
 Server
@@ -634,18 +647,18 @@ Client
 Server
 ------
 
-* Bug      11734  Propagate schedd errors from condor_q back to client without 
+* Bug      11734  Propagate schedd errors from condor_q back to client without
                   python exception traceback noise
 
 * Maint.   11734  Update documentation from help
 
-* Bug      11783  Server returning out of date documentation for 
+* Bug      11783  Server returning out of date documentation for
                   jobsub_submit --help
 
 * Bug      11865  Propagate schedd errors from hold,release,rm back to client
                   without python exception traceback noise
 
-* Bug      11927  krbrefresh not working with myproxy 
+* Bug      11927  krbrefresh not working with myproxy
 
 * Bug      11964  Logfile bloat.  Rename /var/log/jobsub/error.log to
                   debug log
@@ -653,10 +666,10 @@ Server
 * Bug      11989  josub_history.db getting large.  Fix cron script
                   that deletes old entries
 
-* Bug      12048  trap exit errors in job wrapper script, do cleanup and 
+* Bug      12048  trap exit errors in job wrapper script, do cleanup and
                   log truncation
 
-                  NEW JOBSUB.INI PARAMETERS FOR CDF as part of this fix, lots 
+                  NEW JOBSUB.INI PARAMETERS FOR CDF as part of this fix, lots
                   of non trapped errors came from cdf wrapper script.  These
                   may give operations a chance to tune the behavior:
 
@@ -688,7 +701,7 @@ v1.2-3
 v1.2-2
 ================================================================================
 * Feature  12411    Look for 'indowntime' attribute in schedd classadd when
-                    load balancing         
+                    load balancing
 
 ================================================================================
 v1.2
@@ -702,25 +715,25 @@ Client
                     works additively with --group, --user, --jobid
                     Does not work with --hold,  --long, --dag, --summary, --constraint,
                     --better-analyze, or --help.
-              
+
 
 
 Server
 -----
 
-* Feature  6698     Jobsub group admin superuser capability to 
+* Feature  6698     Jobsub group admin superuser capability to
                     hold/release/remove jobs
 
                     to use: you must be listed in the 'group_superusers' entry
-                    for that group in jobsub.ini.  Actions by superusers are 
+                    for that group in jobsub.ini.  Actions by superusers are
                     logged to /var/log/jobsub/condor_superuser.log .  If you
                     have permissions then
-                    
+
                     jobsub_hold -G some_group  --user some_user
                     will hold all of user 'some_user's jobs submitted for accounting
                     group 'some_group' .  NB --jobid also works for hold/release/remove
                     but must include --user as well for command to work.
-                    
+
 
 * Feature  9277     Better pre-staging of SAM jobs
                     When --dataset_definition is specified during a jobsub_submit, a diamond
@@ -734,12 +747,12 @@ Server
                     for files instead of many.
 
 * Feature 11571     Add myproxy authentication to server
-                    to use: 'myproxy' must be listed in the 'authentication_methods' 
-                    entry in jobsub.ini for your group, and 'myproxy_server' entry must exist 
+                    to use: 'myproxy' must be listed in the 'authentication_methods'
+                    entry in jobsub.ini for your group, and 'myproxy_server' entry must exist
                     and resolve to a working myproxy server.  This release, v1.2 will
                     have 'myproxy' listed in the 'test' group.  If you want to test
                     this feature get yourself added to the 'test' VO subgroup and
-                    get access to cigetcert.  
+                    get access to cigetcert.
 
 
 * Feature 11717     job_lease_duration is now a configurable item in the jobsub.ini
@@ -759,7 +772,7 @@ Client
 * Bug 8664          Ungraceful handling of SIGPIPE
 
                     Piping longish client output through a secondary command like
-                    head or more can throw ugly and difficult to understand python 
+                    head or more can throw ugly and difficult to understand python
                     exception - fixed.
 
 * Bug 9856          Clients do not look for cert in documented location
@@ -771,7 +784,7 @@ Client
                     client code to check cert for validity prior to submission.
 
 * Bug 10263         Jobsub_q --long runs out of memory
-                    
+
                     Output from server was handled inneficiently, causing long enough
                     return results to throw an out of memory exception - fixed.
 
@@ -781,18 +794,18 @@ Client
 Server
 -----
 
-* Bug 9976          Jobsub_q not detecting server errors 
- 
-                    Jobsub_q called condor_q -g on the servers.  Condor_q -g may 
+* Bug 9976          Jobsub_q not detecting server errors
+
+                    Jobsub_q called condor_q -g on the servers.  Condor_q -g may
                     or may not exit with non-zero status if a schedd is not responding,
                     this appears to be a function of the order that it contacts the
                     schedds in - it returns the exit status for the  last schedd contacted.
                     Server code now contacts all of the schedds individually and exits
                     non-zero if one of the schedds does.
 
-* Feature 11437     add units to --expected-lifetime , add warning to any input that accepts 
+* Feature 11437     add units to --expected-lifetime , add warning to any input that accepts
                     bare number wihout units. --timeout  --disk --memory do this now
-                    as well                   
+                    as well
 
 ================================================================================
 v1.1.9
@@ -821,7 +834,7 @@ Client
                           memory.              If UNITS is not specified default
                           is 'MB'.   Allowed values for              UNITS are
                           'KB','MB','GB', and 'TB'
-                  --cpu=NUMBER        
+                  --cpu=NUMBER
                            request worker nodes have at least NUMBER cpus
 
 * Feature #10715 new jobsub_submit server option --expected-lifetime
@@ -849,7 +862,7 @@ Client
                  for extra characters that do not belong and exit with useful
                  error message if detected.
 
-* Bug #11132     Problem with jobsub_fetchlog found during testing 
+* Bug #11132     Problem with jobsub_fetchlog found during testing
 * Bug #11134     Problem with jobsub_fetchlog --list found during testing
 
 
@@ -858,15 +871,15 @@ Server
 
 * Feature #6954  Add configurable option to server for maximum number
                  of processes in one cluster.  To protect server resources
-                 jobsub_submit -N is now limited to the value 
+                 jobsub_submit -N is now limited to the value
 
                  jobsub_max_cluster_procs = 10000
-         
-                 in the jobsub.ini file.  
+
+                 in the jobsub.ini file.
 
 * Feature #9671  add a Role reminder to jobsub_fetchlog error message
 
-* Feature #10643 poms_data json data structure sent to ifdh log 
+* Feature #10643 poms_data json data structure sent to ifdh log
 
 * Feature #10819 Web interface to job logs.
 
@@ -876,7 +889,7 @@ Server
                  https://jobsub-server-host.fnal.gov:8443/jobsub/acctgroups/
 
                  After the 'really grant an exception to this servers certificate'
-                 hoops are passed through, A list of links to supported groups on 
+                 hoops are passed through, A list of links to supported groups on
                  the server will appear in the browser.  Click on the group you
                  are a member of in VOMS, other groups will give you authentication
                  errors.  Click on the 'sandboxes for completed jobs' link.
@@ -889,14 +902,14 @@ Server
                  in the jobsub.ini configuration file with the setting
 
                  output_files_web_browsable_allowed_types = '.list .of .extensions .out .err .etc'
-             
+
 * Feature #10822 Make it possible for all members of a group to do
                  jobsub_fetchlog of other members of the group. This is
                  a configurable option.  For all supported groups, setting
                  the jobsub.ini parameter to
 
-                 sandbox_readable_by_group = True                 
-               
+                 sandbox_readable_by_group = True
+
                  turns this feature on.  It is 'off' by default.
 
 * Bug     #10918 Bug in Dag generation
@@ -923,7 +936,7 @@ Client
                  now support --constraint , which acts like -constraint
                  does on the analogous condor_ commands
 
-* Bug     #10445 jobsub_submit fails with unhelpful error message 
+* Bug     #10445 jobsub_submit fails with unhelpful error message
 
 * Bug     #10471 jobsub_fetchlog --list fails when used with proxy
 
@@ -949,11 +962,11 @@ Client
 -------
 
 * Bug #8174    Possible race condition in proxy deletion in client.
-               If two submits happen at same time in seperate windows on same 
+               If two submits happen at same time in seperate windows on same
                machine they could step on each others credentials and one would
                fail.  Fixed with temp files.
 
-* Bug #10161   Check for '@' in --job specification in clients.  
+* Bug #10161   Check for '@' in --job specification in clients.
                If '@'  was not present a confusing and misleading curl error was
                the result.  Now is caught,  clear error message and non zero exit
                results.
@@ -974,10 +987,10 @@ Server
 * Bug #10152  XML dag parsed incorrectly in some circumstances.
               Aribitrarily complicated dag specifications submitted with
               jobsub_submit_dag should now work.  See RITM0270806
-        
+
 
 * Bug #5526  fetchlog should return sandbox even if we specify a jobid for DAG nodes.
-             Another way of stating this problem is that if a jobid can be seen with 
+             Another way of stating this problem is that if a jobid can be seen with
              jobsub_history or jobsub_q then it should work in jobsub_fetchlog to
              retrieve its information.  Formerly the jobsub_parent_id was needed for
              a DAG or a cluster with many processes.
@@ -996,30 +1009,30 @@ Client
 
 * Feature #7227 jobsub_rm new option: --forcex
                 runs condor_rm --forcex, like condor_rm --forcex it will fail
-                if job has not already  been removed with jobsub_rm and placed in the 
-                'X' state 
-                
+                if job has not already  been removed with jobsub_rm and placed in the
+                'X' state
+
 * Feature #7102 jobsub_q new option: --better-analyze
                 runs condor_q -better-analyze on specified --jobid
 
-* Bug #9625    Error in online help said that units for --disk=<num> specified <num>MB of 
+* Bug #9625    Error in online help said that units for --disk=<num> specified <num>MB of
                requested disk on worker node.  It was actually <num>KB of requested
-               disk.  Error in help has been corrected and option now accepts 
-               --disk=<num><units> where <units> can be one of 'KB','MB','GB','TB'.  
-               If <units> is not specified it defaults to 'KB' as in earlier releases. 
+               disk.  Error in help has been corrected and option now accepts
+               --disk=<num><units> where <units> can be one of 'KB','MB','GB','TB'.
+               If <units> is not specified it defaults to 'KB' as in earlier releases.
 Server
 --------
 * Feature #7518 speed up jobsub_history
                 condor_history files are now parsed and exctracted into a sqlite
                 database, which is much faster and does not 'hang' the server like
-                a condor_history to to full history logs does.  The output format 
-                has changed, this will probably be tweaked.  Jobsub_history 
+                a condor_history to to full history logs does.  The output format
+                has changed, this will probably be tweaked.  Jobsub_history
                 --submitted-after <date> and --submitted-before <date> should run
                 reasonably fast now but are not implemented in this release.
 
 * Bug #10028 jobsub_rm --user finds no jobs to remove
                 underlying hold/release/remove commands now use -pool flag
-                as a workaround force correct behavior reference condor bug 
+                as a workaround force correct behavior reference condor bug
                 https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=5221
 
 * Bug #9713 --cpu flag doing the wrong thing
@@ -1035,14 +1048,14 @@ Server
 * Bug #9711 better logging
                 Two new logs created in jobsub log area (default /var/log/jobsub/)
 
-                submit.log shows ip address uid, and jobsub_submit 
-                options of each submitted job, along with jobsubjobid if job is 
-                successful and [ERROR] (error output) if job fails.  
-    
+                submit.log shows ip address uid, and jobsub_submit
+                options of each submitted job, along with jobsubjobid if job is
+                successful and [ERROR] (error output) if job fails.
+
                 condor_commands.log shows (most) condor_commands initiated
-                as a result of client commands, and and error output 
+                as a result of client commands, and and error output
                 along with [ERROR] tag
-             
+
 * Bug #7864 extra @ on job name in certain circumstances
                 resulted in user jobs failing occasionally, fixed.
 
@@ -1072,7 +1085,7 @@ SERVER
 * Bug #8032: jobsub_fetchlog is updating the CreationDate field for the jobids
 * Feature #8095: Make environment variables available in job without setting them in sub
 * Feature #8156: can jobsub cleanup user job
-* Bug #8185:    better error checking for non existant role 
+* Bug #8185:    better error checking for non existant role
 * Feature #9336 : better error message for --resource-provides=
 * Bug #9535: Jobsub server not compatible with proxy generated using certs issued by CILogon OSG CA
 * Bug #9520 : improve --tar_file_name explanation from jobsub_q --help
@@ -1090,20 +1103,20 @@ CLIENT
 ------
 
 * Support 8131 jobsub_status documentation update
-* Bug 9192 jobsub_q exits with wrong status 
+* Bug 9192 jobsub_q exits with wrong status
 * Bug 9380 increase client timeout setting
 
 SERVER
 ------
 * Feature 8301 JOBSUBJOBSECTION number defined for DAG members
-* Feature 8657 gpsn01 - style concurrency limits 
+* Feature 8657 gpsn01 - style concurrency limits
 * Feature 8999 add Jobsub_Group and Jobsub_Subgroup to jobs classad
 * Feature 9305 add kerberos principal to job classad as JobsubClientKrb5Principal
 * Bug 7697 inconsistencies between -L and --use_gftp
 * Bug 8038 --dataset-definition DAG doesnt end project if one job fails
-* Bug 8277 CDF wrapper script problem 
+* Bug 8277 CDF wrapper script problem
 * Bug 8278 Change default SAM_GROUP in CDF wrapper
-* Bug 8886 Jobsub (sometimes) changes executable permissions on user script 
+* Bug 8886 Jobsub (sometimes) changes executable permissions on user script
 * Bug 8941 --maxConcurrent broken for Minerva
 * Bug 9183 fix jobsub_history - faster searching for individual jobs by jobid
 * Bug 9184 server version URL throws exception and internal server error
@@ -1458,7 +1471,7 @@ SERVER
 ------
 * Dropbox service now provides means for users to specify and upload files that
   will be transferred with the job. #4976
-* Bug Fix: Fixed bug where Jobsub server would not create job specific 
+* Bug Fix: Fixed bug where Jobsub server would not create job specific
   directory if no executable is sepecified in the arguments. #5473
 
 ================================================================================

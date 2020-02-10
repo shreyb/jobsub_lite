@@ -12,6 +12,12 @@
 #
 ################################################################################
 
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 helptext = """
 jobsub has been replaced with a suite of client tools listed here:
 
@@ -38,7 +44,7 @@ https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Using_the_Client
 
 
 if __name__ == '__main__':
-    print helptext
+    print(helptext)
 
 
 

@@ -12,6 +12,12 @@
 #
 ################################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import argparse
@@ -83,12 +89,12 @@ def parse_opts(argv):
                          default=False,
                          help='Show this help message and exit')
 
-    client_options.add_argument('--version', 
+    client_options.add_argument('--version',
                         action=Version_String)
 
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -99,8 +105,8 @@ def parse_opts(argv):
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return options
@@ -116,11 +122,11 @@ def main(argv):
         if options.sites:
             http_code=js_client.listConfiguredSites()
             rc = http_code_to_rc(http_code)
-    except JobSubClientError, e:
-        print e
+    except JobSubClientError as e:
+        print(e)
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

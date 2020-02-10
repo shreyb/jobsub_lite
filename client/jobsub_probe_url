@@ -16,6 +16,12 @@
 #
 ##########################################################################
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import argparse
@@ -100,14 +106,14 @@ def parse_opts(argv):
                          default=False,
                          help='debug')
 
-    
-    client_options.add_argument('--version', 
+
+    client_options.add_argument('--version',
                         action=Version_String)
 
 
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
@@ -150,10 +156,10 @@ def main(argv):
                                              post_data, False)
         rcd = http_code_to_rc(http_code)
     except JobSubClientError as err:
-        print err
+        print(err)
         logSupport.dprint(traceback.format_exc())
     except Exception as err:
-        print err
+        print(err)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rcd

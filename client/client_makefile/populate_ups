@@ -1,0 +1,22 @@
+#!/bin/bash -x
+#file: populate_ups
+#called by: Makefile ups_product_dir target
+#purpose: copies python libraries from a virtual env to a ups product directory
+#author Dennis Box, dbox@fnal.gov
+#project: jobsub
+
+PRODUCT_NAME=$1
+PRODUCT_VERSION=$2
+PYFLAVOR=$3
+UPSFLAVOR=$(ups flavor)
+FLAVOR_DIR="${UPSFLAVOR}-${PYFLAVOR}"
+DB_DIR=$(echo "${PRODUCTS}" | sed -e 's/:.*//')
+BASE_DIR=$(dirname "${DB_DIR}")
+PRD_DIR="${BASE_DIR}/prd/${PRODUCT_NAME}/${PRODUCT_VERSION}/${FLAVOR_DIR}"
+VENV_LIB_DIR=$(find "venv-${PYFLAVOR}/lib" -name site-packages)
+mkdir -p ${PRD_DIR}
+cp -r ${VENV_LIB_DIR}/* ${PRD_DIR}
+
+
+
+

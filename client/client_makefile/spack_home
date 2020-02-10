@@ -1,0 +1,12 @@
+#!/bin/bash
+orig=$(pwd)
+here=$(dirname $0)
+cd $here
+here=$(pwd)
+cd $orig
+if  [ "$SPACK_HOME" = "" ];then
+	SPACK_HOME=${here}/spack
+fi
+echo $SPACK_HOME
+
+

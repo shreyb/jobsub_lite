@@ -1,0 +1,28 @@
+#!/bin/bash -x
+#file: fix_pycurl_egg
+#purpose: unwinds a pycurl python egg so that ups python product can import it
+#called by: Makefile pycurl target
+#author: Dennis Box, dbox@fnal.gov
+#project: jobsub
+VENV_DIR=$1
+start_dir=$(pwd)
+cd ${VENV_DIR}
+site_packages=$(find . -name 'site-packages')
+cd ${site_packages}
+pycurl_egg=$(find . -name 'pycurl*.egg')
+
+ftype=$(file $pycurl_egg)
+
+if echo $ftype | grep -q directory; then
+    pycurlso=$(find $pycurl_egg -name 'pycurl*.so')
+    ln -s $pycurlso pycurl.so
+    cd $start_dir
+fi
+
+if echo $ftype | grep -q Zip; then
+    unzip -o $pycurl_egg
+    cd $start_dir
+fi
+
+
+

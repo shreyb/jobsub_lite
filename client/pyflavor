@@ -1,0 +1,14 @@
+#!/bin/bash
+#. ups_sourceme.sh
+pyver=$(python -V 2>&1 | sed -e 's/ //' -e's/\.[0-9]*$//' -e's/P/p/')
+uc_size=$(python -c 'import sys; print(sys.maxunicode)')
+if  [ "$pyver" = "python2.7" ];then
+    if [ "$uc_size" = "1114111" ] ; then
+        pyver="${pyver}-ucs4"
+    else
+        pyver="${pyver}-ucs2"
+    fi
+fi
+echo $pyver
+
+

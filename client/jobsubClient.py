@@ -160,6 +160,9 @@ class JobSubClient(object):
                         features were added
 
         """
+        if sys.version_info[0] == 2 and sys.version_info[1] == 6 :
+            # SL6 Client only works with curl for production servers
+            os.environ['JOBSUB_CURL_ONLY'] = 'True'
         self.server = server
         self.initial_server = server
         self.dropboxServer = dropboxServer

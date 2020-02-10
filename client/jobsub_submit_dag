@@ -20,12 +20,9 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-import getopt
 import argparse
-import time
 import traceback
 
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
@@ -33,40 +30,6 @@ from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
 from defaultServer import defaultServer
 
-
-## TODO
-#def split_client_server_args(parser, argv):
-#    cli_argv = [argv[0]]
-#    srv_argv = []
-#
-#    i = 1
-#    while (i < len(sys.argv)):
-#
-#        opt = parser.get_option(argv[i])
-#
-#        if opt:
-#            cli_argv.append(argv[i])
-#            if opt.action in argparse.Option.TYPED_ACTIONS: #TODO
-#                try:
-#                    cli_argv.append(argv[i+1])
-#                    i += 1
-#                except IndexError:
-#                    parser.error('%s option requires an argument' % argv[i])
-#        elif '=' in argv[i]:
-#            # Check if the arg splitter is '=' example --foo=bar
-#            opt = parser.get_option(argv[i].split('=')[0])
-#            if opt:
-#                cli_argv.append(argv[i])
-#            else:
-#                srv_argv.append(argv[i])
-#        else:
-#            srv_argv.append(argv[i])
-#
-#        i += 1
-#
-#    return (cli_argv, srv_argv)
-#
-##END TODO
 
 def required_args_present(options):
     try:
@@ -88,31 +51,6 @@ def print_opts(options):
     logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
 
-
-"""
-def parse_server_args(option, opt_str, value, parser):
-     assert value is None
-     value = []
-
-     def floatable(str):
-         try:
-             float(str)
-             return True
-         except ValueError:
-             return False
-
-     for arg in parser.rargs:
-         ## stop on --foo like options
-         #if arg[:2] == "--" and len(arg) > 2:
-         #    break
-         ## stop on -a, but not on -3 or -3.0
-         #if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
-         #    break
-         value.append(arg)
-
-     del parser.rargs[:len(value)]
-     setattr(parser.values, option.dest, value)
-"""
 
 def parse_opts(argv):
     usage = '%(prog)s [Client Options] [Server Options] file://user_script \n\nProvide --group and --jobsub-server to see full help'

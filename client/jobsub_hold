@@ -20,17 +20,14 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-# import optparse
-import argparse
+import argparse 
 import traceback
 
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-# from jobsubClient import version_string
 from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
-# from jobsubClient import jid_callback
 from jobsubClient import JID_Callback
 from defaultServer import defaultServer
 
@@ -60,7 +57,6 @@ def parse_opts(argv):
     epi_text += """jobsub/wiki/Frequently_Asked_Questions"""
 
     parser = argparse.ArgumentParser(usage=usage,
-                                   # version=version_string(), #TODO
                                    conflict_handler="resolve",
                                    epilog=epi_text)
 

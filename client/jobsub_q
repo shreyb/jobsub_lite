@@ -20,16 +20,13 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-# import optparse
 import argparse
 import traceback
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-# from jobsubClient import version_string
 from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
-# from jobsubClient import jid_callback
 from jobsubClient import JID_Callback
 from defaultServer import defaultServer
 
@@ -89,7 +86,6 @@ def parse_opts(argv):
     epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
     epi_text += """wiki/Frequently_Asked_Questions"""
     parser = argparse.ArgumentParser(usage=usage,
-                                   # version=version_string(),
                                    conflict_handler="resolve",
                                    epilog=epi_text)
 
@@ -133,7 +129,6 @@ def parse_opts(argv):
                          dest='jobId',
                          type=str,
                          action=JID_Callback,
-                         #callback=jid_callback, TODO
                          metavar='<Job ID>',
                          default=None,
                          help="".join(['Job Ids to query.  Job ',
@@ -228,7 +223,6 @@ def parse_opts(argv):
         parser.print_help()
         sys.exit(1)
 
-    # options, remainder = parser.parse_args(argv) TODO
     options, remainder = parser.parse_known_args(argv)
 
     if options.help or (len(remainder) > 1):

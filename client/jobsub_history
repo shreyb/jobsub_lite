@@ -20,20 +20,15 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-import getopt
-# import optparse
 import argparse
-import time
 import traceback
 
 import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-# from jobsubClient import version_string
 from jobsubClient import Version_String
 from jobsubClient import  JID_Callback
-#from jobsubClient import date_callback
 from jobsubClient import Date_Callback
 from defaultServer import defaultServer
 
@@ -54,13 +49,10 @@ def required_args_present(options):
 
 def parse_opts(argv):
     usage = '%(prog)s [Client Options]'
-#     parser = optparse.OptionParser(usage=usage, TODO
     parser = argparse.ArgumentParser(usage=usage,
-                                   # version=version_string(), TODO
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: --group  .Please direct questions, comments, or problems to the service desk")
 
-    # opt_group = optparse.OptionGroup(parser, "Client Options") TODO
     client_options = parser.add_argument_group("Client Options")
 
     # Required args
@@ -92,7 +84,6 @@ def parse_opts(argv):
                          dest='jobId',
                          type=str,
                          action=JID_Callback,
-                         # callback=jid_callback, TODO
                          metavar='<Job ID>',
                          default=None,
                          help='Job Id (Cluster ID)  to query')
@@ -101,7 +92,6 @@ def parse_opts(argv):
                          dest='qdate_ge',
                          type=str,
                          action=Date_Callback,
-                         # callback=date_callback, TODO
                          metavar='<submission date>',
                          default=None,
                          help="""job submission date (qdate)  greater than or equal to <submission date>
@@ -111,7 +101,6 @@ def parse_opts(argv):
                          dest='qdate_le',
                          type=str,
                          action=Date_Callback,
-                         # callback=date_callback, TODO
                          metavar='<submission date>',
                          default=None,
                          help="""job submission date (qdate)  less than or equal to  <submission date>
@@ -128,8 +117,6 @@ def parse_opts(argv):
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
-
-    # parser.add_option_group(opt_group) TODO
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")

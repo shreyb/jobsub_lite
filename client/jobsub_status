@@ -20,11 +20,9 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-import getopt
 import argparse
-import time
 import traceback
-import constants
+
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError

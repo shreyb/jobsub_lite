@@ -44,7 +44,6 @@ import platform
 import json
 import copy
 import traceback
-# import optparse
 import pprint
 import constants
 import jobsubClientCredentials
@@ -83,26 +82,10 @@ class Version_String(argparse.Action):
     def __call__(self, parser, namespace, values=None, option_string=None):
         version = self.version
         if version is None:
-            version = self.__get_version()
+            version = version_string()
         formatter = parser._get_formatter()
         formatter.add_text(version)
         parser.exit(message=formatter.format_help())
-
-    @staticmethod
-    def __get_version():
-        ver = constants.__rpmversion__
-        rel = constants.__rpmrelease__
-
-        ver_str = ver
-
-        # Release candidates are in rpmrelease with specific pattern
-        p = re.compile('\.rc[0-9]+$')
-        if rel:
-            rc = p.findall(rel)
-            if rc:
-                ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
-
-        return ver_str
 
 
 def version_string():
@@ -2259,17 +2242,6 @@ def http_code_to_rc(http_code):
     return 1
 
 
-# TODO delete this function
-def jid_callback(option, opt, value, p):
-    """call back function for optparse from jobsub_ client commands
-    """
-    if '@' not in value:
-
-        err = "jobid (%s) is missing an '@', it must be of the " % value
-        err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
-        sys.exit(err)
-    setattr(p.values, option.dest, value)
-
 class JID_Callback(argparse.Action):
     def __call__(self, parser, namespace, value, option_string=None):
         if '@' not in value:
@@ -2296,30 +2268,6 @@ class Date_Callback(argparse.Action):
                 """invalid date format for '%s'.  Must be of the form """ % value +
                 """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
                 """example: '2015-03-01 01:59:03'""")
-
-
-# TODO delete this function
-def date_callback(option, opt, value, p):
-    """call back function for optparse from jobsub_ client commands
-       check that date is valid and exit if conversion can't be made
-    """
-    dateOK = False
-    flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
-    for fmt in flist:
-        try:
-            datetime.strptime(value, fmt)
-            dateOK = True
-            break
-        except Exception:
-            pass
-    if dateOK:
-        setattr(p.values, option.dest, value)
-    else:
-        sys.exit(
-            """invalid date format for '%s'.  Must be of the form """ % value +
-            """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
-            """example: '2015-03-01 01:59:03'""")
-    return p
 
 
 def is_tarfile(filename):

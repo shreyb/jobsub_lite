@@ -221,11 +221,7 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
         cluster_pts = clusterid.split('.')
         while '' in cluster_pts:
             cluster_pts.remove('')
-        cluster_pts.append('.*')
-        job_cnst = """regexp("%s#%s\.%s#.*",GlobalJobId)""" % (host,
-                                                               cluster_pts[0],
-                                                               cluster_pts[1]
-                                                              )
+        job_cnst = 'JobsubJobId=="%s@%s" ' % (clusterid, host)
     else:
         lorw = ' '
         job_cnst = 'ClusterID==%d' % (math.trunc(float(jobid)))
@@ -234,8 +230,9 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
     else:
         jstat_cnst = 'JobStatus==%s' % (
             JOBSTATUS_DICT.get(jobstatus.lower(), 5))
-    my_filter = " %s -constraint '%s && %s && %s && %s' " % (
+    fstr = " %s -constraint '%s && %s && %s && %s' " % (
         lorw, ac_cnst, usr_cnst, job_cnst, jstat_cnst)
+    my_filter = fstr.replace(' && True','').replace('True &&','')
     return my_filter
 
 
@@ -267,6 +264,19 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
     else:
         hdr = fmt = ''
     s_list = schedd_list()
+    if a_filter:
+        srch = 'JobsubJobId=="'
+        # if jobsubjobid is in the query filter its wrong to search all schedds
+        idx = a_filter.find(srch)
+        if idx >= 0: 
+            lll = len(srch)
+            idx += lll
+            part = a_filter[idx:]
+            beg = part.find('@') + 1
+            end = part.find('"')
+            schedd = part[beg:end]
+            s_list = [schedd]
+
     all_jobs = hdr
     cqef = condor_q_extra_flags()
     for schedd in s_list:

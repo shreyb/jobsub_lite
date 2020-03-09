@@ -103,6 +103,8 @@ JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE
 
 JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
 
+JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT = 1
+
 
 # {(jobid, uid,role,forcex) : STUPID_ASS_REMOVE_URL }
 remove_url_dict = {

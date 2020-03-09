@@ -33,6 +33,7 @@ from http_lib import coerce_str
 ##########################################################################
 """
 
+from collections import defaultdict
 import sys
 import os
 import stat
@@ -63,47 +64,6 @@ from distutils import spawn
 import argparse
 from encoding import force_text
 import six
-
-class Version_String(argparse.Action):
-    def __init__(self,
-                option_strings,
-                version=None,
-                dest=argparse.SUPPRESS,
-                default=argparse.SUPPRESS,
-                help="Show program's version number and exit"):
-        super(Version_String, self).__init__(
-                option_strings=option_strings,
-                dest=dest,
-                default=default,
-                nargs=0,
-                help=help)
-        self.version = version
-
-    def __call__(self, parser, namespace, values=None, option_string=None):
-        version = self.version
-        if version is None:
-            version = version_string()
-        formatter = parser._get_formatter()
-        formatter.add_text(version)
-        parser.exit(message=formatter.format_help())
-
-
-def version_string():
-    """ figure out response for --version commands
-    """
-    ver = constants.__rpmversion__
-    rel = constants.__rpmrelease__
-
-    ver_str = ver
-
-    # Release candidates are in rpmrelease with specific pattern
-    p = re.compile(r'\.rc[0-9]+$')
-    if rel:
-        rc = p.findall(rel)
-        if rc:
-            ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
-
-    return ver_str
 
 
 class JobSubClientError(Exception):
@@ -2239,34 +2199,6 @@ def http_code_to_rc(http_code):
     return 1
 
 
-class JID_Callback(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string=None):
-        if '@' not in value:
-            err = "jobid (%s) is missing an '@', it must be of the " % value
-            err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
-            sys.exit(err)
-        setattr(namespace, self.dest, value)
-
-class Date_Callback(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string=None):
-        dateOK = False
-        flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
-        for fmt in flist:
-            try:
-                datetime.strptime(value, fmt)
-                dateOK = True
-                break
-            except Exception:
-                pass
-        if dateOK:
-            setattr(namespace, self.dest, value)
-        else:
-            sys.exit(
-                """invalid date format for '%s'.  Must be of the form """ % value +
-                """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
-                """example: '2015-03-01 01:59:03'""")
-
-
 def is_tarfile(filename):
     """ well, is it?
     """
@@ -2286,6 +2218,148 @@ def read_re_file(filename):
         if line[0] != '#':
             re_list.append(line.rstrip('\n'))
     return re_list
+
+
+class JobsubClientNamespace(argparse.Namespace):
+    """
+    Namespace to be used with argparsers that want to use custom actions
+    :param default_values: dict of default values to use
+    """
+    def __init__(self, default_values=None):
+        self.__count_parse = defaultdict(int)
+        super(JobsubClientNamespace, self).__init__(default_values=default_values)
+
+    def __setattr__(self, name, value):
+        super(JobsubClientNamespace, self).__setattr__(name, value)
+        self.__count_parse[name] += 1
+
+    def count_parse(self, name):
+        return self.__count_parse[name]
+
+
+class UniqueStore(argparse.Action):
+    """If you want to use this action, make sure that you use a 
+    JobsubClientNamespace to parse args into like this:
+
+    >>> parser = argparse.ArgumentParser
+    >>> parser.add_argument('--foo', action=UniqueStore, default='BAR')
+    >>> defaults = vars(self.parser.parse_args())
+    >>> j = JobsubClientNamespace(default_values=defaults)
+    >>> parser.parse_args(real_args, namespace=j)
+
+    This adds the defaults for the argument parser to the Namespace object,
+    so UniqueStore actions can compare against that
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        logSupport.dprint("Trying to set {0} to {1}".format(self.dest, values))
+        if self.__is_changed_multiple_from_default(namespace, self.dest, values):
+            error = "{0} was given multiple times, with different values.  "+ \
+            "Please check your command, json file config, and environment."
+            raise JobSubClientError(error.format(self.dest))
+        else:
+            setattr(namespace, self.dest, values)
+        logSupport.dprint("{0} is set to {1}".format(self.dest, getattr(namespace, self.dest)))
+        
+    @staticmethod
+    def __is_changed_multiple_from_default(namespace, dest, values):
+        try:
+            old_value = getattr(namespace, dest)
+        except AttributeError:
+            old_value = None
+
+        # If the namespace has a default value already stored, we want to 
+        # allow it to be overridden num_changes_limit times.  So if we have
+        # a default key/val foo:bar, and we get --foo=baz and 
+        # num_changes_limit=1, we want to allow that to go through return 
+        # False). However, If we then get --foo=blah, we should not allow it 
+        # (return True)
+        try:
+            if dest in namespace.default_values:
+                __num_changes_limit = constants.JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT + 1
+            else:
+                __num_changes_limit = constants.JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT
+        except AttributeError:      
+            # Namesapce doesn't have default_values attr, so it's not a JobsubClientNamespace
+            # Stop here and allow caller to proceed
+            return False
+                
+        if old_value is not None and (
+                old_value != values and
+                namespace.count_parse(dest) >= __num_changes_limit):
+            return True
+        return False
+
+
+class Version_String(argparse.Action):
+    def __init__(self,
+                option_strings,
+                version=None,
+                dest=argparse.SUPPRESS,
+                default=argparse.SUPPRESS,
+                help="Show program's version number and exit"):
+        super(Version_String, self).__init__(
+                option_strings=option_strings,
+                dest=dest,
+                default=default,
+                nargs=0,
+                help=help)
+        self.version = version
+
+    def __call__(self, parser, namespace, values=None, option_string=None):
+        version = self.version
+        if version is None:
+            version = version_string()
+        formatter = parser._get_formatter()
+        formatter.add_text(version)
+        parser.exit(message=formatter.format_help())
+
+
+
+def version_string():
+    """ figure out response for --version commands
+    """
+    ver = constants.__rpmversion__
+    rel = constants.__rpmrelease__
+
+    ver_str = ver
+
+    # Release candidates are in rpmrelease with specific pattern
+    p = re.compile(r'\.rc[0-9]+$')
+    if rel:
+        rc = p.findall(rel)
+        if rc:
+            ver_str = '%s-%s' % (ver, rc[-1].replace('.', ''))
+
+    return ver_str
+
+
+class JID_Callback(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        if '@' not in value:
+            err = "jobid (%s) is missing an '@', it must be of the " % value
+            err += "form number@server, e.g. 313100.0@jobsub01.fnal.gov"
+            sys.exit(err)
+        setattr(namespace, self.dest, value)
+
+
+class Date_Callback(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        dateOK = False
+        flist = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']
+        for fmt in flist:
+            try:
+                datetime.strptime(value, fmt)
+                dateOK = True
+                break
+            except Exception:
+                pass
+        if dateOK:
+            setattr(namespace, self.dest, value)
+        else:
+            sys.exit(
+                """invalid date format for '%s'.  Must be of the form """ % value +
+                """'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss'  """ +
+                """example: '2015-03-01 01:59:03'""")
 
 
 @contextlib.contextmanager

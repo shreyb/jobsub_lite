@@ -29,9 +29,11 @@ import json
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
+from jobsubClient import JobsubClientNamespace
 from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
 from jobsubClient import get_jobexe_idx
+from jobsubClient import UniqueStore
 from defaultServer import defaultServer
 
 
@@ -48,8 +50,10 @@ def split_client_server_args(parser, argv):
     else:
         working_argv = argv[:]
 
+    parser_defaults = vars(parser.parse_args())
+    j = JobsubClientNamespace(default_values=parser_defaults)
     # Parse the known args of what's left to grab client arguments
-    cli_argv, extras = parser.parse_known_args(working_argv)
+    cli_argv, extras = parser.parse_known_args(working_argv, namespace=j)
 
     # Construct srv_argv
     srv_argv = extras + end_srv_argv
@@ -91,7 +95,7 @@ def parse_opts(argv):
     client_options.add_argument('-G', '--group',
                          dest='acctGroup',
                          type=str,
-                         action='store',
+                         action=UniqueStore,
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')

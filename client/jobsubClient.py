@@ -2241,7 +2241,7 @@ class UniqueStore(argparse.Action):
     """If you want to use this action, make sure that you use a 
     JobsubClientNamespace to parse args into like this:
 
-    >>> parser = argparse.ArgumentParser
+    >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action=UniqueStore, default='BAR')
     >>> defaults = vars(self.parser.parse_args())
     >>> j = JobsubClientNamespace(default_values=defaults)

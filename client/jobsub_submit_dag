@@ -130,7 +130,7 @@ def parse_opts(argv):
         sys.exit(1)
 
 
-    parser_defaults = vars(parser.parse_args())
+    parser_defaults = vars(parser.parse_args([]))
     j = JobsubClientNamespace(default_values=parser_defaults)
     options, srv_argv = parser.parse_known_args(argv, namespace=j)
 

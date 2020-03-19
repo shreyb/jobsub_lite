@@ -50,7 +50,7 @@ def split_client_server_args(parser, argv):
     else:
         working_argv = argv[:]
 
-    parser_defaults = vars(parser.parse_args())
+    parser_defaults = vars(parser.parse_args([]))
     j = JobsubClientNamespace(default_values=parser_defaults)
     # Parse the known args of what's left to grab client arguments
     cli_argv, extras = parser.parse_known_args(working_argv, namespace=j)
@@ -255,8 +255,7 @@ def parse_opts(argv):
                 argv_job_idx  += 1
 
     cli_argv_namespace, srv_argv = split_client_server_args(parser, argv)
-
-
+    
     # if len(remainder) > 1:
     #     parser.print_help(file)
 

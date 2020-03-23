@@ -2228,6 +2228,11 @@ class JobsubClientNamespace(argparse.Namespace):
     def __init__(self, default_values=None):
         self.__count_parse = defaultdict(int)
         super(JobsubClientNamespace, self).__init__(default_values=default_values)
+        # No, really, a hidden or private attribute should be hidden
+        self.__dict__ = dict(((key, value) 
+            for key, value in self.__dict__.iteritems() 
+            if not (key.startswith('__') or key.startswith('_'))))
+        
 
     def __setattr__(self, name, value):
         super(JobsubClientNamespace, self).__setattr__(name, value)

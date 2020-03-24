@@ -176,7 +176,9 @@ def main(argv):
     options, srv_argv = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
-    logSupport.dprint('CLIENT_ARGS: ', vars(options))
+    logSupport.dprint('CLIENT_ARGS: ', dict(((key, value)
+        for key, value in vars(options)
+        if not (key.startswith('__') or key.startswith('_')))))
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
                              options.dropboxServer, useDag=True,

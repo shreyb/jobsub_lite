@@ -47,7 +47,12 @@ def is_supported_accountinggroup(acctgroup):
     except RuntimeError as rte:
         r_code['status'] = 'error'
         r_code['err'] = str(rte)
-        logger.log(json.dumps(r_code, sort_keys=True), traceback=True, severity=logging.ERROR)
+        logger.log(
+            json.dumps(
+                r_code,
+                sort_keys=True),
+            traceback=True,
+            severity=logging.ERROR)
         logger.log(json.dumps(r_code, sort_keys=True),
                    traceback=True,
                    severity=logging.ERROR,
@@ -55,7 +60,7 @@ def is_supported_accountinggroup(acctgroup):
 
     if log_verbose():
         logger.log(json.dumps(r_code, sort_keys=True))
-    return r_code
+    return r_code['ret_val']
 
 
 def log_verbose():
@@ -248,14 +253,13 @@ def get_dropbox_cvmfs_server(acctgroup='default'):
     """Scan jobsub.ini for list of cvmfs rcds servers acctgroup
        uses, return random member of list
     """
-    r_code_default_list = ['rcds01.fnal.gov','rcds02.fnal.gov']
+    r_code_default_list = ['rcds01.fnal.gov', 'rcds02.fnal.gov']
     r_code = None
     try:
         prs = JobsubConfigParser()
         r_code = prs.get(acctgroup, 'dropbox_cvmfs_server')
         if not r_code:
             r_code = prs.get('default', 'dropbox_cvmfs_server')
-
 
         logger.log("r_code = %s" % r_code)
     except BaseException:
@@ -265,8 +269,10 @@ def get_dropbox_cvmfs_server(acctgroup='default'):
     if r_code:
         rcl = r_code.split(' ')
     else:
-        rcl = rcode_default_list
+        rcl = r_code_default_list
     return random.choice(rcl)
+    return rcl
+
 
 def get_dropbox_max_size(acctgroup):
     """Scan jobsub.ini for dropbox on pnfs areas that acctgroup
@@ -399,6 +405,7 @@ def get_authentication_methods(acctgroup):
     methods = list()
     for meth in r_code.split(','):
         methods.append(meth.strip())
+    logger.log('returning %s' % methods)
     return methods
 
 
@@ -619,6 +626,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
 
 
 class JobsubConfig:
+
     """Class representing and creating expected directory structure on
        jobsub server
     """
@@ -640,6 +648,8 @@ class JobsubConfig:
         self.commandPathRoot = get_command_path_root()
 
     def state_dir_layout(self):
+        """Static definition of permissions for some server directories
+        """
         layout = [
             (self.state_dir, '0755'),
             (self.creds_dir, '0755'),
@@ -652,9 +662,15 @@ class JobsubConfig:
         return layout
 
     def commandPathAcctgroup(self, acctgroup):
+        """Dynamically compute directory path for acctgroups 
+           condor job description and log files
+        """
         return os.path.join(self.commandPathRoot, acctgroup)
 
     def commandPathUser(self, acctgroup, user):
+        """Dynamically compute directory path for users 
+           condor job description and log files
+        """
         return os.path.join(self.commandPathAcctgroup(acctgroup), user)
 
     def initCommandPathUser(self, acctgroup, username):
@@ -695,6 +711,14 @@ def get_jobsub_priv_exe():
 
 
 def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
+    """Use jobsub_priv to create directories owned by uid other than
+       the one running the jobsub server process
+       Params:
+           @base_dir: path  where directory to be created
+           @sub_dirs: name of directory(s) to be created
+           @username: owner of created directories
+           @mode:  unix permissions of created directories
+    """
     exe = get_jobsub_priv_exe()
     out = err = ''
     # Create the dir as user
@@ -712,6 +736,12 @@ def create_dir_as_user(base_dir, sub_dirs, username, mode='700'):
 
 
 def move_file_as_user(src, dst, username):
+    """rename and change ownership of a file
+       Params:
+           @src: original name of file
+           @dst: new name of file
+           @username: new owner of @dst
+    """
     exe = get_jobsub_priv_exe()
     cmd = '%s moveFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
@@ -726,6 +756,12 @@ def move_file_as_user(src, dst, username):
 
 
 def copy_file_as_user(src, dst, username):
+    """copy a file, change owner
+       Params:
+           @src: original name of file
+           @dst: new name of file
+           @username: new owner of @dst
+    """
     exe = get_jobsub_priv_exe()
     cmd = '%s copyFileAsUser "%s" "%s" "%s"' % (exe, src, dst, username)
     out = err = ''
@@ -740,6 +776,11 @@ def copy_file_as_user(src, dst, username):
 
 
 def chown_as_user(path, username):
+    """unix chown command interface
+       Params:
+           @path: filename to chown
+           @username: new owner of file
+    """
     exe = get_jobsub_priv_exe()
     cmd = '%s chown "%s" "%s"' % (exe, path, username)
     out = err = ''
@@ -754,6 +795,12 @@ def chown_as_user(path, username):
 
 
 def run_cmd_as_user(command, username, child_env={}):
+    """run os command 
+       Params:
+           @command: unix OS shell command to run
+           @username: new owner of file
+           @child_env: dict of OS environment vars
+    """
     exe = get_jobsub_priv_exe()
     c = ' '.join(pipes.quote(s) for s in command)
     cmd = '%s runCommand %s' % (exe, c)

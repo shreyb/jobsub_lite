@@ -12,60 +12,36 @@
 #
 ################################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
-import getopt
-import optparse
-import time
+import argparse
 import traceback
 
-import constants
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientSubmissionError
-from jobsubClient import version_string
-from jobsubClient import version_string
+from jobsubClient import JobsubClientNamespace
+from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
+from jobsubClient import UniqueStore
 from defaultServer import defaultServer
-
-
-def split_client_server_args(parser, argv):
-    cli_argv = [argv[0]]
-    srv_argv = []
-
-    i = 1
-    while (i < len(sys.argv)):
-
-        opt = parser.get_option(argv[i])
-
-        if opt:
-            cli_argv.append(argv[i])
-            if opt.action in optparse.Option.TYPED_ACTIONS:
-                try:
-                    cli_argv.append(argv[i+1])
-                    i += 1
-                except IndexError:
-                    parser.error('%s option requires an argument' % argv[i])
-        elif '=' in argv[i]:
-            # Check if the arg splitter is '=' example --foo=bar
-            opt = parser.get_option(argv[i].split('=')[0])
-            if opt:
-                cli_argv.append(argv[i])
-            else:
-                srv_argv.append(argv[i])
-        else:
-            srv_argv.append(argv[i])
-
-        i += 1
-
-    return (cli_argv, srv_argv)
 
 
 def required_args_present(options):
     try:
         if options.debug and options.jobid_output_only:
-            print "ERROR: --debug and --jobid_output_only are incompatible"
+            print("ERROR: --debug and --jobid_output_only are incompatible")
             return False
+        if options.use_cvmfs_dropbox and options.acctRole:
+            if options.acctRole.lower() == 'mars':
+                print ("jobs with --role mars are not allowed to use --use-cvmfs-dropbox")
+                sys.exit(1)
         if (options.acctGroup and options.jobsubServer):
             return True
     except AttributeError:
@@ -78,113 +54,93 @@ def print_opts(options):
     logSupport.dprint('%s' % options)
 
 
-"""
-def parse_server_args(option, opt_str, value, parser):
-     assert value is None
-     value = []
-
-     def floatable(str):
-         try:
-             float(str)
-             return True
-         except ValueError:
-             return False
-
-     for arg in parser.rargs:
-         ## stop on --foo like options
-         #if arg[:2] == "--" and len(arg) > 2:
-         #    break
-         ## stop on -a, but not on -3 or -3.0
-         #if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
-         #    break
-         value.append(arg)
-
-     del parser.rargs[:len(value)]
-     setattr(parser.values, option.dest, value)
-"""
-
 def parse_opts(argv):
-    usage = '%prog [Client Options] [Server Options] file://user_script \n\nProvide --group and --jobsub-server to see full help'
-    parser = optparse.OptionParser(usage=usage,
-                                   version=version_string(),
-                                   add_help_option=False,
+    usage = '%(prog)s [Client Options] [Server Options] file://user_script \n\nProvide --group and --jobsub-server to see full help'
+    parser = argparse.ArgumentParser(usage=usage,
+                                   add_help=False,
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are (--group AND file://[dag_description_file]).   Please direct questions,  comments, and problems to the service desk")
 
-    opt_group = optparse.OptionGroup(parser, "Client Options")
+    client_options = parser.add_argument_group("Client Options")
 
     # Required args
-    opt_group.add_option('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
-                         action='store',
+                         type=str,
+                         action=UniqueStore,
                          default=os.environ.get('JOBSUB_GROUP'),
                          metavar='<Group/Experiment/Subgroup>',
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
-    opt_group.add_option('--role',
+    client_options.add_argument('--role',
                          dest='acctRole',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<VOMS Role>',
                          default=None,
                          help='VOMS Role for priorities and accounting')
 
 
-    opt_group.add_option('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--dropbox-server',
+    client_options.add_argument('--dropbox-server',
                          dest='dropboxServer',
                          action='store',
                          metavar='<Dropbox Server>',
                          default=None,
                          help='Alternate location of Dropbox server to use')
 
-    opt_group.add_option('--use-cvmfs-dropbox',
+    client_options.add_argument('--use-cvmfs-dropbox',
                          dest='use_cvmfs_dropbox',
                          default=False,
                          action='store_true',
                          help="use cvmfs for dropbox (default is pnfs)")
 
-    opt_group.add_option('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
                          help='Print debug messages including server contacted, http response, response time')
 
-    opt_group.add_option('--jobid-output-only',
+    client_options.add_argument('--jobid-output-only',
                          dest='jobid_output_only',
                          action='store_true',
                          default=False,
                          help='Return only jobsub jobid in response to a successful submission')
 
-    opt_group.add_option('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
 
+    client_options.add_argument('--version',
+                        action=Version_String)
 
-
-    parser.add_option_group(opt_group)
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
-    cli_argv, srv_argv = split_client_server_args(parser, argv)
 
-    options, remainder = parser.parse_args(cli_argv)
+    parser_defaults = vars(parser.parse_args([]))
+    j = JobsubClientNamespace(default_values=parser_defaults)
+    options, srv_argv = parser.parse_known_args(argv, namespace=j)
 
-    if len(remainder) > 1:
-        parser.print_help(file)
+    # ArgumentParser.parse_known_args will by default include the command
+    # name - in this case jobsub_submit_dag.  Remove that from the server
+    # args
+    try:
+        srv_argv.remove(argv[0])
+    except ValueError:
+        pass
 
     if not srv_argv:
         # No server side args or exe provided. Just print help.
@@ -194,13 +150,13 @@ def parse_opts(argv):
         parser.print_help()
         if required_args_present(options):
             header = "  Server Options:"
-            print '\n%s' % header
+            print('\n%s' % header)
             print_acctgroup_help(options)
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return (options, srv_argv)
@@ -220,7 +176,9 @@ def main(argv):
     options, srv_argv = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', dict(((key, value)
+        for key, value in vars(options).iteritems()
+        if not (key.startswith('__') or key.startswith('_')))))
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
                              options.dropboxServer, useDag=True,
@@ -231,11 +189,11 @@ def main(argv):
     try:
         http_code = js_client.submit_dag()
         rc = http_code_to_rc(http_code)
-    except JobSubClientSubmissionError, e:
-        print e
+    except JobSubClientSubmissionError as e:
+        print(e)
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

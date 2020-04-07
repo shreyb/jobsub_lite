@@ -15,7 +15,7 @@ has_exports=`echo $1 |grep 'export_env=' `
 RSLT=$?
 if [ $RSLT -eq 0 ] ; then
 	b64=`echo $1 | cut -c14-`
-	cmds=`echo $b64 | base64 -d`
+	cmds=`echo $b64 | python -c "import base64, sys; [sys.stdout.write(base64.urlsafe_b64decode(line.strip())) for line in sys.stdin]"`
 	file=`mktemp`
 	echo $cmds > $file
 	source $file

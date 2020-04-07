@@ -3,7 +3,7 @@
 from JobSettings import JobSettings
 import os
 import commands
-from optparse import OptionGroup
+# from optparse import OptionGroup
 
 
 class MinosSettings(JobSettings):
@@ -19,20 +19,18 @@ class MinosSettings(JobSettings):
     def initCmdParser(self):
         # print "MinosSettings initCmdParser"
         cmdParser = self.cmdParser
-        self.minos_group = OptionGroup(
-            self.cmdParser, "Minos Specific Options")
-        self.cmdParser.add_option_group(self.minos_group)
+        self.minos_group = self.cmdParser.add_argument_group("Minos Specific Options")
 
-        self.minos_group.add_option("-t", dest="testreldir",
-                                    action="store", type="string",
+        self.minos_group.add_argument("-t", dest="testreldir",
+                                    action="store", type=str,
                                     help="release_directory for test Minos Software ")
 
-        self.minos_group.add_option("-r", dest="rel",
-                                    action="store", type="string",
+        self.minos_group.add_argument("-r", dest="rel",
+                                    action="store", type=str,
                                     help="release_version for  Minos Software ")
 
-        self.minos_group.add_option("-O", dest="msopt",
-                                    action="store", type="string",
+        self.minos_group.add_argument("-O", dest="msopt",
+                                    action="store", type=str,
                                     help="optimize flag")
         return super(MinosSettings, self).initCmdParser()
 

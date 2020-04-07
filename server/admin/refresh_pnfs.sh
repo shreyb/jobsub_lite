@@ -36,15 +36,15 @@ if [ "$AUTHORIZED_USER" != "$ME" ]; then
     echo "exiting...."
     exit 1
 fi
-export PYTHONPATH=/opt/jobsub/lib/logger/:/opt/jobsub/lib/JobsubConfigParser/:/opt/jobsub/server/webapp:.
-grep -i SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed -e 's/[Ss][Ee][Tt][Ee][Nn][Vv]/export/' -e 's/\([A-Z]\)\ /\1=/' -e 's/=[[:space:]]\+/=/'  > /tmp/jobsub_admin_env.sh
-source /tmp/jobsub_admin_env.sh
-here=`dirname $0`
-cd $here
+HERE=`dirname $0`
+source $HERE/config_lib.sh
+get_jobsub_env
+
 if [ "$1" = "--show-environment" ]; then
     printenv
     exit 0
 fi
 if [ "$1" = "--refresh-pnfs" ]; then
+     cd $HERE
      /usr/bin/python ./$pythonfile --refresh-pnfs $2
 fi

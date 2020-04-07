@@ -43,7 +43,7 @@ class AuthMethodsResource(object):
             r_code['status']='exiting'
             if jobsub.log_verbose():
                 logger.log(json.dumps(r_code, sort_keys=True))
-            return r_code
+            return {'out': r_code['out']}
         elif auth_method in methods:
             stat = '%s is valid for %s' % (auth_method, acctgroup)
             r_code['out'] = stat
@@ -58,7 +58,7 @@ class AuthMethodsResource(object):
             r_code['status'] = 'exit_error'
             logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR)
             logger.log(json.dumps(r_code, sort_keys=True), severity=logging.ERROR, logfile='error')
-            return r_code
+            return {'err': r_code['err']}
 
     @cherrypy.expose
     @format_response

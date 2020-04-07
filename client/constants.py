@@ -12,6 +12,12 @@
 #
 ##########################################################################
 
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import os
 
 ##########################################################################
@@ -96,6 +102,8 @@ JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/user/%s/'
 JOBSUB_JOB_RELEASE_BYUSER_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/user/%s/'
 
 JOBSUB_SCHEDD_LOAD_PATTERN = '%s/jobsub/scheddload/'
+
+JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT = 1
 
 
 # {(jobid, uid,role,forcex) : STUPID_ASS_REMOVE_URL }

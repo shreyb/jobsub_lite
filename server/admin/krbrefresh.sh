@@ -33,11 +33,9 @@ if [ "$AUTHORIZED_USER" != "$ME" ]; then
     echo "exiting...."
     exit 1
 fi
-#export PYTHONPATH=/opt/jobsub/lib/logger/:/opt/jobsub/lib/JobsubConfigParser/:/opt/jobsub/server/webapp
-grep -i SetEnv /etc/httpd/conf.d/jobsub_api.conf | sed -e 's/[Ss][Ee][Tt][Ee][Nn][Vv]/export/' -e 's/\([A-Z]\)\ /\1=/' -e 's/=[[:space:]]\+/=/'  > /tmp/jobsub_admin_env.sh  > /tmp/jobsub_admin_env.sh
-grep python-path /opt/jobsub/server/conf/jobsub_api.conf | sed -e 's/.*python-path/export PYTHONPATH/' -e 's/=[[:space:]]\+//'>>/tmp/jobsub_admin_env.sh
-source /tmp/jobsub_admin_env.sh
+HERE=`dirname $0`
+source $HERE/config_lib.sh
+get_jobsub_env
 
-if [ "$1" = "--refresh-proxies" ]; then
-     /usr/bin/python /opt/jobsub/server/webapp/auth.py --refresh-proxies $2
-fi
+
+/usr/bin/python /opt/jobsub/server/webapp/auth.py --refresh-proxies $2

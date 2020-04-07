@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import sys
-import optparse
+import argparse
 import pycurl
 import time
 import os
@@ -19,13 +27,14 @@ from defaultServer import defaultServer
 from jobsubClient import JobSubClient
 from jobsubClient import get_client_credentials
 from jobsubClient import print_formatted_response
-from jobsubClient import version_string
+from jobsubClient import Version_String
 from jobsubClient import print_json_response
 from jobsubClient import servicing_jobsub_server
-from jobsubClient import curl_secure_context
+from http_lib import curl_secure_context
+from http_lib import coerce_str
 from jobsubClient import JobSubClientError
 from jobsubClient import http_code_to_rc
-from jobsubClient import jid_callback
+from jobsubClient import JID_Callback
 from jobsubClient import check_id
 
 
@@ -40,111 +49,112 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    parser = optparse.OptionParser(usage='%prog [options]',
-                                   version=version_string(),
+    parser = argparse.ArgumentParser(usage='%(prog)s [options]',
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are: ( (--group  AND --jobid) OR (--list) ) . Please direct questions, comments, or problems to the service desk.")
 
     # Required args
-    parser.add_option('-G', '--group',
+    parser.add_argument('-G', '--group',
                       dest='acctGroup',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Group/Experiment/Subgroup>',
                       default=os.environ.get('JOBSUB_GROUP'),
                       help='Group/Experiment/Subgroup for priorities and accounting')
 
-    parser.add_option('-J', '--job', '--jobid',
+    parser.add_argument('-J', '--job', '--jobid',
                       dest='jobId',
-                      type='string',
-                      action='callback',
-                      callback=jid_callback,
+                      type=str,
+                      action=JID_Callback,
                       metavar='<Job ID>',
                       help='Job ID')
 
     # Optional args
-    parser.add_option('--jobsub-server',
+    parser.add_argument('--jobsub-server',
                       dest='jobsubServer',
                       action='store',
                       metavar='<JobSub Server>',
                       default=defaultServer(),
                       help='Alternate location of JobSub server to use')
 
-    parser.add_option('--timeout',
+    parser.add_argument('--timeout',
                       dest='timeout',
-                      type='int',
+                      type=int,
                       action='store',
                       metavar='<Timeout>',
                       default=None,
                       help='Timeout for the operation in sec')
 
-    parser.add_option('--dest-dir', '--unzipdir', '--destdir',
+    parser.add_argument('--dest-dir', '--unzipdir', '--destdir',
                       dest='destdir',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Dest Dir>',
                       default=None,
                       help='Directory to automatically unarchive logs into')
 
-    parser.add_option('--role',
+    parser.add_argument('--role',
                       dest='acctRole',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<VOMS Role>',
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
-    parser.add_option('--user',
+    parser.add_argument('--user',
                       dest='user',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<user>',
                       default=None,
                       help='VOMS Role for priorities and accounting')
 
-    parser.add_option('--archive-format',
+    parser.add_argument('--archive-format',
                       dest='format',
-                      type='string',
+                      type=str,
                       action='store',
                       metavar='<Archive Format>',
                       default='tar',
                       help='format for downloaded archive:"tar" (default,compressed) or "zip"')
 
-    parser.add_option('--partial',
+    parser.add_argument('--partial',
                       dest='partial',
                       action='store_true',
-                      metavar='<partial>',
+                      # metavar='<partial>',
                       default=False,
                       help='download only the stdout and stderr for this jobid, not the entire sandbox')
 
-    parser.add_option('--list-sandboxes', '--list',
+    parser.add_argument('--list-sandboxes', '--list',
                       dest='list',
                       action='store_true',
-                      metavar='<List Sandboxes and creation dates>',
+                      # metavar='<List Sandboxes and creation dates>',
                       default=False,
                       help='List all available sandboxes and creation date for given user/group.  If no group specified, list available sandboxes for all groups. ')
 
-    parser.add_option('--debug',
+    parser.add_argument('--debug',
                       dest='debug',
                       action='store_true',
-                      metavar='<debug info>',
+                      # metavar='<debug info>',
                       default=False,
                       help='show debug info like server contacted, http response, response time')
 
+    parser.add_argument('--version',
+                       action=Version_String)
+
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
 
     if len(remainder) > 1:
         # parser.print_help(file)
         parser.print_help()
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
 
@@ -242,8 +252,8 @@ def get_sandbox(options):
     try:
         checkDestDir(options.destdir)
     except:
-        print 'Error creating output directory'
-        print traceback.format_exc()
+        print('Error creating output directory')
+        print(traceback.format_exc())
         return 1
 
     if options.format == 'zip':
@@ -251,7 +261,7 @@ def get_sandbox(options):
     else:
         fn = '%s.tgz' % options.jobId
 
-    fp = open(fn, 'w')
+    fp = open(fn, 'wb')
     # Create curl object and set curl options to use
     curl, response = curl_secure_context(sandboxURL, creds)
     curl.setopt(curl.WRITEFUNCTION, fp.write)
@@ -260,8 +270,8 @@ def get_sandbox(options):
     if options.timeout:
         timeout = options.timeout
     curl.setopt(curl.TIMEOUT, timeout)
-    curl.setopt(curl.HTTPHEADER,
-                ['Accept: application/x-download,application/json'])
+    app_type = coerce_str('Accept: application/x-download,application/json')
+    curl.setopt(curl.HTTPHEADER, [ app_type ])
 
     response_code = 200
     response_time = 0
@@ -273,13 +283,9 @@ def get_sandbox(options):
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
         response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
     except pycurl.error as error:
-        errno, errstr = error
+        #errno, errstr = error
         response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        err = "HTTP response:%s PyCurl Error %s: %s" % (response_code,
-                                                        errno, errstr)
-        if errno == 60:
-            err += "\nDid you remember to include the port number to "
-            err += "your server specification \n( --jobsub-server %s )?" % options.jobsubServer
+        err = "HTTP response:%s PyCurl Error %s" % (response_code, error)
         print(traceback.format_exc())
         raise JobSubClientError(err)
 
@@ -292,9 +298,9 @@ def get_sandbox(options):
     try:
         value = None
         if response_code == 200:
-            print 'Downloaded to %s' % fn
+            print('Downloaded to %s' % fn)
             if options.destdir is not None:
-                print "Moved files to %s" % options.destdir
+                print("Moved files to %s" % options.destdir)
                 if options.format == 'zip':
                     z = zipfile.ZipFile(fn)
                     z.extractall(options.destdir)
@@ -328,9 +334,9 @@ def get_sandbox(options):
                                      print_msg_type=False,
                                      verbose=options.debug)
     except:
-        print 'Error extracting the fetched files'
+        print('Error extracting the fetched files')
         sandbox_extract_rc = 1
-        print traceback.format_exc()
+        print(traceback.format_exc())
 
     return http_code_to_rc(response_code) + sandbox_extract_rc
 
@@ -338,7 +344,7 @@ def get_sandbox(options):
 def main(argv):
     options = parse_opts(argv)
     if options.debug:
-        print "CLIENT_ARGS: %s" % options
+        print("CLIENT_ARGS: %s" % options)
     if options.list:
         return list_sandboxes(options)
     else:

@@ -12,17 +12,21 @@
 #
 ################################################################################
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
-import getopt
-import optparse
-import time
+import argparse
 import traceback
-import constants
+
 import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
-from jobsubClient import version_string
+from jobsubClient import Version_String
 from jobsubClient import http_code_to_rc
 from defaultServer import defaultServer
 
@@ -41,24 +45,23 @@ def required_args_present(options):
 
 
 def parse_opts(argv):
-    usage = '%prog [Client Options]'
-    parser = optparse.OptionParser(usage=usage,
-                                   version=version_string(),
+    usage = '%(prog)s [Client Options]'
+    parser = argparse.ArgumentParser(usage=usage,
                                    conflict_handler="resolve",
                                    epilog="REQUIRED arguments are (--sites AND --group). Please direct questions, comments, or problems to the service desk")
 
-    opt_group = optparse.OptionGroup(parser, "Client Options")
+    client_options = parser.add_argument_group("Client Options")
 
     # Optional args
-    opt_group.add_option('-G', '--group',
+    client_options.add_argument('-G', '--group',
                          dest='acctGroup',
-                         type='string',
+                         type=str,
                          action='store',
                          metavar='<Group/Experiment/Subgroup>',
                          default=os.environ.get('JOBSUB_GROUP'),
                          help='Group/Experiment/Subgroup for priorities and accounting')
 
-    opt_group.add_option('--jobsub-server',
+    client_options.add_argument('--jobsub-server',
                          dest='jobsubServer',
                          action='store',
                          metavar='<JobSub Server>',
@@ -67,42 +70,43 @@ def parse_opts(argv):
 
 
 
-    opt_group.add_option('--debug',
+    client_options.add_argument('--debug',
                          dest='debug',
                          action='store_true',
                          default=False,
                          help='Print debug messages  including server contacted, http response, response time')
 
-    opt_group.add_option('--sites',
+    client_options.add_argument('--sites',
                          dest='sites',
                          action='store_true',
                          default=False,
-                         metavar='<list sites>',
                          help="""query the server for sites that  'jobsub_submit --SITE=' is configured to submit to   """)
 
 
-    opt_group.add_option('-h', '--help',
+    client_options.add_argument('-h', '--help',
                          dest='help',
                          action='store_true',
                          default=False,
                          help='Show this help message and exit')
 
-    parser.add_option_group(opt_group)
+    client_options.add_argument('--version',
+                        action=Version_String)
+
 
     if len(argv) < 1:
-        print "ERROR: Insufficient arguments specified"
+        print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
 
     if options.help or (len(remainder) > 1):
         parser.print_help()
         sys.exit(0)
 
     if not required_args_present(options):
-        print "ERROR: Missing required arguments"
-        print "%s" % parser.epilog
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
         parser.print_help()
         sys.exit(1)
     return options
@@ -111,18 +115,18 @@ def parse_opts(argv):
 def main(argv):
     options = parse_opts(argv)
     logSupport.init_logging(options.debug)
-    logSupport.dprint('CLIENT_ARGS: ', options)
+    logSupport.dprint('CLIENT_ARGS: ', vars(options))
     rc = 1
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [], extra_opts={'debug':options.debug})
     try:
         if options.sites:
             http_code=js_client.listConfiguredSites()
             rc = http_code_to_rc(http_code)
-    except JobSubClientError, e:
-        print e
+    except JobSubClientError as e:
+        print(e)
         logSupport.dprint(traceback.format_exc())
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         logSupport.dprint('%s' % traceback.print_exc())
 
     return rc

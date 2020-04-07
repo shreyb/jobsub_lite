@@ -2,8 +2,7 @@
 
 import sys
 import os
-import getopt
-import optparse
+import argparse
 
 sys.path.append(os.path.join(sys.path[0], '../lib'))
 import ReleaseManagerLib
@@ -22,32 +21,32 @@ def usage():
 
 def parse_opts(argv):
     # parser = optparse.OptionParser(usage='%prog [options]',
-    parser = optparse.OptionParser(usage=usage(),
-                                   version='v0.1',
+    parser = argparse.ArgumentParser(usage=usage(),
+                                   version='v0.2',
                                    conflict_handler="resolve")
-    parser.add_option('--version',
+    parser.add_argument('--version',
                       dest='version',
                       action='store',
                       metavar='<version>',
                       help='version to release')
-    parser.add_option('--rc',
+    parser.add_argument('--rc',
                       dest='rc',
                       default=None,
                       action='store',
                       metavar='<Release Candidate Number>',
                       help='Release Candidate')
-    parser.add_option('--rpm-release',
+    parser.add_argument('--rpm-release',
                       dest='rpmRel',
                       default=1,
                       action='store',
                       metavar='<RPM Release Number>',
                       help='RPM Release Number')
-    parser.add_option('--source-dir',
+    parser.add_argument('--source-dir',
                       dest='srcDir',
                       action='store',
                       metavar='<source directory>',
                       help='directory containing the source code')
-    parser.add_option('--release-dir',
+    parser.add_argument('--release-dir',
                       dest='relDir',
                       action='store',
                       metavar='<release directory>',
@@ -57,7 +56,7 @@ def parse_opts(argv):
         print "ERROR: Insufficient arguments specified"
         parser.print_help()
         sys.exit(1)
-    options, remainder = parser.parse_args(argv)
+    options, remainder = parser.parse_known_args(argv)
     if len(remainder) > 1:
         parser.print_help(file)
     if not required_args_present(options):

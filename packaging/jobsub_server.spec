@@ -109,6 +109,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/jobsub/server/admin/fill_jobsub_history.pyc
 /opt/jobsub/server/admin/fill_jobsub_history.pyo
 /opt/jobsub/server/admin/fill_jobsub_history.sh
+/opt/jobsub/server/admin/config_lib.sh
 /opt/jobsub/server/admin/fix_sandbox_links.py
 /opt/jobsub/server/admin/fix_sandbox_links.pyc
 /opt/jobsub/server/admin/fix_sandbox_links.pyo

@@ -7,6 +7,11 @@ if [ "$JOBSUB_SETUP_SOURCED" = "" ]; then
             break
         fi
     done
+    PYFLAVOR=$(eval $(which pyflavor))
+    if [ "$PYFLAVOR" = "" ]; then
+        PYFLAVOR=python2.6
+    fi
+    setup python_future_six_request -q $PYFLAVOR
     setup cigetcert
     setup kx509
     export KRB5CCNAME=`ls -lart /tmp/krb5cc_${UID}* | tail -1 | awk '{print $9}'`

@@ -61,7 +61,7 @@ def parse_opts(argv):
     """
     use argparse to digest input arguments
     """
-    usage = '%prog [Client Options]'
+    usage = '%(prog)%s [Client Options]'
     usage += "\nadjust job priorities of queued jobs"
     epi_text = """REQUIRED arguments to adjust job priorities  are (-G AND --prio AND  """
     epi_text += """--jobid .  \nPlease direct questions, """
@@ -106,7 +106,7 @@ def parse_opts(argv):
 
     client_options.add_argument('--jobid',
                          dest='jobId',
-                         type='string',
+                         type=str,
                          action=JID_Callback,
                          default=None,
                          metavar='<Job ID>',
@@ -136,21 +136,21 @@ def parse_opts(argv):
 
     #commenting this out for now, we don't know what to do about
     #group superusers affecting other groups priorities en masse
-    opt_group.add_option('--user',
+    client_options.add_argument('--user',
                          dest='uid',
-                         type='string',
+                         type=str,
                          action='store',
                          default=None,
                          metavar='<user ID>',
                          help='****DISABLED****adjust prio of all jobs with this uid ')
 
     client_options.add_argument('--prio',
-                         dest='prio',
-                         type=str,
-                         action='store',
-                         default=None,
-                         metavar='<priority>',
-                         help='change job priority to this number. Default ' +
+                                dest='prio',
+                                type=str,
+                                action='store',
+                                default=None,
+                                metavar='<priority>',
+                                help='change job priority to this number. Default ' +
                                'is 0, higher numbers correspond to higher ' +
                                'priority')
 

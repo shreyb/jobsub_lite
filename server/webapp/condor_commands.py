@@ -265,17 +265,12 @@ def ui_condor_q(a_filter=None, a_format=None, a_key=None):
         hdr = fmt = ''
     s_list = schedd_list()
     if a_filter:
-        srch = 'JobsubJobId=="'
         # if jobsubjobid is in the query filter its wrong to search all schedds
-        idx = a_filter.find(srch)
-        if idx >= 0: 
-            lll = len(srch)
-            idx += lll
-            part = a_filter[idx:]
-            beg = part.find('@') + 1
-            end = part.find('"')
-            schedd = part[beg:end]
-            s_list = [schedd]
+        jobid_cnst_regex = re.compile('JobsubJobId==\"\d+(?:\.\d+)?@(.+)\"')
+        match = jobid_cnst_regex.search(a_filter)
+        if match and match.groups():
+            s_list = list(match.groups(1))
+
 
     all_jobs = hdr
     cqef = condor_q_extra_flags()

@@ -27,11 +27,6 @@ def curl_secure_context(url, credentials):
             logSupport.dprint("setting CAINFO for %s" % proxy)
             curl.setopt(curl.CAINFO, proxy)
     curl.setopt(curl.SSL_VERIFYHOST, constants.JOBSUB_SSL_VERIFYHOST)
-    if platform.system() == 'Darwin':
-        curl.setopt(curl.CAINFO, './ca-bundle.crt')
-    else:
-        curl.setopt(curl.CAPATH, get_capath())
-
     return (curl, response)
 
 
@@ -56,6 +51,13 @@ def curl_context(url):
     curl.setopt(curl.WRITEFUNCTION, response.write)
     curl.setopt(curl.HTTPHEADER, ['Accept: application/json'])
     curl.setopt(curl.SSLVERSION, curl.SSLVERSION_TLSv1)
+    if logSupport.DEBUG_MODE:
+        curl.setopt(curl.VERBOSE, 1)
+    if platform.system() == 'Darwin':
+        curl.setopt(curl.CAINFO, './ca-bundle.crt')
+    else:
+        curl.setopt(curl.CAPATH, coerce_str(get_capath()))
+
 
     return (curl, response)
 
@@ -83,7 +85,6 @@ def get_capath():
 
 def curl_setopt_str(a_curl, an_opt, a_type):
     a_curl.setopt(an_opt, coerce_str(a_type))
-    pass
 
 def coerce_str(a_str):
     a_str = six.b(str(a_str))

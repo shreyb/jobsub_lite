@@ -17,6 +17,7 @@ dprint = lambda *a: None
 
 def init_logging(debug_mode):
     global dprint
+    global DEBUG_MODE
     if debug_mode:
         DEBUG_MODE = True
 

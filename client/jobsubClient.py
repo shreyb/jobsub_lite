@@ -103,6 +103,9 @@ class JobSubClient(object):
                         features were added
 
         """
+        if sys.version_info[0] == 2 and sys.version_info[1] == 6 :
+            # SL6 Client only works with curl for production servers
+            os.environ['JOBSUB_CURL_ONLY'] = 'True'
         self.server = server
         self.initial_server = server
         self.dropboxServer = dropboxServer
@@ -251,7 +254,7 @@ class JobSubClient(object):
                 if arg_v.find(uri) >= 0:
                     parts = arg_v.split(uri)
             if parts:
-                if not os.path.exists(parts[-1]):
+                if not os.path.exists(parts[-1]) and not self.account_group=="cdf":
                     err_msg = "ERROR: %s " % arg_v
                     err_msg +="""does not point to accessible file or direct"""
                     err_msg +="""ory. Try adjusting the slashes in the uri"""

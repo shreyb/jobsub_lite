@@ -286,7 +286,7 @@ class JobSettings(object):
                 settings[x] = False
         if 'transfer_wrapfile' in settings:
             settings['tranfer_executable'] = settings['transfer_wrapfile']
-        if settings['tar_file_name']:
+        if settings.get('tar_file_name'):
             if 'cid=' not in settings['tar_file_name']:
                 settings['tar_file_basename'] = os.path.basename(
                     settings['tar_file_name'])
@@ -981,7 +981,7 @@ class JobSettings(object):
 
         f.write("\n")
         checked_for_locate_cvmfs=False
-        if 'tar_file_name' in settings:
+        if settings.get('tar_file_name'):
             if 'cid=' in settings.get('tar_file_name'):
                 self.write_locate_cvmfs_dir(f)
                 checked_for_locate_cvmfs=True
@@ -1029,7 +1029,7 @@ class JobSettings(object):
         if 'set_up_ifdh' in settings and settings['set_up_ifdh']:
             f.write("\nsource ${JSB_TMP}/ifdh.sh > /dev/null\n")
 
-        if 'tar_file_name' in settings:
+        if settings.get('tar_file_name'):
             if 'cid=' in settings['tar_file_name']:
                 parts = re.split('[=,]', settings['tar_file_name'])
                 f.write("export INPUT_TAR_DIR=$(locate_cvmfs_dir %s %s)\n" % (parts[1],parts[3]))
@@ -1722,13 +1722,6 @@ class JobSettings(object):
                     tInputFiles = tInputFiles + ",%s" % eScript
                 else:
                     tInputFiles = eScript
-        #if settings['tar_file_name']:
-        #    t = settings['tar_file_name']
-        #    if t not in tInputFiles and os.path.exists(t):
-        #        if len(tInputFiles) > 0:
-        #            tInputFiles = tInputFiles + ",%s" % t
-        #        else:
-        #            tInputFiles = t
         if len(tInputFiles) > 0:
             rsp = rsp + "transfer_input_files = %s\n" % tInputFiles
 
@@ -1814,7 +1807,7 @@ class JobSettings(object):
         for idir in settings['input_dir_array']:
             if '/pnfs/' in idir:
                 settings['input_file_classad_list'].append(idir)
-        if 'tar_file_name' in settings:
+        if settings.get('tar_file_name'):
             tfn = settings['tar_file_name']
             self.addToLineSetting("""+TAR_FILE_NAME = "%s" """% tfn)
             if '/pnfs/' in tfn:

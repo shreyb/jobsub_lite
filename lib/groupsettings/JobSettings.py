@@ -1813,10 +1813,10 @@ class JobSettings(object):
 
         for idir in settings['input_dir_array']:
             if '/pnfs/' in idir:
-                if '/scratch/' in idir or '/resilient/' in idir:
-                    settings['input_file_classad_list'].append(idir)
+                settings['input_file_classad_list'].append(idir)
         if 'tar_file_name' in settings:
             tfn = settings['tar_file_name']
+            self.addToLineSetting("""+TAR_FILE_NAME = "%s" """% tfn)
             if '/pnfs/' in tfn:
                 if '/scratch/' in tfn or '/resilient/' in tfn:
                     settings['input_file_classad_list'].append(tfn)

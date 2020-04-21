@@ -104,6 +104,12 @@ else
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
+lg_echo test submission with two --group flags
+OUTFILE=$1.submit.twogroups.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_bad_submit_flags.sh $SERVER  >$OUTFILE 2>&1
+T1=$?
+test $T1 -eq 0
+pass_or_fail
 lg_echo testing holding and releasing $GROUP jobs owned by $USER
 OUTFILE=$1.holdrelease.byuser.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release_byuser.sh $SERVER $GOTJID >$OUTFILE 2>&1

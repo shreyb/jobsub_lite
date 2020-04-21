@@ -1,5 +1,28 @@
 
 ================================================================================
+v1.3.2
+================================================================================
+Client
+----------
+* Bug     21031  Detect and flag when input options that are only supposed to
+                 be used once (such as --group) are used multiple times
+* Bug     22481  Better error checking and messages for --tar_file_name
+* Bug     23476  jobsub_prio incorrectly converted to arg_parse library
+                 in previous version
+* Feature 23380  RCDS not allowed for 'mars' role
+* Bug     24037  SL6 python2.6 authentication problems fixed.
+
+Server
+-----------
+* Feature 22733  Source jobsub group and superuser information from FERRY
+* Bug     23603  More robust decoding of  base64 strings from client.
+* Bug     24057  jobsub_q --better-analyze always chooses correct schedd
+                 resulting in fewer timeouts..
+* Feature 24327  New classad attribute for job submissions: +TAR_FILE_NAME
+                 useful for measuring efficiency of RCDS and pnfs tarball
+                 submissions.
+                 
+================================================================================
 v1.3.1
 ================================================================================
 Client

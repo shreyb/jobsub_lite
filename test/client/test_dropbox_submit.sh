@@ -74,6 +74,16 @@ T7=$? && TS=$T7
 test $TS -eq 0 && echo PASSED
 test $TS -ne 0 && echo FAILED
 
+echo  test jobsub_q --better-analyze
+# issue 24057 'smoke test'
+$EXEPATH/jobsub_q $GROUP_SPEC  \
+       $SERVER_SPEC  \
+        --jobid $JID --better-analyze  >>$ERROUT
+grep -q 'for your job reduces to these conditions' $ERROUT
+T10=$? && TS=$T10
+test $TS -eq 0 && echo PASSED
+test $TS -ne 0 && echo FAILED
+
 echo test using -tar_file_name instead of --tar_file_name, submission should fail
 ERROUT=${GROUP}_dropbox2.sh.err
 rm -f $ERROUT

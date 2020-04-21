@@ -246,11 +246,11 @@ class JobSubClient(object):
         for idx in range(0, len(self.server_argv)):
             arg_v = self.server_argv[idx]
             parts = []         
-            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
+            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:  #dropbox://
                 parts = arg_v.split(constants.DROPBOX_SUPPORTED_URI)
-            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
+            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: #tardir://
                 parts = arg_v.split(constants.DIRECTORY_SUPPORTED_URI)
-            for uri in constants.JOB_EXE_SUPPORTED_URIs:
+            for uri in constants.JOB_EXE_SUPPORTED_URIs: #file://
                 if arg_v.find(uri) >= 0:
                     parts = arg_v.split(uri)
             if parts:
@@ -620,7 +620,7 @@ class JobSubClient(object):
                 cmd += """--url %s  -X POST --data-binary @%s """ % (upload_url,
                                                                      uri2path(file_name))
                 try:
-                    logSupport.dprint("cmd = %s" % cmd)
+                    logSupport.dprint("dropbox_upload: cmd = %s" % cmd)
                     resp, err = subprocessSupport.iexe_cmd(cmd)
                     resp = resp.strip()
                     err = err.strip()

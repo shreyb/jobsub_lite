@@ -315,23 +315,22 @@ def create_rcds_server_map():
     return data
 
 
-def fetch_from_ferry(fname):
+def fetch_from_ferry(fname, **kwargs):
     """ create @param fname : a json file
         by default stored in /var/lib/jobsub/ferry
     """
-    if fname == "dn_user_roles_map.json":
-        return create_dn_user_roles_map()
-    elif fname == "uname_fqan_map.json":
-        return create_uname_fqan_map()
-    elif fname == "fqan_user_map.json":
-        return create_fqan_user_map()
-    elif fname == "vo_role_fqan_map.json":
-        return create_vo_role_fqan_map()
-    elif fname == "getGridMapFile":
-        return getGridMapFile()
-    elif fname == "rcds_server_map.json":
-        return create_rcds_server_map()
-    else:
+    fname_dict = {
+        "dn_user_roles_map.json": create_dn_user_roles_map,
+        "uname_fqan_map.json": create_uname_fqan_map,
+        "fqan_user_map.json": create_fqan_user_map,
+        "vo_role_fqan_map.json": create_vo_role_fqan_map,
+        "getGridMapFile": getGridMapFile,
+        "rcds_server_map.json": create_rcds_server_map,
+        "superusers": get_superusers 
+    }
+    try:
+        return fname_dict[fname](**kwargs)
+    except KeyError:
         return _get_ferry_output_from_response(fname)
 
 
@@ -353,6 +352,19 @@ def getGridMapFile():
         if dat:
             gmf[vo] = dat
     return gmf
+
+
+def get_superusers(group=None):
+    prs = JobsubConfigParser()
+    api = prs.get('default', 'ferry_jobsub_superusers')
+    if not api:
+        api = 'getGroupMembers?grouptype=BatchSuperusers&groupname={group}'
+    
+    dat = _get_ferry_output_from_response(api.format(group=group))
+    if dat:
+        superusers = [elt['username'] for elt in dat]
+        return superusers 
+    return []
 
 
 def _fetch_from_rcds(fname='config'):
@@ -433,25 +445,39 @@ def _fetch_from_ferry(fname):
         return {}
 
 
-def refresh_ferry_dat(fname, jfile):
-    dat = fetch_from_ferry(fname)
+def refresh_ferry_dat(fname, jfile, **kwargs):
+    dat = fetch_from_ferry(fname, **kwargs)
     if dat:
         jtmp = mk_temp_fname(jfile)
         fd = open(jtmp, "w")
         fd.write(json.dumps(dat, indent=4))
         fd.close()
         os.rename(jtmp, jfile)
-        FERRY_DAT[fname] = dat
+        fname_withkwargs = os.path.basename(jfile)
+        FERRY_DAT[fname_withkwargs] = dat
     return dat
 
 
-def json_from_file(fname):
+def json_from_file(fname, **kwargs):
+    # Files that depend on the acctgroup
+    kwargs_dependent_files = ['superusers', ]
 
     jcp = JobsubConfigParser()
     jpath = jcp.get('default', 'ferry_output')
     if not jpath:
         jpath = '/var/lib/jobsub/ferry'
-    jfile = os.path.join(jpath, fname)
+    
+    # We only want to use fname_withkwargs for the final filename and the
+    # FERRY_DAT dict
+    fname_withkwargs = fname 
+    if fname in kwargs_dependent_files and len(kwargs) > 0:
+        # This is the file to actually write to.  We strip '_' for cases
+        # like the FERRY '_global' superusers group
+        sorted_keys = sorted(kwargs)  # Keep the order of the file suffixes the same
+        fname_add = '_'.join((kwargs[key].strip('_') for key in sorted_keys))
+        fname_withkwargs = '{0}_{1}'.format(fname, fname_add)
+
+    jfile = os.path.join(jpath, fname_withkwargs)
     if jobsub.log_verbose():
         logger.log('checking for %s' % jfile)
     dat = None
@@ -468,9 +494,9 @@ def json_from_file(fname):
                 max_age = 3600
 
             if age > max_age:
-                refresh_ferry_dat(fname, jfile)
-            if fname in FERRY_DAT:
-                return FERRY_DAT[fname]
+                refresh_ferry_dat(fname, jfile, **kwargs)
+            if fname_withkwargs in FERRY_DAT:
+                return FERRY_DAT[fname_withkwargs]
         except Exception as e:
             logger.log(e, traceback=True)
     if os.path.exists(jfile):
@@ -478,9 +504,9 @@ def json_from_file(fname):
         dat = json.load(fd)
         fd.close()
     else:
-        dat = refresh_ferry_dat(fname, jfile)
+        dat = refresh_ferry_dat(fname, jfile, **kwargs)
     if dat:
-        FERRY_DAT[fname] = dat
+        FERRY_DAT[fname_withkwargs] = dat
     return dat
 
 

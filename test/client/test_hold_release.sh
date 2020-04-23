@@ -1,7 +1,7 @@
 #!/bin/sh
 if [ "$1" = "" ]; then
     echo "usage: $0 server [joblist] "
-    echo " hold and relieve list of jobs on server"
+    echo " hold and release list of jobs on server"
     exit 0
 fi
 source ./setup_env.sh

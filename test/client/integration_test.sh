@@ -118,6 +118,12 @@ lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
+lg_echo test adjusting priority
+OUTFILE=$1.test_prio.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_prio.sh $SERVER $GOTJID >$OUTFILE 2>&1
+pass_or_fail
+#test 1 -eq 0
+#pass_or_fail
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test submission with role
     OUTFILE=$1.submit_role.$OUTGROUP.log

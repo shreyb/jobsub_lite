@@ -104,6 +104,12 @@ else
 fi 
 test $SUBMIT_WORKED -eq 0
 pass_or_fail
+lg_echo test submission with two --group flags
+OUTFILE=$1.submit.twogroups.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_bad_submit_flags.sh $SERVER  >$OUTFILE 2>&1
+T1=$?
+test $T1 -eq 0
+pass_or_fail
 lg_echo testing holding and releasing $GROUP jobs owned by $USER
 OUTFILE=$1.holdrelease.byuser.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release_byuser.sh $SERVER $GOTJID >$OUTFILE 2>&1
@@ -112,6 +118,12 @@ lg_echo testing holding and releasing
 OUTFILE=$1.holdrelease.$OUTGROUP.log
 sh ${TEST_FLAG} ./test_hold_release.sh $SERVER $GOTJID >$OUTFILE 2>&1
 pass_or_fail
+lg_echo test adjusting priority
+OUTFILE=$1.test_prio.$OUTGROUP.log
+sh ${TEST_FLAG} ./test_prio.sh $SERVER $GOTJID >$OUTFILE 2>&1
+pass_or_fail
+#test 1 -eq 0
+#pass_or_fail
 if [ "$SKIP_PRODUCTION_TEST" = "" ]; then
     lg_echo test submission with role
     OUTFILE=$1.submit_role.$OUTGROUP.log

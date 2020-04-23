@@ -95,7 +95,7 @@ $EXEPATH/jobsub_submit $GROUP_SPEC  \
 ret=$?
 test $ret -ne 0
 T5=$?
-grep -q 'looks like you specified' $ERROUT
+grep -q 'unrecognized arguments: -tar_file_name' $ERROUT
 T6=$?
 test $T5 -eq 0 && test $T6 -eq 0
 TS=$?
@@ -114,7 +114,7 @@ $EXEPATH/jobsub_submit $GROUP_SPEC  \
 ret=$?
 test $ret -ne 0
 T8=$?
-grep -q 'unrecognized arguments: -tar_file_name' $ERROUT
+grep -q 'role mars are not allowed to use --use-cvmfs-dropbox' $ERROUT
 T9=$?
 test $T8 -eq 0 && test $T9 -eq 0
 TS=$?

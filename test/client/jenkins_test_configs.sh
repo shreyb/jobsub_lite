@@ -9,6 +9,9 @@ if [ "$JOBSUB_SETUP_SOURCED" = "" ]; then
     done
     PYFLAVOR=$(eval $(which pyflavor))
     if [ "$PYFLAVOR" = "" ]; then
+        PYFLAVOR=../../client/pyflavor
+    fi
+    if [ ! test -f "$PYFLAVOR" ]; then
         PYFLAVOR=python2.6
     fi
     setup python_future_six_request -q $PYFLAVOR

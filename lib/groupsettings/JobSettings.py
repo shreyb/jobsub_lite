@@ -837,7 +837,7 @@ class JobSettings(object):
                     err = 'error setting up running environment'
                     raise InitializationError(err)
         if 'testreldir' in settings and settings['testreldir'] == 'ar_file_name':
-            err = 'it looks like you specified -tar_file_name instead of --tar_file_name'
+            err = 'unrecognized arguments: -tar_file_name (did you mean --tar_file_name?)'
             raise InitializationError(err)
 
         if 'memory' in settings and not self.memFormatOK(settings['memory']):

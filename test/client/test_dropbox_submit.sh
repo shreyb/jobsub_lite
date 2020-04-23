@@ -114,7 +114,7 @@ $EXEPATH/jobsub_submit $GROUP_SPEC  \
 ret=$?
 test $ret -ne 0
 T8=$?
-grep -q 'role mars are not allowed to use' $ERROUT
+grep -q 'unrecognized arguments: -tar_file_name' $ERROUT
 T9=$?
 test $T8 -eq 0 && test $T9 -eq 0
 TS=$?

@@ -5,7 +5,9 @@ v1.3.2
 Client
 ----------
 * Bug     21031  Detect and flag when input options that are only supposed to
-                 be used once (such as --group) are used multiple times
+                 be used once (such as --group) are used multiple times for 
+		 jobsub_submit and jobsub_submit_dag.  This will be rolled
+		 out to other commands in a future release.
 * Bug     22481  Better error checking and messages for --tar_file_name
 * Bug     23476  jobsub_prio incorrectly converted to arg_parse library
                  in previous version

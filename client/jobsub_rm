@@ -31,6 +31,7 @@ from jobsubClient import http_code_to_rc
 from jobsubClient import JID_Callback
 from defaultServer import defaultServer
 
+
 def print_opts(options):
     logSupport.dprint('COMMAND LINE OPTIONS:')
     logSupport.dprint('%s' % options)
@@ -45,6 +46,7 @@ def required_args_present(options):
         return False
     return False
 
+
 def parse_opts(argv):
     usage = '%(prog)s [Client Options]'
     epi_text = """REQUIRED arguments to remove jobs  are (-G AND  """
@@ -55,92 +57,91 @@ def parse_opts(argv):
     epi_text += """wiki/Frequently_Asked_Questions"""
 
     parser = argparse.ArgumentParser(usage=usage,
-                                   conflict_handler="resolve",
-                                   epilog=epi_text)
+                                     conflict_handler="resolve",
+                                     epilog=epi_text)
 
     client_options = parser.add_argument_group("Client Options")
 
     # Required args
     client_options.add_argument('-G', '--group',
-                         dest='acctGroup',
-                         type=str,
-                         action='store',
-                         metavar='<Group/Experiment/Subgroup>',
-                         default=os.environ.get('JOBSUB_GROUP'),
-                         help="".join(['Group/Experiment/Subgroup ',
-                                       'for priorities and accounting',
-                                      ]))
+                                dest='acctGroup',
+                                type=str,
+                                action='store',
+                                metavar='<Group/Experiment/Subgroup>',
+                                default=os.environ.get('JOBSUB_GROUP'),
+                                help="".join(['Group/Experiment/Subgroup ',
+                                              'for priorities and accounting',
+                                              ]))
     # Optional args
     client_options.add_argument('--jobsub-server',
-                         dest='jobsubServer',
-                         action='store',
-                         metavar='<JobSub Server>',
-                         default=defaultServer(),
-                         help='Alternate location of JobSub server to use')
+                                dest='jobsubServer',
+                                action='store',
+                                metavar='<JobSub Server>',
+                                default=defaultServer(),
+                                help='Alternate location of JobSub server to use')
 
     client_options.add_argument('--role',
-                         dest='acctRole',
-                         type=str,
-                         action='store',
-                         metavar='<VOMS Role>',
-                         default=None,
-                         help='VOMS Role for priorities and accounting')
+                                dest='acctRole',
+                                type=str,
+                                action='store',
+                                metavar='<VOMS Role>',
+                                default=None,
+                                help='VOMS Role for priorities and accounting')
 
     client_options.add_argument('--jobid',
-                         dest='jobId',
-                         type=str,
-                         action=JID_Callback,
-                         metavar='<Job ID>',
-                         help="".join(['CSV list of Job Ids to remove.  Job ',
-                                       'Ids have format of ',
-                                       '(cluster).(process)@(schedd_name). ',
-                                       'If Job id has a decimal point but no ',
-                                       'process ',
-                                       '(example) 1234.@fifebatch.fnal.gov ',
-                                       'then ALL job ids with that cluster ',
-                                       'and schedd name will be removed',
-                                      ]))
+                                dest='jobId',
+                                type=str,
+                                action=JID_Callback,
+                                metavar='<Job ID>',
+                                help="".join(['CSV list of Job Ids to remove.  Job ',
+                                              'Ids have format of ',
+                                              '(cluster).(process)@(schedd_name). ',
+                                              'If Job id has a decimal point but no ',
+                                              'process ',
+                                              '(example) 1234.@fifebatch.fnal.gov ',
+                                              'then ALL job ids with that cluster ',
+                                              'and schedd name will be removed',
+                                              ]))
 
     client_options.add_argument('--debug',
-                         dest='debug',
-                         action='store_true',
-                         default=False,
-                         help="".join(['Print debug messages including ',
-                                       'server contacted, http response, ',
-                                       'response time',
-                                      ]))
+                                dest='debug',
+                                action='store_true',
+                                default=False,
+                                help="".join(['Print debug messages including ',
+                                              'server contacted, http response, ',
+                                              'response time',
+                                              ]))
 
     client_options.add_argument('-h', '--help',
-                         dest='help',
-                         action='store_true',
-                         default=False,
-                         help='Show this help message and exit')
+                                dest='help',
+                                action='store_true',
+                                default=False,
+                                help='Show this help message and exit')
 
     client_options.add_argument('--user',
-                         dest='uid',
-                         type=str,
-                         action='store',
-                         default=None,
-                         metavar='<user ID>',
-                         help='remove all jobs with this uid ')
+                                dest='uid',
+                                type=str,
+                                action='store',
+                                default=None,
+                                metavar='<user ID>',
+                                help='remove all jobs with this uid ')
 
     client_options.add_argument('--constraint',
-                         dest='constraint',
-                         type=str,
-                         action='store',
-                         default=None,
-                         metavar='<constraint>',
-                         help='remove all jobs with this constraint ')
+                                dest='constraint',
+                                type=str,
+                                action='store',
+                                default=None,
+                                metavar='<constraint>',
+                                help='remove all jobs with this constraint ')
 
     client_options.add_argument('--forcex',
-                         dest='forcex',
-                         action='store_true',
-                         default=False,
-                         help='forcibly remove jobs currently in "X" state ')
+                                dest='forcex',
+                                action='store_true',
+                                default=False,
+                                help='forcibly remove jobs currently in "X" state ')
 
     client_options.add_argument('--version',
-                        action=Version_String)
-
+                                action=Version_String)
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")

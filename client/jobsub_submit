@@ -46,7 +46,8 @@ def split_client_server_args(parser, argv):
     exe_idx = get_jobexe_idx(argv)
     if exe_idx is not None:
         end_srv_argv = argv[exe_idx:]
-        working_argv = argv[1:exe_idx] #Don't need to parse the jobsub command
+        # Don't need to parse the jobsub command
+        working_argv = argv[1:exe_idx]
     else:
         working_argv = argv[:]
 
@@ -60,6 +61,7 @@ def split_client_server_args(parser, argv):
 
     return cli_argv, srv_argv
 
+
 def required_args_present(options):
     try:
         if options.debug and options.jobid_output_only:
@@ -67,7 +69,8 @@ def required_args_present(options):
             return False
         if options.use_cvmfs_dropbox and options.acctRole:
             if options.acctRole.lower() == 'mars':
-                print ("jobs with --role mars are not allowed to use --use-cvmfs-dropbox")
+                print (
+                    "jobs with --role mars are not allowed to use --use-cvmfs-dropbox")
                 sys.exit(1)
         if (options.acctGroup and options.jobsubServer):
             return True
@@ -81,110 +84,109 @@ def print_opts(options):
     logSupport.dprint('%s' % options)
 
 
-
 def parse_opts(argv):
     usage = '%(prog)s [Client Options] [Server Options] file://user_script [user_script_args]\n\nProvide --group and --jobsub-server to see full help'
     parser = argparse.ArgumentParser(usage=usage,
-                                   add_help=False,
-                                   conflict_handler="resolve",
-                                   epilog="REQUIRED arguments are (--group AND  file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")
+                                     add_help=False,
+                                     conflict_handler="resolve",
+                                     epilog="REQUIRED arguments are (--group AND  file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")
 
     client_options = parser.add_argument_group('Client Options')
 
     # Required args
     client_options.add_argument('-G', '--group',
-                         dest='acctGroup',
-                         type=str,
-                         action=UniqueStore,
-                         metavar='<Group/Experiment/Subgroup>',
-                         default=os.environ.get('JOBSUB_GROUP'),
-                         help='Group/Experiment/Subgroup for priorities and accounting')
+                                dest='acctGroup',
+                                type=str,
+                                action=UniqueStore,
+                                metavar='<Group/Experiment/Subgroup>',
+                                default=os.environ.get('JOBSUB_GROUP'),
+                                help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
     client_options.add_argument('--role',
-                         dest='acctRole',
-                         type=str,
-                         action='store',
-                         metavar='<VOMS Role>',
-                         default=None,
-                         help='VOMS Role for priorities and accounting')
+                                dest='acctRole',
+                                type=str,
+                                action='store',
+                                metavar='<VOMS Role>',
+                                default=None,
+                                help='VOMS Role for priorities and accounting')
 
     client_options.add_argument('--dag',
-                         dest='dag',
-                         action='store_true',
-                         default=False,
-                         help='submit and run a dagNabbit input file')
+                                dest='dag',
+                                action='store_true',
+                                default=False,
+                                help='submit and run a dagNabbit input file')
 
     client_options.add_argument('--jobsub-server',
-                         dest='jobsubServer',
-                         action='store',
-                         metavar='<JobSub Server>',
-                         default=defaultServer(),
-                         help='Alternate location of JobSub server to use')
+                                dest='jobsubServer',
+                                action='store',
+                                metavar='<JobSub Server>',
+                                default=defaultServer(),
+                                help='Alternate location of JobSub server to use')
 
     client_options.add_argument('--dropbox-server',
-                         dest='dropboxServer',
-                         action='store',
-                         metavar='<Dropbox Server>',
-                         default=None,
-                         help='Alternate location of Dropbox server to use')
+                                dest='dropboxServer',
+                                action='store',
+                                metavar='<Dropbox Server>',
+                                default=None,
+                                help='Alternate location of Dropbox server to use')
 
     client_options.add_argument('--json-config',
-                         dest='json_config',
-                         action='store',
-                         metavar='<JSON submit config file>',
-                         default=None,
-                         help='a JSON dict file of jobsub_submit options and values')
+                                dest='json_config',
+                                action='store',
+                                metavar='<JSON submit config file>',
+                                default=None,
+                                help='a JSON dict file of jobsub_submit options and values')
 
     client_options.add_argument('--tarball-exclusion-file',
-                         dest='tarball_reject_list',
-                         action='store',
-                         metavar='<tarball exclusion regex file>',
-                         default=None,
-                         help="A file of python regex's to exclude from "+\
-                              " tarballs. Use with --tar_file_name tardir://"+\
-                              " Default exclusion list includes .git and .svn"+\
-                              " directories, pdf, eps, log files, and human"+\
-                              " readable images.  "+\
-                              "\n")
+                                dest='tarball_reject_list',
+                                action='store',
+                                metavar='<tarball exclusion regex file>',
+                                default=None,
+                                help="A file of python regex's to exclude from " +
+                                " tarballs. Use with --tar_file_name tardir://" +
+                                " Default exclusion list includes .git and .svn" +
+                                " directories, pdf, eps, log files, and human" +
+                                " readable images.  " +
+                                "\n")
 
     client_options.add_argument('--use-cvmfs-dropbox',
-                         dest='use_cvmfs_dropbox',
-                         default=False,
-                         action='store_true',
-                         help='use cvmfs for dropbox (default is pnfs)')
+                                dest='use_cvmfs_dropbox',
+                                default=False,
+                                action='store_true',
+                                help='use cvmfs for dropbox (default is pnfs)')
 
     client_options.add_argument('--debug',
-                         dest='debug',
-                         action='store_true',
-                         default=False,
-                         help='Print debug messages including server contacted, http response, response time')
+                                dest='debug',
+                                action='store_true',
+                                default=False,
+                                help='Print debug messages including server contacted, http response, response time')
 
     client_options.add_argument('--jobid-output-only',
-                         dest='jobid_output_only',
-                         action='store_true',
-                         default=False,
-                         help='Return only jobsub jobid in response to a successful submission')
+                                dest='jobid_output_only',
+                                action='store_true',
+                                default=False,
+                                help='Return only jobsub jobid in response to a successful submission')
 
     client_options.add_argument('-h', '--help',
-                         dest='help',
-                         action='store_true',
-                         default=False,
-                         help='Show this help message and exit')
+                                dest='help',
+                                action='store_true',
+                                default=False,
+                                help='Show this help message and exit')
 
     client_options.add_argument('--version',
-                       action=Version_String)
-
+                                action=Version_String)
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")
         parser.print_help()
         sys.exit(1)
 
-    # This bit is just for --json-config since it's treated differently than other args
+    # This bit is just for --json-config since it's treated differently than
+    # other args
     if argv.count("--json-config") > 1:
-        JobSubClientSubmissionError("Only one json config file can be specified.")
-
+        JobSubClientSubmissionError(
+            "Only one json config file can be specified.")
 
     # print('1 argv=%s' % argv)
     j = 0
@@ -194,11 +196,10 @@ def parse_opts(argv):
             argv.pop(j)
             submit_config = argv.pop(j)
         elif "--json-config=" in argv[j]:
-            arg=argv.pop(j)
+            arg = argv.pop(j)
             # pathological? case where '=' may be in name of json-config-file
             submit_config = "=".join(arg.split("=")[1:])
         j += 1
-
 
     if submit_config:
         classad_val = "--lines '+JOBSUB_JSON_CONFIG_FILE=\"%s\"'" % submit_config
@@ -213,19 +214,20 @@ def parse_opts(argv):
             argv_job_idx = len(argv)
             argv_job_present = False
         for opt in sd:
-            if isinstance(opt,str):
+            if isinstance(opt, str):
                 opt = str(opt)
             if opt[0] == "#":
                 continue
 
-            if sd.get(opt) and isinstance(sd[opt],str):
+            if sd.get(opt) and isinstance(sd[opt], str):
                 sd[opt] = str(sd[opt])
             if str(sd[opt]).lower() == "true":
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
             elif "file://" in opt:
                 if argv_job_present:
-                    print("ERROR: you specified %s in %s" % (opt,submit_config))
+                    print("ERROR: you specified %s in %s" %
+                          (opt, submit_config))
                     print("and %s in the command line" % (argv_job_present))
                     print("these conflict, exiting")
                     exit(1)
@@ -235,27 +237,26 @@ def parse_opts(argv):
                         inc = 1
                         if isinstance(sd[opt], list):
                             for el in sd[opt]:
-                                argv.insert(argv_job_idx+inc, str(el))
+                                argv.insert(argv_job_idx + inc, str(el))
                                 inc += 1
                         else:
-                            argv.insert(argv_job_idx+inc, str(sd[opt]))
-
+                            argv.insert(argv_job_idx + inc, str(sd[opt]))
 
             elif isinstance(sd[opt], list):
                 for lel in sd[opt]:
                     argv.insert(argv_job_idx, opt)
                     argv_job_idx += 1
                     argv.insert(argv_job_idx, lel)
-                    argv_job_idx  += 1
+                    argv_job_idx += 1
 
             elif str(sd[opt]).lower() != "false":
                 argv.insert(argv_job_idx, opt)
                 argv_job_idx += 1
-                argv.insert(argv_job_idx,str(sd[opt]))
-                argv_job_idx  += 1
+                argv.insert(argv_job_idx, str(sd[opt]))
+                argv_job_idx += 1
 
     cli_argv_namespace, srv_argv = split_client_server_args(parser, argv)
-    
+
     # if len(remainder) > 1:
     #     parser.print_help(file)
 
@@ -285,7 +286,7 @@ def print_acctgroup_help(options):
     """
 
     js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [
-        ], extra_opts={})
+    ], extra_opts={})
     return js_client.help()
 
     # out = response
@@ -306,16 +307,16 @@ def main(argv):
     options, srv_argv = parse_opts(argv)
     logSupport.init_logging(options.debug)
     logSupport.dprint('SERVER_ARGS: ', srv_argv)
-    #logSupport.dprint('CLIENT_ARGS: ', dict(((key, value)
+    # logSupport.dprint('CLIENT_ARGS: ', dict(((key, value)
     #    for key, value in vars(options).iteritems()
     #    if not (key.startswith('__') or key.startswith('_')))))
     js_client = JobSubClient(options.jobsubServer, options.acctGroup,
                              options.acctRole, srv_argv,
                              options.dropboxServer, options.dag,
                              extra_opts={'debug': options.debug,
-                                         'jobid_output_only':options.jobid_output_only,
-                                         'tarball_reject_list':options.tarball_reject_list,
-                                         'use_cvmfs_dropbox': options.use_cvmfs_dropbox,})
+                                         'jobid_output_only': options.jobid_output_only,
+                                         'tarball_reject_list': options.tarball_reject_list,
+                                         'use_cvmfs_dropbox': options.use_cvmfs_dropbox, })
     rc = 1
     try:
         http_code = js_client.submit()

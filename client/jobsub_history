@@ -28,7 +28,7 @@ import logSupport
 from jobsubClient import JobSubClient
 from jobsubClient import JobSubClientError
 from jobsubClient import Version_String
-from jobsubClient import  JID_Callback
+from jobsubClient import JID_Callback
 from jobsubClient import Date_Callback
 from defaultServer import defaultServer
 
@@ -50,73 +50,73 @@ def required_args_present(options):
 def parse_opts(argv):
     usage = '%(prog)s [Client Options]'
     parser = argparse.ArgumentParser(usage=usage,
-                                   conflict_handler="resolve",
-                                   epilog="REQUIRED arguments are: --group  .Please direct questions, comments, or problems to the service desk")
+                                     conflict_handler="resolve",
+                                     epilog="REQUIRED arguments are: --group  .Please direct questions, comments, or problems to the service desk")
 
     client_options = parser.add_argument_group("Client Options")
 
     # Required args
     client_options.add_argument('-G', '--group',
-                         dest='acctGroup',
-                         type=str,
-                         action='store',
-                         metavar='<Group/Experiment/Subgroup>',
-                         default=os.environ.get('JOBSUB_GROUP'),
-                         help='Group/Experiment/Subgroup for priorities and accounting')
+                                dest='acctGroup',
+                                type=str,
+                                action='store',
+                                metavar='<Group/Experiment/Subgroup>',
+                                default=os.environ.get('JOBSUB_GROUP'),
+                                help='Group/Experiment/Subgroup for priorities and accounting')
 
     # Optional args
     client_options.add_argument('--jobsub-server',
-                         dest='jobsubServer',
-                         action='store',
-                         metavar='<JobSub Server>',
-                         default=defaultServer(),
-                         help='Alternate location of JobSub server to use')
+                                dest='jobsubServer',
+                                action='store',
+                                metavar='<JobSub Server>',
+                                default=defaultServer(),
+                                help='Alternate location of JobSub server to use')
 
     client_options.add_argument('--user',
-                         dest='histUser',
-                         type=str,
-                         action='store',
-                         metavar='<uid>',
-                         default=None,
-                         help='username to look at history of')
+                                dest='histUser',
+                                type=str,
+                                action='store',
+                                metavar='<uid>',
+                                default=None,
+                                help='username to look at history of')
 
     client_options.add_argument('--jobid',
-                         dest='jobId',
-                         type=str,
-                         action=JID_Callback,
-                         metavar='<Job ID>',
-                         default=None,
-                         help='Job Id (Cluster ID)  to query')
+                                dest='jobId',
+                                type=str,
+                                action=JID_Callback,
+                                metavar='<Job ID>',
+                                default=None,
+                                help='Job Id (Cluster ID)  to query')
 
     client_options.add_argument('--qdate-ge',
-                         dest='qdate_ge',
-                         type=str,
-                         action=Date_Callback,
-                         metavar='<submission date>',
-                         default=None,
-                         help="""job submission date (qdate)  greater than or equal to <submission date>
+                                dest='qdate_ge',
+                                type=str,
+                                action=Date_Callback,
+                                metavar='<submission date>',
+                                default=None,
+                                help="""job submission date (qdate)  greater than or equal to <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
     client_options.add_argument('--qdate-le',
-                         dest='qdate_le',
-                         type=str,
-                         action=Date_Callback,
-                         metavar='<submission date>',
-                         default=None,
-                         help="""job submission date (qdate)  less than or equal to  <submission date>
+                                dest='qdate_le',
+                                type=str,
+                                action=Date_Callback,
+                                metavar='<submission date>',
+                                default=None,
+                                help="""job submission date (qdate)  less than or equal to  <submission date>
                          Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss' """)
 
     client_options.add_argument('--debug',
-                         dest='debug',
-                         action='store_true',
-                         default=False,
-                         help='Print debug messages including server contacted, http response, response time')
+                                dest='debug',
+                                action='store_true',
+                                default=False,
+                                help='Print debug messages including server contacted, http response, response time')
 
     client_options.add_argument('-h', '--help',
-                         dest='help',
-                         action='store_true',
-                         default=False,
-                         help='Show this help message and exit')
+                                dest='help',
+                                action='store_true',
+                                default=False,
+                                help='Show this help message and exit')
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")

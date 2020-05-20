@@ -65,7 +65,7 @@ def required_args_present(options):
                 return False
 
         if options.better_analyze and not options.jobId:
-            err =  """ERROR --better-analyze must be used with --jobid"""
+            err = """ERROR --better-analyze must be used with --jobid"""
             print(err)
             return False
 
@@ -86,137 +86,136 @@ def parse_opts(argv):
     epi_text += """https://cdcvs.fnal.gov/redmine/projects/jobsub/"""
     epi_text += """wiki/Frequently_Asked_Questions"""
     parser = argparse.ArgumentParser(usage=usage,
-                                   conflict_handler="resolve",
-                                   epilog=epi_text)
+                                     conflict_handler="resolve",
+                                     epilog=epi_text)
 
     client_options = parser.add_argument_group("Client Options")
 
     # Optional args
     client_options.add_argument('-G', '--group',
-                         dest='acctGroup',
-                         type=str,
-                         action='store',
-                         metavar='<Group/Experiment/Subgroup>',
-                         default=os.environ.get('JOBSUB_GROUP'),
-                         help="".join(['Group/Experiment/Subgroup ',
-                                       'for priorities and accounting',
-                                      ]))
+                                dest='acctGroup',
+                                type=str,
+                                action='store',
+                                metavar='<Group/Experiment/Subgroup>',
+                                default=os.environ.get('JOBSUB_GROUP'),
+                                help="".join(['Group/Experiment/Subgroup ',
+                                              'for priorities and accounting',
+                                              ]))
 
     client_options.add_argument('--jobsub-server',
-                         dest='jobsubServer',
-                         action='store',
-                         metavar='<JobSub Server>',
-                         default=defaultServer(),
-                         help='Alternate location of JobSub server to use')
+                                dest='jobsubServer',
+                                action='store',
+                                metavar='<JobSub Server>',
+                                default=defaultServer(),
+                                help='Alternate location of JobSub server to use')
 
     client_options.add_argument('--role',
-                         dest='acctRole',
-                         type=str,
-                         action='store',
-                         metavar='<VOMS Role>',
-                         default=None,
-                         help='VOMS Role for priorities and accounting')
+                                dest='acctRole',
+                                type=str,
+                                action='store',
+                                metavar='<VOMS Role>',
+                                default=None,
+                                help='VOMS Role for priorities and accounting')
 
     client_options.add_argument('--user',
-                         dest='uid',
-                         type=str,
-                         action='store',
-                         metavar='<user ID>',
-                         default=None,
-                         help='User Id  to query')
+                                dest='uid',
+                                type=str,
+                                action='store',
+                                metavar='<user ID>',
+                                default=None,
+                                help='User Id  to query')
 
     client_options.add_argument('--jobid',
-                         dest='jobId',
-                         type=str,
-                         action=JID_Callback,
-                         metavar='<Job ID>',
-                         default=None,
-                         help="".join(['Job Ids to query.  Job ',
-                                       'Ids have format of ',
-                                       '(cluster).(process)@(schedd_name). ',
-                                       'If Job id has a decimal point but no ',
-                                       'process ',
-                                       '(example) 1234.@fifebatch.fnal.gov ',
-                                       'then ALL job ids with that cluster ',
-                                       'and schedd name will be returned',
-                                      ]))
+                                dest='jobId',
+                                type=str,
+                                action=JID_Callback,
+                                metavar='<Job ID>',
+                                default=None,
+                                help="".join(['Job Ids to query.  Job ',
+                                              'Ids have format of ',
+                                              '(cluster).(process)@(schedd_name). ',
+                                              'If Job id has a decimal point but no ',
+                                              'process ',
+                                              '(example) 1234.@fifebatch.fnal.gov ',
+                                              'then ALL job ids with that cluster ',
+                                              'and schedd name will be returned',
+                                              ]))
 
     client_options.add_argument('--long',
-                         dest='outFormat',
-                         action='store_const',
-                         const='long',
-                         # metavar='<output Format>',
-                         default=None,
-                         help='show long listing (like condor_q -l)')
+                                dest='outFormat',
+                                action='store_const',
+                                const='long',
+                                # metavar='<output Format>',
+                                default=None,
+                                help='show long listing (like condor_q -l)')
 
     client_options.add_argument('--dag',
-                         dest='outFormat',
-                         action='store_const',
-                         const='dags',
-                         metavar='<output Format>',
-                         default=None,
-                         help='show dags (like condor_q -dag)')
+                                dest='outFormat',
+                                action='store_const',
+                                const='dags',
+                                metavar='<output Format>',
+                                default=None,
+                                help='show dags (like condor_q -dag)')
 
     client_options.add_argument('--hold',
-                         dest='outFormat',
-                         action='store_const',
-                         const='hold',
-                         metavar='<output Format>',
-                         default=None,
-                         help='show held jobs (like condor_q -hold)')
+                                dest='outFormat',
+                                action='store_const',
+                                const='hold',
+                                metavar='<output Format>',
+                                default=None,
+                                help='show held jobs (like condor_q -hold)')
 
     client_options.add_argument('--run',
-                         dest='outFormat',
-                         action='store_const',
-                         const='run',
-                         metavar='<output Format>',
-                         default=None,
-                         help='show running jobs (like condor_q -run)')
+                                dest='outFormat',
+                                action='store_const',
+                                const='run',
+                                metavar='<output Format>',
+                                default=None,
+                                help='show running jobs (like condor_q -run)')
 
     client_options.add_argument('--idle',
-                         dest='outFormat',
-                         action='store_const',
-                         const='idle',
-                         metavar='<output Format>',
-                         default=None,
-                         help='show idle jobs ')
+                                dest='outFormat',
+                                action='store_const',
+                                const='idle',
+                                metavar='<output Format>',
+                                default=None,
+                                help='show idle jobs ')
 
     client_options.add_argument('--constraint',
-                         dest='constraint',
-                         action='store',
-                         type=str,
-                         metavar='<constraint>',
-                         default=None,
-                         help='like condor_q -constraint <constraint>')
+                                dest='constraint',
+                                action='store',
+                                type=str,
+                                metavar='<constraint>',
+                                default=None,
+                                help='like condor_q -constraint <constraint>')
 
     client_options.add_argument('--summary',
-                         dest='summary',
-                         action='store_true',
-                         default=False,
-#                         metavar='<summary>',
-                         help='provide a summary (like ifront_q) ')
+                                dest='summary',
+                                action='store_true',
+                                default=False,
+                                #                         metavar='<summary>',
+                                help='provide a summary (like ifront_q) ')
 
     client_options.add_argument('--debug',
-                         dest='debug',
-                         action='store_true',
-                         default=False,
-                         help='Print debug messages to including server contacted, http response, response time')
+                                dest='debug',
+                                action='store_true',
+                                default=False,
+                                help='Print debug messages to including server contacted, http response, response time')
 
     client_options.add_argument('--better-analyze',
-                         dest='better_analyze',
-                         action='store_true',
-                         default=False,
-                         help='do condor_q -better-analyze on job (must use with --jobid)')
+                                dest='better_analyze',
+                                action='store_true',
+                                default=False,
+                                help='do condor_q -better-analyze on job (must use with --jobid)')
 
     client_options.add_argument('-h', '--help',
-                         dest='help',
-                         action='store_true',
-                         default=False,
-                         help='Show this help message and exit')
+                                dest='help',
+                                action='store_true',
+                                default=False,
+                                help='Show this help message and exit')
 
     client_options.add_argument('--version',
-                        action=Version_String)
-
+                                action=Version_String)
 
     if len(argv) < 1:
         print("ERROR: Insufficient arguments specified")
@@ -243,11 +242,11 @@ def main(argv):
     logSupport.dprint('CLIENT_ARGS: ', vars(options))
     rc = 1
 
-    optDict = {'debug':options.debug,
-               'better_analyze':options.better_analyze,
-                'constraint':options.constraint,
-                'uid': options.uid
-              }
+    optDict = {'debug': options.debug,
+               'better_analyze': options.better_analyze,
+               'constraint': options.constraint,
+               'uid': options.uid
+               }
 
     js_client = JobSubClient(options.jobsubServer,
                              options.acctGroup,

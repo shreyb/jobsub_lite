@@ -7,6 +7,9 @@ if [ "$JOBSUB_SETUP_SOURCED" = "" ]; then
             break
         fi
     done
+    if [ "$EXEPATH" = "" ]; then
+        EXEPATH=~dbox/jobsub/client
+    fi
     setup python_future_six_request -q $($EXEPATH/pyflavor)
     setup cigetcert
     setup kx509

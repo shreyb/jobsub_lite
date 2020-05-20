@@ -198,7 +198,7 @@ class Krb5Ticket(Credentials):
                 if os.path.exists(self.krb5CredCache):
                     return True
         return False
-    
+
     def expired(self):
         if not self.exists():
             raise CredentialsNotFoundError
@@ -234,12 +234,12 @@ class Krb5Ticket(Credentials):
             cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
         except subprocessSupport.CalledProcessError:
             logSupport.dprint('Credential validation failed for krb5cache {0}'
-                .format(self.krb5CredCache))
+                              .format(self.krb5CredCache))
             return False
 
         logSupport.dprint('Credential validation passed for krb5cache {0}'
-                .format(self.krb5CredCache))
-        return True 
+                          .format(self.krb5CredCache))
+        return True
 
 
 def mk_temp_fname(fname):
@@ -326,17 +326,18 @@ def cigetcert_to_x509(server, acctGroup=None, debug=None):
     cmd_out = 1
     itry = 0
     ntries = 3
-    #a flaky web server behind DNS RR or HAProxy RR can cause cigetcert to fail, retry
+    # a flaky web server behind DNS RR or HAProxy RR can cause cigetcert to fail, retry
     #'ntries' times in hopes of hitting a good one
     #
     while cmd_out != 0 and itry <= ntries:
         itry += 1
         err = ''
         try:
-            cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=child_env)
+            cmd_out, cmd_err = subprocessSupport.iexe_cmd(
+                cmd, child_env=child_env)
             break
         except:
-            print(' cigetcert try %s of %s failed' % (itry,ntries))
+            print(' cigetcert try %s of %s failed' % (itry, ntries))
             err = "%s %s" % (cmd_err, sys.exc_info()[1])
             print(err)
 
@@ -404,6 +405,7 @@ def proxy_issuer(proxy_fname):
         pass
     return issuer
 
+
 def proxy_subject(proxy_fname):
     openssl_cmd = spawn.find_executable("openssl")
     issuer = ""
@@ -412,10 +414,11 @@ def proxy_subject(proxy_fname):
     cmd = '%s x509 -in %s -noout -subject' % (openssl_cmd, proxy_fname)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        issuer = cmd_out.replace('subject= ','')
+        issuer = cmd_out.replace('subject= ', '')
     except:
         pass
     return issuer
+
 
 if __name__ == '__main__':
     # Simple tests that work on SL5,6,7, OSX 10

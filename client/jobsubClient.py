@@ -40,8 +40,8 @@ import stat
 import re
 import base64
 import pycurl
-import io
-import platform
+#import io
+#import platform
 import json
 import copy
 import traceback
@@ -55,7 +55,9 @@ import tarfile
 import socket
 import time
 import shutil
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import random
 from datetime import datetime
 from signal import signal, SIGPIPE, SIG_DFL
@@ -103,7 +105,7 @@ class JobSubClient(object):
                         features were added
 
         """
-        if sys.version_info[0] == 2 and sys.version_info[1] == 6 :
+        if sys.version_info[0] == 2 and sys.version_info[1] == 6:
             # SL6 Client only works with curl for production servers
             os.environ['JOBSUB_CURL_ONLY'] = 'True'
         self.server = server
@@ -152,7 +154,7 @@ class JobSubClient(object):
             if serverParts[2] != self.serverPort:
                 self.serverPort = serverParts[2]
                 self.serverHost = serverParts[1].replace("//", "")
-        self.serverAliases = [ self.server ]
+        self.serverAliases = [self.server]
         self.credentials = get_client_credentials(acctGroup=self.account_group,
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
@@ -178,8 +180,8 @@ class JobSubClient(object):
         self.serverargs_b64en = None
 
     def checkProxyDepth(self, cert):
-        """ check that proxy has not been derived from itself too 
-            many times for web server to trust it 
+        """ check that proxy has not been derived from itself too
+            many times for web server to trust it
         """
         subject = jobsubClientCredentials.proxy_subject(cert)
         regex = re.compile('/CN=[0-9]+')
@@ -245,19 +247,19 @@ class JobSubClient(object):
         # if not, raise error
         for idx in range(0, len(self.server_argv)):
             arg_v = self.server_argv[idx]
-            parts = []         
-            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:  #dropbox://
+            parts = []
+            if arg_v.find(constants.DROPBOX_SUPPORTED_URI) >= 0:  # dropbox://
                 parts = arg_v.split(constants.DROPBOX_SUPPORTED_URI)
-            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0: #tardir://
+            if arg_v.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:  # tardir://
                 parts = arg_v.split(constants.DIRECTORY_SUPPORTED_URI)
-            for uri in constants.JOB_EXE_SUPPORTED_URIs: #file://
+            for uri in constants.JOB_EXE_SUPPORTED_URIs:  # file://
                 if arg_v.find(uri) >= 0:
                     parts = arg_v.split(uri)
             if parts:
-                if not os.path.exists(parts[-1]) and not self.account_group=="cdf":
+                if not os.path.exists(parts[-1]) and not self.account_group == "cdf":
                     err_msg = "ERROR: %s " % arg_v
-                    err_msg +="""does not point to accessible file or direct"""
-                    err_msg +="""ory. Try adjusting the slashes in the uri"""
+                    err_msg += """does not point to accessible file or direct"""
+                    err_msg += """ory. Try adjusting the slashes in the uri"""
                     raise JobSubClientError(err_msg)
 
         # now that we uris are accessible, package them
@@ -330,7 +332,7 @@ class JobSubClient(object):
 
                 # now create an encoded url to send to jobsub server
                 # informing it of what dropbox files to look for
-                # and where 
+                # and where
                 for idx in range(0, len(srv_argv)):
                     arg = srv_argv[idx]
                     # tardir://
@@ -370,7 +372,8 @@ class JobSubClient(object):
 
             if server_env_exports:
                 srv_env_export_b64en = \
-                    force_text(base64.urlsafe_b64encode(six.b(server_env_exports)))
+                    force_text(base64.urlsafe_b64encode(
+                        six.b(server_env_exports)))
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
 
             self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
@@ -460,9 +463,11 @@ class JobSubClient(object):
             nfp.extend(dpl[2:])
             guc_path = '/'.join(nfp)
             globus_url_cp_cmd = ["globus-url-copy", "-rst-retries",
-                                 "1", "-gridftp2", "-nodcau", "-restart", "-stall-timeout",
-                                 "30", "-len", "16", "-tcp-bs", "16",
-                                 "gsiftp://fndca1.fnal.gov/%s" % guc_path, "/dev/null", ]
+                                 "1", "-gridftp2", "-nodcau", "-restart",
+                                 "-stall-timeout", "30", "-len", "16",
+                                 "-tcp-bs", "16",
+                                 "gsiftp://fndca1.fnal.gov/%s" % guc_path,
+                                 "/dev/null", ]
 
             val['path'] = destpath
             val['host'] = self.server
@@ -592,7 +597,7 @@ class JobSubClient(object):
                     parts = resp.strip().split(':')
                     exists = parts[0]
                     path = parts[-1]
-                    logSupport.dprint("url=%s exists='%s'" % (url,exists))
+                    logSupport.dprint("url=%s exists='%s'" % (url, exists))
                     if exists == 'PRESENT':
                         srv = self.dropboxServer[idx]
                         break
@@ -609,14 +614,22 @@ class JobSubClient(object):
                 srv = random.choice(self.dropboxServer)
             path = "%s/%s" % (self.account_group, digest)
             result[digest] = {'path': "cid=%s,cdir=%s" % (path, cdir),
-                                  'host': srv,
-                                  }
+                              'host': srv,
+                              }
             if exists != 'PRESENT':
                 upload_url = constants.JOBSUB_CID_PUBLISH_URL_PATTERN %\
                     (srv, self.account_group, digest)
                 cert = self.credentials.get('cert')
                 key = self.credentials.get('key')
-                cmd = """curl --cert %s --key %s """ % (cert, key)
+                capath = ""
+                try:
+                    resp, err = subprocessSupport.iexe_cmd("which systemctl")
+                    if err:
+                        capath = " --capath %s " % self.ca_path
+                except:
+                    capath = " --capath %s " % self.ca_path
+
+                cmd = """curl --cert %s --key %s %s """ % (cert, key, capath)
                 cmd += """--url %s  -X POST --data-binary @%s """ % (upload_url,
                                                                      uri2path(file_name))
                 try:
@@ -636,7 +649,6 @@ class JobSubClient(object):
 
         return result
 
-
     def submit_dag(self):
         """ called from jobsub_submit_dag to uh well,
             submit a dag
@@ -655,9 +667,12 @@ class JobSubClient(object):
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
 
         post_data = []
-        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
-        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
-        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
+        post_data = post_data_append(
+            post_data, 'jobsub_args_base64', self.serverargs_b64en)
+        post_data = post_data_append(
+            post_data, 'jobsub_client_version', version_string())
+        post_data = post_data_append(
+            post_data, 'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
@@ -683,14 +698,14 @@ class JobSubClient(object):
 
             post_data = post_data_append(post_data,
                                          'jobsub_command',
-                                          self.job_executable,
-                                          fmt=pycurl.FORM_FILE)
+                                         self.job_executable,
+                                         fmt=pycurl.FORM_FILE)
             payloadFileName = self.makeDagPayload(uri2path(self.job_exe_uri))
 
             post_data = post_data_append(post_data,
-                                              'jobsub_payload',
-                                              payloadFileName,
-                                              fmt=pycurl.FORM_FILE)
+                                         'jobsub_payload',
+                                         payloadFileName,
+                                         fmt=pycurl.FORM_FILE)
 
         #curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         curl.setopt(curl.HTTPPOST, post_data)
@@ -720,7 +735,6 @@ class JobSubClient(object):
         response.close()
         return http_code
 
-
     def makeDagPayload(self, infile):
         """ create a tarfile with all the files that
             go in a dag so it can be uploaded to the
@@ -738,7 +752,7 @@ class JobSubClient(object):
         fout = open(fnameout, 'w')
         tar = tarfile.open('payload.tgz', 'w:gz')
         lines = z.split('\n')
-        contents=[]
+        contents = []
         for line in lines:
             wrds = re.split(r'\s+', line)
             la = []
@@ -781,9 +795,12 @@ class JobSubClient(object):
                 (self.server, self.account_group)
         krb5_principal = jobsubClientCredentials.krb5_default_principal()
         post_data = []
-        post_data=post_data_append(post_data,'jobsub_args_base64', self.serverargs_b64en)
-        post_data=post_data_append(post_data,'jobsub_client_version', version_string())
-        post_data=post_data_append(post_data,'jobsub_client_krb5_principal', krb5_principal)
+        post_data = post_data_append(
+            post_data, 'jobsub_args_base64', self.serverargs_b64en)
+        post_data = post_data_append(
+            post_data, 'jobsub_client_version', version_string())
+        post_data = post_data_append(
+            post_data, 'jobsub_client_krb5_principal', krb5_principal)
 
         logSupport.dprint('URL            : %s %s\n' %
                           (self.submit_url, self.serverargs_b64en))
@@ -807,9 +824,9 @@ class JobSubClient(object):
         # If it is a local file upload the file
         if self.requiresFileUpload(self.job_exe_uri):
             post_data = post_data_append(post_data,
-                                              'jobsub_command',
-                                              self.job_executable,
-                                              fmt=pycurl.FORM_FILE)
+                                         'jobsub_command',
+                                         self.job_executable,
+                                         fmt=pycurl.FORM_FILE)
         # curl.setopt(curl.POSTFIELDS, urllib.urlencode(post_fields))
         # logSupport.dprint('post_data = %s ' % post_data)
         curl.setopt(curl.HTTPPOST, post_data)
@@ -826,7 +843,7 @@ class JobSubClient(object):
             #errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
             err = "HTTP response:%s PyCurl Error %s" % (http_code, error)
-            #if errno == 60:
+            # if errno == 60:
             #    err += "\nDid you remember to include the port number to "
             #    err += "your server specification \n( --jobsub-server %s )?" %\
             #        self.server
@@ -851,7 +868,7 @@ class JobSubClient(object):
                           response
         """
 
-        http_code = 503 #service unavailable
+        http_code = 503  # service unavailable
 
         rtv = self.perform_(url, http_custom_request, post_data,
                             ssl_verifyhost, connect_timeout)
@@ -1046,13 +1063,12 @@ class JobSubClient(object):
             r_dict['resp'] = resp
 
         except requests.ConnectionError as error:
-            r_dict['error'] =  error
+            r_dict['error'] = error
         except Exception as error:
             print('%s' % error)
             raise JobSubClientError(error)
 
         return r_dict
-
 
     def adjust_prio(self, jobid=None, uid=None):
         """ Adjust condor_prio for jobid or uid
@@ -1466,8 +1482,8 @@ class JobSubClient(object):
                             err_fmt += 'is not responding'
                             print(err_fmt % (schedd_host, self.serverPort))
                         elif not is_port_open(schedd_host, condor_port):
-                            print('ERROR condor on  %s port %s not responding' %\
-                                (schedd_host, condor_port))
+                            print('ERROR condor on  %s port %s not responding' %
+                                  (schedd_host, condor_port))
                         else:
                             self.schedd_list.append(schedd)
                             jobload = int(pts[-1:][0])
@@ -1711,8 +1727,6 @@ def servicing_jobsub_server(curl):
     return server
 
 
-
-
 def report_counts(msg):
     jobs = 0
     completed = 0
@@ -1761,15 +1775,16 @@ def print_server_details(response_code, server, serving_server, response_time):
     print('', file=sys.stderr)
     print('JOBSUB SERVER CONTACTED     : %s' % server, file=sys.stderr)
     print('JOBSUB SERVER RESPONDED     : %s' % serving_server, file=sys.stderr)
-    print('JOBSUB SERVER RESPONSE CODE : %s (%s)' %\
-        (response_code,
-         constants.HTTP_RESPONSE_CODE_STATUS.get(response_code,
-                                                 'Failed')), file=sys.stderr)
-    print('JOBSUB SERVER SERVICED IN   : %s sec' % response_time, file=sys.stderr)
-    print('JOBSUB CLIENT FQDN          : %s' %\
-        socket.gethostname(), file=sys.stderr)
-    print('JOBSUB CLIENT SERVICED TIME : %s' %\
-        time.strftime('%d/%b/%Y %X'), file=sys.stderr)
+    print('JOBSUB SERVER RESPONSE CODE : %s (%s)' %
+          (response_code,
+           constants.HTTP_RESPONSE_CODE_STATUS.get(response_code,
+                                                   'Failed')), file=sys.stderr)
+    print('JOBSUB SERVER SERVICED IN   : %s sec' %
+          response_time, file=sys.stderr)
+    print('JOBSUB CLIENT FQDN          : %s' %
+          socket.gethostname(), file=sys.stderr)
+    print('JOBSUB CLIENT SERVICED TIME : %s' %
+          time.strftime('%d/%b/%Y %X'), file=sys.stderr)
 
 
 def print_json_response(response, response_code, server, serving_server,
@@ -1865,8 +1880,8 @@ def get_client_credentials(acctGroup=None, server=None):
         #            cred_dict['cert']
         #    cred_dict = {}
         if not x509.isValid():
-            print("WARNING: %s is not valid.  Attempting to regenerate " %\
-                cred_dict['cert'])
+            print("WARNING: %s is not valid.  Attempting to regenerate " %
+                  cred_dict['cert'])
             cred_dict = {}
 
     if not cred_dict:
@@ -1896,7 +1911,6 @@ def get_client_credentials(acctGroup=None, server=None):
             raise JobSubClientError(long_err_msg)
 
     return cred_dict
-
 
 
 def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
@@ -2058,7 +2072,6 @@ def get_dropbox_idx(argv):
     i = 0
     while(i < len(argv)):
 
-
         if argv[i].find(constants.DROPBOX_SUPPORTED_URI) < 0 and\
                 argv[i].find(constants.DIRECTORY_SUPPORTED_URI) < 0:
             i += 1
@@ -2132,7 +2145,7 @@ def digest_for_file(file_name, block_size=2**20, write_chunks=False):
             sha1 digest of file_name (string)
         Raises:
     """
-    dig  = hashlib.sha1()
+    dig = hashlib.sha1()
     fhdl = open(file_name, 'rb')
     block_size = int(block_size)
     if write_chunks:
@@ -2228,9 +2241,11 @@ class JobsubClientNamespace(argparse.Namespace):
     Namespace to be used with argparsers that want to use custom actions
     :param default_values: dict of default values to use
     """
+
     def __init__(self, default_values=None):
         self.__count_parse = defaultdict(int)
-        super(JobsubClientNamespace, self).__init__(default_values=default_values)
+        super(JobsubClientNamespace, self).__init__(
+            default_values=default_values)
 
     def __setattr__(self, name, value):
         super(JobsubClientNamespace, self).__setattr__(name, value)
@@ -2253,16 +2268,18 @@ class UniqueStore(argparse.Action):
     This adds the defaults for the argument parser to the Namespace object,
     so UniqueStore actions can compare against that
     """
+
     def __call__(self, parser, namespace, values, option_string=None):
         logSupport.dprint("Trying to set {0} to {1}".format(self.dest, values))
         if self.__is_changed_multiple_from_default(namespace, self.dest, values):
-            error = "{0} was given multiple times, with different values.  "+ \
-            "Please check your command, json file config, and environment."
+            error = "{0} was given multiple times, with different values.  " + \
+                "Please check your command, json file config, and environment."
             raise JobSubClientError(error.format(self.dest))
         else:
             setattr(namespace, self.dest, values)
-        logSupport.dprint("{0} is set to {1}".format(self.dest, getattr(namespace, self.dest)))
-        
+        logSupport.dprint("{0} is set to {1}".format(
+            self.dest, getattr(namespace, self.dest)))
+
     @staticmethod
     def __is_changed_multiple_from_default(namespace, dest, values):
         try:
@@ -2270,22 +2287,22 @@ class UniqueStore(argparse.Action):
         except AttributeError:
             old_value = None
 
-        # If the namespace has a default value already stored, we want to 
+        # If the namespace has a default value already stored, we want to
         # allow it to be overridden num_changes_limit times.  So if we have
-        # a default key/val foo:bar, and we get --foo=baz and 
-        # num_changes_limit=1, we want to allow that to go through return 
-        # False). However, If we then get --foo=blah, we should not allow it 
+        # a default key/val foo:bar, and we get --foo=baz and
+        # num_changes_limit=1, we want to allow that to go through return
+        # False). However, If we then get --foo=blah, we should not allow it
         # (return True)
         try:
             if dest in namespace.default_values:
                 __num_changes_limit = constants.JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT + 1
             else:
                 __num_changes_limit = constants.JOBSUB_CLIENT_NUM_CHANGES_FROM_DEFAULT_LIMIT
-        except AttributeError:      
+        except AttributeError:
             # Namesapce doesn't have default_values attr, so it's not a JobsubClientNamespace
             # Stop here and allow caller to proceed
             return False
-                
+
         if old_value is not None and (
                 old_value != values and
                 namespace.count_parse(dest) >= __num_changes_limit):
@@ -2295,17 +2312,17 @@ class UniqueStore(argparse.Action):
 
 class Version_String(argparse.Action):
     def __init__(self,
-                option_strings,
-                version=None,
-                dest=argparse.SUPPRESS,
-                default=argparse.SUPPRESS,
-                help="Show program's version number and exit"):
+                 option_strings,
+                 version=None,
+                 dest=argparse.SUPPRESS,
+                 default=argparse.SUPPRESS,
+                 help="Show program's version number and exit"):
         super(Version_String, self).__init__(
-                option_strings=option_strings,
-                dest=dest,
-                default=default,
-                nargs=0,
-                help=help)
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            nargs=0,
+            help=help)
         self.version = version
 
     def __call__(self, parser, namespace, values=None, option_string=None):
@@ -2315,7 +2332,6 @@ class Version_String(argparse.Action):
         formatter = parser._get_formatter()
         formatter.add_text(version)
         parser.exit(message=formatter.format_help())
-
 
 
 def version_string():
@@ -2406,7 +2422,7 @@ if __name__ == '__main__':
                        "\.log$", "\.err$", "\.out$"]
         if len(sys.argv) >= 7:
             print('reading reject_list file %s' % sys.argv[6])
-            reject_list = read_re_file(sys.argv[6])
+            REJECT_LIST = read_re_file(sys.argv[6])
             print('reject_list = %s' % reject_list)
 
         create_tarfile(sys.argv[1 + 1], sys.argv[2 + 1],
@@ -2422,8 +2438,8 @@ if __name__ == '__main__':
         print("digest for %s is %s" % (sys.argv[2], DIG))
         if WRITE_CHUNKS:
             print("to test directory /tmp/%s contents use commands " % DIG)
-            print("'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %\
-                (DIG, sys.argv[2], sys.argv[2], sys.argv[2]))
+            print("'cat  /tmp/%s/* > %s.copy ; diff %s.copy  %s' " %
+                  (DIG, sys.argv[2], sys.argv[2], sys.argv[2]))
     elif sys.argv[1] == 'TEST_RE_LIST':
         x_re_list = read_re_file(sys.argv[2])
         print("re_list = %s" % x_re_list)

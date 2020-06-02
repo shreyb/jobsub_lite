@@ -14,6 +14,7 @@ Client
 * Feature 23380  RCDS not allowed for 'mars' role
 * Bug     24037  SL6 python2.6 authentication problems fixed.
 * Bug     24445  OSG CA Cert dir needed for SL6 authentication still
+* Feature 24449  jobsub client python version added to job classad
 
 Server
 -----------

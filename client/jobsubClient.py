@@ -369,12 +369,16 @@ class JobSubClient(object):
                 idx = get_jobexe_idx(srv_argv)
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
+            ver = sys.version[:sys.version.find(' ')]
+            srv_argv.insert(0, '--lines=+JobsubClientPython=\\\"%s...%s\\\"' % 
+                    (sys.executable,ver))
 
             if server_env_exports:
                 srv_env_export_b64en = \
                     force_text(base64.urlsafe_b64encode(
                         six.b(server_env_exports)))
                 srv_argv.insert(0, '--export_env=%s' % srv_env_export_b64en)
+
 
             self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
                 six.b(' '.join(srv_argv))))

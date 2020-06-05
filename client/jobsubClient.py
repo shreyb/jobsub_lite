@@ -236,12 +236,13 @@ class JobSubClient(object):
         ]
         return reject_list
 
-    def init_submission(self):
+    def init_submission(self, is_dag=False):
         """ A refactor of __init__ ,
             only do this stuff if a job submission is requested
         """
         self.probeSchedds()
 
+        
         # make sure all the file:// dropbox:// uris
         # are accessible from submission node.
         # if not, raise error
@@ -370,8 +371,13 @@ class JobSubClient(object):
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
             ver = sys.version[:sys.version.find(' ')]
-            srv_argv.insert(0, '--lines=+JobsubClientPython=\\\"%s...%s\\\"' % 
-                    (sys.executable,ver))
+            if is_dag:
+                sep = "'"
+            else:
+                sep = ""
+
+            srv_argv.insert(0, """ %s  -l=+JobsubClientPython=\\\"%s...%s\\\"  %s """ % 
+                    (sep,sys.executable,ver,sep))
 
             if server_env_exports:
                 srv_env_export_b64en = \
@@ -657,7 +663,7 @@ class JobSubClient(object):
         """ called from jobsub_submit_dag to uh well,
             submit a dag
         """
-        self.init_submission()
+        self.init_submission(is_dag=True)
         # if (not self.dropbox_uri_map) or self.dropboxServer:
         #    self.probeSchedds()
         # self.serverAuthMethods()

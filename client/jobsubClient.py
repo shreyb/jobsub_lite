@@ -242,7 +242,7 @@ class JobSubClient(object):
         """
         self.probeSchedds()
 
-        
+
         # make sure all the file:// dropbox:// uris
         # are accessible from submission node.
         # if not, raise error
@@ -376,7 +376,7 @@ class JobSubClient(object):
             else:
                 sep = ""
 
-            srv_argv.insert(0, """ %s  -l=+JobsubClientPython=\\\"%s...%s\\\"  %s """ % 
+            srv_argv.insert(0, """ %s  -l=+JobsubClientPython=\\\"%s...%s\\\"  %s """ %
                     (sep,sys.executable,ver,sep))
 
             if server_env_exports:
@@ -1501,9 +1501,7 @@ class JobSubClient(object):
                                 best_schedd = schedd
                                 best_jobload = jobload
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
-        except RuntimeError as error:
-            errno, errstr = err
-            http_code = response.status_code
+        except RuntimeError as err:
             raise JobSubClientError(err)
 
     def listConfiguredSites(self):
@@ -2266,7 +2264,7 @@ class JobsubClientNamespace(argparse.Namespace):
 
 
 class UniqueStore(argparse.Action):
-    """If you want to use this action, make sure that you use a 
+    """If you want to use this action, make sure that you use a
     JobsubClientNamespace to parse args into like this:
 
     >>> parser = argparse.ArgumentParser()
@@ -2425,7 +2423,7 @@ if __name__ == '__main__':
                        "%s --help\n" % sys.argv[0],
                        "%s TEST_TAR_FUNCS output_tarfile " % sys.argv[0],
                        "input_directory[write_chunks (1|0)]  [block_size (int)]\n",
-                       "%s TEST_DATE_CALLBACK 'date_string'\n" % sys.argv[0],)))
+                       "%s \n" % sys.argv[0],)))
 
     elif sys.argv[1] == "TEST_TAR_FUNCS":
         REJECT_LIST = ["\.git/", "\.svn/", "\.core$", "~$", "\.pdf$", "\.eps$", "\.png$",
@@ -2433,7 +2431,7 @@ if __name__ == '__main__':
         if len(sys.argv) >= 7:
             print('reading reject_list file %s' % sys.argv[6])
             REJECT_LIST = read_re_file(sys.argv[6])
-            print('reject_list = %s' % reject_list)
+            print('reject_list = %s' % REJECT_LIST)
 
         create_tarfile(sys.argv[1 + 1], sys.argv[2 + 1],
                        reject_list=REJECT_LIST)
@@ -2454,14 +2452,6 @@ if __name__ == '__main__':
         x_re_list = read_re_file(sys.argv[2])
         print("re_list = %s" % x_re_list)
 
-    elif sys.argv[1] == "TEST_DATE_CALLBACK":
-        def P_DUCK(): return None
-        P_DUCK.values = lambda: None
-
-        def OPT_DUCK(): return None
-        OPT_DUCK.dest = "values"
-        if date_callback(OPT_DUCK, None, sys.argv[2], P_DUCK):
-            print("date format OK")
 
     else:
         print("syntax error for command input:  %s" % sys.argv)

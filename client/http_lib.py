@@ -1,11 +1,18 @@
 import os
+import sys
+import traceback
 import pycurl
 import platform
-import io
 import six
 import logSupport
 import constants
 import subprocessSupport
+
+class HTTPLibError(Exception):
+
+    def __init__(self, errMsg="http call failed."):
+        logSupport.dprint(traceback.format_exc())
+        sys.exit(errMsg)
 
 def curl_secure_context(url, credentials):
     """
@@ -78,7 +85,7 @@ def get_capath():
     if not ca_dir:
         err = 'Could not find CA Certificates in %s. ' % system_ca_dir
         err += 'Set X509_CERT_DIR in the environment.'
-        raise JobSubClientError(err)
+        raise HTTPLibError(err)
 
     logSupport.dprint('Using CA_DIR: %s' % ca_dir)
     return ca_dir

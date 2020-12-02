@@ -19,7 +19,6 @@ def defaultServer():
             return deflist[random.randint(0, ln)]
         else:
             raise Exception("no default server set in constants.py")
-    return (force_text(stdoutdata), force_text(stderrdata))
 
 
 

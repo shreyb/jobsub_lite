@@ -24,6 +24,7 @@ export SERVER=https://${MACH}:8443
 
 echo test --tar_file_name with pnfs, creating tarball
 $EXEPATH/jobsub_submit.py $GROUP_SPEC $DEBUG \
+       --use-pnfs-dropbox \
        $SERVER_SPEC $SUBMIT_FLAGS \
               --tar_file_name tardir://${GROUP}_stuff file://"${GROUP}_dropbox.sh" $SLEEPVAL
 T1=$? && TS=$T1
@@ -32,6 +33,7 @@ test $TS -ne 0 && echo FAILED
 
 echo test --tar_file_name with pnfs, re-using  tarball
 $EXEPATH/jobsub_submit.py $GROUP_SPEC $DEBUG \
+       --use-pnfs-dropbox \
        $SERVER_SPEC $SUBMIT_FLAGS \
               --tar_file_name dropbox://${GROUP}_stuff.tar \
             -e SERVER   file://"${GROUP}_dropbox.sh"

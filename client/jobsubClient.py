@@ -311,10 +311,11 @@ class JobSubClient(object):
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
+                self.dropbox_method = self.dropboxMethod()
                 actual_server = self.server
                 tfiles = []
                 # upload cvmfs rapid code distribution files, if any
-                if self.extra_opts.get('use_cvmfs_dropbox', False):
+                if self.dropbox_method == 'cvmfs':
                     logSupport.dprint('calling dropbox_upload')
                     self.uploaded = self.dropbox_upload()
                     logSupport.dprint(
@@ -400,7 +401,7 @@ class JobSubClient(object):
             create box_url = dropbox://somedir.tar
 
             set self.dropbox_uri_map[box_url] = digest
-            sel self.directory_tar_map[dir_url] = box_url
+            set self.directory_tar_map[dir_url] = box_url
 
         use these mapfiles later to get tarfiles to submitted jobs
         """
@@ -1394,6 +1395,28 @@ class JobSubClient(object):
         list_url = constants.JOBSUB_Q_SUMMARY_URL_PATTERN % (self.server)
         return self.changeJobState(list_url, 'GET')
 
+    def dropboxMethod(self, acct_group=None):
+        """Get default dropbox transfer method"""
+
+        if self.extra_opts.get('use_cvmfs_dropbox'):
+            return 'cvmfs'
+        if self.extra_opts.get('use_pnfs_dropbox'):
+            return 'pnfs'
+
+        if not acct_group:
+            acct_group = self.account_group
+
+        url_ = constants.JOBSUB_DROPBOX_METHOD_SERVER_PATTERN %\
+               (self.server, acct_group)
+
+        default_ = 'cvmfs'
+
+        try:
+            meth = self.requestValue(url_)
+            return meth
+        except Exception:
+            return default_
+
     def dropboxSize(self, acct_group=None):
         """Get max size of file allowed in dropbox location from server"""
         if not acct_group:
@@ -2100,9 +2123,11 @@ def get_dropbox_uri(argv):
         if dropbox_uri.find('=') > 0:
             parts = dropbox_uri.split('=')
             for part in parts:
+                # look for dropbox://
                 if part.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
                     dropbox_uri = part.strip()
                     return dropbox_uri
+                # look for tardir://
                 if part.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
                     dropbox_uri = part.strip()
                     return dropbox_uri
@@ -2131,6 +2156,10 @@ def uri2path(uri):
 def get_dropbox_uri_map(argv):
     """
     make a map with keys of file path and value of sequence
+    output looks like
+    amap = { "dropbox://path/to/tarfile.tgz": "5f96c2817b90057eb29397ddebd37ed0029e5cad",
+             "dropbox://some/other/file"    : "74eb8c9259661afafb4b9c549d8d314c8232dfeb"
+           }
     """
     amap = dict()
     for arg in argv:

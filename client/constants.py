@@ -47,8 +47,9 @@ JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/job
 
 JOBSUB_AUTHMETHODS_URL_PATTERN = '%s/jobsub/acctgroups/%s/authmethods/'
 JOBSUB_DROPBOX_MAX_SIZE_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxsize/'
-
-JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/' 
+JOBSUB_DROPBOX_LOCATION_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropboxlocation/'
+JOBSUB_DROPBOX_CVMFS_SERVER_PATTERN = '%s/jobsub/acctgroups/%s/dropboxcvmfsserver/'
+JOBSUB_DROPBOX_METHOD_SERVER_PATTERN = '%s/jobsub/acctgroups/%s/dropboxmethod/'
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
 JOBSUB_Q_USERID_URL_PATTERN = '%s/jobsub/users/%s/jobs/'
@@ -73,8 +74,6 @@ JOBSUB_JOB_SANDBOX_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jo
 JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN = '%s/jobsub/acctgroups/%s/sandboxes/%s/'
 JOBSUB_JOB_LIST_SANDBOXES_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/sandboxes/%s/'
 
-#JOBSUB_DROPBOX_POST_URL_PATTERN = '%s/jobsub/acctgroups/%s/dropbox/'
-JOBSUB_DROPBOX_CVMFS_SERVER_PATTERN = '%s/jobsub/acctgroups/%s/dropboxcvmfsserver/'
 JOBSUB_CID_PUBLISH_URL_PATTERN = 'https://%s/pubapi/publish?cid=%s/%s'
 JOBSUB_CID_EXISTS_URL_PATTERN = 'https://%s/pubapi/exists?cid=%s/%s'
 
@@ -172,7 +171,7 @@ KRB5_DEFAULT_CC = 'FILE:/tmp/krb5cc_%s' % os.getuid()
 X509_PROXY_DEFAULT_FILE = '/tmp/x509up_u%s' % os.getuid()
 
 ##########################################################################
-# Other 
+# Other
 ##########################################################################
 
 IFDH_FILE_EXISTS_PATTERN = ".+File\sexists(.+)?"

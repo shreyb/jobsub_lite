@@ -367,6 +367,23 @@ def get_dropbox_upload_list(acctgroup):
 
     return list(dropbox_upload_set)
 
+def get_dropbox_method(acctgroup):
+    """Scan jobsub.ini for default tarball transport
+        method that acctgroup uses
+    """
+    try:
+        prs = JobsubConfigParser()
+        r_code = prs.get(acctgroup, 'tarball_default_transport_method')
+    except BaseException:
+        logger.log('Failed to get transport_methods ',
+                   traceback=True,
+                   severity=logging.ERROR)
+        logger.log('Failed to get transport_method: ',
+                   traceback=True,
+                   severity=logging.ERROR,
+                   logfile='error')
+
+    return r_code
 
 def get_authentication_methods(acctgroup):
     """Scan jobsub.ini for authentication methods that acctgroup
@@ -644,13 +661,13 @@ class JobsubConfig:
         return layout
 
     def commandPathAcctgroup(self, acctgroup):
-        """Dynamically compute directory path for acctgroups 
+        """Dynamically compute directory path for acctgroups
            condor job description and log files
         """
         return os.path.join(self.commandPathRoot, acctgroup)
 
     def commandPathUser(self, acctgroup, user):
-        """Dynamically compute directory path for users 
+        """Dynamically compute directory path for users
            condor job description and log files
         """
         return os.path.join(self.commandPathAcctgroup(acctgroup), user)
@@ -777,7 +794,7 @@ def chown_as_user(path, username):
 
 
 def run_cmd_as_user(command, username, child_env={}):
-    """run os command 
+    """run os command
        Params:
            @command: unix OS shell command to run
            @username: new owner of file

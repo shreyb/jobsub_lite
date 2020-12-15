@@ -27,6 +27,7 @@ from dropbox_location import DropboxLocationResource
 from dropbox_size import DropboxSizeResource
 from dropbox_upload_list import DropboxUploadListResource
 from dropbox_cvmfs_server import DropboxCVMFSServerResource
+from dropbox_method import DropboxMethodResource
 from voms_group import VOMSGroupResource
 
 
@@ -58,6 +59,7 @@ class AccountingGroupsResource(object):
         self.dropboxsize = DropboxSizeResource()
         self.dropboxuploadlist = DropboxUploadListResource()
         self.dropboxcvmfsserver = DropboxCVMFSServerResource()
+        self.dropboxmethod = DropboxMethodResource()
         self.vomsgroup = VOMSGroupResource()
 
     def doGET(self, acctgroup):

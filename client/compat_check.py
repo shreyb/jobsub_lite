@@ -35,7 +35,7 @@ from future import standard_library
 try:
     standard_library.install_aliases()
 except Exception as err1:
-    err += "sucks to be you"
+    err += "should never get here, open a service desk ticket"
     print(err)
     raise Exception(err1)
 

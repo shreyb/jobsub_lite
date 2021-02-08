@@ -1,3 +1,25 @@
+================================================================================
+v1.3.3
+================================================================================
+
+Client
+--------
+
+* Feature 24968  Better error message and instructions when client has loaded
+                 The wrong python_future_six_request compatibility layer
+
+* Feature 23234  New submission flag: --use-pnfs-dropbox.  Overrides server
+                 configured default.  Note that flag --use-cvmfs-dropbox also
+                 overrides default configuration, and the two flags cannot be
+                 used together in a submission.
+
+Server
+--------
+
+* Feature 23234  Default behavior of tarball upload configurable in jobsub.ini file
+                 can be overridden with --use-cvmfs-dropbox or --use-pnfs-dropbox
+
+
 
 ================================================================================
 v1.3.2.1
@@ -14,7 +36,7 @@ v1.3.2
 Client
 ----------
 * Bug     21031  Detect and flag when input options that are only supposed to
-                 be used once (such as --group) are used multiple times for 
+                 be used once (such as --group) are used multiple times for
 		 jobsub_submit and jobsub_submit_dag.  This will be rolled
 		 out to other commands in a future release.
 * Bug     22481  Better error checking and messages for --tar_file_name
@@ -34,7 +56,7 @@ Server
 * Feature 24327  New classad attribute for job submissions: +TAR_FILE_NAME
                  useful for measuring efficiency of RCDS and pnfs tarball
                  submissions.
-                 
+
 ================================================================================
 v1.3.1
 ================================================================================

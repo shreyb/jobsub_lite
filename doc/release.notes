@@ -12,6 +12,7 @@ Client
                  configured default.  Note that flag --use-cvmfs-dropbox also
                  overrides default configuration, and the two flags cannot be
                  used together in a submission.
+* Bugfix 25553   Tarball upload method defaults to PNFS rather than CVMFS
 
 Server
 --------

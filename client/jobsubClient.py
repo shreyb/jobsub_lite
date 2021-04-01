@@ -1402,7 +1402,7 @@ class JobSubClient(object):
             return 'cvmfs'
         if self.extra_opts.get('use_pnfs_dropbox'):
             return 'pnfs'
-        
+
         if not acct_group:
             acct_group = self.account_group
 
@@ -1414,10 +1414,10 @@ class JobSubClient(object):
         try:
             meth = self.requestValue(url_)
         except Exception:
-	    logSupport.dprint('Error receiving dropbox upload method from '
+            logSupport.dprint('Error receiving dropbox upload method from '
                 'server.  Will use default method {0}'.format(default))
             return default_
-        
+
         return default_ if meth is None else meth
 
     def dropboxSize(self, acct_group=None):

@@ -16,7 +16,7 @@ if [ "$rpmfile" = "" ]; then
 fi
 
 #repologin="jobsub@web1.fnal.gov"
-repologin="flxi03.fnal.gov"
+repologin="flxi04.fnal.gov"
 #repodir='/var/www/html/files/jobsub'
 repodir='/web/sites/j/jobsub.fnal.gov/htdocs/rpms'
 #For now only SL6 support

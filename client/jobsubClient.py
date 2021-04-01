@@ -1415,7 +1415,7 @@ class JobSubClient(object):
             meth = self.requestValue(url_)
         except Exception:
             logSupport.dprint('Error receiving dropbox upload method from '
-                'server.  Will use default method {0}'.format(default))
+                'server.  Will use default method {0}'.format(default_))
             return default_
 
         return default_ if meth is None else meth

@@ -1,0 +1,369 @@
+#!/usr/bin/env python
+
+##########################################################################
+# Project:
+#   JobSub
+#
+# Author:
+#   Parag Mhashilkar
+#
+# Description:
+#   This module implements the JobSub client tool
+#
+##########################################################################
+
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from __future__ import division
+import compat_check
+from builtins import open
+from builtins import str
+import sys
+import os
+import argparse
+import traceback
+import json
+
+import re
+import logSupport
+from jobsubClient import JobSubClient
+from jobsubClient import JobSubClientSubmissionError
+from jobsubClient import JobsubClientNamespace
+from jobsubClient import Version_String
+from jobsubClient import http_code_to_rc
+from jobsubClient import get_jobexe_idx
+from jobsubClient import UniqueStore
+from jobsubClient import digest_for_file
+from defaultServer import defaultServer
+
+
+def split_client_server_args(parser, argv):
+    end_srv_argv = []
+    working_argv = []
+
+    # Find executable, make sure it and all arguments following are considered
+    # server args
+    exe_idx = get_jobexe_idx(argv)
+    if exe_idx is not None:
+        end_srv_argv = argv[exe_idx:]
+        # Don't need to parse the jobsub command
+        working_argv = argv[1:exe_idx]
+    else:
+        working_argv = argv[:]
+
+    parser_defaults = vars(parser.parse_args([]))
+    j = JobsubClientNamespace(default_values=parser_defaults)
+    # Parse the known args of what's left to grab client arguments
+    cli_argv, extras = parser.parse_known_args(working_argv, namespace=j)
+
+    # Construct srv_argv
+    srv_argv = extras + end_srv_argv
+
+    return cli_argv, srv_argv
+
+
+def required_args_present(options):
+    try:
+        if options.debug and options.jobid_output_only:
+            print("ERROR: --debug and --jobid_output_only are incompatible")
+            return False
+        if options.use_cvmfs_dropbox and options.acctRole:
+            if options.acctRole.lower() == 'mars':
+                print (
+                    "jobs with --role mars are not allowed to use --use-cvmfs-dropbox")
+                sys.exit(1)
+        if (options.acctGroup and options.jobsubServer):
+            return True
+    except AttributeError:
+        return False
+    return False
+
+
+def print_opts(options):
+    logSupport.dprint('COMMAND LINE OPTIONS:')
+    logSupport.dprint('%s' % options)
+
+
+def parse_opts(argv):
+    usage = '%(prog)s [Client Options] [Server Options] file://[source_for_preload]\n\nProvide --group and --jobsub-server to see full help'
+    parser = argparse.ArgumentParser(usage=usage,
+                                     add_help=False,
+                                     conflict_handler="resolve",
+                                     epilog="REQUIRED arguments are (--group AND  file://[your_grid_job_here]). Please direct questions, comments, or problems to the service desk")
+
+    client_options = parser.add_argument_group('Client Options')
+
+    # Required args
+    client_options.add_argument('-G', '--group',
+                                dest='acctGroup',
+                                type=str,
+                                action=UniqueStore,
+                                metavar='<Group/Experiment/Subgroup>',
+                                default=os.environ.get('JOBSUB_GROUP'),
+                                help='Group/Experiment/Subgroup for priorities and accounting')
+
+    # Optional args
+    client_options.add_argument('--role',
+                                dest='acctRole',
+                                type=str,
+                                action='store',
+                                metavar='<VOMS Role>',
+                                default=None,
+                                help='VOMS Role for priorities and accounting')
+
+
+    client_options.add_argument('--jobsub-server',
+                                dest='jobsubServer',
+                                action='store',
+                                metavar='<JobSub Server>',
+                                default=defaultServer(),
+                                help='Alternate location of JobSub server to use')
+
+
+
+    client_options.add_argument('--tarball-exclusion-file',
+                                dest='tarball_reject_list',
+                                action='store',
+                                metavar='<tarball exclusion regex file>',
+                                default=None,
+                                help="A file of python regex's to exclude from " +
+                                " tarballs. Use with --tar_file_name tardir://" +
+                                " Default exclusion list includes .git and .svn" +
+                                " directories, pdf, eps, log files, and human" +
+                                " readable images.  " +
+                                "\n")
+
+    client_options.add_argument('--use-cvmfs-dropbox',
+                                dest='use_cvmfs_dropbox',
+                                default=False,
+                                action='store_true',
+                                help='force cvmfs for dropbox ')
+
+    client_options.add_argument('--use-pnfs-dropbox',
+                                dest='use_pnfs_dropbox',
+                                default=False,
+                                action='store_true',
+                                help='force pnfs for dropbox ')
+
+    client_options.add_argument('--debug',
+                                dest='debug',
+                                action='store_true',
+                                default=False,
+                                help='Print debug messages including server contacted, http response, response time')
+
+
+    client_options.add_argument('-h', '--help',
+                                dest='help',
+                                action='store_true',
+                                default=False,
+                                help='Show this help message and exit')
+
+    client_options.add_argument('--version',
+                                action=Version_String)
+
+    if len(argv) < 1:
+        print("ERROR: Insufficient arguments specified")
+        parser.print_help()
+        sys.exit(1)
+
+    # This bit is just for --json-config since it's treated differently than
+    # other args
+    if argv.count("--json-config") > 1:
+        JobSubClientSubmissionError(
+            "Only one json config file can be specified.")
+
+    # print('1 argv=%s' % argv)
+    j = 0
+    submit_config = ""
+    while j < len(argv):
+        if argv[j] == "--json-config":
+            argv.pop(j)
+            submit_config = argv.pop(j)
+        elif "--json-config=" in argv[j]:
+            arg = argv.pop(j)
+            # pathological? case where '=' may be in name of json-config-file
+            submit_config = "=".join(arg.split("=")[1:])
+        j += 1
+
+    if submit_config:
+        classad_val = "--lines '+JOBSUB_JSON_CONFIG_FILE=\"%s\"'" % submit_config
+        argv.insert(1, classad_val)
+        fd = open(submit_config)
+        sd = json.load(fd)
+        fd.close()
+        argv_job_idx = get_jobexe_idx(argv)
+        if argv_job_idx is not None:
+            argv_job_present = argv[argv_job_idx]
+        else:
+            argv_job_idx = len(argv)
+            argv_job_present = False
+        for opt in sd:
+            if isinstance(opt, str):
+                opt = str(opt)
+            if opt[0] == "#":
+                continue
+
+            if sd.get(opt) and isinstance(sd[opt], str):
+                sd[opt] = str(sd[opt])
+            if str(sd[opt]).lower() == "true":
+                argv.insert(argv_job_idx, opt)
+                argv_job_idx += 1
+            elif "file://" in opt:
+                if argv_job_present:
+                    print("ERROR: you specified %s in %s" %
+                          (opt, submit_config))
+                    print("and %s in the command line" % (argv_job_present))
+                    print("these conflict, exiting")
+                    exit(1)
+                else:
+                    argv.insert(argv_job_idx, opt)
+                    if sd[opt]:
+                        inc = 1
+                        if isinstance(sd[opt], list):
+                            for el in sd[opt]:
+                                argv.insert(argv_job_idx + inc, str(el))
+                                inc += 1
+                        else:
+                            argv.insert(argv_job_idx + inc, str(sd[opt]))
+
+            elif isinstance(sd[opt], list):
+                for lel in sd[opt]:
+                    argv.insert(argv_job_idx, opt)
+                    argv_job_idx += 1
+                    argv.insert(argv_job_idx, lel)
+                    argv_job_idx += 1
+
+            elif str(sd[opt]).lower() != "false":
+                argv.insert(argv_job_idx, opt)
+                argv_job_idx += 1
+                argv.insert(argv_job_idx, str(sd[opt]))
+                argv_job_idx += 1
+
+    cli_argv_namespace, srv_argv = split_client_server_args(parser, argv)
+
+    # if len(remainder) > 1:
+    #     parser.print_help(file)
+
+    if not srv_argv:
+        # No server side args or exe provided. Just print help.
+        cli_argv_namespace.help = True
+
+    if cli_argv_namespace.help:
+        parser.print_help()
+        if required_args_present(cli_argv_namespace):
+            header = "  Server Options:"
+            print('\n%s' % header)
+            print_acctgroup_help(cli_argv_namespace)
+        sys.exit(0)
+
+    if not required_args_present(cli_argv_namespace):
+        print("ERROR: Missing required arguments")
+        print("%s" % parser.epilog)
+        parser.print_help()
+        sys.exit(1)
+    return (cli_argv_namespace, srv_argv)
+
+
+def print_acctgroup_help(options):
+    """
+    Format and print the help message from the server
+    """
+
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup, None, [
+    ], extra_opts={})
+    return js_client.help()
+
+    # out = response
+
+    # Remove the duplicate lines from the server response
+    #    --help message
+    #    Options:
+    # for lineno in range(len(out)):
+    #     if out[lineno].lstrip().startswith(
+    #             '-h, --help') or (out[lineno].strip() == 'Options:'):
+    #         out[lineno] = ''
+    #         break
+    # help_str = '  '.join(out[4:])
+    # print help_str
+
+
+def main(argv):
+    options, srv_argv = parse_opts(argv)
+    logSupport.init_logging(options.debug)
+    logSupport.dprint('SERVER_ARGS: ', srv_argv)
+    # logSupport.dprint('CLIENT_ARGS: ', dict(((key, value)
+    #    for key, value in vars(options).iteritems()
+    #    if not (key.startswith('__') or key.startswith('_')))))
+    js_client = JobSubClient(options.jobsubServer, options.acctGroup,
+                             options.acctRole, srv_argv,
+                             extra_opts={'debug': options.debug,
+                                         'tarball_reject_list': options.tarball_reject_list,
+                                         'use_cvmfs_dropbox': options.use_cvmfs_dropbox,
+                                         'use_pnfs_dropbox': options.use_pnfs_dropbox, })
+    rc = 1
+    intext = []
+    outtext = []
+    digest_dic = {}
+
+
+    try:
+        dagin = srv_argv[0]
+        dagin = dagin.replace("file://","")
+        with open(dagin,'r') as f:
+            intext = f.readlines()
+        os.chdir(os.path.dirname(dagin))
+        for line in intext:
+            r1 = re.findall("dropbox:\S+",line)
+            if r1:
+                for dbx in r1:
+                    if dbx not in digest_dic:
+                        fname=dbx.replace("dropbox://","")
+                        digest_dic[dbx] = digest_for_file(fname)
+        #print(digest_dic)
+        js_client.dropbox_uri_map = digest_dic
+        upload_dic = js_client.dropbox_upload()
+        print(upload_dic)
+        with open("%s.new"%dagin,'w') as f:
+            for line in intext:
+                for dbx in digest_dic:
+                    if dbx in line:
+                        dig = digest_dic[dbx]
+                        if dig in upload_dic:
+                            path = upload_dic[dig]['path']
+                            line = line.replace(dbx,path)
+                f.write(line)
+
+        return 0
+        http_code = js_client.submit()
+        rc = http_code_to_rc(http_code)
+    except JobSubClientSubmissionError as e:
+        print(e)
+        logSupport.dprint(traceback.format_exc())
+    except Exception as e:
+        print(e)
+        logSupport.dprint('%s' % traceback.print_exc())
+
+    return rc
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))
+
+# TO TEST RUN SOMETHING LIKE THE FOLLOWING
+
+# X509_CERT_DIR=/Users/parag/.globus/certificates
+# X509_USER_CERT=/Users/parag/.globus/x509up_u11017
+# X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --group
+# nova --jobsub-server https://fermicloud326.fnal.gov:8443 -g -N 3 --site
+# Fermicloud-MultiSlots parag_test.sh --job-args 100
+
+# Following are old examples
+# X509_CERT_DIR=/Users/parag/.globus/certificates X509_USER_CERT=/Users/parag/.globus/x509up_u11017 X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443 --job-exe parag_test.sh --job-args 100 --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots
+# X509_CERT_DIR=/Users/parag/.globus/certificates
+# X509_USER_CERT=/Users/parag/.globus/x509up_u11017
+# X509_USER_KEY=/Users/parag/.globus/x509up_u11017 ./jobsub.py
+# --acct-group 1 --jobsub-server https://fermicloud326.fnal.gov:8443
+# --jobsub-server-args -g -N 3 --site Fermicloud-MultiSlots
+# --X509_USER_PROXY=/scratch/proxies/dbox/dbox.nova.proxy
+# /scratch/app/users/condor-exec/dbox/test_grid_env.sh 100

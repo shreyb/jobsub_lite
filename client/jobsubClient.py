@@ -268,13 +268,15 @@ class JobSubClient(object):
         if self.server_argv:
             self.job_exe_uri = get_jobexe_uri(self.server_argv)
             self.job_executable = uri2path(self.job_exe_uri)
+            self.dropbox_method = self.dropboxMethod()
             d_idx = get_dropbox_idx(self.server_argv)
             if d_idx is not None and d_idx < len(self.server_argv):
                 self.server_argv = self.server_argv[:d_idx] + \
                     self.server_argv[d_idx].split('=') + \
                     self.server_argv[d_idx + 1:]
-            self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
+            self.dropbox_uri_map = {}
             self.get_directory_tar_map(self.server_argv)
+            self.dropbox_uri_map.update(get_dropbox_uri_map(self.server_argv))
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -311,7 +313,6 @@ class JobSubClient(object):
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
-                self.dropbox_method = self.dropboxMethod()
                 actual_server = self.server
                 tfiles = []
                 # upload cvmfs rapid code distribution files, if any
@@ -406,15 +407,27 @@ class JobSubClient(object):
         use these mapfiles later to get tarfiles to submitted jobs
         """
         for arg in argv:
-            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:  # tardir://
+            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0 or \
+                (arg.find(constants.DROPBOX_SUPPORTED_URI) >=0 and
+                 self.dropbox_method = 'cvmfs'):  # tardir:// or -f dropbox://
+                                                  # with RCDS/CVMFS
                 dir_url = arg
                 tarpath = uri2path(dir_url)
                 if tarpath[-1] == '/':
                     tarpath = tarpath[:-1]
+                if is_tarfile(tarpath):  # Don't re-tar a tarfile
+                    continue
                 dirname = os.path.basename(tarpath)
+
+                # If dropbox with cvmfs, make sure to strip all extensions
+                # from name before tarring
+                if arg.find(constants.DROPBOX_SUPPORTED_URI) >=0:
+                    dirname = os.path.splitext(tarpath)[0]
+
                 tarname = dirname + ".tar"
                 create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
+
                 box_url = "dropbox://%s" % tarname
                 self.dropbox_uri_map[box_url] = digest
                 self.directory_tar_map[dir_url] = box_url

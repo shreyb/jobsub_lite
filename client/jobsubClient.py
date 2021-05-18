@@ -417,7 +417,7 @@ class JobSubClient(object):
                     tarpath = tarpath[:-1]
 
                 # Don't re-tar a tarfile
-                if not os.path.isdir(tarpath) and is_tarfile(tarpath):  
+                if is_tarfile(tarpath):  
                     continue
 
                 dirname = os.path.basename(tarpath)
@@ -2275,6 +2275,8 @@ def is_tarfile(filename):
     """ well, is it?
     """
     if not os.path.exists(filename):
+        return False
+    if os.path.isdir(filename):
         return False
     return tarfile.is_tarfile(filename)
 

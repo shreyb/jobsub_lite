@@ -428,6 +428,7 @@ class JobSubClient(object):
                     dirname = os.path.splitext(tarpath)[0]
 
                 tarname = dirname + ".tar"
+                # TODO  Either make dir and put file in there to tar up or change create_tarfile to check if tarpath is dir, and if not, to create the dir there or otherwise only add the file to the tar.  Think about this 
                 create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
 

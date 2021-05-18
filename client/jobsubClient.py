@@ -415,8 +415,11 @@ class JobSubClient(object):
                 tarpath = uri2path(dir_url)
                 if tarpath[-1] == '/':
                     tarpath = tarpath[:-1]
-                if is_tarfile(tarpath):  # Don't re-tar a tarfile
+
+                # Don't re-tar a tarfile
+                if not os.path.isdir(tarpath) and is_tarfile(tarpath):  
                     continue
+
                 dirname = os.path.basename(tarpath)
 
                 # If dropbox with cvmfs, make sure to strip all extensions

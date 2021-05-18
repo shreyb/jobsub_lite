@@ -409,7 +409,7 @@ class JobSubClient(object):
         for arg in argv:
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0 or \
                 (arg.find(constants.DROPBOX_SUPPORTED_URI) >=0 and
-                 self.dropbox_method = 'cvmfs'):  # tardir:// or -f dropbox://
+                 self.dropbox_method == 'cvmfs'):  # tardir:// or -f dropbox://
                                                   # with RCDS/CVMFS
                 dir_url = arg
                 tarpath = uri2path(dir_url)

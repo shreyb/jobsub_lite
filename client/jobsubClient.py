@@ -1969,7 +1969,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     create a compressed tarfile
         Args:
             tar_file (string): full pathname of tarfile to be created
-            tar_path (string): directory to be tarred up into 'tar_file'
+            tar_path (string): directory or file to be tarred up into 'tar_file'
             tar_type (string, optional): if "tgz": gzipped tarfile
                                                   otherwise bzipped tarfile
             reject_list (list[]): list of regular expressions of file names
@@ -1990,37 +1990,55 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     if tar_file not in reject_list:
         reject_list.append('%s$' % tar_file)
 
-    os.chdir(tar_path)
-    tar_dir = os.getcwd()
     failed_file_list = []
-    ftar_d = os.path.realpath(tar_dir)
-    for root, dirs, files in os.walk(ftar_d):
-        for dd in dirs:
-            fd = os.path.join(root, dd)
-            ok_include = True
-            if os.path.islink(fd) or not os.listdir(fd):
+    
+    if not os.path.isdir(tar_path):
+        # Tarring a single file up into its own tarball
+        os.chdir(os.path.dirname(tar_path))
+        file_path= os.path.realpath(tar_path)
+        ok_include = True
+        for patt in reject_list:
+            if re.search(patt, file_path):
+                ok_include=False
+                break
+        if ok_include:
+            try:
+                tar.add(os.path.basename(file_path))
+            except Exception:
+                failed_file_list.append(file_path)
+    else:
+        # Tar a directory
+        os.chdir(tar_path)
+        tar_dir = os.getcwd()
+        ftar_d = os.path.realpath(tar_dir)
+        for root, dirs, files in os.walk(ftar_d):
+            for dd in dirs:
+                fd = os.path.join(root, dd)
+                ok_include = True
+                if os.path.islink(fd) or not os.listdir(fd):
+                    for patt in reject_list:
+                        if re.search(patt, fd):
+                            ok_include = False
+                            break
+                    if ok_include:
+                        try:
+                            tar.add(fd[len(ftar_d) + 1:])
+                        except Exception:
+                            failed_file_list.append(fd)
+            for ff in files:
+                ok_include = True
+                ft = os.path.join(root, ff)
+                fname = os.path.basename(ft)
                 for patt in reject_list:
-                    if re.search(patt, fd):
+                    if re.search(patt, ft):
                         ok_include = False
                         break
                 if ok_include:
                     try:
-                        tar.add(fd[len(ftar_d) + 1:])
+                        tar.add(ft[len(ftar_d) + 1:])
                     except Exception:
-                        failed_file_list.append(fd)
-        for ff in files:
-            ok_include = True
-            ft = os.path.join(root, ff)
-            fname = os.path.basename(ft)
-            for patt in reject_list:
-                if re.search(patt, ft):
-                    ok_include = False
-                    break
-            if ok_include:
-                try:
-                    tar.add(ft[len(ftar_d) + 1:])
-                except Exception:
-                    failed_file_list.append(fname)
+                        failed_file_list.append(fname)
+
     tar.close()
     cmd1 = "gzip -n %s" % temp_name
     subprocessSupport.iexe_cmd(cmd1)

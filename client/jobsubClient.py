@@ -276,7 +276,9 @@ class JobSubClient(object):
                     self.server_argv[d_idx + 1:]
             self.dropbox_uri_map = {}
             self.get_directory_tar_map(self.server_argv)
-            self.dropbox_uri_map.update(get_dropbox_uri_map(self.server_argv))
+            _dropbox_uri_map = {k:v for (k, v) in get_dropbox_uri_map(self.server_argv).iteritems()
+                                if k not in self.directory_tar_map}
+            self.dropbox_uri_map.update(_dropbox_uri_map)
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -417,7 +419,7 @@ class JobSubClient(object):
                     tarpath = tarpath[:-1]
 
                 # Don't re-tar a tarfile
-                if is_tarfile(tarpath):  
+                if is_tarfile(tarpath):
                     continue
 
                 dirname = os.path.basename(tarpath)
@@ -428,7 +430,7 @@ class JobSubClient(object):
                     dirname = os.path.splitext(tarpath)[0]
 
                 tarname = dirname + ".tar"
-                # TODO  Either make dir and put file in there to tar up or change create_tarfile to check if tarpath is dir, and if not, to create the dir there or otherwise only add the file to the tar.  Think about this 
+                # TODO  Either make dir and put file in there to tar up or change create_tarfile to check if tarpath is dir, and if not, to create the dir there or otherwise only add the file to the tar.  Think about this
                 create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
 
@@ -1991,7 +1993,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
         reject_list.append('%s$' % tar_file)
 
     failed_file_list = []
-    
+
     if not os.path.isdir(tar_path):
         # Tarring a single file up into its own tarball
         os.chdir(os.path.dirname(tar_path))

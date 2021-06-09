@@ -275,7 +275,7 @@ class JobSubClient(object):
                     self.server_argv[d_idx].split('=') + \
                     self.server_argv[d_idx + 1:]
             self.dropbox_uri_map = {}
-            self.get_directory_tar_map(self.server_argv)
+            self.get_directory_tar_map()
             _dropbox_uri_map = {k:v for (k, v) in get_dropbox_uri_map(self.server_argv).iteritems()
                                 if k not in self.directory_tar_map}
             self.dropbox_uri_map.update(_dropbox_uri_map)
@@ -393,12 +393,12 @@ class JobSubClient(object):
             self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
                 six.b(' '.join(srv_argv))))
 
-    def get_directory_tar_map(self, argv):
+    def get_directory_tar_map(self):
         """
-        @argv: list of arguments to jobsub_* client command
-               some of these are directories to be tarred up
+        operates on self.server_argv: list of arguments to jobsub_* client
+               command some of these are directories to be tarred up
                prefixed with tardir: i.e tardir://path/to/dir/
-        foreach arg in argv:
+        foreach arg in self.server_argv:
             create somedir.tar from dir_url=tardir://path/to/somedir/
             compute digest of somedir.tar:
             create box_url = dropbox://somedir.tar
@@ -408,7 +408,7 @@ class JobSubClient(object):
 
         use these mapfiles later to get tarfiles to submitted jobs
         """
-        for arg in argv:
+        for idx, arg in enumerate(self.server_argv):
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0 or \
                 (arg.find(constants.DROPBOX_SUPPORTED_URI) >=0 and
                  self.dropbox_method == 'cvmfs'):  # tardir:// or -f dropbox://
@@ -425,20 +425,25 @@ class JobSubClient(object):
                 dirname = os.path.basename(tarpath)
 
                 # If dropbox with cvmfs, make sure to strip all extensions
-                # from name before tarring
+                # from name before tarring, as well as swapping the dropbox uri
+                # with the tardir uri for later mapping
                 if arg.find(constants.DROPBOX_SUPPORTED_URI) >=0:
-                    dirname = os.path.splitext(tarpath)[0]
+                    dirname = os.path.splitext(dirname)[0]
+                    dir_url = re.sub(constants.DROPBOX_SUPPORTED_URI,
+                                     constants.DIRECTORY_SUPPORTED_URI,
+                                     dir_url, count=1)
+                    self.server_argv[idx] = dir_url
 
                 tarname = dirname + ".tar"
-                # TODO  Either make dir and put file in there to tar up or change create_tarfile to check if tarpath is dir, and if not, to create the dir there or otherwise only add the file to the tar.  Think about this
                 create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
 
-                box_url = "dropbox://%s" % tarname
+                box_url = "{0}{1}".format(constants.DROPBOX_SUPPORTED_URI,
+                                          tarname)
                 self.dropbox_uri_map[box_url] = digest
                 self.directory_tar_map[dir_url] = box_url
-                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
-                                  (self.dropbox_uri_map, self.directory_tar_map))
+                logSupport.dprint("dropbox_uri_map={0} directory_tar_map={1}"\
+                    .format(self.dropbox_uri_map, self.directory_tar_map))
 
     def ifdh_upload(self):
         """

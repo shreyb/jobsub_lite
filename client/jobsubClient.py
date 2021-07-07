@@ -268,13 +268,19 @@ class JobSubClient(object):
         if self.server_argv:
             self.job_exe_uri = get_jobexe_uri(self.server_argv)
             self.job_executable = uri2path(self.job_exe_uri)
+            self.dropbox_method = self.dropboxMethod()
             d_idx = get_dropbox_idx(self.server_argv)
             if d_idx is not None and d_idx < len(self.server_argv):
                 self.server_argv = self.server_argv[:d_idx] + \
                     self.server_argv[d_idx].split('=') + \
                     self.server_argv[d_idx + 1:]
-            self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
-            self.get_directory_tar_map(self.server_argv)
+            self.dropbox_uri_map = {}
+            self.get_directory_tar_map()
+            _dropbox_uri_map = {k:v for (k, v) in
+                                get_dropbox_uri_map(
+                                    self.server_argv).iteritems()
+                                if k not in self.directory_tar_map}
+            self.dropbox_uri_map.update(_dropbox_uri_map)
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -311,7 +317,6 @@ class JobSubClient(object):
             if self.dropbox_uri_map:
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
-                self.dropbox_method = self.dropboxMethod()
                 actual_server = self.server
                 tfiles = []
                 # upload cvmfs rapid code distribution files, if any
@@ -390,12 +395,12 @@ class JobSubClient(object):
             self.serverargs_b64en = force_text(base64.urlsafe_b64encode(
                 six.b(' '.join(srv_argv))))
 
-    def get_directory_tar_map(self, argv):
+    def get_directory_tar_map(self):
         """
-        @argv: list of arguments to jobsub_* client command
-               some of these are directories to be tarred up
+        operates on self.server_argv: list of arguments to jobsub_* client
+               command some of these are directories to be tarred up
                prefixed with tardir: i.e tardir://path/to/dir/
-        foreach arg in argv:
+        foreach arg in self.server_argv:
             create somedir.tar from dir_url=tardir://path/to/somedir/
             compute digest of somedir.tar:
             create box_url = dropbox://somedir.tar
@@ -405,21 +410,42 @@ class JobSubClient(object):
 
         use these mapfiles later to get tarfiles to submitted jobs
         """
-        for arg in argv:
-            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:  # tardir://
+        for idx, arg in enumerate(self.server_argv):
+            if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0 or \
+                (arg.find(constants.DROPBOX_SUPPORTED_URI) >=0 and
+                 self.dropbox_method == 'cvmfs'):  # tardir:// or -f dropbox://
+                                                  # with RCDS/CVMFS
                 dir_url = arg
                 tarpath = uri2path(dir_url)
                 if tarpath[-1] == '/':
                     tarpath = tarpath[:-1]
+
+                # Don't re-tar a tarfile
+                if is_tarfile(tarpath):
+                    continue
+
                 dirname = os.path.basename(tarpath)
+
+                # If dropbox with cvmfs, make sure to strip all extensions
+                # from name before tarring, as well as swapping the dropbox uri
+                # with the tardir uri for later mapping
+                if arg.find(constants.DROPBOX_SUPPORTED_URI) >=0:
+                    dirname = os.path.splitext(dirname)[0]
+                    dir_url = re.sub(constants.DROPBOX_SUPPORTED_URI,
+                                     constants.DIRECTORY_SUPPORTED_URI,
+                                     dir_url, count=1)
+                    self.server_argv[idx] = dir_url
+
                 tarname = dirname + ".tar"
                 create_tarfile(tarname, tarpath, self.reject_list)
                 digest = digest_for_file(tarname)
-                box_url = "dropbox://%s" % tarname
+
+                box_url = "{0}{1}".format(constants.DROPBOX_SUPPORTED_URI,
+                                          tarname)
                 self.dropbox_uri_map[box_url] = digest
                 self.directory_tar_map[dir_url] = box_url
-                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
-                                  (self.dropbox_uri_map, self.directory_tar_map))
+                logSupport.dprint("dropbox_uri_map={0} directory_tar_map={1}"\
+                    .format(self.dropbox_uri_map, self.directory_tar_map))
 
     def ifdh_upload(self):
         """
@@ -1952,7 +1978,7 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     create a compressed tarfile
         Args:
             tar_file (string): full pathname of tarfile to be created
-            tar_path (string): directory to be tarred up into 'tar_file'
+            tar_path (string): directory or file to be tarred up into 'tar_file'
             tar_type (string, optional): if "tgz": gzipped tarfile
                                                   otherwise bzipped tarfile
             reject_list (list[]): list of regular expressions of file names
@@ -1973,37 +1999,55 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
     if tar_file not in reject_list:
         reject_list.append('%s$' % tar_file)
 
-    os.chdir(tar_path)
-    tar_dir = os.getcwd()
     failed_file_list = []
-    ftar_d = os.path.realpath(tar_dir)
-    for root, dirs, files in os.walk(ftar_d):
-        for dd in dirs:
-            fd = os.path.join(root, dd)
-            ok_include = True
-            if os.path.islink(fd) or not os.listdir(fd):
+
+    if not os.path.isdir(tar_path):
+        # Tarring a single file up into its own tarball
+        os.chdir(os.path.dirname(tar_path))
+        file_path= os.path.realpath(tar_path)
+        ok_include = True
+        for patt in reject_list:
+            if re.search(patt, file_path):
+                ok_include=False
+                break
+        if ok_include:
+            try:
+                tar.add(os.path.basename(file_path))
+            except Exception:
+                failed_file_list.append(file_path)
+    else:
+        # Tar a directory
+        os.chdir(tar_path)
+        tar_dir = os.getcwd()
+        ftar_d = os.path.realpath(tar_dir)
+        for root, dirs, files in os.walk(ftar_d):
+            for dd in dirs:
+                fd = os.path.join(root, dd)
+                ok_include = True
+                if os.path.islink(fd) or not os.listdir(fd):
+                    for patt in reject_list:
+                        if re.search(patt, fd):
+                            ok_include = False
+                            break
+                    if ok_include:
+                        try:
+                            tar.add(fd[len(ftar_d) + 1:])
+                        except Exception:
+                            failed_file_list.append(fd)
+            for ff in files:
+                ok_include = True
+                ft = os.path.join(root, ff)
+                fname = os.path.basename(ft)
                 for patt in reject_list:
-                    if re.search(patt, fd):
+                    if re.search(patt, ft):
                         ok_include = False
                         break
                 if ok_include:
                     try:
-                        tar.add(fd[len(ftar_d) + 1:])
+                        tar.add(ft[len(ftar_d) + 1:])
                     except Exception:
-                        failed_file_list.append(fd)
-        for ff in files:
-            ok_include = True
-            ft = os.path.join(root, ff)
-            fname = os.path.basename(ft)
-            for patt in reject_list:
-                if re.search(patt, ft):
-                    ok_include = False
-                    break
-            if ok_include:
-                try:
-                    tar.add(ft[len(ftar_d) + 1:])
-                except Exception:
-                    failed_file_list.append(fname)
+                        failed_file_list.append(fname)
+
     tar.close()
     cmd1 = "gzip -n %s" % temp_name
     subprocessSupport.iexe_cmd(cmd1)
@@ -2259,6 +2303,8 @@ def is_tarfile(filename):
     """ well, is it?
     """
     if not os.path.exists(filename):
+        return False
+    if os.path.isdir(filename):
         return False
     return tarfile.is_tarfile(filename)
 

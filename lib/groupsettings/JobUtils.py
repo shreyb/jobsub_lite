@@ -312,6 +312,7 @@ locate_cvmfs_dir(){
             num_tries=$(($num_tries + 1))
             if  test -d "$cid" ; then
                 cd $CONDOR_DIR_INPUT
+                for F in "$cid"/*; do ln -s $F . ; done
                 ln -s $cid $ldir
                 msg="$JOBSUBJOBID found $cid"
                 ${JSB_TMP}/ifdh.sh log $msg
@@ -342,6 +343,7 @@ locate_cvmfs_dir(){
            if test -d $dropbox_dir; then 
               cd $CONDOR_DIR_INPUT
               ln -s $dropbox_dir $ldir
+              for F in "$ldir"/*; do ln -s $F . ; done
               msg="$JOBSUBJOBID found $dropbox_dir"
               ${JSB_TMP}/ifdh.sh log $msg
               cd ${locate_cvmfs_dir_called_from}

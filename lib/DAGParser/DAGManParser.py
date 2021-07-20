@@ -327,7 +327,12 @@ class DAGManLogParser:
             if long:
                 print "\tSubmitted: %s %s" % (el["submit"]["date"], el["submit"]["time"])
                 if "exe" in el:
-                    print "\tExe on %s: %s %s " % (socket.gethostbyaddr(el["exe"]["node"])[0], el["exe"].get("date"), el["exe"].get("time"))
+                    node = el["exe"].get("node")
+                    try:
+                        node = socket.gethostbyaddr(node)
+                    except:
+                        pass
+                    print "\tExe on %s: %s %s " % (node, el["exe"].get("date"), el["exe"].get("time"))
                 if "end" in el:
                     print "\tDone Exit Code %s: %s %s" % (el["end"].get("retcode"), el["end"].get("date"), el["end"].get("time"))
                 if "abort" in el:

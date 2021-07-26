@@ -312,8 +312,12 @@ locate_cvmfs_dir(){
             num_tries=$(($num_tries + 1))
             if  test -d "$cid" ; then
                 cd $CONDOR_DIR_INPUT
-                for F in "$cid"/*; do ln -s $F . ; done
-                ln -s $cid $ldir
+                num_d=`find ${cid} -maxdepth 1 -type d | wc -l`
+                if [ $num_d -eq 1 ] ; then 
+                   for F in ${cid}/*; do ln -s $F . ; done
+                else
+                   ln -s $cid $ldir 
+                fi
                 msg="$JOBSUBJOBID found $cid"
                 ${JSB_TMP}/ifdh.sh log $msg
                 cd ${locate_cvmfs_dir_called_from}
@@ -342,8 +346,12 @@ locate_cvmfs_dir(){
            dropbox_dir="${mnt_point}/sw/${cid}"
            if test -d $dropbox_dir; then 
               cd $CONDOR_DIR_INPUT
-              ln -s $dropbox_dir $ldir
-              for F in "$ldir"/*; do ln -s $F . ; done
+              num_d=`find ${dropbox_dir} -maxdepth 1 -type d | wc -l`
+              if [ $num_d -eq 1 ]; then 
+                 for F in ${dropbox_dir}/*; do ln -s $F . ; done
+              else
+                 ln -s $dropbox_dir $ldir 
+              fi
               msg="$JOBSUBJOBID found $dropbox_dir"
               ${JSB_TMP}/ifdh.sh log $msg
               cd ${locate_cvmfs_dir_called_from}

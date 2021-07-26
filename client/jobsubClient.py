@@ -2001,6 +2001,9 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
 
     failed_file_list = []
 
+    all_r = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+    all_x = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+
     if not os.path.isdir(tar_path):
         # Tarring a single file up into its own tarball
         os.chdir(os.path.dirname(tar_path))
@@ -2012,7 +2015,10 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
                 break
         if ok_include:
             try:
+                st = os.stat(file_path)
+                os.chmod(file_path, st.st_mode | all_r)
                 tar.add(os.path.basename(file_path))
+                os.chmod(file_path, st.st_mode)
             except Exception:
                 failed_file_list.append(file_path)
     else:
@@ -2031,7 +2037,10 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
                             break
                     if ok_include:
                         try:
+                            st = os.stat(dd)
+                            os.chmod(dd, st.st_mode | all_r | all_x)
                             tar.add(fd[len(ftar_d) + 1:])
+                            os.chmod(dd, st.st_mode)
                         except Exception:
                             failed_file_list.append(fd)
             for ff in files:
@@ -2044,7 +2053,10 @@ def create_tarfile(tar_file, tar_path, tar_type="tar", reject_list=[]):
                         break
                 if ok_include:
                     try:
+                        st = os.stat(ff)
+                        os.chmod(ff, st.st_mode | all_r)
                         tar.add(ft[len(ftar_d) + 1:])
+                        os.chmod(ff, st.st_mode)
                     except Exception:
                         failed_file_list.append(fname)
 

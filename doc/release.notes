@@ -6,7 +6,10 @@ v1.3.4
 Client
 -------
 
-* Bugfix 25723  -f dropbox:// not quite right for rcds via cvmfs
+* Bugfix 25723  Fixed -f dropbox:// failure for single non-tarfile upload using 
+		RCDS via cvmfs. Single file now gets wrapped in own tarball and 
+		uploaded to RCDS.  See here for details:
+		https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/Rapid_Code_Distribution_Service_via_CVMFS_using_Jobsub
 
 
 Server

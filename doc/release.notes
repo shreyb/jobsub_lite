@@ -16,7 +16,7 @@ Server
 -------
 
 * Bugfix 26058  email summary for jobs fails when some nodes have NAT problems
-* Bugfix INC000001119278 problem with job email summary fixed
+                see INC000001119278
 
 
 ================================================================================

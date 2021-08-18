@@ -278,7 +278,7 @@ class JobSubClient(object):
             self.get_directory_tar_map()
             _dropbox_uri_map = {k:v for (k, v) in
                                 get_dropbox_uri_map(
-                                    self.server_argv).iteritems()
+                                    self.server_argv).items()
                                 if k not in self.directory_tar_map}
             self.dropbox_uri_map.update(_dropbox_uri_map)
             server_env_exports = get_server_env_exports(self.server_argv)

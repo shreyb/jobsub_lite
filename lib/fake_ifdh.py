@@ -73,6 +73,9 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
     else:
         issuer = exp
 
+    role = role.lower()  # Token-world wants all-lower
+    service = f"{issuer}_{role}" if role != DEFAULT_ROLE.lower() else issuer
+
     if os.environ.get("BEARER_TOKEN_FILE", None) and os.path.exists(
         os.environ["BEARER_TOKEN_FILE"]
     ):
@@ -83,9 +86,7 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     if not checkToken(tokenfile):
-        cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
-        if role != DEFAULT_ROLE:
-            cmd = "%s -r %s" % (cmd, role.lower())  # Token-world wants all-lower
+        cmd = f"condor_vault_storer {service}"
         # send htgettoken output to stderr because invokers read stdout
         res = os.system("%s >&2" % cmd)
         if res != 0:

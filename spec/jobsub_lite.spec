@@ -18,6 +18,7 @@ Requires: condor
 Requires: condor-classads
 Requires: condor-credmon-vault
 Requires: python3-condor
+Requires: gfal-util
 
 %description
 Job submission wrapper scripts
@@ -98,6 +99,9 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Thu Jul 21 2022 Shreyas Bhat <sbhat@fnal.gov> beta13
+- Added Requires gfal-util so fake_ifdh.cp() works
+
 * Thu Jul 21 2022 Shreyas Bhat <sbhat@fnal.gov> beta12
 - Removed bin/fake_ifdh from files list
 

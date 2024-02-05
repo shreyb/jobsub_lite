@@ -1,0 +1,25 @@
+name: make
+
+on:
+  workflow_dispatch:
+    branches:
+      - *
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_make:
+    runs-on: latest
+    container:
+      image: almalinux:9.3-minimal
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install rpm-build
+      run: microdnf install rpm-build
+    - name: Install make
+      run: microdnf install make
+    - name: Run make
+      run: make
+    - name: Verify that RPM was generated
+      run: ls -1 jobsub_lite-*.rpm

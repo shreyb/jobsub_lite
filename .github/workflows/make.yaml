@@ -1,10 +1,10 @@
 name: make
 
 on:
-  workflow_dispatch:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   run_make:

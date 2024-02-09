@@ -9,7 +9,7 @@ on:
 jobs:
   pushed_commit:
     runs-on: ubuntu-20.04
-    name: "Build master after push in AL9 container"
+    name: "Build master after push in SL7 container"
     container:
       image: fermilab/fnal-wn-sl7
     steps:
@@ -18,9 +18,9 @@ jobs:
       - name: Upgrade glibc
         run: yum upgrade glibc
       - name: Check out jobsub_lite in runner
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       - name: Check out jobsub_lite_config in runner
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: fermitools/jobsub_lite_config
           path: config

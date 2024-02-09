@@ -12,6 +12,9 @@ runs:
     - name: Install make
       shell: bash
       run: yum install -y make
+    - name: Install python3
+      shell: bash
+      run: yum install -y python3
     - name: Run make
       shell: bash
       run: make

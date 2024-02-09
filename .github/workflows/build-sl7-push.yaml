@@ -13,6 +13,10 @@ jobs:
     container:
       image: fermilab/fnal-wn-sl7
     steps:
+      - name: Install glibc if needed
+        run: yum info glibc || yum install -y glibc
+      - name: Upgrade glibc
+        run: yum upgrade glibc
       - name: Check out jobsub_lite in runner
         uses: actions/checkout@v4
       - name: Check out jobsub_lite_config in runner

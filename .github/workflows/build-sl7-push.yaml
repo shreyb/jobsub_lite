@@ -1,4 +1,4 @@
-name: build-al9-push
+name: build-sl7-push
 
 on:
   push:

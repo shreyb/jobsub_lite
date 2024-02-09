@@ -11,12 +11,8 @@ jobs:
     runs-on: ubuntu-20.04
     name: "Build master after push in SL7 container"
     container:
-      image: fermilab/fnal-wn-sl7
+      image: scientificlinux/sl:7
     steps:
-      - name: Install glibc if needed
-        run: yum info glibc || yum install -y glibc
-      - name: Upgrade glibc
-        run: yum upgrade glibc
       - name: Check out jobsub_lite in runner
         uses: actions/checkout@v3
       - name: Check out jobsub_lite_config in runner
